@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+   // alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 kotlin {
@@ -19,10 +20,8 @@ kotlin {
     jvm()
     
     sourceSets {
-        androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
-        }
+
+
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -32,14 +31,47 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            // Navigation
+            implementation(libs.voyager.navigator)
+            implementation(libs.voyager.screenmodel)
+            implementation(libs.voyager.transitions)
+
+            // DI
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+
+            // JSON & Database
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
+
+
+            //For material icons
+            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
+
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+
+            // SQLDelight Android driver
+            implementation(libs.sqldelight.android.driver)
+
         }
+
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            // SQLDelight JVM driver
+            implementation(libs.sqldelight.jvm.driver)
         }
+
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+
     }
 }
 

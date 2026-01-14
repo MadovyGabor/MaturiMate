@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.ui.theme
+package com.madovygabor.maturimate.core.theme
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF845400)

@@ -38,3 +38,7 @@ in your IDE’s toolbar or run it directly from the terminal:
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+
+To DO:
+- Change nav ba icons
+- Implement desktop padding/margin
