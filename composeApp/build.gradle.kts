@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
-   // alias(libs.plugins.jetbrains.kotlin.serialization)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -33,9 +33,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
             // Navigation
-            implementation(libs.voyager.navigator)
-            implementation(libs.voyager.screenmodel)
-            implementation(libs.voyager.transitions)
+            implementation(libs.jetbrains.navigation3.ui)
+            implementation(libs.jetbrains.lifecycle.viewmodel.nav3)
+            implementation(libs.kotlinx.serialization.json)
 
             // DI
             implementation(libs.koin.core)
@@ -47,8 +47,9 @@ kotlin {
             implementation(libs.sqldelight.coroutines)
 
 
-            //For material icons
+            //For material iconsn and google fonts
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            //implementation("androidx.compose.ui:ui-text-google-fonts:1.10.0")
 
         }
 

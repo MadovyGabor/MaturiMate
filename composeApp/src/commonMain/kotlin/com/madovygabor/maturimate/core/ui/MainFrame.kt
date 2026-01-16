@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -24,12 +22,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.compose.AppTheme
+import com.madovygabor.maturimate.core.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+
+/*
+* This composable provides a responsive main frame layout that adapts to different screen sizes.
+*/
 @Composable
 fun MainFrame(
-    currentScreen: @Composable () -> Unit // Ez a "lyuk", ahová a tartalom kerül
+    content: @Composable () -> Unit
 ) {
     BoxWithConstraints {
 
@@ -40,7 +42,7 @@ fun MainFrame(
             Row(Modifier.fillMaxSize()) {
                 NavigationRail(
                     modifier = Modifier.width(100.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                     header = { /* Application logo */ }
                 ) {
 
@@ -72,8 +74,8 @@ fun MainFrame(
                 }
 
                 // The main content area
-                Box(Modifier.fillMaxSize().padding(16.dp)) {
-                    currentScreen()
+                Box(Modifier.fillMaxSize()) {
+                    content()
                 }
             }
         } else {
@@ -82,7 +84,7 @@ fun MainFrame(
             Scaffold(
                 bottomBar = {
                     NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
                         NavigationBarItem(
                             selected = true,
@@ -109,7 +111,7 @@ fun MainFrame(
                 }
             ) { padding ->
                 Box(Modifier.padding(padding)) {
-                    currentScreen()
+                    content()
                 }
             }
         }
@@ -120,9 +122,11 @@ fun MainFrame(
 @Preview(showBackground = true, widthDp = 1920, heightDp = 1080)
 @Composable
 fun AppPreview() {
-    AppTheme(darkTheme = false) {
-        MainFrame {
-            // Például a HomeScreen()
-        }
+    AppTheme(darkTheme = true) {
+        MainFrame (
+            content = {
+                Text("Hello, World!", modifier = Modifier.padding(16.dp))
+            }
+        )
     }
 }
