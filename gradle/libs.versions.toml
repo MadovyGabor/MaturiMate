@@ -18,7 +18,7 @@ kotlinx-coroutines = "1.10.2"
 
 
 # For the navigation component in Compose
-cmpNavigation3 = "1.0.0-alpha05"
+cmpNavigation3 = "1.0.0-alpha06"
 lifecycleViewmodelNav3 = "2.10.0-alpha05"
 
 koin = "4.1.1"

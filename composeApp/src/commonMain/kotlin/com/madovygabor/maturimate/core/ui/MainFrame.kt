@@ -7,10 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -22,19 +18,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavKey
 import com.madovygabor.maturimate.core.theme.AppTheme
+import com.madovygabor.maturimate.core.ui.navigation.Route
+import com.madovygabor.maturimate.core.ui.navigation.TOP_LEVEL_NAVBAR_DESTINATIONS
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
-/*
-* This composable provides a responsive main frame layout that adapts to different screen sizes.
-*/
+// MainFrame composable that provides responsive bottom or side navigation based on screen size.
 @Composable
 fun MainFrame(
+    selectedKey: NavKey,// The currently selected navigation key
+    onSelectedKey: (NavKey) -> Unit,// Callback when a navigation item is selected
     content: @Composable () -> Unit
 ) {
-    BoxWithConstraints {
 
+
+    BoxWithConstraints {
+        // Determine if the device is considered a desktop based on maxWidth
         val isDesktop = maxWidth > 600.dp
 
         if (isDesktop) {
@@ -49,27 +50,22 @@ fun MainFrame(
                     //For item centering
                     Spacer(Modifier.weight(1f))
 
-                    NavigationRailItem(
-                        selected = true,
-                        onClick = { /* Navigation */ },
-                        icon = { Icon(Icons.Default.Home, null) },
-                        label = { Text("Főoldal") }
-                    )
+                    // Dynamically create navigation items from the TOP_LEVEL_NAV_ITEMS map
+                    TOP_LEVEL_NAVBAR_DESTINATIONS.forEach { (topLevelDestination, data) ->
 
-                    NavigationRailItem(
-                        selected = false,
-                        onClick = { /* Navigation */ },
-                        icon = { Icon(Icons.Default.History, null) },
-                        label = { Text("Előzmények") }
-                    )
+                        // Determine if the current item is selected
+                        val isSelected = selectedKey == topLevelDestination
+                        val iconToShow = if (isSelected) data.selectedIcon else data.icon
 
-                    NavigationRailItem(
-                        selected = false,
-                        onClick = { /* Navigation */ },
-                        icon = { Icon(Icons.Default.Person, null) },
-                        label = { Text("Profil") }
-                    )
+                        NavigationRailItem(
+                            selected = selectedKey == topLevelDestination,
+                            onClick = { onSelectedKey(topLevelDestination) },
+                            icon = { Icon(iconToShow, data.title) },
+                            label = { Text(data.title) }
+                        )
 
+                    }
+                    //For item centering
                     Spacer(Modifier.weight(1f))
                 }
 
@@ -86,27 +82,20 @@ fun MainFrame(
                     NavigationBar(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
-                        NavigationBarItem(
-                            selected = true,
-                            onClick = { /* Navigáció */ },
-                            icon = { Icon(Icons.Default.Home, null) },
-                            label = { Text("Főoldal") }
-                        )
+                        // Dynamically create navigation items from the TOP_LEVEL_NAVBAR_DESTINATIONS map
+                        TOP_LEVEL_NAVBAR_DESTINATIONS.forEach { (topLevelDestination, data) ->
+                            // Determine if the current item is selected
+                            val isSelected = selectedKey == topLevelDestination
+                            val iconToShow = if (isSelected) data.selectedIcon else data.icon
 
-                        NavigationBarItem(
-                            selected = false,
-                            onClick = { /* Navigáció */ },
-                            icon = { Icon(Icons.Default.History, null) },
-                            label = { Text("Előzmények") }
-                        )
+                            NavigationBarItem(
+                                selected = selectedKey == topLevelDestination,
+                                onClick = { onSelectedKey(topLevelDestination) },
+                                icon = { Icon(iconToShow, data.title,) },
+                                label = { Text(data.title) },
+                            )
 
-                        NavigationBarItem(
-                            selected = false,
-                            onClick = { /* Navigáció */ },
-                            icon = { Icon(Icons.Default.Person, null) },
-                            label = { Text("Profil") }
-                        )
-                        // Többi ikon...
+                        }
                     }
                 }
             ) { padding ->
@@ -124,6 +113,8 @@ fun MainFrame(
 fun AppPreview() {
     AppTheme(darkTheme = true) {
         MainFrame (
+            selectedKey = Route.Main.Subject,
+            onSelectedKey = {},
             content = {
                 Text("Hello, World!", modifier = Modifier.padding(16.dp))
             }
