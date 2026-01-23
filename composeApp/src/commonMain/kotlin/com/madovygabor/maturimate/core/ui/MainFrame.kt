@@ -36,7 +36,8 @@ fun MainFrame(
 
     BoxWithConstraints {
         // Determine if the device is considered a desktop based on maxWidth
-        val isDesktop = maxWidth > 600.dp
+        val isDesktop = maxWidth > isDesktopSize.size
+
 
         if (isDesktop) {
             // Desktop navigation side bar

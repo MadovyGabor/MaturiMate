@@ -8,8 +8,15 @@ import kotlinx.serialization.Serializable
 sealed interface Route : NavKey {
 
     // --- Top Level Screens ---
+
+    // Initial setup screen
     @Serializable
-    data object InitialSetup : Route // Initial setup screen
+    data object AppOnboarding : Route {
+        @Serializable
+        data object Welcome : Route // Welcome screen for onboarding
+        @Serializable
+        data object ProfileSetup : Route // Profile setup during onboarding
+    }
     @Serializable
     data class ExamWrite(val examId: String) : Route // Fullscreen exam writing screen
 

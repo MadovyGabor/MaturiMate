@@ -5,6 +5,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 
 // 1. Definiáljuk a modellt (id-val kiegészítve)
 data class Subject(
@@ -14,6 +15,10 @@ data class Subject(
     val color: Color,
     val level: String? = null
 )
+
+object isDesktopSize {
+    val size = 600.dp
+}
 
 object SubjectStaticData {
     // 2. A Map, ami tárolja a fix adatokat
