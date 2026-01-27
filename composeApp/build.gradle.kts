@@ -31,6 +31,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.kotlinx.datetime)
 
             // Navigation
             implementation(libs.jetbrains.navigation3.ui)
@@ -38,18 +39,21 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
 
             // DI
-            implementation(libs.koin.core)
+            api(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
 
             // JSON & Database
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
 
+            //DataStore
+            api(libs.datastore)
+            api(libs.datastore.preferences)
 
-            //For material iconsn and google fonts
+            //For material icons and google fonts
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
-            //implementation("androidx.compose.ui:ui-text-google-fonts:1.10.0")
 
         }
 
@@ -59,6 +63,13 @@ kotlin {
 
             // SQLDelight Android driver
             implementation(libs.sqldelight.android.driver)
+
+            //Koin Android
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
+
+            //Android Splash Screen API
+            implementation(libs.core.splashscreen)
 
         }
 

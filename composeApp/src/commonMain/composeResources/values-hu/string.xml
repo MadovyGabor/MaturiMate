@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MaturiMate</string>
+    <string name="error_date_past">A vizsga nem lehet a múltban!</string>
+    <string name="error_date_null">Kérlek, válassz dátumot!</string>
+</resources>
