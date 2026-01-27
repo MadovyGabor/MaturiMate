@@ -14,8 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.madovygabor.maturimate.core.presentation.SubjectStaticData
 import com.madovygabor.maturimate.core.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -144,7 +145,7 @@ fun ExamListItem(
 
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Assignment, // Itt bármilyen ikont használhatsz
+                    imageVector = Icons.AutoMirrored.Outlined.Assignment, // Itt bármilyen ikont használhatsz
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.inverseSurface,
                     modifier = Modifier

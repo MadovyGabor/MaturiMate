@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.ui.utils
+package com.madovygabor.maturimate.core.presentation.utils
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,33 +23,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-// Date Picker Field Composable
+
+/**
+ * A custom Date Picker field that uses Material 3 [DatePicker].
+ * Fully compatible with Kotlin Multiplatform using kotlinx-datetime.
+ * * @param label The label to display on the text field.
+ * @param label The label to display on the text field.in milliseconds.
+ * @param onDateSelected Callback when a new date is picked.
+ * @param modifier Styling for the container.
+ * @param placeholder Text shown when no date is selected.
+ */
 @Composable
 fun DatePickerField(
     label: String,
     selectedDateMillis: Long?,
     onDateSelected: (Long?) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "ÉÉÉÉ. HH. NN."
+    placeholder: String = "YYYY. MM. DD."
 ) {
-    // State to control the visibility of the date picker modal
+    // State to manage modal visibility
     var showModal by remember { mutableStateOf(false) }
 
-    // Format the selected date for display
+    // Convert millis to formatted string whenever the selection changes
     val formattedDate = remember(selectedDateMillis) {
         selectedDateMillis?.let { convertMillisToDate(it) } ?: ""
     }
 
-    // Main UI Box
+
     Box(modifier = modifier) {
-        // Outlined Text Field displaying the selected date
         OutlinedTextField(
             value = formattedDate,
-            onValueChange = { },
+            onValueChange = { }, // Read-only field
             label = { Text(label) },
             placeholder = { Text(placeholder) },
             readOnly = true,
@@ -59,14 +69,13 @@ fun DatePickerField(
                 IconButton(onClick = { showModal = true }) {
                     Icon(
                         imageVector = Icons.Default.DateRange,
-                        contentDescription = "Dátum kiválasztása",
+                        contentDescription = "Select Date",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
         )
 
-        // Date Picker Modal
         if (showModal) {
             MaturiDatePickerModal(
                 initialSelectedDateMillis = selectedDateMillis,
@@ -80,7 +89,9 @@ fun DatePickerField(
     }
 }
 
-// Date Picker Modal Composable
+/**
+ * Material 3 Date Picker Dialog wrapper.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MaturiDatePickerModal(
@@ -88,12 +99,11 @@ private fun MaturiDatePickerModal(
     onDateSelected: (Long?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // Remember the state of the date picker
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialSelectedDateMillis
     )
 
-    // Date Picker Dialog
+
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -103,7 +113,7 @@ private fun MaturiDatePickerModal(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Mégse")
+                Text("Cancel")
             }
         }
     ) {
@@ -111,9 +121,19 @@ private fun MaturiDatePickerModal(
     }
 }
 
-// Converts milliseconds since epoch to a formatted date string "yyyy. MM. dd."
+/**
+ * Platform-independent date formatting using kotlinx-datetime.
+ * Converts Epoch Milliseconds to "YYYY. MM. DD." format.
+ */
+@OptIn(ExperimentalTime::class)
 fun convertMillisToDate(millis: Long): String {
+    val instant = Instant.fromEpochMilliseconds(millis)
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
 
-    val formatter = SimpleDateFormat("yyyy. MM. dd.", Locale.getDefault())
-    return formatter.format(Date(millis))
+    // Manual formatting for KMP compatibility (since SimpleDateFormat is JVM-only)
+    val year = dateTime.year
+    val month = dateTime.month.number.toString().padStart(2, '0')
+    val day = dateTime.day.toString().padStart(2, '0')
+
+    return "$year. $month. $day."
 }

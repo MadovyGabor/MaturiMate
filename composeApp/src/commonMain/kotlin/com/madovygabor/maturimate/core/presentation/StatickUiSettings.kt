@@ -1,13 +1,22 @@
+package com.madovygabor.maturimate.core.presentation
+
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-// 1. Definiáljuk a modellt (id-val kiegészítve)
+/**
+ * Domain model representing an academic subject.
+ * * @param id Unique identifier for the subject (e.g., "MATH").
+ * @param name Localized name of the subject.
+ * @param icon The [ImageVector] associated with the subject.
+ * @param color Representative color used in the UI.
+ * @param level Optional academic level or difficulty (e.g., "B2" for languages).
+ */
 data class Subject(
     val id: String,
     val name: String,
@@ -16,12 +25,20 @@ data class Subject(
     val level: String? = null
 )
 
-object isDesktopSize {
-    val size = 600.dp
+/**
+ * UI-related constants for responsive design.
+ * @property DesktopThreshold The minimum width in dp to consider the layout as "desktop".
+ */
+object LayoutConstants {
+    val DesktopThreshold = 600.dp
 }
 
+/**
+ * Static provider for predefined subject data.
+ */
 object SubjectStaticData {
-    // 2. A Map, ami tárolja a fix adatokat
+
+    // Internal configuration map for subjects
     private val configs = mapOf(
         "ENGLISH" to Subject(
             id = "ENGLISH",
@@ -39,7 +56,7 @@ object SubjectStaticData {
         "HUNGARIAN" to Subject(
             id = "HUNGARIAN",
             name = "Magyar nyelv és irodalom",
-            icon = Icons.Outlined.MenuBook,
+            icon = Icons.AutoMirrored.Outlined.MenuBook,
             color = Color(0xFFFFB74D)
         ),
         "MATH" to Subject(
@@ -50,12 +67,21 @@ object SubjectStaticData {
         )
     )
 
-    // 3. Ezzel éred el egyenként az ID alapján
+    /**
+     * Retrieves a subject by its unique ID.
+     * Returns an "Unknown" subject fallback to prevent application crashes on invalid IDs.
+     */
     fun getById(id: String): Subject {
-        // Ha elírod az ID-t, ad egy alapértelmezett "Ismeretlen" tantárgyat, hogy ne szálljon el az app
-        return configs[id] ?: Subject("UNKNOWN", "Ismeretlen", Icons.Outlined.MenuBook, Color.Gray)
+        return configs[id] ?: Subject(
+            id = "UNKNOWN",
+            name = "Unknown Subject",
+            icon = Icons.AutoMirrored.Outlined.MenuBook,
+            color = Color.Gray
+        )
     }
 
-    // 4. Ezzel le tudod kérni az összeset egyszerre (pl. egy listához a főképernyőn)
+    /**
+     * Returns all available subjects as a list for UI display.
+     */
     fun getAll(): List<Subject> = configs.values.toList()
 }

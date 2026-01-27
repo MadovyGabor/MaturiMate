@@ -15,6 +15,7 @@ composeMultiplatform = "1.9.1"
 junit = "4.13.2"
 kotlin = "2.2.20"
 kotlinx-coroutines = "1.10.2"
+kotlinxDatetime = "0.7.1"
 
 
 # For the navigation component in Compose
@@ -41,8 +42,6 @@ jetbrains-lifecycle-viewmodel-nav3 = { module = "org.jetbrains.androidx.lifecycl
 # Splash Screen
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
-
-
 # Kotlinx Serialization
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "kotlinSerialization" }
 
@@ -62,6 +61,8 @@ sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", 
 #Datastore for preferences and settings
 datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.ui.navigation
+package com.madovygabor.maturimate.core.presentation.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

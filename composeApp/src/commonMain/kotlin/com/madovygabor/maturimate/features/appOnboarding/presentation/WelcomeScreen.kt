@@ -2,16 +2,7 @@ package com.madovygabor.maturimate.features.appOnboarding.presentation
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
@@ -27,15 +18,22 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.madovygabor.maturimate.core.presentation.LayoutConstants
 import com.madovygabor.maturimate.core.theme.AppTheme
-import com.madovygabor.maturimate.core.ui.utils.SurfaceContainer
+import com.madovygabor.maturimate.core.presentation.utils.SurfaceContainer
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.welcome
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-// WelcomeScreen composable that serves as the onboarding welcome screen.
+/**
+ * The initial landing screen of the application.
+ * Introduces the user to MaturiMate and provides a clear call-to-action to begin setup.
+ *
+ * @param onNavigateToProfileSetup Callback to advance the user to the profile configuration screen.
+ */
 @Composable
 fun WelcomeScreen(
     onNavigateToProfileSetup: () -> Unit
@@ -46,12 +44,10 @@ fun WelcomeScreen(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.TopCenter
     ) {
-
-        // Define breakpoint for desktop size
         val windowHeight = this.maxHeight
-        val isDesktop = maxWidth > isDesktopSize.size
+        val isDesktop = maxWidth > LayoutConstants.DesktopThreshold
 
-        // Responsive font sizes based on device type
+        // Responsive font size scales
         val surfaceTitleFontSize = if (isDesktop) 26.sp else 18.sp
         val surfaceSubtitleFontSize = if (isDesktop) 22.sp else 16.sp
 
@@ -62,82 +58,85 @@ fun WelcomeScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // Title Text
-            Text(
+            // Main App Title with adaptive sizing
+            BasicText(
                 text = "Üdvözöllek a MaturiMate-ben!",
-                modifier = Modifier
-                    .fillMaxWidth(.8f),
-                style = TextStyle(
-                    fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
+                modifier = Modifier.fillMaxWidth(0.8f),
+                style = MaterialTheme.typography.headlineLarge.copy(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = Bold,
+                    lineHeight = 1.em
                 ),
                 maxLines = 2,
                 autoSize = TextAutoSize.StepBased(
-                    minFontSize = 20.sp,
+                    minFontSize = 24.sp,
                     maxFontSize = 55.sp
                 )
             )
 
-            // Spacer for vertical spacing
-            Spacer(modifier = Modifier.weight(0.3f))
+            // Flexible spacer to push content towards the center
+            Spacer(modifier = Modifier.weight(0.4f))
 
-            // Content Surface
+            // Highlighted Info Section
             SurfaceContainer(
-                spaceBy = 8
+                verticalSpacing = 8.dp
             ) {
-
+                // Featured Welcome Illustration
                 Image(
                     painter = painterResource(Res.drawable.welcome),
-                    contentDescription = "Üdvözlő kép",
+                    contentDescription = "Welcome Illustration",
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = windowHeight * 0.35f)
-                        .padding(vertical = 16.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer),
+                        .padding(vertical = 8.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Fit
                 )
 
                 Text(
                     text = "Hódítsd meg az érettségi csúcsát!",
                     style = TextStyle(
-                        fontStyle = MaterialTheme.typography.titleMedium.fontStyle,
                         textAlign = TextAlign.Start,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = Bold,
                     ),
                     fontSize = surfaceTitleFontSize,
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
-               Text(
+                Text(
                     text = "Tarts velünk, és juss el a célodig lépésről lépésre. A MaturiMate-tel a vizsga nem akadály, hanem egy újabb győzelem.",
                     style = TextStyle(
-                        fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
                         textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
-                   fontSize = surfaceSubtitleFontSize,
-                   modifier = Modifier
-                       .fillMaxWidth(),
-               )
+                    fontSize = surfaceSubtitleFontSize,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
+            // Pushes the button to the bottom
             Spacer(modifier = Modifier.weight(1f))
 
-            // Start Button
+            // Primary Call-to-Action
             Button(
-                onClick = { onNavigateToProfileSetup() },
+                onClick = onNavigateToProfileSetup,
                 modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .padding(bottom = 16.dp)
-                    .height(56.dp)
+                    .widthIn(max = 350.dp)
+                    .fillMaxWidth(0.7f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text(text = "Kezdjük el!", style = MaterialTheme.typography.titleMedium )
+                Text(
+                    text = "Kezdjük el!",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = Bold
+                )
             }
+
+            // Bottom safety margin
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

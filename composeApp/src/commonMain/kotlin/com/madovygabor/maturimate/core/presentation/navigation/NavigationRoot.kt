@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.ui.navigation
+package com.madovygabor.maturimate.core.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -17,28 +17,9 @@ import kotlinx.serialization.modules.polymorphic
 // Root navigation composable that manages top-level navigation routes.
 @Composable
 fun NavigationRoute(
-    modifier: Modifier
+    modifier: Modifier,
+    startRoute: Route,
 ){
-
-//    // Koin segítségével injektáljuk a repository-t
-//    val repository: UserPreferencesRepository = koinInject()
-//
-//    // Figyeljük a preferenciákat. A null kezdeti érték jelzi, hogy még töltünk.
-//    val prefs by repository.preferences.collectAsState(initial = null)
-//
-//    // Amíg tölt az adatbázis/DataStore, ne mutassunk semmit vagy mutassunk Splash-t
-//    if (prefs == null) {
-//        // Opcionális: LoadingScreen()
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(color = MaterialTheme.colorScheme.background)
-//        )
-//        return
-//    }
-//
-//    // Itt dől el, mi az alapértelmezett útvonal
-//    val startRoute = if (prefs!!.isCompleted) Route.Main else Route.InitialSetup
 
     val rootBackStack = rememberNavBackStack(
         configuration = SavedStateConfiguration{
@@ -52,7 +33,7 @@ fun NavigationRoute(
             }
         },
 
-        Route.AppOnboarding, // TODO: Change to Route.InitialSetup to test the onboarding flow first
+        startRoute,
     )
 
     NavDisplay(

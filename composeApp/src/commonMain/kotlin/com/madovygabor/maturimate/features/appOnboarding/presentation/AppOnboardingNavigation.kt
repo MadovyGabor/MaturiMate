@@ -8,45 +8,48 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
-import com.madovygabor.maturimate.core.ui.navigation.Route
+import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.ProfileSetupScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.viewmodel.koinViewModel
 
+/**
+ * Navigation graph for the App Onboarding flow.
+ * Manages the transition between Welcome and Profile Setup screens.
+ *
+ * @param onAppOnboardingComplete Callback triggered when the entire onboarding is finished.
+ */
 @Composable
 fun AppOnboardingNavigation(
     onAppOnboardingComplete: () -> Unit
 ) {
-
+    // Initialize the backstack with serialization support for Type-Safe routing
     val onboardingBackStack = rememberNavBackStack(
-        configuration = SavedStateConfiguration{
+        configuration = SavedStateConfiguration {
             serializersModule = SerializersModule {
                 polymorphic(NavKey::class) {
-                    // Root level routes
                     subclass(Route.AppOnboarding.Welcome::class, Route.AppOnboarding.Welcome.serializer())
                     subclass(Route.AppOnboarding.ProfileSetup::class, Route.AppOnboarding.ProfileSetup.serializer())
                 }
             }
         },
-
-        Route.AppOnboarding.Welcome, // TODO: Change to Route.InitialSetup to test the onboarding flow first
+        // Starting destination
+        Route.AppOnboarding.Welcome
     )
 
     NavDisplay(
-        //modifier = modifier,
         backStack = onboardingBackStack,
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
+            // Shared ViewModel for the entire onboarding flow, scoped to the backstack
+            val onboardingViewModel = koinViewModel<OnboardingViewModel>()
 
-            val onBoardingViewModel = koinViewModel<OnboardingViewModel>()
-
-            // Welcome Screen for first-time users
+            // 1. Welcome Screen
             entry<Route.AppOnboarding.Welcome> {
-
                 WelcomeScreen(
                     onNavigateToProfileSetup = {
                         onboardingBackStack.add(Route.AppOnboarding.ProfileSetup)
@@ -54,18 +57,15 @@ fun AppOnboardingNavigation(
                 )
             }
 
-            // Profile Setup Screen
+            // 2. Profile Setup Screen
             entry<Route.AppOnboarding.ProfileSetup> {
-
                 ProfileSetupScreen(
-                    viewModel = onBoardingViewModel,
+                    viewModel = onboardingViewModel,
                     onProfileSetupComplete = {
                         onAppOnboardingComplete()
                     }
                 )
-
             }
-
         }
     )
 }

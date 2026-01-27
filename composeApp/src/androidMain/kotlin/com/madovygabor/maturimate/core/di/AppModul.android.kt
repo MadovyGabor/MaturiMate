@@ -12,7 +12,7 @@ actual val platformModule = module {
     singleOf(::DbClient)
 
     single<DataStore<Preferences>> {
-        // A Koin androidContext() függvénye eléri az ApplicationContext-et
+        // Androidon a kontextus fájlrendszerét használjuk
         createDataStore(androidContext())
     }
 }

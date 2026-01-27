@@ -39,12 +39,11 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.madovygabor.maturimate.core.presentation.LayoutConstants
 import com.madovygabor.maturimate.core.theme.AppTheme
-import com.madovygabor.maturimate.core.ui.utils.DatePickerField
-import com.madovygabor.maturimate.core.ui.utils.LoadingScreenWrapper
-import com.madovygabor.maturimate.core.ui.utils.SurfaceContainer
+import com.madovygabor.maturimate.core.presentation.utils.DatePickerField
+import com.madovygabor.maturimate.core.presentation.utils.SurfaceContainer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
-import isDesktopSize
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // The main Profile Setup Screen Composable
@@ -87,13 +86,14 @@ fun ProfileSetupContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
+
         contentAlignment = Alignment.TopCenter
     ) {
         // Determine if the device is a desktop based on maxHeight
-        val isDesktop = maxWidth > isDesktopSize.size
+        val isDesktop = maxWidth > LayoutConstants.DesktopThreshold
 
         // Adjust text styles based on device type
-        val titleFontSize = if (isDesktop) 40.sp else 30.sp
+        val titleFontSize = if (isDesktop) 38.sp else 30.sp
 
         // Surface text sizes
         val surfaceTitleFontSize = if (isDesktop) 20.sp else 16.sp
@@ -105,7 +105,8 @@ fun ProfileSetupContent(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .widthIn(max = 600.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
 
@@ -239,7 +240,7 @@ fun ProfileSetupContent(
 
                     DatePickerField(
                         label = "Érettségi dátuma",
-                        placeholder = "Válaszd ki az érettségi dátumát",
+                        placeholder = "Dátum kiválasztása",
                         selectedDateMillis = uiState.examDate,
                         onDateSelected = { onDateSelected(it) }
                     )
@@ -286,22 +287,28 @@ fun ProfileSetupContent(
                         )
 
                     }
+
                 }
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Action Button - Now part of the column for better scrolling and sizing
+            Button(
+                onClick = onProfileSetupComplete,
+                modifier = Modifier
+                    .widthIn(max = 400.dp) // Limits button width on Desktop
+                    .fillMaxWidth(0.75f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "Tovább a feladatokhoz!",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = Bold
+                )
+            }
         }
-        //Button to complete profile setup
-        Button(
-            onClick = { onProfileSetupComplete() },
-            modifier = Modifier
-                .fillMaxWidth(0.70f)
-                .align (Alignment.BottomCenter)
-                .height(56.dp)
-        ) {
-            Text(text = "Tovább a feladatokhoz!", style = MaterialTheme.typography.titleMedium )
-        }
-
-
-
     }
 }
 

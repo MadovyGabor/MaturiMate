@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.ui
+package com.madovygabor.maturimate.core.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.madovygabor.maturimate.core.theme.AppTheme
-import com.madovygabor.maturimate.core.ui.navigation.Route
-import com.madovygabor.maturimate.core.ui.navigation.TOP_LEVEL_NAVBAR_DESTINATIONS
+import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.core.presentation.navigation.TOP_LEVEL_NAVBAR_DESTINATIONS
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
@@ -36,7 +36,7 @@ fun MainFrame(
 
     BoxWithConstraints {
         // Determine if the device is considered a desktop based on maxWidth
-        val isDesktop = maxWidth > isDesktopSize.size
+        val isDesktop = maxWidth > LayoutConstants.DesktopThreshold
 
 
         if (isDesktop) {
