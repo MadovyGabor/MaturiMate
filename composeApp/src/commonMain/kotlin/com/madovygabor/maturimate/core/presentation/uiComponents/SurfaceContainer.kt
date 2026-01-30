@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.presentation.utils
+package com.madovygabor.maturimate.core.presentation.uiComponents
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -24,14 +25,15 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SurfaceContainer(
     modifier: Modifier = Modifier,
-    verticalSpacing: Dp = 0.dp,
+    verticalSpacing: Dp = 12.dp,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     content: @Composable () -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .background(backgroundColor)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(verticalSpacing)
     ) {

@@ -20,9 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.madovygabor.maturimate.core.presentation.LayoutConstants
-import com.madovygabor.maturimate.core.theme.AppTheme
-import com.madovygabor.maturimate.core.presentation.utils.SurfaceContainer
+import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
+import com.madovygabor.maturimate.core.presentation.theme.AppTheme
+import com.madovygabor.maturimate.core.presentation.uiComponents.SurfaceContainer
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.welcome
 import org.jetbrains.compose.resources.painterResource
@@ -80,7 +80,7 @@ fun WelcomeScreen(
 
             // Highlighted Info Section
             SurfaceContainer(
-                verticalSpacing = 8.dp
+                verticalSpacing = 8.dp,
             ) {
                 // Featured Welcome Illustration
                 Image(
@@ -150,7 +150,5 @@ private fun OnboardingScreenPreview() {
         WelcomeScreen(
             onNavigateToProfileSetup = {}
         )
-
     }
-
 }

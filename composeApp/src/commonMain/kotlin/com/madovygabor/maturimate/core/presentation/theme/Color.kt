@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.theme
+package com.madovygabor.maturimate.core.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

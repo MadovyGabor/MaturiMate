@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.presentation.navigation
+package com.madovygabor.maturimate.core.presentation.navigation.MainFrame
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.madovygabor.maturimate.core.presentation.MainFrame
+import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileScreen
+import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
 import com.madovygabor.maturimate.features.subjects.presentation.SubjectNavigation
+import org.koin.compose.viewmodel.koinViewModel
 
 // MainFrameNavigation composable that sets up the main navigation structure of the app.
 @Composable
@@ -59,13 +63,13 @@ fun MainFrameNavigation(
                         }
                         // Profile feature navigation
                         entry<Route.Main.Profile> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "Profile Screen")
-                            }
+
+                            // Get the ProfileViewModel instance using Koin
+                            val profileViewModel = koinViewModel<ProfileViewModel>()
+
+                            ProfileScreen(
+                                profileViewModel
+                            )
                         }
                     }
                 )

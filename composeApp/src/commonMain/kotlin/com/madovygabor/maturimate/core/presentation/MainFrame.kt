@@ -19,9 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import com.madovygabor.maturimate.core.theme.AppTheme
+import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.core.presentation.navigation.TOP_LEVEL_NAVBAR_DESTINATIONS
+import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.TOP_LEVEL_NAVBAR_DESTINATIONS
+import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 

@@ -1,9 +1,7 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,18 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -39,11 +31,15 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.madovygabor.maturimate.core.presentation.LayoutConstants
-import com.madovygabor.maturimate.core.theme.AppTheme
-import com.madovygabor.maturimate.core.presentation.utils.DatePickerField
-import com.madovygabor.maturimate.core.presentation.utils.SurfaceContainer
+import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
+import com.madovygabor.maturimate.core.presentation.theme.AppTheme
+import com.madovygabor.maturimate.core.presentation.uiComponents.DatePickerField
+import com.madovygabor.maturimate.core.presentation.uiComponents.SurfaceContainer
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
+import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.components.LanguageSelector
+import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // The main Profile Setup Screen Composable
@@ -75,9 +71,9 @@ fun ProfileSetupScreen(
 @Composable
 fun ProfileSetupContent(
     uiState: ProfileSetupUiState,
-    onLanguageSelected: (String) -> Unit,
-    onLevelSelected: (String) -> Unit,
-    onDateSelected: (Long?) -> Unit,
+    onLanguageSelected: (MaturitaLanguage) -> Unit,
+    onLevelSelected: (MaturitaLevel) -> Unit,
+    onDateSelected: (LocalDate?) -> Unit,
     onVpuToggled: (Boolean) -> Unit,
     onProfileSetupComplete: () -> Unit,
 ){
@@ -140,37 +136,12 @@ fun ProfileSetupContent(
                         fontSize = surfaceTitleFontSize,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
                     )
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ){
-
-                        LanguageCard(
-                            name = "Magyar",
-                            flag = "🇭🇺", //TODO: Use image not emoji
-                            isSelected = uiState.selectedLanguage == "HU",
-                            onClick = {
-                                onLanguageSelected("HU")
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp)
-                        )
-
-                        LanguageCard(
-                            name = "Szlovák",
-                            flag = "🇸🇰", //TODO: Use image not emoji
-                            isSelected = uiState.selectedLanguage == "SK",
-                            onClick = { onLanguageSelected("SK") },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp)
-                        )
-                    }
+                    LanguageSelector(
+                        selectedLanguage = uiState.selectedLanguage,
+                        onLanguageSelected = { onLanguageSelected(it) }
+                    )
                 }
             )
 
@@ -190,11 +161,10 @@ fun ProfileSetupContent(
                         fontSize = surfaceTitleFontSize,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
                     )
 
 
-                    val options = listOf("B1", "B2")
+                    val options = MaturitaLevel.entries
 
                     SingleChoiceSegmentedButtonRow(
                         modifier = Modifier
@@ -211,7 +181,7 @@ fun ProfileSetupContent(
                                     onLevelSelected(label)
                                 },
                                 label = {
-                                    Text(label)
+                                    Text(label.toUiText().asString())
                                 }
                             )
                         }
@@ -235,13 +205,12 @@ fun ProfileSetupContent(
                         fontSize = surfaceTitleFontSize,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
                     )
 
                     DatePickerField(
                         label = "Érettségi dátuma",
                         placeholder = "Dátum kiválasztása",
-                        selectedDateMillis = uiState.examDate,
+                        selectedDate = uiState.examDate,
                         onDateSelected = { onDateSelected(it) }
                     )
                 }
@@ -261,8 +230,7 @@ fun ProfileSetupContent(
                             fontWeight = Bold,
                         ),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
+                            .fillMaxWidth(),
                         fontSize = surfaceTitleFontSize,
                     )
 
@@ -306,56 +274,6 @@ fun ProfileSetupContent(
                     text = "Tovább a feladatokhoz!",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = Bold
-                )
-            }
-        }
-    }
-}
-
-
-
-// Language selection card
-@Composable
-fun LanguageCard(
-    name: String,
-    flag: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-
-    OutlinedCard(
-        onClick = onClick,
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            width = if (isSelected) 2.dp else 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-        ),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface
-        )
-    ) {
-        // Content of the card
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = flag, fontSize = 32.sp) // Emoji vagy Image
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            // Show check icon if selected
-            if (isSelected) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }

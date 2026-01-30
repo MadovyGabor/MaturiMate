@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.presentation.navigation
+package com.madovygabor.maturimate.core.presentation.navigation.MainFrame
 
 import androidx.navigation3.runtime.NavKey
 

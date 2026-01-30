@@ -15,10 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -33,14 +33,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.madovygabor.maturimate.core.theme.AppTheme
+import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
 private val subjects = listOf(
     Subject("MATH","Matematika", Icons.Outlined.Calculate, Color(0xFF4B88E0)),
     Subject("ENGLISH","Angol nyelv", Icons.Outlined.Language, Color(0xFF4CA16A), level = "B2"),
-    Subject("HUNGARIAN","Magyar nyelv és irodalom", Icons.Outlined.MenuBook, Color(0xFFFFB74D)),
+    Subject("HUNGARIAN","Magyar nyelv és irodalom", Icons.AutoMirrored.Outlined.MenuBook, Color(0xFFFFB74D)),
     Subject("SLOVAK","Szlovák nyelv és irodalom", Icons.Outlined.DriveFileRenameOutline, Color(0xFFEA5D56))
     //Icons.Outlined.DriveFileRenameOutline, Icons.Outlined.EditNote
 )

@@ -2,27 +2,30 @@ package com.madovygabor.maturimate.features.appOnboarding.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.madovygabor.maturimate.core.error.OperationResult
+import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
-import com.madovygabor.maturimate.features.appOnboarding.data.UserPreferencesRepository
-import com.madovygabor.maturimate.features.appOnboarding.domain.OnBoardingDataValidator
+import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.ProfileSetupUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
 /**
  * ViewModel responsible for managing the user's onboarding progression.
  * Orchestrates data validation, persistence, and UI feedback via Snackbars.
  * @param repository Repository for persisting user preferences.
- * @param onBoardingDataValidator Validator for onboarding input data.
+ * @param maturitaValidator Validator for onboarding input data.
  * @param snackbarController Controller to show snackbar messages.
  */
 class OnboardingViewModel(
     private val repository: UserPreferencesRepository,
-    private val onBoardingDataValidator: OnBoardingDataValidator,
+    private val maturitaValidator: MaturitaValidator,
     private val snackbarController: SnackbarController,
 ) : ViewModel() {
 
@@ -33,21 +36,21 @@ class OnboardingViewModel(
     /**
      * Updates the selected language in the UI state.
      */
-    fun onLanguageSelected(lang: String) {
+    fun onLanguageSelected(lang: MaturitaLanguage) {
         _profileSetupUiState.update { it.copy(selectedLanguage = lang) }
     }
 
     /**
      * Updates the target exam level (e.g., B1, B2) in the UI state.
      */
-    fun onLevelSelected(level: String) {
+    fun onLevelSelected(level: MaturitaLevel) {
         _profileSetupUiState.update { it.copy(examLevel = level) }
     }
 
     /**
      * Updates the selected graduation date in milliseconds.
      */
-    fun onDateSelected(dateMillis: Long?) {
+    fun onDateSelected(dateMillis: LocalDate?) {
         _profileSetupUiState.update { it.copy(examDate = dateMillis) }
     }
 
@@ -67,7 +70,7 @@ class OnboardingViewModel(
         val currentState = _profileSetupUiState.value
 
         // 1. Validate inputs (currently focusing on the graduation date)
-        val dateValidationResult = onBoardingDataValidator.validateMaturitaDate(currentState.examDate)
+        val dateValidationResult = maturitaValidator.validateDate(currentState.examDate)
 
         when (dateValidationResult) {
             is OperationResult.Error -> {
@@ -84,11 +87,11 @@ class OnboardingViewModel(
 
                 viewModelScope.launch {
                     // 2. Persist onboarding data to DataStore
-                    val saveResult = repository.saveOnboarding(
-                        language = currentState.selectedLanguage,
-                        level = currentState.examLevel,
+                    val saveResult = repository.saveUserPreferences(
+                        maturitaLanguage = currentState.selectedLanguage,
+                        maturitaLevel = currentState.examLevel,
                         isVpuEnabled = currentState.isVpuEnabled,
-                        examDate = currentState.examDate ?: 0L
+                        maturitaDate = currentState.examDate ?: LocalDate(2026, 1, 1)
                     )
 
                     // 3. Handle persistence result

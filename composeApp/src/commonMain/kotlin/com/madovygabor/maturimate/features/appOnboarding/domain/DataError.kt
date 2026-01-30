@@ -1,6 +1,6 @@
 package com.madovygabor.maturimate.features.appOnboarding.domain
 
-import com.madovygabor.maturimate.core.error.Error
+import com.madovygabor.maturimate.core.domain.error.Error
 
 /**
  * Represents specific errors that can occur during data persistence or retrieval

@@ -4,7 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.madovygabor.maturimate.core.di.initKoin
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.appOnboarding.data.UserPreferencesRepository
+import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject

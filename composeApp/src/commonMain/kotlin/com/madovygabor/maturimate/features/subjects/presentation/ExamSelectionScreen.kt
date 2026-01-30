@@ -30,8 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.madovygabor.maturimate.core.presentation.SubjectStaticData
-import com.madovygabor.maturimate.core.theme.AppTheme
+import com.madovygabor.maturimate.core.presentation.utils.SubjectStaticData
+import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable

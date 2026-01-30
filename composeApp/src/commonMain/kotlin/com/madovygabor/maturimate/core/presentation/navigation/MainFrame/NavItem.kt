@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.presentation.navigation
+package com.madovygabor.maturimate.core.presentation.navigation.MainFrame
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.madovygabor.maturimate.core.presentation.navigation.Route
 
 // Data class representing a navigation item with an icon and title.
 data class BottomNavItem (

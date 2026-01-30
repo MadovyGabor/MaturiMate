@@ -8,23 +8,21 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.madovygabor.maturimate.features.appOnboarding.domain.DataError
-import com.madovygabor.maturimate.core.error.OperationResult
+import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
+import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
+import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferences
+import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
- * Data model representing the persisted onboarding choices and application state.
- */
-data class UserPreferences(
-    val language: String,
-    val level: String,
-    val isVpuEnabled: Boolean,
-    val examDate: Long,
-    val isSetupCompleted: Boolean
-)
-
-/**
-* Jetpack DataStore implementation of [UserPreferencesRepository].
+* Jetpack DataStore implementation of [com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository].
 * Handles low-level data persistence and retrieval.
 */
 class UserPreferencesRepositoryImpl(
@@ -46,12 +44,24 @@ class UserPreferencesRepositoryImpl(
      * Maps the raw [Preferences] into a structured [UserPreferences] object.
      * Provides default values if the keys are not yet present in the storage.
      */
+    @OptIn(ExperimentalTime::class)
     override val preferences: Flow<UserPreferences> = dataStore.data.map { prefs ->
         UserPreferences(
-            language = prefs[Keys.LANGUAGE] ?: "HU",
-            level = prefs[Keys.LEVEL] ?: "B2",
+            maturitaLanguage = prefs[Keys.LANGUAGE]?.let {
+                try { MaturitaLanguage.valueOf(it) } catch (e: Exception) { MaturitaLanguage.HU }
+            } ?: MaturitaLanguage.HU,
+
+            maturitaLevel = prefs[Keys.LEVEL]?.let {
+                try { MaturitaLevel.valueOf(it) } catch (e: Exception) { MaturitaLevel.B2 }
+            } ?: MaturitaLevel.B2,
+
             isVpuEnabled = prefs[Keys.IS_VPU_ENABLED] ?: false,
-            examDate = prefs[Keys.EXAM_DATE] ?: 0L,
+
+            // Long (epoch days) -> LocalDate
+            maturitaDate = prefs[Keys.EXAM_DATE]?.let {
+                LocalDate.fromEpochDays(it.toInt())
+            } ?: Clock.System.todayIn(TimeZone.currentSystemDefault()),
+
             isSetupCompleted = prefs[Keys.SETUP_COMPLETED] ?: false
         )
     }
@@ -60,18 +70,18 @@ class UserPreferencesRepositoryImpl(
      * Updates multiple preference keys at once within a single [edit] transaction.
      * Includes error handling for I/O and unexpected exceptions.
      */
-    override suspend fun saveOnboarding(
-        language: String,
-        level: String,
-        isVpuEnabled: Boolean,
-        examDate: Long
+    override suspend fun saveUserPreferences(
+        maturitaLanguage: MaturitaLanguage,
+        maturitaLevel: MaturitaLevel,
+        maturitaDate: LocalDate,
+        isVpuEnabled: Boolean
     ): OperationResult<Unit, DataError> {
         return try {
             dataStore.edit { prefs ->
-                prefs[Keys.LANGUAGE] = language
-                prefs[Keys.LEVEL] = level
+                prefs[Keys.LANGUAGE] = maturitaLanguage.name
+                prefs[Keys.LEVEL] = maturitaLevel.name
                 prefs[Keys.IS_VPU_ENABLED] = isVpuEnabled
-                prefs[Keys.EXAM_DATE] = examDate
+                prefs[Keys.EXAM_DATE] = maturitaDate.toEpochDays()
                 prefs[Keys.SETUP_COMPLETED] = true
             }
             // Emit success if the transaction completes without errors

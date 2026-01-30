@@ -6,6 +6,10 @@
     <string name="error_storage_full">"Tele van a tarhelyed"</string>
     <string name="error_io">"IO error"</string>
     <string name="error_unexpected_save">"Unexpected Error saving the preferences"</string>
+    <string name="maturitaLanguage_sk">"Szlovák tagozat"</string>
+    <string name="maturitaLanguage_hu">"Magyar tagozat"</string>
+    <string name="maturitaLevel_b1">"B1"</string>
+    <string name="maturitaLevel_b2">"B2"</string>
 
 
     <!--This is a comment area, write your comment-->

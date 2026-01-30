@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.error
+package com.madovygabor.maturimate.core.domain.error
 
 /**
  * Base interface for all domain-specific errors.

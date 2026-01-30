@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.appOnboarding.data.UserPreferencesRepository
+import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject

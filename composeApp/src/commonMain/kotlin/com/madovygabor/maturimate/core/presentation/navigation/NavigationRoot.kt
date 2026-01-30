@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.MainFrameNavigation
 import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboardingNavigation
 import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
 import kotlinx.serialization.modules.SerializersModule

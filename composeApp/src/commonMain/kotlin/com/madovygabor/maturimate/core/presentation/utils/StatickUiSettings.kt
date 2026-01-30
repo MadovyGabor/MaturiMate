@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.core.presentation
+package com.madovygabor.maturimate.core.presentation.utils
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook

@@ -45,10 +45,13 @@ sealed class UiText {
      */
     @Composable
     fun asString(): String {
-        return when (this) {
+
+        val rawText = when (this) {
             is DynamicString -> value
             is StringRes -> stringResource(res, *args)
         }
+        // Trimming quotes ensures clean text display on all platforms
+        return rawText.trim('\"')
     }
 
     /**
