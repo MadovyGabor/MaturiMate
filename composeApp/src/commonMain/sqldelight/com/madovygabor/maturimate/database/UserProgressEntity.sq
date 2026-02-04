@@ -1,0 +1,45 @@
+/**
+ * Table for tracking user progress and exam attempts.
+ * Stores the answers provided by students and the results of their evaluations.
+ */
+CREATE TABLE UserProgressEntity (
+    -- Unique identifier for a specific exam session or attempt (e.g., a UUID string).
+    -- This allows users to have multiple attempts for the same exam.
+    attemptId TEXT NOT NULL,
+
+    -- Reference to the specific question being answered.
+    taskId TEXT NOT NULL,
+
+    -- Denormalized field to quickly filter results by exam without complex joins.
+    examId TEXT NOT NULL,
+
+    -- The student's response.
+    -- For CHOICE tasks, this might be an index ("1").
+    -- For INPUT tasks, this is the raw text entered.
+    userAnswer TEXT,
+
+    -- Evaluation result. Mapped to Kotlin's Boolean type via SQLDelight.
+    isCorrect INTEGER AS kotlin.Boolean,
+
+    -- The actual points awarded for the answer.
+    earnedPoints INTEGER DEFAULT 0,
+
+    -- Unix timestamp recording when the answer was submitted or last modified.
+    timestamp INTEGER NOT NULL,
+
+    -- Ensure a user can only have one saved answer per task within a single attempt.
+    PRIMARY KEY (attemptId, taskId),
+
+    -- Maintain data integrity: if a task is removed, its associated progress is also deleted.
+    FOREIGN KEY (taskId) REFERENCES TaskEntity(id) ON DELETE CASCADE
+);
+
+
+-- Saves a user's answer. If an answer already exists for this task in this attempt, it is updated.
+saveUserAnswer:
+INSERT OR REPLACE INTO UserProgressEntity(attemptId, taskId, examId, userAnswer, isCorrect, earnedPoints, timestamp)
+VALUES (:attemptId, :taskId, :examId, :userAnswer, :isCorrect, :earnedPoints, :timestamp);
+
+-- Retrieves all recorded progress for a specific attempt to restore the UI state.
+getUserProgressForExam:
+SELECT * FROM UserProgressEntity WHERE attemptId = :attemptId;

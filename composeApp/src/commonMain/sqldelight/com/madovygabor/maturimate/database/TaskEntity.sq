@@ -1,0 +1,50 @@
+/**
+ * Table for storing individual exam tasks (questions).
+ * This entity links to both an Exam and optionally a Content Unit.
+ */
+CREATE TABLE TaskEntity (
+    -- Unique identifier for the task (e.g., "Q01", "MAT_Q21")
+    id TEXT NOT NULL PRIMARY KEY,
+
+    -- Required foreign key linking the task to its parent Exam.
+    examId TEXT NOT NULL,
+
+    -- Optional foreign key linking the task to a specific Content Unit (text/audio).
+    -- This is NULL for tasks that don't belong to a specific source (e.g., basic Math).
+    contentUnitId TEXT,
+
+    -- Numerical order to ensure tasks are displayed in the correct sequence.
+    orderIndex INTEGER NOT NULL,
+
+    -- The interaction type (e.g., "CHOICE", "INPUT", "CHOICE_5").
+    -- Mapped to the TaskType enum in the domain layer.
+    type TEXT NOT NULL,
+
+    -- The actual question text or instruction.
+    question TEXT NOT NULL,
+
+    -- Point value for the task. Defaults to 1.
+    points INTEGER NOT NULL DEFAULT 1,
+
+    -- Optional locator for associated image resources (e.g., "diagram.png").
+    imageUrl TEXT,
+
+    -- Flexible "Metadata" field: stores type-specific data (options, correct answers)
+    -- as a raw JSON string to avoid excessive table joining.
+    metadataJson TEXT NOT NULL,
+
+    -- Data integrity constraints:
+    -- Deleting an exam or a content unit will automatically remove associated tasks.
+    FOREIGN KEY (examId) REFERENCES ExamEntity(id) ON DELETE CASCADE,
+    FOREIGN KEY (contentUnitId) REFERENCES ContentUnitEntity(id) ON DELETE CASCADE
+);
+
+
+-- Fetches all tasks for a specific exam, sorted by their intended order.
+getTasksForExam:
+SELECT * FROM TaskEntity WHERE examId = :examId ORDER BY orderIndex ASC;
+
+-- Inserts a new task record.
+insertTask:
+INSERT INTO TaskEntity(id, examId, contentUnitId, orderIndex, type, question, points, imageUrl, metadataJson)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

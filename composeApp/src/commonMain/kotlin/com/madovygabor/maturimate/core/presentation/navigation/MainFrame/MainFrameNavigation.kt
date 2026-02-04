@@ -13,7 +13,7 @@ import com.madovygabor.maturimate.core.presentation.MainFrame
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileScreen
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
-import com.madovygabor.maturimate.features.subjects.presentation.SubjectNavigation
+import com.madovygabor.maturimate.features.subjectsAndExams.presentation.SubjectNavigation
 import org.koin.compose.viewmodel.koinViewModel
 
 // MainFrameNavigation composable that sets up the main navigation structure of the app.

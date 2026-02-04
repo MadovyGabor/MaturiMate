@@ -1,0 +1,813 @@
+{
+  "metadata": {
+    "id": "HU_MJL_2025_MARCH_251425",
+    "subjectId": "HU_MJL",
+    "year": 2025,
+    "session": "MARCH",
+    "language": "HU",
+    "totalMinutes": 100,
+    "vpuMinutes": 0,
+    "taskCount": 64
+  },
+  "contentUnits": [
+    {
+      "id": "UNIT_1",
+      "type": "TEXT",
+      "title": "1. számú idézet",
+      "author": "Janus Pannonius",
+      "contentHtml": "<b>Janus Pannonius – Búcsú Váradtól</b><br><i>(részletek)</i><br><br>Folyón, mocsáron át gyerünk előre,<br>A mély tavak fölött is jég feszül már,<br>S hol imbolygó ladikján félt a gazda,<br>Most bártan jár-kel, hetvenkedve vágtat<br>S rugdossa tán a holt hullámok élét;<br>Fel hát az útra, társaim, siessünk!<br>...<br>Isten veled, te híres, gazdag könyvtár,<br>Hol annyi régi író könyve van meg,<br>Itt szállt meg Phoebus is, honát elhagyva<br>S innét a szűzi múzsák sem sietnek<br>Kasztáliának erdeibe vissza;<br>Fel hát az útra, társaim, siessünk!",
+      "relatedTaskIds": ["Q01", "Q02", "Q03", "Q04", "Q05", "Q06", "Q07", "Q08"]
+    },
+    {
+      "id": "UNIT_2",
+      "type": "TEXT",
+      "title": "2. számú idézet",
+      "author": "Voltaire",
+      "contentHtml": "<b>Françoise Voltaire – Candide vagy az optimizmus</b><br><i>(részletek)</i><br><br>Ahogy a városhoz közeledtek, egy négert láttak a földön fekve...",
+      "relatedTaskIds": ["Q09", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"]
+    },
+    {
+      "id": "UNIT_3",
+      "type": "TEXT",
+      "title": "3. számú idézet",
+      "author": "Jánk István - Kovács Luca",
+      "contentHtml": "<b>Mi az a kétnyelvűség, és miért érdekes nekünk?</b><br><br>Az emberek többsége kemény munkával jut el odáig...",
+      "relatedTaskIds": ["Q17", "Q18", "Q19", "Q20", "Q21", "Q22", "Q23", "Q24"]
+    },
+    {
+      "id": "UNIT_4",
+      "type": "TEXT",
+      "title": "4. számú idézet",
+      "author": "Petőfi Sándor",
+      "contentHtml": "<b>Petőfi Sándor – Az apostol</b><br><i>(részletek)</i><br><br>„A szőlőszem kicsiny gyümölcs...”",
+      "relatedTaskIds": ["Q25", "Q26", "Q27", "Q28", "Q29", "Q30", "Q31", "Q32"]
+    },
+    {
+      "id": "UNIT_5",
+      "type": "TEXT",
+      "title": "5. számú idézet",
+      "author": "Juhász Katalin",
+      "contentHtml": "<b>A jövő olvasóinak behálózása</b><br><br>Talán nem árulok el nagy titkot azzal...",
+      "relatedTaskIds": ["Q33", "Q34", "Q35", "Q36", "Q37", "Q38", "Q39", "Q40"]
+    },
+    {
+      "id": "UNIT_6",
+      "type": "TEXT",
+      "title": "6. számú idézet",
+      "author": "Gogol",
+      "contentHtml": "<b>Gogol – Az orr</b><br><i>(részletek)</i><br><br>Kovaljov kaukázusi törvényszéki ülnök volt...",
+      "relatedTaskIds": ["Q41", "Q42", "Q43", "Q44", "Q45", "Q46", "Q47", "Q48"]
+    },
+    {
+      "id": "UNIT_7",
+      "type": "TEXT",
+      "title": "7. számú idézet",
+      "author": "Három szerző",
+      "contentHtml": "<b>Halotti beszéd</b><br><i>(részletek - három szerzőtől)</i><br><br>1.) Látjátok, feleim, szemetekkel, mik vagyunk!",
+      "relatedTaskIds": ["Q49", "Q50", "Q51", "Q52", "Q53", "Q54", "Q55", "Q56"]
+    },
+    {
+      "id": "UNIT_8",
+      "type": "TEXT",
+      "title": "8. számú idézet",
+      "author": "KSH",
+      "contentHtml": "<b>Az egyes kontinenseken a népességfejlődés eltérő ütemű</b>",
+      "relatedTaskIds": ["Q57", "Q58", "Q59", "Q60", "Q61", "Q62", "Q63", "Q64"]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "Q01",
+      "orderIndex": 1,
+      "type": "CHOICE",
+      "question": "Határozza meg az idézett, melankolikus hangulatú költemény műfaját!",
+      "points": 1,
+      "metadata": {
+        "options": ["óda", "elégia", "ballada", "epigramma"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q02",
+      "orderIndex": 2,
+      "type": "CHOICE",
+      "question": "Állapítsa meg, hogyan viselkedik az első versszakban említett gazda, amikor a jégen „hetvenkedve vágtat”!",
+      "points": 1,
+      "metadata": {
+        "options": ["dühösen", "kérkedve", "szorongva", "méltatlankodva"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q03",
+      "orderIndex": 3,
+      "type": "CHOICE",
+      "question": "Döntse el, mit fejezett ki Pannonius egy másik ismert költeményében, a Pannonia dicséretében!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "saját költői büszkeségét, amely hazája javát is szolgálja",
+          "hazája szellemi elmaradottságát, amely számára csak hátrány",
+          "saját költői nagyszerűségét, amelyet csak emel hazája fejlődése",
+          "Itália kulturális fejlettségét, amely még Mátyás udvarát is elhalványítja"
+        ],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q04",
+      "orderIndex": 4,
+      "type": "CHOICE",
+      "question": "Válassza ki, hová sietett a költő a fenti idézet valamennyi versszakának végén ismétlődő felszólítás alapján!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "el akarja hagyni Nagyváradot, nehéz diákévei színhelyét",
+          "Budára igyekszik, hogy eleget tegyen a király hívásának",
+          "vissza akar térni Magyarországról a művelt Itáliába",
+          "országjáró útra készül, nem bír egy helyben nyugodni"
+        ],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q05",
+      "orderIndex": 5,
+      "type": "CANCELED",
+      "question": "Jelölje meg az alábbiak közül azt a szerzőt, akire semmiképp sem vonatkozhat a poeta doctus jelző!",
+      "points": 1,
+      "metadata": { "note": "A tétel anulálva lett." }
+    },
+    {
+      "id": "Q06",
+      "orderIndex": 6,
+      "type": "INPUT",
+      "question": "Nevezze meg a Vitéz János által alapított híres egyetemet, amely Pozsonyban még ma is megtekinthető!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["Academia Istropolitana"],
+        "acceptableAlternatives": ["academia istropolitana"],
+        "vpuNote": "Elfogadható fonetikus írással is."
+      }
+    },
+    {
+      "id": "Q07",
+      "orderIndex": 7,
+      "type": "INPUT",
+      "question": "Írja le, hogy Pannonius milyen nyelven írta verseit!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["latinul"],
+        "acceptableAlternatives": ["latin"]
+      }
+    },
+    {
+      "id": "Q08",
+      "orderIndex": 8,
+      "type": "INPUT",
+      "question": "Írja le annak a híres olasz művésznek a teljes nevét, akit Pannonius egyik epigrammájában kigúnyolt!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["Galeotto Marzio"],
+        "acceptableAlternatives": [],
+        "vpuNote": "Elfogadható fonetikus írással is."
+      }
+    },
+    {
+      "id": "Q09",
+      "orderIndex": 9,
+      "type": "CHOICE",
+      "question": "Döntse el, melyik megállapítás illik a legjobban a Candide című kisregényre!",
+      "points": 1,
+      "metadata": {
+        "options": ["drámai", "idillikus", "ironikus", "komikus"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q10",
+      "orderIndex": 10,
+      "type": "CHOICE",
+      "question": "Döntse el, miről beszél a szerencsétlenül járt fekete rabszolga az idézet második felében!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "egyszerű állatok boldogabbak",
+          "a keresztény tanítás ellenére nem egyenrangúak az emberek",
+          "a holland papok akaratuk ellenére keresztelték meg őket",
+          "Pangloss ne lázítsa a rabszolgákat"
+        ],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q11",
+      "orderIndex": 11,
+      "type": "CHOICE",
+      "question": "Válassza ki a pontos magyar megfelelőjét a klasszicizmusnak!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "első osztályba tartozó",
+          "ókori irodalmat felelevenítő",
+          "tudományos alapokon nyugvó",
+          "hagyományos irodalmat tisztelő"
+        ],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q12",
+      "orderIndex": 12,
+      "type": "CHOICE",
+      "question": "Állapítsa meg, mit gúnyolt ki Voltaire a Candide című művében!",
+      "points": 1,
+      "metadata": {
+        "options": ["túlzó idealizmust", "túlzó vallásosságot", "túlzó pesszimizmust", "túlzó felvilágosultságot"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q13",
+      "orderIndex": 13,
+      "type": "CHOICE",
+      "question": "Határozza meg, hogy milyen szerepe van a főszereplőnek!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "író rámutat az ember tökéletességre törekvésére",
+          "Candide az optimista, aki szerint a világ a lehetséges világok legjobbika",
+          "Candide az örök kételkedő",
+          "tettei utalnak arra, hogy az észszerűség minden gond okozója"
+        ],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q14",
+      "orderIndex": 14,
+      "type": "INPUT",
+      "question": "Nevezze meg a kor jelentős tudománytárát, amelynek szerkesztésében Voltaire is részt vett!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["Enciklopédia"],
+        "acceptableAlternatives": ["Nagy Francia Enciklopédia"]
+      }
+    },
+    {
+      "id": "Q15",
+      "orderIndex": 15,
+      "type": "INPUT",
+      "question": "Fogalmazza meg, mit jelent magyarul az optimizmus!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["derűlátás", "bizakodás", "reménykedés"],
+        "acceptableAlternatives": ["jót váró", "jót hívő"]
+      }
+    },
+    {
+      "id": "Q16",
+      "orderIndex": 16,
+      "type": "INPUT",
+      "question": "Írja le helyesen Voltaire nevének -val, -vel ragos alakját!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["Voltaire-rel"],
+        "vpuNote": "VPU: Emil vagy a nevelésről elfogadható."
+      }
+    },
+    {
+      "id": "Q17",
+      "orderIndex": 17,
+      "type": "CHOICE",
+      "question": "Állapítsa meg, melyik állítás nem érvényes a nyelvre!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "kapcsolatteremtés eszköze",
+          "kinyilváníthatjuk érzéseinket",
+          "önmagunk meghatározására képesek vagyunk",
+          "identitásunk kifejezése szempontjából közömbös"
+        ],
+        "correctAnswerIndex": 3
+      }
+    },
+    {
+      "id": "Q18",
+      "orderIndex": 18,
+      "type": "CHOICE",
+      "question": "Döntse el, melyik állítás helyes a két- és többnyelvűséggel kapcsolatban!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "mindenkinek egyaránt nehéz",
+          "modern kori jelenség",
+          "emberiség több mint fele többnyelvű környezetben él",
+          "vizsgálata már a globalizációt megelőzően is fontos volt"
+        ],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q19",
+      "orderIndex": 19,
+      "type": "CHOICE",
+      "question": "Döntse el, hogy a frazémák mely csoportjába tartozik a gondolat: „Ahány nyelvet beszélsz, annyi embert érsz.”",
+      "points": 1,
+      "metadata": {
+        "options": ["szólás", "szállóige", "közmondás", "szóláshasonlat"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q20",
+      "orderIndex": 20,
+      "type": "CHOICE",
+      "question": "Határozza meg, hogy a kétnyelvűség mely formáját definiálja az idézet utolsó tagmondata!",
+      "points": 1,
+      "metadata": {
+        "options": ["balansz kétnyelvűség", "felcserélő kétnyelvűség", "domináns kétnyelvűség", "kiegyenlített kétnyelvűség"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q21",
+      "orderIndex": 21,
+      "type": "CHOICE",
+      "question": "Jelölje meg a direkt kölcsönszóra a példát!",
+      "points": 1,
+      "metadata": {
+        "options": ["krumpli", "kecsup", "alapiskola", "születési szám"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q22",
+      "orderIndex": 22,
+      "type": "INPUT",
+      "question": "Nevezze meg az idézet címében szereplő kérdő mondat típusát!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["kiegészítendő kérdő mondat"],
+        "acceptableAlternatives": ["kiegészítendő"]
+      }
+    },
+    {
+      "id": "Q23",
+      "orderIndex": 23,
+      "type": "INPUT",
+      "question": "Írja le, hogy a magyar nyelv szerkezeti felosztása szerint melyik csoportba tartozik!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["agglutináló"],
+        "acceptableAlternatives": ["ragasztó", "ragozó", "toldalékoló"]
+      }
+    },
+    {
+      "id": "Q24",
+      "orderIndex": 24,
+      "type": "INPUT",
+      "question": "Írja le a lehető legpontosabban az összetett mondat szerkezet szerinti típusát!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["mellérendelő, kapcsolatos"],
+        "acceptableAlternatives": ["kapcsolatos"]
+      }
+    },
+    {
+      "id": "Q25",
+      "orderIndex": 25,
+      "type": "CHOICE",
+      "question": "Értelmezze a szőlőszem-hasonlatot!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "nép lassan érik meg a forradalomra",
+          "allegorikusan üdvözli a nép forradalmát",
+          "nép fokozatosan érik, de neki csekély része lesz",
+          "látja a nép szándékát, de nem akar zászlóvivő lenni"
+        ],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q26",
+      "orderIndex": 26,
+      "type": "CHOICE",
+      "question": "Miért akart a költő a nemzet „apostola” lenni?",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "szabadság elérése mennyei feladat",
+          "szabadság a világ legfőbb célja",
+          "szabadság kevesek kiváltsága",
+          "szabadság kivívása áldozattal járó kötelesség"
+        ],
+        "correctAnswerIndex": 3
+      }
+    },
+    {
+      "id": "Q27",
+      "orderIndex": 27,
+      "type": "CHOICE",
+      "question": "Melyik elemet nem meríthette Petőfi saját életéből?",
+      "points": 1,
+      "metadata": {
+        "options": ["gyermekének megrázó halála", "műveinek nehéz kiadása", "ellene fordított, félrevezetett nép", "rangban felette álló nőt vett feleségül"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q28",
+      "orderIndex": 28,
+      "type": "CHOICE",
+      "question": "Ki tartozott a magyar romantikus triász tagjai közé?",
+      "points": 1,
+      "metadata": {
+        "options": ["Petőfi Sándor", "Kölcsey Ferenc", "Kisfaludy Károly", "Vörösmarty Mihály"],
+        "correctAnswerIndex": 3
+      }
+    },
+    {
+      "id": "Q29",
+      "orderIndex": 29,
+      "type": "CHOICE",
+      "question": "Melyik jellemző vonatkozik a romantikára?",
+      "points": 1,
+      "metadata": {
+        "options": ["fontossá vált az eredetiség", "műfajok tisztasága", "törekedtek a fegyelmezettségre", "antik művészet szabályszerűségei"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q30",
+      "orderIndex": 30,
+      "type": "INPUT",
+      "question": "Határozza meg Az apostol című alkotás műfaját!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["elbeszélő költemény"] }
+    },
+    {
+      "id": "Q31",
+      "orderIndex": 31,
+      "type": "INPUT",
+      "question": "Idegen kifejezéssel írja le, milyen kezdéssel indul a mű!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["in medias res"] }
+    },
+    {
+      "id": "Q32",
+      "orderIndex": 32,
+      "type": "INPUT",
+      "question": "Nevezze meg Petőfi azon programversét, amelyben kora költőinek szerepét fogalmazza meg!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["A XIX. század költői"],
+        "acceptableAlternatives": ["A 19. század költői"]
+      }
+    },
+    {
+      "id": "Q33",
+      "orderIndex": 33,
+      "type": "CHOICE",
+      "question": "Döntse el, melyik megállapítás helyes Z. Németh István könyvével kapcsolatban!",
+      "points": 1,
+      "metadata": {
+        "options": ["mondókák, mesék világa", "23. gyermekműve", "10 év körüli iskolás generációt célozza", "elfogult szülő hangján szólal meg"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q34",
+      "orderIndex": 34,
+      "type": "CHOICE",
+      "question": "Mi jellemző a megcélzott korosztály olvasási szokásaira?",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "nem kötik le őket az állatszereplős történetek",
+          "elfogadják ha a szerző töri a nyelvüket",
+          "ebben a korban megszerettethetőek a versek",
+          "elsősorban a ritmust díjazzák"
+        ],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q35",
+      "orderIndex": 35,
+      "type": "CHOICE",
+      "question": "Jelölje meg azt a szót, amelyben részleges hasonulást talál!",
+      "points": 1,
+      "metadata": {
+        "options": ["elfogadják", "belebuktak", "elégszenek", "telefonjukkal"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q36",
+      "orderIndex": 36,
+      "type": "CHOICE",
+      "question": "Jelölje meg azt a szóalakot, amelyben a toldalék egy képző!",
+      "points": 1,
+      "metadata": {
+        "options": ["azt", "töri", "csengő", "gyerekek"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q37",
+      "orderIndex": 37,
+      "type": "CHOICE",
+      "question": "Melyik -nak/-nek toldalékos szó birtokos jelző?",
+      "points": 1,
+      "metadata": {
+        "options": ["keresnek", "humornak", "gyerekeknek", "versolvasóinak"],
+        "correctAnswerIndex": 3
+      }
+    },
+    {
+      "id": "Q38",
+      "orderIndex": 38,
+      "type": "INPUT",
+      "question": "Írja ki az egyetlen alárendelő kötőszót!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["mert"] }
+    },
+    {
+      "id": "Q39",
+      "orderIndex": 39,
+      "type": "INPUT",
+      "question": "Nevezze meg a helyesírási elvet a „könnyű” szóban!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["egyszerűsítés elve"],
+        "vpuNote": "VPU: számnévi határozatlan névmás is elfogadható."
+      }
+    },
+    {
+      "id": "Q40",
+      "orderIndex": 40,
+      "type": "INPUT",
+      "question": "Írja le a publicisztikai műfaj nevét!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["recenzió"],
+        "acceptableAlternatives": ["könyvismertetés", "kritika"]
+      }
+    },
+    {
+      "id": "Q41",
+      "orderIndex": 41,
+      "type": "CHOICE",
+      "question": "Mitől tartott Ivan Jakovlevics az orr megtalálása után?",
+      "points": 1,
+      "metadata": {
+        "options": ["rendőrök börtönbe zárják", "nem fog tudni megnősülni", "kihozta a sodrából a lelet", "bíróság elé állítják és kivégzik"],
+        "correctAnswerIndex": 3
+      }
+    },
+    {
+      "id": "Q42",
+      "orderIndex": 42,
+      "type": "CHOICE",
+      "question": "Miként értelmezhető a groteszk?",
+      "points": 1,
+      "metadata": {
+        "options": ["lekicsinylő ítélet", "maró gúny", "nevetséges és ijesztő keveredése", "képtelen és észszerűtlen összefonódása"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q43",
+      "orderIndex": 43,
+      "type": "CHOICE",
+      "question": "Értelmezze: „Valamennyien Gogol köpenyéből bújtunk elő.”",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "realizmusa háttérbe szorítja kortársait",
+          "stílusa meghatározó lesz a további orosz irodalomban",
+          "naturalizmusa nehéz köpenyként nyomja őket",
+          "sejtelmesen írja műveit"
+        ],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q44",
+      "orderIndex": 44,
+      "type": "CHOICE",
+      "question": "Melyik állítás hamis Az orr című alkotásra nézve?",
+      "points": 1,
+      "metadata": {
+        "options": ["személyiségölő nagyváros", "erőteljes antiklerikalizmus", "rang és pénz az egyedüli érték", "eltorzult emberi lét"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q45",
+      "orderIndex": 45,
+      "type": "CHOICE",
+      "question": "Egészítse ki Tolsztoj véleményét a Háború és békéről!",
+      "points": 1,
+      "metadata": {
+        "options": ["az Iliász", "a Holt lelkek", "A nyomorultak", "az Isteni színjáték"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q46",
+      "orderIndex": 46,
+      "type": "INPUT",
+      "question": "Írja le a Gogol-mű címét, ahol egy ruhadarab lesz az élet értelme!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["A köpönyeg"] }
+    },
+    {
+      "id": "Q47",
+      "orderIndex": 47,
+      "type": "INPUT",
+      "question": "Hogy nevezték az orosz realista művek kishivatalnokát?",
+      "points": 1,
+      "metadata": { "correctAnswers": ["csinovnyik"] }
+    },
+    {
+      "id": "Q48",
+      "orderIndex": 48,
+      "type": "INPUT",
+      "question": "Nevezze meg a cselekmény nélküli drámák orosz szerzőjét!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["Anton Pavlovics Csehov"],
+        "acceptableAlternatives": ["Csehov"]
+      }
+    },
+    {
+      "id": "Q49",
+      "orderIndex": 49,
+      "type": "CHOICE",
+      "question": "Mit hangsúlyozott a költő a 2.) részletben?",
+      "points": 1,
+      "metadata": {
+        "options": ["élet egyedi, egyszeri csoda", "élet véges", "élet a természetben megújul", "élet egy folytonos csalás"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q50",
+      "orderIndex": 50,
+      "type": "CHOICE",
+      "question": "Értelmezze a 3.) részlet Toldi említését!",
+      "points": 1,
+      "metadata": {
+        "options": [
+          "kivándorlók elszakadnak anyanyelvüktől",
+          "amerikai magyarok álmaikban térnek haza",
+          "Toldiban látják a megtartó erőt",
+          "titokban használják anyanyelvüket"
+        ],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q51",
+      "orderIndex": 51,
+      "type": "CHOICE",
+      "question": "Kik a 2.) és 3.) részlet szerzői?",
+      "points": 1,
+      "metadata": {
+        "options": ["József Attila, Babits Mihály", "Tóth Árpád, Radnóti Miklós", "Kosztolányi Dezső, Márai Sándor", "Csokonai Vitéz Mihály, Ady Endre"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q52",
+      "orderIndex": 52,
+      "type": "CHOICE",
+      "question": "Melyik kódexben van a Halotti Beszéd?",
+      "points": 1,
+      "metadata": {
+        "options": ["Pray-kódex", "Érdy-kódex", "Jókai-kódex", "Leuveni kódex"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q53",
+      "orderIndex": 53,
+      "type": "CHOICE",
+      "question": "Melyik alkotásból van a vastagított mondat?",
+      "points": 1,
+      "metadata": {
+        "options": ["Himnusz", "Szózat", "Nemzeti dal", "A walesi bárdok"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q54",
+      "orderIndex": 54,
+      "type": "INPUT",
+      "question": "Milyen emléknek nevezzük az első magyar nyelvemléket?",
+      "points": 1,
+      "metadata": { "correctAnswers": ["szövegemléknek"] }
+    },
+    {
+      "id": "Q55",
+      "orderIndex": 55,
+      "type": "INPUT",
+      "question": "Írja le a Margitsziget -i képzős változatát!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["Margit-szigeti"] }
+    },
+    {
+      "id": "Q56",
+      "orderIndex": 56,
+      "type": "INPUT",
+      "question": "Nevezze meg a középkori műfajt, jelentése: „viselt dolgok”!",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["Geszta"],
+        "acceptableAlternatives": ["gesta", "krónika"]
+      }
+    },
+    {
+      "id": "Q57",
+      "orderIndex": 57,
+      "type": "CHOICE",
+      "question": "Melyik állítás vonatkozik Európára?",
+      "points": 1,
+      "metadata": {
+        "options": ["lakossága meghaladja a 2 milliárdot", "lakossága kisebb lesz mint Észak-Amerikáé", "lakossága 2060-ra az 1980-as szintre csökken", "legkisebb lakosságszámú kontinens lesz"],
+        "correctAnswerIndex": 2
+      }
+    },
+    {
+      "id": "Q58",
+      "orderIndex": 58,
+      "type": "CHOICE",
+      "question": "Melyik az igekötős szó?",
+      "points": 1,
+      "metadata": {
+        "options": ["tér el", "több mint", "legkisebb", "időszak alatt"],
+        "correctAnswerIndex": 0
+      }
+    },
+    {
+      "id": "Q59",
+      "orderIndex": 59,
+      "type": "CHOICE",
+      "question": "Melyik párosítás helyes?",
+      "points": 1,
+      "metadata": {
+        "options": ["6x növekedés - Afrika", "másfélszeres - Európa", "2x - Észak-Amerika", "4x - Latin-Amerika"],
+        "correctAnswerIndex": 1
+      }
+    },
+    {
+      "id": "Q60",
+      "orderIndex": 60,
+      "type": "CANCELED",
+      "question": "Törölt feladat",
+      "points": 1,
+      "metadata": { "note": "A tétel anulálva lett." }
+    },
+    {
+      "id": "Q61",
+      "orderIndex": 61,
+      "type": "CHOICE",
+      "question": "Melyik szószerkezetből van egynél több a 2. mondatban?",
+      "points": 1,
+      "metadata": {
+        "options": ["tárgyas", "határozós", "minőségjelzős", "birtokos jelzős"],
+        "correctAnswerIndex": 3
+      }
+    },
+    {
+      "id": "Q62",
+      "orderIndex": 62,
+      "type": "INPUT",
+      "question": "Nevezze meg az állítmány fajtáját az utolsó mondatban!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["igei állítmány"] }
+    },
+    {
+      "id": "Q63",
+      "orderIndex": 63,
+      "type": "INPUT",
+      "question": "Írja le a Latin-Amerika -i képzős alakját!",
+      "points": 1,
+      "metadata": { "correctAnswers": ["latin-amerikai"] }
+    },
+    {
+      "id": "Q64",
+      "orderIndex": 64,
+      "type": "INPUT",
+      "question": "Melyik jelentéstani kategória a „tér” szó?",
+      "points": 1,
+      "metadata": {
+        "correctAnswers": ["azonos alakú szó"],
+        "acceptableAlternatives": ["homonima"]
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.features.subjects.presentation
+package com.madovygabor.maturimate.features.subjectsAndExams.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey

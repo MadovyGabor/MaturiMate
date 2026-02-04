@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlin.serialization)
+
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -54,6 +56,10 @@ kotlin {
 
             //For material icons and google fonts
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+
+            //SQLDelight
+            implementation(libs.sqldelight.coroutines)
+            implementation(libs.sqldelight.runtime)
 
         }
 
@@ -126,6 +132,15 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.madovygabor.maturimate"
             packageVersion = "1.0.0"
+        }
+    }
+}
+
+
+sqldelight {
+    databases {
+        create("Database") { // Ez lesz az osztály neve
+            packageName.set("com.madovygabor.maturimate.database") // Ez a csomag
         }
     }
 }

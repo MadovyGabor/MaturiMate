@@ -1,0 +1,43 @@
+/**
+ * Table for storing content materials associated with an exam.
+ * This can include reading passages, audio transcripts, or instructions.
+ */
+CREATE TABLE ContentUnitEntity (
+    -- Unique identifier for the unit (e.g., "UNIT_TEXT_01")
+    id TEXT NOT NULL PRIMARY KEY,
+
+    -- Foreign key linking this unit to its parent Exam record.
+    -- Ensures data integrity across the database.
+    examId TEXT NOT NULL,
+
+    -- The category of the unit (e.g., "TEXT", "AUDIO", "GAP_FILL").
+    -- Used by the UI to determine the appropriate renderer.
+    type TEXT NOT NULL,
+
+    -- Metadata for the unit
+    title TEXT NOT NULL,       -- e.g., "Reading Section 1"
+    author TEXT,               -- Author of the source text (if available)
+    description TEXT,          -- Instructions for the student (e.g., "Read carefully...")
+
+    -- The core content
+    contentHtml TEXT,          -- Rich text content formatted as HTML for the UI.
+
+    -- Resource locator
+    mediaUrl TEXT,             -- Filename or URL for audio/media files.
+
+    -- Flexible storage for complex task types (e.g., English B1 sentence pools)
+    -- Stored as a raw JSON string to be parsed in the presentation layer.
+    sharedOptionsJson TEXT,
+
+    -- Data integrity constraint: Deleting an exam removes all its content units.
+    FOREIGN KEY (examId) REFERENCES ExamEntity(id) ON DELETE CASCADE
+);
+
+-- Fetches all content units linked to a specific exam ID.
+getContentUnitsForExam:
+SELECT * FROM ContentUnitEntity WHERE examId = :examId;
+
+-- Inserts a new content unit record into the database.
+insertContentUnit:
+INSERT INTO ContentUnitEntity(id, examId, type, title, author, contentHtml, mediaUrl, description, sharedOptionsJson)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

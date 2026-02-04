@@ -1,0 +1,37 @@
+/**
+ * Main table for storing high-level exam information.
+ * This entity acts as the root for all related tasks and content units.
+ */
+CREATE TABLE ExamEntity (
+    -- Unique identifier for the exam (e.g., "HU_MJL_2025_MARCH")
+    id TEXT NOT NULL PRIMARY KEY,
+
+    -- Identifier for the school subject (e.g., "HU_MJL", "SK_SJL").
+    -- Mapped to string resources in the UI.
+    subjectId TEXT NOT NULL,
+
+    -- Temporal metadata
+    year INTEGER NOT NULL,          -- e.g., 2025
+    session TEXT NOT NULL,          -- e.g., "MARCH" or "MAY"
+
+    -- Time constraints in minutes
+    totalMinutes INTEGER NOT NULL,  -- Standard duration
+    vpuMinutes INTEGER NOT NULL,    -- Extended duration for students with special needs (VPU)
+
+    -- Quantitative data
+    taskCount INTEGER NOT NULL      -- Total number of questions in this exam
+);
+
+
+-- Retrieves all exams currently stored in the local database.
+selectAllExams:
+SELECT * FROM ExamEntity;
+
+-- Fetches a single exam record based on its unique ID.
+selectExamById:
+SELECT * FROM ExamEntity WHERE id = :id;
+
+-- Inserts a new exam entry. All fields are required to maintain data integrity.
+insertExam:
+INSERT INTO ExamEntity(id, subjectId, year, session, totalMinutes, vpuMinutes, taskCount)
+VALUES (?, ?, ?, ?, ?, ?, ?);

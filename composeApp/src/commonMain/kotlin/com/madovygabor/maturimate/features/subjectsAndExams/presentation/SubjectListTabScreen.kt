@@ -1,4 +1,4 @@
-package com.madovygabor.maturimate.features.subjects.presentation
+package com.madovygabor.maturimate.features.subjectsAndExams.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

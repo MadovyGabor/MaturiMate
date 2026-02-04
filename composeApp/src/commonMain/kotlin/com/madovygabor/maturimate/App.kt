@@ -22,6 +22,7 @@ import com.madovygabor.maturimate.core.presentation.utils.snackbar.MainScaffoldW
 fun App(
     startRoute: Route,
 ) {
+
     // Apply the application's Material 3 theme
     AppTheme {
         // Global scaffold wrapper that manages Snackbars and system-level UI

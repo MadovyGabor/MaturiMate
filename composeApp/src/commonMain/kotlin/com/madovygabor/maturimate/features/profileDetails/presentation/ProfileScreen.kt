@@ -50,7 +50,6 @@ import toFormattedDateString
  * The main entry point for the Profile screen.
  * It manages the lifecycle of the UI state and handles the display of
  * edit dialogs based on the active [EditType].
- *
  * @param viewModel The [ProfileViewModel] providing state and business logic.
  */
 @Composable
