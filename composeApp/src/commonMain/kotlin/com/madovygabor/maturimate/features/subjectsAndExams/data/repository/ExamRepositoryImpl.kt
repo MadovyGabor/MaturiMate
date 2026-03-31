@@ -44,6 +44,16 @@ class ExamRepositoryImpl(
             }
     }
 
+    override fun getExamsBySubject(subjectId: String): Flow<List<Exam>> {
+        return database.examEntityQueries
+            .getExamsBySubject(subjectId)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { entities ->
+                entities.map { it.toDomain() }
+            }
+    }
+
     /**
      * Fetches a detailed [Exam] object by its unique identifier,
      * including all associated tasks and content units.

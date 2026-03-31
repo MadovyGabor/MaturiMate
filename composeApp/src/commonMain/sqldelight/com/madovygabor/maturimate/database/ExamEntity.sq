@@ -31,6 +31,12 @@ SELECT * FROM ExamEntity;
 selectExamById:
 SELECT * FROM ExamEntity WHERE id = :id;
 
+-- Retrieves all exams for a specific subject, ordered by year in descending order.
+getExamsBySubject:
+SELECT * FROM ExamEntity
+WHERE subjectId = :subjectId
+ORDER BY year DESC;
+
 -- Inserts a new exam entry. All fields are required to maintain data integrity.
 insertExam:
 INSERT INTO ExamEntity(id, subjectId, year, session, totalMinutes, vpuMinutes, taskCount)

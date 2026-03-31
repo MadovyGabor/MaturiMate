@@ -10,6 +10,7 @@ import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileVi
 import com.madovygabor.maturimate.features.subjectsAndExams.data.DatabaseSeeder
 import com.madovygabor.maturimate.features.subjectsAndExams.data.repository.ExamRepositoryImpl
 import com.madovygabor.maturimate.features.subjectsAndExams.domain.repository.ExamRepository
+import com.madovygabor.maturimate.features.subjectsAndExams.presentation.SubjectViewModel
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -74,5 +75,7 @@ val sharedModule = module {
     /** * Handles profile-related state and user preference updates.
      */
     viewModelOf(::ProfileViewModel)
+
+    viewModelOf(::SubjectViewModel)
 }
 

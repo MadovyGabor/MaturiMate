@@ -36,6 +36,15 @@ interface ExamRepository {
      */
     suspend fun getExamById(id: String): OperationResult<Exam, ExamError>
 
+
+    /**
+     * Retrieves all exams associated with a specific subject.
+     *
+     * @param subjectId The unique identifier of the subject.
+     * @return A [Flow] emitting lists of [Exam]s related to the given subject.
+     */
+    fun getExamsBySubject(subjectId: String): Flow<List<Exam>>
+
     /**
      * Synchronizes the local database with provided JSON content.
      * Typically used during onboarding or when importing new test materials.

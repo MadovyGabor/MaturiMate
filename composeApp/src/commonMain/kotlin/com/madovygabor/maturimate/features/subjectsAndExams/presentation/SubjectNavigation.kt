@@ -7,8 +7,11 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.features.subjectsAndExams.presentation.examSelection.ExamSelectionScreen
+import com.madovygabor.maturimate.features.subjectsAndExams.presentation.subjectSelection.SubjectSelectionScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SubjectNavigation() {
@@ -28,16 +31,22 @@ fun SubjectNavigation() {
     NavDisplay(
         backStack = backStack,
         entryProvider = entryProvider {
+
+            val viewModel = koinViewModel<SubjectViewModel>()
+
             entry<Route.Main.Subject.Selection>{
-                SubjectListTabScreen(
-                    onSubjectClick = {
-                        backStack.add(Route.Main.Subject.ExamList(it))
+                SubjectSelectionScreen(
+                    viewModel = viewModel,
+                    onSubjectClick = { subjectId ->
+                        backStack.add(Route.Main.Subject.ExamList(subjectId))
                     }
                 )
             }
             entry<Route.Main.Subject.ExamList>{
                 ExamSelectionScreen(
                     subjectId = it.subjectId,
+                    viewModel = viewModel,
+                    onExamClick = {}
                 )
             }
 
