@@ -61,6 +61,7 @@ class ProfileViewModel(
                     draftMaturitaLanguage = prefs.maturitaLanguage,
                     maturitaLevel = prefs.maturitaLevel,
                     draftMaturitaLevel = prefs.maturitaLevel,
+                    isVpuEnabled = prefs.isVpuEnabled,
                     daysLeft = calculateDaysLeft(prefs.maturitaDate)
                 ) }
             }
@@ -123,7 +124,7 @@ class ProfileViewModel(
                     maturitaLanguage = finalLanguage,
                     maturitaLevel = finalLevel,
                     maturitaDate = finalDate ?: currentState.maturitaDate!!,
-                    isVpuEnabled = false
+                    isVpuEnabled = currentState.isVpuEnabled
                 )
 
                 when (saveResult) {

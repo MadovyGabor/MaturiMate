@@ -18,6 +18,7 @@ data class ProfileUiState(
     val maturitaDate: LocalDate? = null,
     val maturitaLevel: MaturitaLevel = MaturitaLevel.B1,
     val maturitaLanguage: MaturitaLanguage = MaturitaLanguage.HU,
+    val isVpuEnabled: Boolean = false,
     val daysLeft: Int = 0,
 
     // --- Temporary (Draft) Data ---

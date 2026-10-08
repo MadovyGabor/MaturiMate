@@ -44,7 +44,7 @@ import com.madovygabor.maturimate.features.profileDetails.presentation.component
 import com.madovygabor.maturimate.features.profileDetails.presentation.components.SubjectStatsSection
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import toFormattedDateString
+import com.madovygabor.maturimate.features.profileDetails.presentation.components.toFormattedDateString
 
 /**
  * The main entry point for the Profile screen.

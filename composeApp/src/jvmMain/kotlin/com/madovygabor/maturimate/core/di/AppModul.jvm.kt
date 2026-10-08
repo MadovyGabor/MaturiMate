@@ -7,14 +7,19 @@ import com.madovygabor.maturimate.features.appOnboarding.data.createDataStore
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
-actual val platformModule = module{
+import java.io.File
+
+actual val platformModule = module {
 
     singleOf(::DbClient)
 
     single<DataStore<Preferences>> {
         createDataStore {
-            // Desktopon pl. a felhasználó home könyvtárába mentünk
-            DATA_STORE_FILE_NAME
+            val appDir = File(System.getProperty("user.home"), ".maturimate")
+            if (!appDir.exists()) {
+                appDir.mkdirs()
+            }
+            File(appDir, DATA_STORE_FILE_NAME).absolutePath
         }
     }
 }

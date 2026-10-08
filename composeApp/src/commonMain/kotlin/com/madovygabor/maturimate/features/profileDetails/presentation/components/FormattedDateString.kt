@@ -1,3 +1,5 @@
+package com.madovygabor.maturimate.features.profileDetails.presentation.components
+
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 
@@ -19,10 +21,9 @@ fun LocalDate.toFormattedDateString(): String {
         Month.OCTOBER -> "október"
         Month.NOVEMBER -> "november"
         Month.DECEMBER -> "december"
-        else -> this.month.name.lowercase()
     }
 
-    return "${this.year}. $monthName ${this.dayOfMonth}."
+    return "${this.year}. $monthName ${this.day}."
 }
 
 //TODO: UiText verzió, ha szükség lesz rá
