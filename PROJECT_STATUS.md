@@ -139,15 +139,15 @@ Built with the new **Navigation3** component:
 - **Git Ignore**: Properly ignores build caches, IntelliJ/Gradle state, `.DS_Store`, and the desktop DataStore file (`prefs.preferences_pb`).
 
 ### 4.3 Buildability Audit
-- **Android Debug Build**: ✅ **PASSED** (`./gradlew :composeApp:assembleDebug` completed in 14s).
-- **Desktop JVM Compilation**: ✅ **PASSED** (`./gradlew :composeApp:compileKotlinJvm` completed in 10s).
-- **Test Suite**: ✅ **PASSED** (`./gradlew :composeApp:allTests` completed in 32s).
+- **Android Debug Build**: **PASSED** (`./gradlew :composeApp:assembleDebug` completed in 14s).
+- **Desktop JVM Compilation**: **PASSED** (`./gradlew :composeApp:compileKotlinJvm` completed in 10s).
+- **Test Suite**: **PASSED** (`./gradlew :composeApp:allTests` completed in 32s).
 
 ---
 
 ## 5. Technical Debt & Identified Risks
 
-### 🚨 Critical Issues
+### Critical Issues
 1. **Machine-Specific Java Path Breaking Builds**:
    - In [gradle.properties](file:///c:/Users/madov/StudioProjects/MaturiMate/gradle.properties#L4), `org.gradle.java.home=C\:\\Program Files\\Android\\Android Studio\\jbr` was hardcoded.
    - When Android Studio upgraded its bundled JBR to **Java 25** (`25.0.3`), Gradle 8.14.3's Kotlin DSL parser crashed with:
@@ -176,7 +176,7 @@ Built with the new **Navigation3** component:
 4. **Desktop DataStore File Path Risk**:
    - In [AppModul.jvm.kt:L17](file:///c:/Users/madov/StudioProjects/MaturiMate/composeApp/src/jvmMain/kotlin/com/madovygabor/maturimate/core/di/AppModul.jvm.kt#L17), the desktop preferences file is saved as `"prefs.preferences_pb"` relative to the current working directory instead of the user's home directory (`System.getProperty("user.home")`). This leaves artifacts in the project root during local testing.
 
-### ⚠️ Code Smells & Architectural Inconsistencies
+### Code Smells & Architectural Inconsistencies
 - **Model Duplication**: [SubjectListTabScreen.kt](file:///c:/Users/madov/StudioProjects/MaturiMate/composeApp/src/commonMain/kotlin/com/madovygabor/maturimate/features/subjects/presentation/SubjectListTabScreen.kt#L86-L92) defines a local `data class Subject`, conflicting with the canonical [StatickUiSettings.kt:Subject](file:///c:/Users/madov/StudioProjects/MaturiMate/composeApp/src/commonMain/kotlin/com/madovygabor/maturimate/core/presentation/utils/StatickUiSettings.kt#L20-L26).
 - **Unwired ViewModel**: `SubjectViewModel` in [SubjectViewModel.kt](file:///c:/Users/madov/StudioProjects/MaturiMate/composeApp/src/commonMain/kotlin/com/madovygabor/maturimate/features/subjects/presentation/SubjectViewModel.kt) is not injected via Koin, produces dummy strings `(1..4).map { "Subject $it" }`, and is not referenced by any UI screen.
 - **Filename Typo (Resolved)**: Renamed [UserPreferencesRepositoryImpl.kt](file:///c:/Users/madov/StudioProjects/MaturiMate/composeApp/src/commonMain/kotlin/com/madovygabor/maturimate/features/appOnboarding/data/UserPreferencesRepositoryImpl.kt) to match class `UserPreferencesRepositoryImpl`.

@@ -1,7 +1,7 @@
-# 🧭 MaturiMate
+# MaturiMate
 
-> **Interactive, offline-first exam preparation platform and daily study companion for high school students in Slovakia.**  
-> Built with **Kotlin Multiplatform** and **Compose Multiplatform** to replace static examination paper PDFs with an engaging, immediate-feedback study experience.
+> **Offline-first exam preparation platform for high school students in Slovakia.**  
+> Built with **Kotlin Multiplatform** and **Compose Multiplatform** to replace static examination paper PDFs with interactive, self-grading tests.
 
 ---
 
@@ -10,33 +10,33 @@
 [![Platform](https://img.shields.io/badge/Platform-Android_%7C_Desktop_(JVM)-3DDC84.svg?logo=android&logoColor=white)](https://github.com/)
 [![Database](https://img.shields.io/badge/Database-SQLDelight_2.2.1-blue.svg)](https://cashapp.github.io/sqldelight/)
 [![DI](https://img.shields.io/badge/DI-Koin_4.1.1-red.svg)](https://insert-koin.io/)
-[![Architecture](https://img.shields.io/badge/Architecture-Clean_%2B_MVI-brightgreen.svg)](#-architecture--system-outline)
+[![Architecture](https://img.shields.io/badge/Architecture-Clean_%2B_MVI-brightgreen.svg)](#system-architecture--tech-stack)
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [Vision & Value Proposition](#-vision--value-proposition)
+- [Project Overview & Scope](#project-overview--scope)
   - [The Problem Space](#the-problem-space)
   - [The Solution](#the-solution)
   - [Two-Phase Strategy](#two-phase-strategic-rollout)
-- [System Architecture & Tech Stack](#-system-architecture--tech-stack)
+- [System Architecture & Tech Stack](#system-architecture--tech-stack)
   - [Core Technology Stack](#core-technology-stack)
   - [Architectural Blueprint](#architectural-blueprint)
   - [Logical Relational Schema](#logical-relational-schema-sqldelight)
   - [Responsive Adaptive UI](#responsive-adaptive-ui-m3)
-- [Roadmap & Milestone Status](#-roadmap--milestone-status)
+- [Roadmap & Milestone Status](#roadmap--milestone-status)
   - [Status Overview](#status-overview)
   - [Milestone Breakdown](#milestone-breakdown)
-- [Project Directory Structure](#-project-directory-structure)
-- [Getting Started & Tooling](#-getting-started--tooling)
+- [Project Directory Structure](#project-directory-structure)
+- [Setup & Installation](#setup--installation)
   - [Prerequisites](#prerequisites)
   - [Build and Run Commands](#build-and-run-commands)
-- [Documentation Hub](#-documentation-hub)
+- [Documentation Hub](#documentation-hub)
 
 ---
 
-## 🎯 Vision & Value Proposition
+## Project Overview & Scope
 
 ### The Problem Space
 
@@ -63,16 +63,16 @@
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-> [!TIP]
+> [!NOTE]
 > For in-depth product rationale and personas, see [VISION.md](VISION.md).
 
 ---
 
-## 🏛️ System Architecture & Tech Stack
+## System Architecture & Tech Stack
 
 ### Core Technology Stack
 
-MaturiMate leverages the modern Kotlin Multiplatform ecosystem to share **100% of domain, data, and UI logic** across targets:
+MaturiMate uses Kotlin Multiplatform to share **100% of domain, data, and UI logic** across targets:
 
 | Component | Technology | Version | Purpose |
 | :--- | :--- | :--- | :--- |
@@ -113,12 +113,12 @@ The layout automatically responds to the window size using `BoxWithConstraints` 
 
 ---
 
-## 🗺️ Roadmap & Milestone Status
+## Roadmap & Milestone Status
 
 ### Status Overview
 
 * `[x]` = **Completed & Operational**
-* `[/]` = **In Progress / Current Active Station**
+* `[/]` = **In Progress**
 * `[ ]` = **Planned / Backlog**
 
 ---
@@ -132,13 +132,13 @@ The layout automatically responds to the window size using `BoxWithConstraints` 
 - [x] Profile screen with countdown timer and persistent DataStore preferences.
 - [x] Root navigation setup using Navigation3 and polymorphic route serialization.
 
-#### Milestone 1: Database Core & Parser Scaffolding (SQLDelight) `[/]` 📍 *CURRENT ACTIVE STATION*
+#### Milestone 1: Database Core & Parser Scaffolding (SQLDelight) `[/]` *(current)*
 - [x] Implement SQLDelight schema files: `ExamEntity`, `ContentUnitEntity`, `TaskEntity`, and `UserProgressEntity` on `database` branch.
 - [x] Configure platform SQLite drivers (`DatabaseDriverFactory` expect/actual) and bind `ExamRepository` in Koin.
 - [x] Asset reader for bundled JSON files (`composeResources/files/`) and atomic `DatabaseSeeder`.
 - [/] Finalize and merge `origin/database` branch into `main`.
 
-#### Milestone 2: 1st Vertical Slice — Hungarian Language & Literature 🎯 `[/]`
+#### Milestone 2: 1st Vertical Slice — Hungarian Language & Literature `[/]`
 - [x] Ingest and parse official `HU_MJL_2025.json` exam dataset.
 - [/] Dynamic subject & year selection UI populated directly from SQLDelight queries.
 - [/] **Exam Runner Interface (`ExamWriteScreen`):**
@@ -163,23 +163,23 @@ The layout automatically responds to the window size using `BoxWithConstraints` 
 - [ ] Question transition animations and split-screen reading passage scroll synchronization.
 - [ ] Comprehensive analytics and performance aggregation on the user profile dashboard.
 
-#### Milestone 6: Final Subject — Mathematics 📐 `[ ]`
+#### Milestone 6: Final Subject — Mathematics `[ ]`
 - [ ] Geometric charts, coordinate plane graphics, and inline figure rendering.
 - [ ] Mathematical formula layout (LaTeX / vector rendering).
 - [ ] Numeric grading normalization (decimal commas vs. dots and scientific units).
 
-#### 🔵 Phase 2 (v2.0): Gamification & Habit Formation `[ ]`
+#### Phase 2 (v2.0): Gamification & Habit Formation `[ ]`
 - [ ] **Daily Micro-Lessons:** Algorithmic 5-question daily sessions across syllabus topics.
 - [ ] **Streak Engine:** Consecutive day tracking with motivational notifications.
 - [ ] **30-Topic Progress Trees:** Modular skill trees covering the official curriculum.
 - [ ] **Error Vault:** Spaced-repetition review of missed examination questions.
 
-> [!TIP]
+> [!NOTE]
 > Track granular implementation progress in [ROADMAP.md](ROADMAP.md).
 
 ---
 
-## 📂 Project Directory Structure
+## Project Directory Structure
 
 ```
 MaturiMate/
@@ -213,7 +213,7 @@ MaturiMate/
 
 ---
 
-## 🚀 Getting Started & Tooling
+## Setup & Installation
 
 ### Prerequisites
 
@@ -263,14 +263,14 @@ cd MaturiMate
 
 ---
 
-## 📚 Documentation Hub
+## Documentation Hub
 
-* [🧭 Product Vision & Concept (`VISION.md`)](VISION.md) — Problem background, personas, and long-term vision.
-* [🏛️ Technical Architecture (`ARCHITECTURE.md`)](ARCHITECTURE.md) — Comprehensive tech stack, Clean Architecture, and SQLDelight schemas.
-* [🗺️ Development Roadmap (`ROADMAP.md`)](ROADMAP.md) — Detailed milestone tracking across all subject vertical slices.
+* [Product Vision & Concept (`VISION.md`)](VISION.md) — Problem background, personas, and scope.
+* [Technical Architecture (`ARCHITECTURE.md`)](ARCHITECTURE.md) — Tech stack, layering, and SQLDelight schemas.
+* [Development Roadmap (`ROADMAP.md`)](ROADMAP.md) — Detailed milestone tracking across all subject vertical slices.
 
 ---
 
 <p align="center">
-  <b>MaturiMate</b> • Built with ❤️ for students preparing for graduation.
+  <b>MaturiMate</b> • Exam preparation tooling for Slovak graduation students.
 </p>

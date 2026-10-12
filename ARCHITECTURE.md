@@ -1,6 +1,6 @@
-# 🏛️ MATURIMATE — Technical Architecture & System Outline (Phase 1 Focus)
+# MaturiMate — Technical Architecture & System Outline (Phase 1)
 
-This document provides a high-level technical overview of the system architecture, foundational tools, tech stack, and component responsibilities based on the current Kotlin Multiplatform implementation.
+This document provides a technical overview of the system architecture, foundational tools, tech stack, and component responsibilities based on the current Kotlin Multiplatform implementation.
 
 ---
 
@@ -111,7 +111,7 @@ The offline examination engine is built upon four primary relational entities wi
 
 ---
 
-## 4. Extensibility & Strategic Continuity
+## 4. Extensibility & Phase 2 Compatibility
 
 * **Zero-Migration Exam Expansion:**
   * Adding new past exam years or updated examination sheets requires zero SQL schema migrations.

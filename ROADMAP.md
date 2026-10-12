@@ -1,4 +1,4 @@
-# 🧭 MATURIMATE — Development Plan & Vertical Slice Subject Roadmap
+# MaturiMate — Development Plan & Vertical Slice Roadmap
 
 Legend:
 * `[x]` = Completed & Operational
@@ -19,7 +19,7 @@ The foundational scaffolding and onboarding journeys are functional on the `main
 
 ---
 
-## Milestone 1: Database Core & Parser Scaffolding (SQLDelight) 📍 *CURRENT STATUS*
+## Milestone 1: Database Core & Parser Scaffolding (SQLDelight) *(current)*
 
 Establish the local database and JSON loading pipeline before building interactive exam screens.
 
@@ -34,7 +34,7 @@ Establish the local database and JSON loading pipeline before building interacti
 
 ---
 
-## Milestone 2: First Full Vertical Slice — HUNGARIAN LANGUAGE & LITERATURE 🎯
+## Milestone 2: First Full Vertical Slice — HUNGARIAN LANGUAGE & LITERATURE
 
 Goal: Complete the end-to-end user loop (Selection ➔ Exam Taking ➔ Auto-grading ➔ History) using Hungarian tests.
 
@@ -46,7 +46,7 @@ Goal: Complete the end-to-end user loop (Selection ➔ Exam Taking ➔ Auto-grad
   * [x] Connect `SubjectViewModel` to SQLDelight via `ExamRepository.getExamsBySubject()`.
   * [/] Finalize exam summary card rendering (year, question count, time limit) and route passing to `ExamWriteScreen` with selected `examId`.
 
-* [/] **2.3. Hungarian Exam Runner Interface (`ExamWriteScreen`):** 📍 *Immediate Next Step*
+* [/] **2.3. Hungarian Exam Runner Interface (`ExamWriteScreen`):** *(next)*
   * [ ] *Reading Passage View:* Dedicated scrollable viewport displaying literary prose, essays, or poems alongside active questions.
   * [ ] *Input Components:* Multiple-choice ABCD radio groups and short text fields.
   * [ ] *Exam Timer:* Countdown clock reflecting official time allowances with automatic extension for VPUS accommodations.
@@ -106,7 +106,7 @@ Stabilize all implemented subjects, ensure bilingual platform parity, and polish
 
 ---
 
-## Milestone 6: Final Exam Subject — MATHEMATICS 📐
+## Milestone 6: Final Exam Subject — MATHEMATICS
 
 Deferred to the final milestone due to specific rendering and verification requirements.
 
@@ -120,7 +120,7 @@ Deferred to the final milestone due to specific rendering and verification requi
 
 ---
 
-## 🔵 PHASE 2 (v2.0): Gamification & Duolingo-Style Micro-Learning (Future Scope)
+## Phase 2 (v2.0): Gamification & Micro-Learning (Future Scope)
 
 Layer habit-forming mechanics on top of the validated Phase 1 exam bank.
 

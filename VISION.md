@@ -1,10 +1,10 @@
-# 🧭 MATURIMATE — Product Vision & Strategic Concept
+# MaturiMate — Project Overview & Scope
 
-A dedicated, offline-first exam preparation platform designed for high school students in Slovakia. Built to replace static test paper PDFs with an interactive, immediate-feedback study experience.
+An offline-first exam preparation application for high school students in Slovakia, replacing static test paper PDFs with interactive, self-grading tests.
 
 ---
 
-## 1. Executive Summary & Problem Space
+## 1. Summary & Problem Space
 
 ### The Core Problem
 
@@ -99,7 +99,7 @@ Phase 2 builds upon the validated task bank of Phase 1 by introducing daily micr
 
 ## 6. Product Value Summary
 
-> **The MaturiMate Guarantee:**
-> 1. Complete digitisation of national graduation test sheets into interactive, self-grading formats.
+> **Scope Summary:**
+> 1. Digitisation of national graduation test sheets into interactive, self-grading formats.
 > 2. Full offline accessibility on both mobile devices and desktop computers.
 > 3. A clear, progressive transition from realistic full exam simulation to daily retention drills.
