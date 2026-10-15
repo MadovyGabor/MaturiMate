@@ -18,3 +18,5 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 /composeApp/prefs.preferences_pb
+composeApp/src/commonMain/composeResources/files/HU_MJL_2025.json
+composeApp/src/commonMain/composeResources/files/*_private.json

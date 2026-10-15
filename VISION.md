@@ -1,6 +1,8 @@
 # MaturiMate — Project Overview & Scope
 
-An offline-first exam preparation application for high school students in Slovakia, replacing static test paper PDFs with interactive, self-grading tests.
+> **Status:** This document describes the intended product and its planned scope. For what is implemented on `main`, see the "Current status" section of the [README](README.md#current-status). Sections 4 and 5 describe planned work.
+
+A planned offline-first exam preparation application for high school students in Slovakia, intended to replace static test paper PDFs with interactive, self-grading tests.
 
 ---
 
@@ -14,7 +16,7 @@ An offline-first exam preparation application for high school students in Slovak
 
 ### The Solution: MaturiMate
 
-MaturiMate transforms static examination material into a responsive, interactive exam platform. It provides instant validation, eliminates manual grade checking, and runs completely offline on mobile and desktop platforms.
+MaturiMate transforms static examination material into a responsive, interactive exam platform. It is intended to provide instant validation, eliminate manual grade checking, and run completely offline on mobile and desktop platforms. These are targets; the current state of the code is described in the README.
 
 ---
 
@@ -51,35 +53,35 @@ To ensure early delivery of tangible value, development is strictly split into t
 
 ---
 
-## 4. Phase 1 (v1.0): Full Interactive Exam Runner (MVP)
+## 4. Phase 1 (v1.0): Full Interactive Exam Runner (MVP) — Planned
 
-Phase 1 delivers a complete, interactive examination environment covering all past central test sheets across every key subject.
+Phase 1 is planned to deliver a complete, interactive examination environment covering all past central test sheets across every key subject. None of the capabilities below is complete on `main`.
 
 ### 4.1 Key Capabilities
 
-* **Subject & Past Year Catalog:**
+* **Subject & Past Year Catalog** *(planned; the subject list is static on `main`, and the exam data exists only on the unmerged `database` branch)*:
   * Clean selection of examination tracks: Hungarian Language & Literature, Slovak Language, English (B1 & B2 tiers), and Mathematics.
   * Comprehensive coverage of past official exam years loaded dynamically from offline storage.
 
-* **Interactive Exam Taking (`ExamWrite`):**
+* **Interactive Exam Taking (`ExamWrite`)** *(planned; `ExamWriteScreen` is a placeholder on `main`)*:
   * **Unified Reading Comprehension View:** Displays primary source texts (literature excerpts, non-fiction articles, dialogues) side-by-side or paired directly above corresponding question sets.
   * **Input Mechanics:**
     * *Multiple Choice (Single Choice / ABCD):* Instant radio or tile selection.
     * *Short Text / Fill-in:* Free-text input fields for vocabulary, grammar questions, or numerical values with support for synonymous grading keys.
-  * **Exam Clock:** Countdown timer calibrated to official regulations (e.g., 100/150 minutes), automatically adjusted for students with special educational accommodations (VPUS / SNI extended duration).
+  * **Exam Clock** *(planned)*: countdown timer calibrated to official regulations (e.g., 100/150 minutes), automatically adjusted for students with special educational accommodations (VPUS / SNI extended duration).
 
-* **Automated Evaluation & Score Summary (`ResultScreen`):**
+* **Automated Evaluation & Score Summary (`ResultScreen`)** *(planned)*:
   * Instant grading upon submission: overall score, percentage, and clear Pass/Fail indication against national passing thresholds.
   * Comprehensive review mode: task-by-task breakdown highlighting correct solutions in green, incorrect student entries in red, and revealing official answer keys.
 
-* **Local Exam History (`HistoryScreen`):**
+* **Local Exam History (`HistoryScreen`)** *(planned; the History tab is a placeholder on `main`)*:
   * Persistent log of previous attempts, recording completion dates, elapsed time, and percentage outcomes.
 
 ---
 
-## 5. Phase 2 (v2.0): Habit Formation & Gamification
+## 5. Phase 2 (v2.0): Habit Formation & Gamification — Planned
 
-Phase 2 builds upon the validated task bank of Phase 1 by introducing daily micro-learning routines inspired by modern retention apps.
+Phase 2 is planned to build upon the task bank of Phase 1 by introducing daily micro-learning routines inspired by modern retention apps.
 
 ### 5.1 Key Capabilities
 

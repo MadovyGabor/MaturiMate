@@ -1,276 +1,189 @@
 # MaturiMate
 
-> **Offline-first exam preparation platform for high school students in Slovakia.**  
-> Built with **Kotlin Multiplatform** and **Compose Multiplatform** to replace static examination paper PDFs with interactive, self-grading tests.
-
----
+> Kotlin Multiplatform app for Android and desktop (JVM), in early development. The product goal, described in [VISION.md](VISION.md), is an offline exam preparation tool for high school students who take the graduation exam (*maturita*) in Slovakia.
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.9.1-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
-[![Platform](https://img.shields.io/badge/Platform-Android_%7C_Desktop_(JVM)-3DDC84.svg?logo=android&logoColor=white)](https://github.com/)
-[![Database](https://img.shields.io/badge/Database-SQLDelight_2.2.1-blue.svg)](https://cashapp.github.io/sqldelight/)
+[![Platform](https://img.shields.io/badge/Platform-Android_%7C_Desktop_(JVM)-3DDC84.svg?logo=android&logoColor=white)](https://github.com/MadovyGabor/MaturiMate)
+[![Architecture](https://img.shields.io/badge/Architecture-MVVM_%2B_StateFlow-brightgreen.svg)](#architecture)
+[![Database](https://img.shields.io/badge/Database-SQLDelight_(unmerged_branch)-lightgrey.svg)](https://cashapp.github.io/sqldelight/)
 [![DI](https://img.shields.io/badge/DI-Koin_4.1.1-red.svg)](https://insert-koin.io/)
-[![Architecture](https://img.shields.io/badge/Architecture-Clean_%2B_MVI-brightgreen.svg)](#system-architecture--tech-stack)
 
----
+## Table of contents
 
-## Table of Contents
+- [Current status](#current-status)
+- [Technology](#technology)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Setup](#setup)
+- [Known limitations](#known-limitations)
+- [Development approach](#development-approach)
+- [Documentation](#documentation)
 
-- [Project Overview & Scope](#project-overview--scope)
-  - [The Problem Space](#the-problem-space)
-  - [The Solution](#the-solution)
-  - [Two-Phase Strategy](#two-phase-strategic-rollout)
-- [System Architecture & Tech Stack](#system-architecture--tech-stack)
-  - [Core Technology Stack](#core-technology-stack)
-  - [Architectural Blueprint](#architectural-blueprint)
-  - [Logical Relational Schema](#logical-relational-schema-sqldelight)
-  - [Responsive Adaptive UI](#responsive-adaptive-ui-m3)
-- [Roadmap & Milestone Status](#roadmap--milestone-status)
-  - [Status Overview](#status-overview)
-  - [Milestone Breakdown](#milestone-breakdown)
-- [Project Directory Structure](#project-directory-structure)
-- [Setup & Installation](#setup--installation)
-  - [Prerequisites](#prerequisites)
-  - [Build and Run Commands](#build-and-run-commands)
-- [Documentation Hub](#documentation-hub)
+## Current status
 
----
+This section describes the `main` branch. Work that exists only on the unmerged `database` branch is labelled as such.
 
-## Project Overview & Scope
+### Built
 
-### The Problem Space
+- One Kotlin Multiplatform project with an Android target and a desktop (JVM) target. About 96% of production Kotlin lines (3777 of 3949 non-blank lines) are in `commonMain`.
+- Onboarding: welcome screen, language choice (HU or SK), English level (B1 or B2), graduation date picker with validation, and a VPUS/SNI toggle. The toggle value is stored, but no exam timer exists yet, so it does not change any time limit.
+- User settings are persisted with Jetpack DataStore.
+- Profile screen: days left until the graduation date, and edit dialogs for the date, language and level.
+- Adaptive navigation: a bottom `NavigationBar` below 600 dp and a `NavigationRail` at 600 dp and above.
+- Navigation3 (alpha) root with serializable route keys, top-level tabs and per-tab back stacks.
+- Koin dependency injection modules, shared and per platform.
+- Android splash screen and a desktop window entry point.
 
-* **Procrastination & Exam Anxiety:** High school finals (*Maturita* in Slovakia, *Érettségi* in Hungarian-curriculum schools) span massive, multi-year syllabi. Students easily become overwhelmed and postpone preparation until the final weeks before national testing.
-* **Antiquated Study Workflows:** Past examination sheets exist primarily as non-interactive PDFs on institutional portals (e.g., NÚCEM / NIVaM). Self-testing requires juggling separate question sheets, printed answer booklets, and grading keys.
-* **Bilingual & Minority Education Gap:** Hungarian-minority students in Slovakia must satisfy dual curriculum tracks: Hungarian Language & Literature, Slovak Language & Slovak Literature, alongside Foreign Languages (B1/B2 English) and Mathematics. Tailored digital tooling for these parallel tracks is practically non-existent.
+### In progress
 
-### The Solution
+- On the unmerged `database` branch (not in `main`): SQLDelight schema (four tables), `DatabaseSeeder`, and database-backed subject and exam selection.
+- On `main`, the subject and exam selection screens are a static shell. They read hard-coded subject data and do not load exams.
 
-**MaturiMate** converts static past exam papers into responsive, self-grading interactive tests. It operates completely **offline** across mobile and desktop environments, providing instant scoring, official answer key reveals, and persistent progress tracking.
+### Planned
 
-### Two-Phase Strategic Rollout
+- Exam runner: reading passage view, multiple-choice and short-answer inputs, exam timer.
+- Automatic time extension for VPUS/SNI students.
+- Grading, result screen and exam history.
+- Slovak (`SK_SJL`), English (B1/B2) and Mathematics content, with their input types.
+- Full localization of UI strings.
+- Subject and profile statistics from real attempt data.
+- Phase 2 features (daily micro-lessons, streaks, topic trees, error review), see [VISION.md](VISION.md) and [ROADMAP.md](ROADMAP.md).
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  PHASE 1 (v1.0): INTERACTIVE EXAM ENGINE (Core Foundation)             │
-│  "Select a subject and past year, solve the test, inspect errors"      │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│  PHASE 2 (v2.0): GAMIFICATION & MICRO-LEARNING (Habit Engine)          │
-│  "5-minute daily bites, streak tracking, topic trees & mistake recall" │
-└────────────────────────────────────────────────────────────────────────┘
-```
+## Technology
 
-> [!NOTE]
-> For in-depth product rationale and personas, see [VISION.md](VISION.md).
+Versions are taken from `gradle/libs.versions.toml` on `main`.
 
----
+| Component | Version | Notes |
+| :--- | :--- | :--- |
+| Kotlin | 2.2.20 | Also used for the Compose compiler plugin and the serialization plugin |
+| Compose Multiplatform | 1.9.1 | Shared UI in `commonMain` |
+| Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`; Android and Compose extras |
+| Navigation3 (`navigation3-ui`) | 1.0.0-alpha06 | **Alpha** |
+| AndroidX lifecycle (`viewmodel-compose`) | 2.10.0-alpha07 | **Alpha** |
+| DataStore Preferences | 1.2.0 | User settings |
+| kotlinx.serialization (JSON) | 1.9.0 | On `main`, used for navigation key polymorphism only |
+| kotlinx.datetime | 0.7.1 | Date handling |
+| kotlinx.coroutines | 1.10.2 | `StateFlow`, `SharedFlow`, `viewModelScope` |
+| SQLDelight | 2.2.1 | Schema and drivers are on the unmerged `database` branch; `main` declares the runtime artifacts but has no `.sq` file |
+| Android | minSdk 24, compileSdk 36, targetSdk 36 | Android Gradle Plugin 8.13.0 |
+| JVM | `jvmTarget` 11 for Android; JDK 21 for the build | See [Setup](#setup) |
 
-## System Architecture & Tech Stack
+## Architecture
 
-### Core Technology Stack
+Presentation follows MVVM with `StateFlow`. Each ViewModel keeps a private `MutableStateFlow` and exposes it as a read-only `StateFlow`. The state is an immutable `data class` (for example `ProfileUiState`), updated with `copy()`. Screens call ViewModel functions directly. There are no intent types and no reducer, so this is not MVI.
 
-MaturiMate uses Kotlin Multiplatform to share **100% of domain, data, and UI logic** across targets:
+One-shot messages (snackbars) go through a singleton `SnackbarController` that wraps a `MutableSharedFlow`.
 
-| Component | Technology | Version | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Language & Runtime** | Kotlin Multiplatform (KMP) | `2.2.20` | Shared business logic, models, and platform abstractions |
-| **UI Framework** | Compose Multiplatform (CMP) | `1.9.1` | Declarative, shared single-codebase UI for Android and Desktop |
-| **Local Database** | CashApp SQLDelight | `2.2.1` | Offline-first SQLite database with type-safe query generation |
-| **Dependency Injection** | Koin Multiplatform | `4.1.1` | Loose coupling of repositories, drivers, and ViewModels |
-| **Navigation** | JetBrains Navigation3 | `1.0.0-alpha06` | Type-safe, state-preserving multi-stack routing (`navigation3-ui`) |
-| **Preferences Storage** | AndroidX DataStore | `1.2.0` | Multiplatform key-value persistence for student preferences |
-| **Serialization & Time** | kotlinx.serialization / datetime | `2.2.20` / `0.7.1` | Bundled JSON exam parsing and graduation countdown math |
-| **Asynchronous Engine** | kotlinx.coroutines | `1.10.2` | Concurrency, reactive `StateFlow` streams, and platform dispatchers |
+Layering is not uniform:
 
-### Architectural Blueprint
+- `features/appOnboarding` has `data`, `domain` and `presentation` packages.
+- `features/profileDetails`, `features/subjects` and `features/examTaking` have only `presentation` code.
+- `core/domain` contains the shared `OperationResult` and `Error` types.
 
-The application follows a **Feature-First Clean Architecture** with an **MVI / Unidirectional Data Flow (UDF)** presentation model:
+Domain on `main`: `UserPreferences`, `UserPreferencesRepository` (interface), `MaturitaValidator`, and the `MaturitaLanguage` and `MaturitaLevel` enums. There is no `Subject` model in the domain package. Two data classes named `Subject` exist in presentation code: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
 
-* **Domain Layer:** Pure Kotlin models (`UserPreferences`, `Subject`, `Exam`), repository contracts (`ExamRepository`, `UserPreferencesRepository`), and business validation rules (`MaturitaValidator`).
-* **Data Layer:** Implementations of repositories, SQLDelight drivers (`android-driver` / `sqlite-driver` for JVM), DataStore preferences, and the transactional `DatabaseSeeder`.
-* **Presentation Layer:** Composables emit intents/actions to Koin-injected ViewModels, which process business logic and emit immutable `UiState` via `StateFlow`.
+Data on `main`: `UserPreferencesRepositoryImpl` writes the DataStore keys `language`, `eng_level`, `is_vpu_enabled`, `exam_date` and `setup_completed` in one `edit` transaction.
 
-### Logical Relational Schema (SQLDelight)
+Platform code (`expect`/`actual`): the platform Koin module (`platformModule`), the empty `DbClient` class, and `Modifier.systemPadding()`.
 
-The offline examination engine is built upon four relational entities:
+Database (unmerged `database` branch only): four SQLDelight tables (`ExamEntity`, `ContentUnitEntity`, `TaskEntity`, `UserProgressEntity`), a `DatabaseSeeder` that inserts one exam from a JSON file inside a transaction, and platform database drivers. The seeder is not idempotent: a second run fails on the primary key and is reported as a parse error. See [ARCHITECTURE.md](ARCHITECTURE.md) for the schema.
 
-1. **`ExamEntity`:** Primary exam headers (subject identifier, year, session, total duration, and accommodated VPUS duration).
-2. **`ContentUnitEntity`:** Reading passages, poetry, prose, and shared resource texts linked to exams via foreign keys with cascade deletion.
-3. **`TaskEntity`:** Individual examination questions, order indices, point weights, interaction types (`CHOICE`, `INPUT`), and JSON metadata for keys and accepted synonyms.
-4. **`UserProgressEntity`:** Historical session attempts, recorded student choices, scored points, evaluation timestamps, and review logs.
+## Project structure
 
-### Responsive Adaptive UI (M3)
-
-The layout automatically responds to the window size using `BoxWithConstraints` and `LayoutConstants.DesktopThreshold` (`600.dp`):
-* **Mobile (< 600 dp):** Standard Material 3 bottom `NavigationBar`.
-* **Desktop / Tablet (≥ 600 dp):** Side `NavigationRail` with spacious centered content area.
-
-> [!NOTE]
-> Detailed technical diagrams and entity definitions are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
-
----
-
-## Roadmap & Milestone Status
-
-### Status Overview
-
-* `[x]` = **Completed & Operational**
-* `[/]` = **In Progress**
-* `[ ]` = **Planned / Backlog**
-
----
-
-### Milestone Breakdown
-
-#### 0. Baseline Setup & Existing Implementation `[x]`
-- [x] Multiplatform project scaffolding (Android SDK 36, minSdk 24, JVM Desktop).
-- [x] Responsive adaptive frame (`MainFrame`) with dual bottom bar / side rail modes.
-- [x] User onboarding journey: Language section (`HU` / `SK`), English level (`B1` / `B2`), graduation date picker, and VPUS/SNI accommodation toggle.
-- [x] Profile screen with countdown timer and persistent DataStore preferences.
-- [x] Root navigation setup using Navigation3 and polymorphic route serialization.
-
-#### Milestone 1: Database Core & Parser Scaffolding (SQLDelight) `[/]` *(current)*
-- [x] Implement SQLDelight schema files: `ExamEntity`, `ContentUnitEntity`, `TaskEntity`, and `UserProgressEntity` on `database` branch.
-- [x] Configure platform SQLite drivers (`DatabaseDriverFactory` expect/actual) and bind `ExamRepository` in Koin.
-- [x] Asset reader for bundled JSON files (`composeResources/files/`) and atomic `DatabaseSeeder`.
-- [/] Finalize and merge `origin/database` branch into `main`.
-
-#### Milestone 2: 1st Vertical Slice — Hungarian Language & Literature `[/]`
-- [x] Ingest and parse official `HU_MJL_2025.json` exam dataset.
-- [/] Dynamic subject & year selection UI populated directly from SQLDelight queries.
-- [/] **Exam Runner Interface (`ExamWriteScreen`):**
-  - [ ] Dedicated scrollable reading passage viewport (prose, poetry, essays).
-  - [ ] Multiple-choice (ABCD) and short-text / synonym-tolerant input components.
-  - [ ] Official countdown timer with automatic VPUS accommodation extension.
-- [ ] **Grading Engine & Result Screen (`ResultScreen`):** Auto-evaluation with item-by-item correct/incorrect breakdown and answer key reveals.
-- [ ] **Exam History (`HistoryScreen`):** Persistent attempt logging in `UserProgressEntity`.
-
-#### Milestone 3: 2nd Vertical Slice — Slovak Language & Literature `[ ]`
-- [ ] Standardize Slovak exam datasets (`SK_SJL`) into unified JSON schema.
-- [ ] Character encoding and Slovak typography validation.
-- [ ] Track-based filtering (Hungarian-minority track vs. Slovak national track).
-
-#### Milestone 4: 3rd Vertical Slice — English Language (B1 / B2) `[ ]`
-- [ ] Dynamic filtering by student CEFR level (`B1` or `B2`).
-- [ ] Cloze (gap-fill) input mechanics.
-- [ ] Audio player integration and textual transcript support for listening comprehension.
-
-#### Milestone 5: UI/UX Refinement, Localization & Parity Review `[ ]`
-- [ ] Application and content localization (full Slovak & Hungarian UI strings via Compose Multiplatform string resources, localized dates, and curriculum content).
-- [ ] Question transition animations and split-screen reading passage scroll synchronization.
-- [ ] Comprehensive analytics and performance aggregation on the user profile dashboard.
-
-#### Milestone 6: Final Subject — Mathematics `[ ]`
-- [ ] Geometric charts, coordinate plane graphics, and inline figure rendering.
-- [ ] Mathematical formula layout (LaTeX / vector rendering).
-- [ ] Numeric grading normalization (decimal commas vs. dots and scientific units).
-
-#### Phase 2 (v2.0): Gamification & Habit Formation `[ ]`
-- [ ] **Daily Micro-Lessons:** Algorithmic 5-question daily sessions across syllabus topics.
-- [ ] **Streak Engine:** Consecutive day tracking with motivational notifications.
-- [ ] **30-Topic Progress Trees:** Modular skill trees covering the official curriculum.
-- [ ] **Error Vault:** Spaced-repetition review of missed examination questions.
-
-> [!NOTE]
-> Track granular implementation progress in [ROADMAP.md](ROADMAP.md).
-
----
-
-## Project Directory Structure
+Tracked files on `main`, at package level:
 
 ```
 MaturiMate/
-├── .github/                     # GitHub workflows and issue templates
+├── .gitignore
+├── README.md  ARCHITECTURE.md  ROADMAP.md  VISION.md
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle.properties
 ├── gradle/
-│   └── libs.versions.toml       # Centralized version catalog
-├── composeApp/
-│   ├── src/
-│   │   ├── commonMain/
-│   │   │   ├── composeResources/# Images, localized strings, and bundled exam JSONs
-│   │   │   ├── sqldelight/      # SQLDelight database definitions (.sq)
-│   │   │   └── kotlin/com/madovygabor/maturimate/
-│   │   │       ├── App.kt       # Root composable & theme scaffold
-│   │   │       ├── core/        # Shared database factories, DI, navigation & theme
-│   │   │       │   ├── database/
-│   │   │       │   ├── di/
-│   │   │       │   ├── domain/
-│   │   │       │   └── presentation/
-│   │   │       └── features/    # Feature-first modules
-│   │   │           ├── appOnboarding/   # First-run setup & user preferences
-│   │   │           ├── subjectsAndExams/# Subject catalog, seeder & exam repo
-│   │   │           ├── examTaking/      # Exam runner, timer & question inputs
-│   │   │           └── profileDetails/  # Profile, countdown & preferences
-│   │   ├── androidMain/         # Android application entry & platform drivers
-│   │   └── jvmMain/             # Desktop JVM application entry & platform drivers
-├── ARCHITECTURE.md              # Technical architecture specification
-├── ROADMAP.md                   # Vertical slice development roadmap
-├── VISION.md                    # Product vision and strategic concept
-└── README.md                    # Project overview & documentation index
+│   ├── libs.versions.toml
+│   └── wrapper/
+├── gradlew
+├── gradlew.bat
+└── composeApp/
+    ├── build.gradle.kts
+    └── src/
+        ├── androidMain/
+        │   ├── AndroidManifest.xml
+        │   ├── res/
+        │   └── kotlin/com/madovygabor/maturimate/
+        │       ├── MainActivity.kt
+        │       ├── core/di/            AppModul.android, DbClient.android, MyApplication
+        │       ├── core/presentation/  androidSystemPadding.android
+        │       └── features/           createDataStore
+        ├── commonMain/
+        │   ├── composeResources/       drawable/, values/, values-hu/, values-sk/
+        │   └── kotlin/com/madovygabor/maturimate/
+        │       ├── App.kt
+        │       ├── core/
+        │       │   ├── di/             AppModul, DbClient (expect), initKoin
+        │       │   ├── domain/error/   Error, OperationResult
+        │       │   └── presentation/
+        │       │       ├── navigation/ (NavigationRoot, Route, MainFrame/)
+        │       │       ├── theme/
+        │       │       ├── uiComponents/
+        │       │       └── utils/      StatickUiSettings, UiText, snackbar/
+        │       └── features/
+        │           ├── appOnboarding/  data/, domain/, presentation/
+        │           ├── examTaking/     ExamWriteScreen (placeholder)
+        │           ├── profileDetails/ presentation/
+        │           └── subjects/       presentation/ (static)
+        ├── commonTest/                 ComposeAppCommonTest (placeholder)
+        └── jvmMain/
+            └── kotlin/com/madovygabor/maturimate/
+                ├── main.kt
+                └── core/               di/ (AppModul.jvm, DbClient.jvm), presentation/
 ```
 
----
+## Setup
 
-## Setup & Installation
+Requirements:
 
-### Prerequisites
+- JDK 21.
+- Android SDK Platform 36 (for the Android target). Put its path in `local.properties`; that file is not committed.
+- Android Studio or IntelliJ IDEA with the Compose Multiplatform plugin is optional.
 
-* **JDK 21** or **JDK 17** configured as the default Gradle JDK.
-* **Android Studio Ladybug (or newer)** or **IntelliJ IDEA Ultimate / Community** with the Compose Multiplatform plugin.
-* Android SDK Platform 36 installed (Android build).
+Important: `gradle.properties` line 4 sets `org.gradle.java.home` to a JDK 21 (JBR) path under a local Windows user profile. This path exists only on the original development machine. On any other machine, change that line to your JDK 21 location, or remove it and set `JAVA_HOME`.
 
-### Build and Run Commands
-
-Clone the repository and run the Gradle tasks from your terminal:
+Commands (names come from the build configuration; they were not executed while writing this section):
 
 ```bash
-# Clone the repository
-git clone https://github.com/MadovyGabor/MaturiMate.git
-cd MaturiMate
-```
-
-#### Android Application
-
-```bash
-# Build Android debug APK
+# Android debug APK
 ./gradlew :composeApp:assembleDebug
 
-# On Windows PowerShell
-.\gradlew.bat :composeApp:assembleDebug
-```
-
-#### Desktop (JVM) Application
-
-```bash
-# Run the Desktop app locally
+# Desktop application
 ./gradlew :composeApp:run
 
-# On Windows PowerShell
-.\gradlew.bat :composeApp:run
-
-# Compile Desktop JVM target classes
+# Compile the desktop (JVM) target
 ./gradlew :composeApp:compileKotlinJvm
-```
 
-#### Tests & Verification
-
-```bash
-# Run multiplatform unit tests
+# Run the multiplatform tests (one placeholder test)
 ./gradlew :composeApp:allTests
 ```
 
----
+On Windows PowerShell, replace `./gradlew` with `.\gradlew.bat`.
 
-## Documentation Hub
+Desktop packaging is configured for Dmg, Msi and Deb (`composeApp/build.gradle.kts`). Packaging has not been run.
 
-* [Product Vision & Concept (`VISION.md`)](VISION.md) — Problem background, personas, and scope.
-* [Technical Architecture (`ARCHITECTURE.md`)](ARCHITECTURE.md) — Tech stack, layering, and SQLDelight schemas.
-* [Development Roadmap (`ROADMAP.md`)](ROADMAP.md) — Detailed milestone tracking across all subject vertical slices.
+## Known limitations
 
----
+- Placeholders and mock data: `ExamWriteScreen` is a text placeholder; the History entry is a text placeholder; profile subject statistics are hard-coded values; the subject list and the exam list are static, with no data source.
+- Alpha dependencies: `androidx.lifecycle` 2.10.0-alpha07 and Navigation3 1.0.0-alpha06.
+- One placeholder test (`ComposeAppCommonTest`, which checks `1 + 2 == 3`). No tests exist for the onboarding, profile, or navigation code. No coverage tool is configured.
+- No CI: the repository has no `.github` directory and no workflow files.
+- Partial localization: 12 strings in `values`, 3 in `values-hu` and 3 in `values-sk`. Some UI text is hard-coded in Kotlin source.
 
-<p align="center">
-  <b>MaturiMate</b> • Exam preparation tooling for Slovak graduation students.
-</p>
+## Development approach
+
+I design the architecture and make the technical decisions myself. AI assistants help with boilerplate, documentation and drafts and speed up implementation; I review what goes into the repository.
+
+## Documentation
+
+- [VISION.md](VISION.md): product goal, personas and planned scope.
+- [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch.
+- [ROADMAP.md](ROADMAP.md): milestones with checkbox status.

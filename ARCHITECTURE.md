@@ -1,124 +1,180 @@
-# MaturiMate — Technical Architecture & System Outline (Phase 1)
+# MaturiMate Architecture
 
-This document provides a technical overview of the system architecture, foundational tools, tech stack, and component responsibilities based on the current Kotlin Multiplatform implementation.
+This document describes the architecture of the `main` branch and, separately, the database work that exists only on the unmerged `database` branch. Statements about `main` were checked against the code on `main`. Anything marked "on the unmerged `database` branch" is not present on `main`.
 
----
-
-## 1. Technology Stack & Rationale
-
-The project is built on the modern **Kotlin Multiplatform (KMP)** ecosystem, currently targeting **Android** and **Desktop (JVM)** runtimes:
-
-* **Kotlin Multiplatform (KMP — v2.2.20):**
-  * **Role:** Shares 100% of business logic, domain models, validation, and persistence across target platforms.
-  * **Targets:** Android (minSdk 24, compileSdk 36, targetSdk 36) and Desktop JVM (packaged for Windows MSI, macOS DMG, Linux DEB).
-
-* **Compose Multiplatform (CMP — v1.9.1):**
-  * **Role:** Declarative user interface layer. Shares the exact same UI codebase across mobile and desktop environments.
-
-* **Material 3 (M3) Adaptive Layout:**
-  * **Role:** Responsive UI layout adapting dynamically to viewport width:
-    * **Mobile (< 600 dp):** Renders a standard bottom `NavigationBar` within the main scaffold.
-    * **Desktop & Large Displays (≥ 600 dp):** Switches dynamically to a side `NavigationRail` with spacious content centering (`LayoutConstants.DesktopThreshold = 600.dp`).
-
-* **CashApp SQLDelight (v2.2.1):**
-  * **Role:** Type-safe, offline-first SQLite database.
-  * **Platform Drivers:** `android-driver` on Android, `sqlite-driver` on JVM/Desktop, along with coroutines extension bindings. Guarantees that graduation exams, content units, and questions remain instantly accessible without an internet connection.
-
-* **Koin Dependency Injection (v4.1.1):**
-  * **Role:** Lightweight multiplatform dependency injection (`koin-core`, `koin-compose`, `koin-compose-viewmodel`). Decouples and injects repositories, platform database drivers (`expect`/`actual`), business validators, and ViewModels.
-
-* **JetBrains Navigation3 for Compose Multiplatform (v1.0.0-alpha06):**
-  * **Role:** Type-safe, polymorphic, state-preserving routing system (`navigation3-ui` with `lifecycle-viewmodel-navigation3`). Manages back-stack serialization and seamless screen transitions between top-level flows and fullscreen exam experiences.
-
-* **AndroidX DataStore Preferences (v1.2.0):**
-  * **Role:** Multiplatform key-value persistence for student profile and preferences (graduation language track `HU`/`SK`, English tier `B1`/`B2`, target exam date, and special accommodations / VPU status).
-
-* **kotlinx.serialization (v2.2.20) & kotlinx.datetime (v0.7.1):**
-  * **Role:** Dynamic JSON parsing of bundled exam databases, countdown calculation toward graduation day, and active test timer tracking.
-
-* **kotlinx.coroutines (v1.10.2):**
-  * **Role:** Asynchronous concurrency, reactive StateFlow streams, and platform event dispatchers (including `kotlinx-coroutines-swing` on Desktop).
+For the current status of each part, see the "Current status" section of the [README](README.md).
 
 ---
 
-## 2. Architecture & Modular Structure
+## 1. Technology Stack
 
-The codebase is organized using a **Feature-First Clean Architecture** approach combined with the **MVI / Unidirectional Data Flow (UDF)** pattern:
+| Component | Version (from `gradle/libs.versions.toml`) | Notes |
+|---|---|---|
+| Kotlin Multiplatform | Kotlin 2.2.20 | Android target and desktop `jvm()` target |
+| Compose Multiplatform | 1.9.1 | Shared UI for Android and desktop |
+| Navigation3 for Compose Multiplatform | 1.0.0-alpha06 | Alpha dependency |
+| AndroidX Lifecycle (ViewModel) | 2.10.0-alpha07 | Alpha dependency |
+| Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
+| DataStore Preferences | 1.2.0 | Stores user preferences on all targets |
+| kotlinx.serialization | 1.9.0 | On `main`, used for polymorphic navigation routes. No `Json` instance is used on `main`. |
+| kotlinx.datetime | 0.7.1 | Used for `LocalDate` and time zone handling |
+| kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
+| SQLDelight | 2.2.1 | On the unmerged `database` branch only |
+
+Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
+
+---
+
+## 2. Module Layout
+
+The source tree on `main` follows the package layout below. Paths are relative to `composeApp/src/`.
 
 ```
-composeApp/src/commonMain/kotlin/com/madovygabor/maturimate/
+commonMain/kotlin/com/madovygabor/maturimate/
+├── App.kt
 ├── core/
-│   ├── database/        # Platform database driver contracts & factory
-│   ├── di/              # Shared & platform Koin modules
-│   ├── domain/          # Core cross-cutting domain logic
-│   └── presentation/    # Shell, Navigation3 root, M3 Theme & Responsive MainFrame
+│   ├── di/                 # Koin modules (AppModul.kt, DbClient.kt, initKoin.kt)
+│   ├── domain/error/       # Error.kt, OperationResult.kt
+│   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/
 └── features/
-    ├── appOnboarding/   # First-launch setup, language/level selection, preferences
-    ├── subjectsAndExams/# Subject catalog, past year list, database seeder, exam repo
-    ├── examTaking/      # Live test runner, timers, question layouts
-    └── profileDetails/  # User settings, accommodations, study profile
+    ├── appOnboarding/      # data/, domain/, presentation/
+    ├── examTaking/         # ExamWriteScreen.kt (placeholder)
+    ├── profileDetails/     # presentation/ only
+    └── subjects/           # presentation/ only
+androidMain/kotlin/...      # Android actuals (AppModul.android.kt, DbClient.android.kt, ...)
+jvmMain/kotlin/...          # Desktop actuals (AppModul.jvm.kt, DbClient.jvm.kt, ...)
+commonTest/kotlin/...       # One placeholder test (ComposeAppCommonTest.kt)
 ```
 
-### Clean Architecture Layers:
-
-* **Domain Layer:**
-  * Contains pure business models (`UserPreferences`, `Subject`, exam models), repository interfaces (`ExamRepository`, `UserPreferencesRepository`), and business rules (`MaturitaValidator`).
-  * Free of platform-specific frameworks or UI dependencies.
-
-* **Data Layer:**
-  * Implements repository interfaces (`ExamRepositoryImpl`, `UserPreferencesRepositoryImpl`).
-  * SQLDelight database query wrappers and offline database driver bindings.
-  * `DatabaseSeeder`: Atomically parses bundled JSON exam assets and populates the SQLite database within a single transaction.
-  * Preferences persistence powered by DataStore.
-
-* **Presentation Layer:**
-  * **Unidirectional Data Flow (UDF):** UI components dispatch intents/events to Koin-injected ViewModels.
-  * ViewModels maintain and publish an immutable `UiState` via `StateFlow`.
-  * Composable screens consume states reactively and render Material 3 UI accordingly.
+On `main`, the `core/database`, `features/subjectsAndExams`, and `sqldelight` directories do not exist. The `composeResources/files/` directory is also absent on `main`. These are part of the unmerged `database` branch.
 
 ---
 
-## 3. Logical Data Schema (v1 Focus)
+## 3. Layering
 
-The offline examination engine is built upon four primary relational entities within the SQLDelight schema (`com.madovygabor.maturimate.database`):
+Only `features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split on `main`. The other features contain only presentation code:
 
-### 1. Exam Header (`ExamEntity`)
-* Primary identifier (`id`, e.g., `"HU_MJL_2025_MARCH"`).
-* Subject specification (`subjectId`, e.g., `"HU_MJL"`, `"SK_SJL"`, `"HU_MAT"`, `"AJ_B2"`).
-* Temporal metadata: `year` (e.g., 2025) and `session` (e.g., `"MARCH"`).
-* Time constraints: `totalMinutes` (standard duration) and `vpuMinutes` (extended accommodation duration).
-* Quantitative metrics: `taskCount`.
+* `features/profileDetails` contains only `presentation/`.
+* `features/subjects` contains only `presentation/`.
+* `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
-### 2. Reading & Resource Blocks (`ContentUnitEntity`)
-* Primary source material linked to an exam via foreign key (`examId` with `ON DELETE CASCADE`).
-* Categorization: `type` (e.g., `"TEXT"`, `"AUDIO"`, `"GAP_FILL"`).
-* Metadata & Rich Text: `title`, `author`, `description`, `contentHtml` (formatted for UI display), and `mediaUrl`.
-* Extensible metadata: `sharedOptionsJson` for structured task pools.
+`appOnboarding` domain contains `UserPreferences`, `UserPreferencesRepository`, `MaturitaValidator`, and `DataError`. The data layer contains `UserPreferencesRepositoryImpl`, which uses DataStore. The presentation layer contains the onboarding ViewModel and screens.
 
-### 3. Tasks / Questions (`TaskEntity`)
-* Individual question record linked to parent exam (`examId`) and optional parent resource (`contentUnitId` with `ON DELETE CASCADE`).
-* Display order: `orderIndex`.
-* Interaction category: `type` (e.g., `"CHOICE"`, `"INPUT"`, `"CHOICE_5"`).
-* Content: `question`, point weight `points`, and optional image locator `imageUrl`.
-* Type-specific payload: `metadataJson` containing answer choices, correct keys, and accepted synonym variants for automated grading.
+The `Subject` model is in the presentation layer, not in the domain layer. There are two classes named `Subject` on `main`:
 
-### 4. User Progress & History (`UserProgressEntity`)
-* Tracks individual exam sessions: composite primary key `(attemptId, taskId)`.
-* Denormalized lookup: `examId`.
-* Student response data: `userAnswer` (selected choice index or submitted free text).
-* Evaluation outcome: `isCorrect` (Boolean) and `earnedPoints` (Integer).
-* Audit tracking: `timestamp` (epoch milliseconds) for recording attempt history.
+* `core/presentation/utils/StatickUiSettings.kt:20` defines `data class Subject(...)` with the UI fields and a `dbIdMapping` field. A static map of subjects is defined in the same file.
+* `features/subjects/presentation/SubjectListTabScreen.kt:86` defines a second `data class Subject(...)`.
+
+The subject list in `SubjectListTabScreen.kt` is a static `listOf(...)` (line 40) with the subjects MATH, ENGLISH, HUNGARIAN, and SLOVAK.
 
 ---
 
-## 4. Extensibility & Phase 2 Compatibility
+## 4. Presentation Pattern
 
-* **Zero-Migration Exam Expansion:**
-  * Adding new past exam years or updated examination sheets requires zero SQL schema migrations.
-  * Bundled JSON descriptors placed in application resources are parsed and imported atomically by `DatabaseSeeder`.
+Presentation on `main` follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `ProfileViewModel.kt:40` declares `private val _profileUiState = MutableStateFlow(ProfileUiState())` and `ProfileViewModel.kt:43` exposes `val profileUiState = _profileUiState.asStateFlow()`.
 
-* **Phase 2 Ready (Habit & Gamification Engine):**
-  * The v1 data foundation directly supports Phase 2 features:
-    * The task repository feeds algorithmic 5-question daily micro-learning bites.
-    * The granular `UserProgressEntity` history directly feeds the Spaced Repetition **Error Vault** for targeted review.
-    * Existing topic categorization supports curriculum progression trees without breaking database restructuring.
+`main` does not use intents, a reducer, or a single-state MVI loop. Screens call ViewModel methods directly.
+
+One-shot messages (for example, snackbars) go through a singleton `SnackbarController` (`core/presentation/utils/snackbar/SnackbarController.kt:11`), which uses a `MutableSharedFlow` (line 14).
+
+Profile statistics are mock data on `main`. `ProfileViewModel.kt:47` calls `loadMockSubjectStats()`, and the values are hard-coded in lines 164-171.
+
+---
+
+## 5. Navigation
+
+Navigation uses JetBrains Navigation3 with `@Serializable` routes. `Route` is a `sealed interface Route : NavKey` (`core/presentation/navigation/Route.kt:8`). Routes include `Route.ExamWrite(val examId: String)` (`Route.kt:21`). The back stack is held with `rememberNavBackStack`.
+
+`NavigationRoot.kt` registers the polymorphic subclasses for `Main`, `AppOnboarding`, and `ExamWrite` (lines 28-32). `ExamWrite` renders `ExamWriteScreen()` (lines 64-66). `ExamWriteScreen` currently displays the text "Exam Write Screen" (`features/examTaking/ExamWriteScreen.kt:25`). The `History` tab shows a placeholder text (`core/presentation/navigation/MainFrame/MainFrameNavigation.kt:61`).
+
+Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(it)` to the back stack (lines 33-34). `ExamSelectionScreen.kt` reads the subject from the static `SubjectStaticData` (line 44) and has a `// TODO: Use Koin to inject the ViewModel` comment (line 39). The exam list is not connected to a data source on `main`, and tapping an exam does not open `ExamWriteScreen` with an exam ID.
+
+---
+
+## 6. Responsive Layout
+
+`MainFrame.kt` wraps its content in `BoxWithConstraints` (line 38) and sets `isDesktop = maxWidth > LayoutConstants.DesktopThreshold` (line 40). `LayoutConstants.DesktopThreshold` is `600.dp` (`StatickUiSettings.kt:33`). Below the threshold, the frame uses a `NavigationBar` (line 84). At or above the threshold, it uses a `NavigationRail` (line 46).
+
+`ProfileScreen.kt:136` contains its own check, `val isDesktop = 600.dp < this.maxWidth`, which duplicates the threshold instead of using the constant.
+
+---
+
+## 7. Dependency Injection and Platform Code
+
+Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:18`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`.
+
+`DbClient.kt:6` declares an empty `expect` on `main`. Its actuals are `DbClient.android.kt:6` and `DbClient.jvm.kt:4`.
+
+`Modifier.systemPadding` is declared as an `expect` in `core/presentation/androidSystemPadding.kt:5`, with actuals in the Android and JVM source sets (`androidSystemPadding.android.kt:6`, `androidSystemPadding.jvm.kt:5`).
+
+On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`composeApp/src/jvmMain/kotlin/com/madovygabor/maturimate/core/di/AppModul.jvm.kt:18`).
+
+---
+
+## 8. Preferences Storage
+
+`UserPreferencesRepositoryImpl.kt` stores preferences in DataStore. The keys are defined in a private `Keys` object (line 35): `language`, `eng_level`, `is_vpu_enabled`, `exam_date` (stored as epoch days in a `long`), and `setup_completed`. `saveUserPreferences` writes all values in a single `dataStore.edit` transaction (lines 73-80).
+
+The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. On `main`, the toggle has no effect on any timer, because no exam timer exists.
+
+---
+
+## 9. Database Layer (unmerged `database` branch only)
+
+The following describes code that exists only on the unmerged `database` branch. None of it is present on `main`.
+
+### 9.1 Components
+
+* SQLDelight 2.2.1 schema files in `composeApp/src/commonMain/sqldelight/com/madovygabor/maturimate/database/` (`ExamEntity.sq`, `ContentUnitEntity.sq`, `TaskEntity.sq`, `UserProgressEntity.sq`).
+* `DatabaseSeeder` in `features/subjectsAndExams/data/DatabaseSeeder.kt`. It parses the bundled JSON with `Json { ignoreUnknownKeys = true; coerceInputValues = true }` (lines 20-23) and writes the data inside `database.transaction` (line 38). Inserts are plain `INSERT` statements (for example `ExamEntity.sq:41-43`), so re-running the seeder against existing data is not expected to succeed. The seeder is not idempotent.
+* `ExamRepositoryImpl` in `features/subjectsAndExams/data/repository/`. It maps exceptions to `DATABASE_ERROR` and `PARSE_ERROR` (lines 87-89 and 107-109).
+* `DatabaseDriverFactory.jvm.kt` creates the database file under the user home directory (line 24) and creates the schema only when the file is new (lines 34 and 39-41). The Android driver is `AndroidSqliteDriver` with the database name `maturimate.db`.
+
+### 9.2 Schema
+
+`ExamEntity` (table root):
+
+* `id` (primary key, for example `HU_MJL_2025_MARCH_251425`), `subjectId`, `year`, `session`
+* `totalMinutes`, `vpuMinutes`, `taskCount`
+
+`ContentUnitEntity` (reading passages and other source material):
+
+* `id` (primary key), `examId` (foreign key to `ExamEntity`, `ON DELETE CASCADE`, `ContentUnitEntity.sq:33`)
+* `type`, `title`, `author`, `description`, `contentHtml`, `mediaUrl`, `sharedOptionsJson`
+
+`TaskEntity` (questions):
+
+* `id` (primary key), `examId` (foreign key, `ON DELETE CASCADE`), `contentUnitId` (nullable foreign key, `ON DELETE CASCADE`, `TaskEntity.sq:38-39`)
+* `orderIndex`, `type`, `question`, `points` (default 1), `imageUrl`, `metadataJson` (`NOT NULL`)
+
+`UserProgressEntity` (saved answers):
+
+* Composite primary key `(attemptId, taskId)` (`UserProgressEntity.sq:31`), foreign key `taskId` to `TaskEntity` with `ON DELETE CASCADE` (`UserProgressEntity.sq:34`)
+* `examId`, `userAnswer`, `isCorrect` (mapped to `kotlin.Boolean`), `earnedPoints`, `timestamp`
+
+### 9.3 Stored but not interpreted
+
+On the `database` branch, `contentHtml` and `metadataJson` are stored as strings. They are passed through the mapper (`ExamMapper.kt:82` and `:96`) and are not parsed or rendered. `sharedOptionsJson` is written as `null` by the seeder (`DatabaseSeeder.kt:62`). No code on the `database` branch parses `metadataJson` into typed answer data.
+
+### 9.4 Enum mapping
+
+`TaskType` (`features/subjectsAndExams/domain/model/ExamTypes.kt`) has the values `CHOICE`, `INPUT`, `CHOICE_5`, `WORD_FORMATION`, `GAP_FILL_SELECTION`, and `UNKNOWN`. `ContentUnitType` has `TEXT`, `AUDIO`, `GAP_FILL`, and `UNKNOWN`. `ExamMapper.kt:21-27` converts a string with `TaskType.valueOf` inside a try-catch and returns `UNKNOWN` for any unrecognised value. The bundled `HU_MJL_2025.json` contains two tasks with type `CANCELED`, which is not in the enum, so those two tasks map to `UNKNOWN`.
+
+### 9.5 Subject and exam identifiers
+
+On the `database` branch, `StatickUiSettings.kt` maps UI subjects to database subject IDs through `dbIdMapping`:
+
+* HUNGARIAN maps to `HU_MJL`.
+* SLOVAK maps to `HU_SJSL` (Hungarian school type) or `SK_SJL` (Slovak school type).
+* ENGLISH maps to `AJ_B1` or `AJ_B2`, depending on the selected English level.
+* MATH maps to `HU_MAT` (Hungarian school type) or `SK_MAT` (Slovak school type).
+
+The bundled exam file `composeApp/src/commonMain/composeResources/files/HU_MJL_2025.json` has the exam ID `HU_MJL_2025_MARCH_251425` on line 3. The file is tracked on `origin/database` and is not present on `main`.
+
+---
+
+## 10. Extensibility
+
+On the `database` branch, the design intends that new exam years are added as JSON files and imported by `DatabaseSeeder` without SQL schema changes. This has not been tested with more than one bundled exam file.
+
+The `UserProgressEntity` table is intended to store per-attempt answers. No code on `main` writes to it, and no screen reads it.
