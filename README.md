@@ -1,6 +1,6 @@
 # MaturiMate
 
-> Kotlin Multiplatform app for Android and desktop (JVM), in early development. The product goal, described in [VISION.md](VISION.md), is an offline exam preparation tool for high school students who take the graduation exam (*maturita*) in Slovakia.
+> Kotlin Multiplatform app for Android and desktop (JVM), in early development. The product goal is an offline-first learning app (short lessons and practice tasks) for high school students who prepare for the graduation exam (*maturita*) in Slovakia. [VISION.md](VISION.md) still describes the earlier plan; see the update below.
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.9.1-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
@@ -9,8 +9,45 @@
 [![Database](https://img.shields.io/badge/Database-SQLDelight_(unmerged_branch)-lightgrey.svg)](https://cashapp.github.io/sqldelight/)
 [![DI](https://img.shields.io/badge/DI-Koin_4.1.1-red.svg)](https://insert-koin.io/)
 
+## Update, 2026-10-22: change of plan
+
+**The plan changed.** This README and the other documents (VISION, ROADMAP, ARCHITECTURE) still describe the old plan, where the first version digitised the official Slovak graduation exam papers. The new first version (V1) uses only content written for this project. The official papers move to a later V2, and only if the exam authority (NIVAM) gives permission. The "Current status" section below still describes the code accurately; the "Planned" parts and the other documents will be updated step by step.
+
+### Why: the problems and barriers
+
+- **Copyright.** The official papers and audio are copyrighted, so using them needs permission. The repository may become public, so real exam content cannot live in it.
+- **Effort.** Digitising real papers (task formats, answer keys, audio, accommodation variants, missing keys and papers) took much more work than expected.
+- **The hard parts are not the code.** They are content production, legal questions and offline sync.
+- **Dependency on a third party.** A release would have to wait for a permission that may take long or never come.
+
+### Why: the new approach is better, faster and works
+
+- **No legal dependency.** The app can be released at any time.
+- **Full control** over content, difficulty and topics.
+- **A stronger idea.** Short lessons with practice tasks (micro-learning) beat another copy of freely available exam papers.
+- **Much smaller scope and risk.** One subject and one platform are enough to start, so a working app comes sooner.
+- **A better position for V2.** With real users and usage numbers, a later request for permission is stronger. If it is refused, the app still lives on its own content.
+- **No redesign needed.** The planned database design stays compatible: a new subject, lesson or task is new data, not new code.
+
+**Content sources for V1.** The content is written for this project, from four sources:
+
+- **My own experience.** I have been through the graduation exam myself, so the lessons and tasks come from what I learned and how I prepared. This includes notes and study material I worked out myself in high school.
+- **Teachers.** Lessons and tasks written together with teachers, who contribute only with their written permission.
+- **AI.** AI helps to draft and extend lessons and tasks, and a human reviews everything before it goes into the app.
+- **Legally available material.** Sources that can be used legally, such as public-domain texts. Published textbooks and workbooks are not copied.
+
+**What happens next.**
+
+1. Android only, one subject: short lessons, practice tasks, a streak and simple progress.
+2. More subjects on the same engine, where a new subject, lesson or task is new data and not new code.
+3. More platforms (a desktop target already exists in the project; iOS and web later).
+4. V2: official exam content, only with permission.
+
+The app stays offline-first.
+
 ## Table of contents
 
+- [Update, 2026-10-22: change of plan](#update-2026-10-22-change-of-plan)
 - [Current status](#current-status)
 - [Technology](#technology)
 - [Architecture](#architecture)
@@ -37,18 +74,22 @@ This section describes the `main` branch. Work that exists only on the unmerged 
 
 ### In progress
 
-- On the unmerged `database` branch (not in `main`): SQLDelight schema (four tables), `DatabaseSeeder`, and database-backed subject and exam selection.
+- On the unmerged `database` branch (not in `main`): SQLDelight schema (four tables), `DatabaseSeeder`, and database-backed subject and exam selection. This branch follows the earlier plan (official exam papers), so its schema will be reworked before it is merged.
 - On `main`, the subject and exam selection screens are a static shell. They read hard-coded subject data and do not load exams.
 
 ### Planned
 
-- Exam runner: reading passage view, multiple-choice and short-answer inputs, exam timer.
-- Automatic time extension for VPUS/SNI students.
-- Grading, result screen and exam history.
-- Slovak (`SK_SJL`), English (B1/B2) and Mathematics content, with their input types.
+Under the new plan (see the update above):
+
+- Short lessons with practice tasks for one subject, on Android first.
+- Daily streak and simple progress based on real attempt data.
+- Offline-first storage: content shipped with the app, user progress stored separately.
 - Full localization of UI strings.
-- Subject and profile statistics from real attempt data.
-- Phase 2 features (daily micro-lessons, streaks, topic trees, error review), see [VISION.md](VISION.md) and [ROADMAP.md](ROADMAP.md).
+- More subjects and platforms later, see [ROADMAP.md](ROADMAP.md) (not yet updated to the new plan).
+
+Postponed to V2, only with permission from the exam authority: official exam papers, the exam runner with timer, VPUS/SNI time extension, and the exam-specific subject content (`SK_SJL`, English B1/B2, Mathematics).
+
+Open question: the VPUS/SNI toggle and the English level (B1/B2) setting from onboarding were built for the exam plan. Whether they stay in V1 is not decided yet.
 
 ## Technology
 
@@ -183,6 +224,8 @@ Desktop packaging is configured for Dmg, Msi and Deb (`composeApp/build.gradle.k
 I design the architecture and make the technical decisions myself. AI assistants help with boilerplate, documentation and drafts and speed up implementation; I review what goes into the repository.
 
 ## Documentation
+
+The documents below were written for the earlier plan (digitising official exam papers) and have not been updated yet. Where they disagree with the update at the top of this README, the update wins.
 
 - [VISION.md](VISION.md): product goal, personas and planned scope.
 - [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch.
