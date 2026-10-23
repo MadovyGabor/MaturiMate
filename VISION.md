@@ -22,17 +22,13 @@ All content is written for this project. Following the exam's task formats, topi
 
 ---
 
-## 2. Target Audience & Personas
+## 2. Target Audience
 
-* **Primary Persona — Minority Track High Schooler:**
-  * Bilingual student attending a Hungarian-curriculum grammar or vocational school in Slovakia.
-  * Needs focused drills for Slovak language requirements alongside native literature and language exams.
+MaturiMate is for high school students in Slovakia who prepare for the graduation exam:
 
-* **Secondary Persona — Standard Curriculum Student:**
-  * Slovak track high schooler preparing for the graduation exam.
-
-* **Universal Student Need:**
-  * Wants short, clear lessons and realistic practice with instant feedback, without juggling paper sheets or external answer keys.
+* **Students at schools with Hungarian as the language of instruction.** They prepare for Hungarian Language & Literature and for Slovak Language, alongside a foreign language and Mathematics.
+* **Students at schools with Slovak as the language of instruction.** They prepare for the Slovak Language & Literature exam, alongside a foreign language and Mathematics.
+* **Any student who wants short, clear lessons and realistic practice with instant feedback,** without juggling paper sheets or external answer keys.
 
 ---
 
