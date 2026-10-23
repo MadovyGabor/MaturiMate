@@ -85,7 +85,7 @@ Under the new plan (see the update above):
 - Daily streak and simple progress based on real attempt data.
 - Offline-first storage: content shipped with the app, user progress stored separately.
 - Full localization of UI strings.
-- More subjects and platforms later, see [ROADMAP.md](ROADMAP.md) (not yet updated to the new plan).
+- More subjects and platforms later, see [ROADMAP.md](ROADMAP.md).
 
 Postponed to V2, only with permission from the exam authority: official exam papers, the exam runner with timer, VPUS/SNI time extension, and the exam-specific subject content (`SK_SJL`, English B1/B2, Mathematics).
 
@@ -225,8 +225,6 @@ I design the architecture and make the technical decisions myself. AI assistants
 
 ## Documentation
 
-The documents below were written for the earlier plan (digitising official exam papers) and have not been updated yet. Where they disagree with the update at the top of this README, the update wins.
-
-- [VISION.md](VISION.md): product goal, personas and planned scope.
-- [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch.
-- [ROADMAP.md](ROADMAP.md): milestones with checkbox status.
+- [VISION.md](VISION.md): product goal, target audience, content sources and planned scope, updated for the own-content plan.
+- [ROADMAP.md](ROADMAP.md): milestones in working order, with the offline-first data architecture.
+- [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch. Sections 1 to 8 describe the code on `main`. Sections 9 and 10 describe the exam-centred database design of the earlier plan, and section 11 summarises the planned data architecture.
