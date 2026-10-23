@@ -11,7 +11,7 @@
 
 ## Update, 2026-10-22: change of plan
 
-**The plan changed.** This README and the other documents (VISION, ROADMAP, ARCHITECTURE) still describe the old plan, where the first version digitised the official Slovak graduation exam papers. The new first version (V1) uses only content written for this project. The official papers move to a later V2, and only if the exam authority (NIVAM) gives permission. The "Current status" section below still describes the code accurately; the "Planned" parts and the other documents will be updated step by step.
+**The plan changed.** The original plan was that the first version digitises the official Slovak graduation exam papers. The new first version (V1) uses only content written for this project. The official papers move to a later V2, and only if the exam authority (NIVAM) gives permission. The "Current status" section below describes the code on `main`; the "Planned" section, [VISION.md](VISION.md), [ROADMAP.md](ROADMAP.md) and [ARCHITECTURE.md](ARCHITECTURE.md) follow the new plan.
 
 ### Why: the problems and barriers
 
@@ -64,7 +64,7 @@ This section describes the `main` branch. Work that exists only on the unmerged 
 ### Built
 
 - One Kotlin Multiplatform project with an Android target and a desktop (JVM) target. About 96% of production Kotlin lines (3777 of 3949 non-blank lines) are in `commonMain`.
-- Onboarding: welcome screen, language choice (HU or SK), English level (B1 or B2), graduation date picker with validation, and a VPUS/SNI toggle. The toggle value is stored, but no exam timer exists yet, so it does not change any time limit.
+- Onboarding: welcome screen, language choice (HU or SK), English level (B1 or B2), graduation date picker with validation, and a VPUS/SNI toggle. The toggle value is stored, but no exam timer exists yet, so it does not change any time limit. The VPUS/SNI time extension is dropped from the plan, so the toggle will be removed during the onboarding rework.
 - User settings are persisted with Jetpack DataStore.
 - Profile screen: days left until the graduation date, and edit dialogs for the date, language and level.
 - Adaptive navigation: a bottom `NavigationBar` below 600 dp and a `NavigationRail` at 600 dp and above.
@@ -85,11 +85,11 @@ Under the new plan (see the update above):
 - Daily streak and simple progress based on real attempt data.
 - Offline-first storage: content shipped with the app, user progress stored separately.
 - Full localization of UI strings.
-- More subjects and platforms later, see [ROADMAP.md](ROADMAP.md) (not yet updated to the new plan).
+- More subjects and platforms later, see [ROADMAP.md](ROADMAP.md).
 
-Postponed to V2, only with permission from the exam authority: official exam papers, the exam runner with timer, VPUS/SNI time extension, and the exam-specific subject content (`SK_SJL`, English B1/B2, Mathematics).
+Postponed to V2, only with permission from the exam authority: official exam papers and the exam-specific subject content (`SK_SJL`, English B1/B2, Mathematics).
 
-Open question: the VPUS/SNI toggle and the English level (B1/B2) setting from onboarding were built for the exam plan. Whether they stay in V1 is not decided yet.
+Open question: the English level (B1/B2) setting from onboarding was built for the exam plan. Whether it stays in V1 is not decided yet. The VPUS/SNI toggle is removed (see the ROADMAP).
 
 ## Technology
 
@@ -225,8 +225,6 @@ I design the architecture and make the technical decisions myself. AI assistants
 
 ## Documentation
 
-The documents below were written for the earlier plan (digitising official exam papers) and have not been updated yet. Where they disagree with the update at the top of this README, the update wins.
-
-- [VISION.md](VISION.md): product goal, personas and planned scope.
-- [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch.
-- [ROADMAP.md](ROADMAP.md): milestones with checkbox status.
+- [VISION.md](VISION.md): product goal, target audience, content sources and planned scope, updated for the own-content plan.
+- [ROADMAP.md](ROADMAP.md): milestones in working order, with the offline-first data architecture.
+- [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch. Sections 1 to 8 describe the code on `main`. Sections 9 and 10 describe the exam-centred database design of the earlier plan, and section 11 summarises the planned data architecture.

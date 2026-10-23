@@ -4,6 +4,8 @@ This document describes the architecture of the `main` branch and, separately, t
 
 For the current status of each part, see the "Current status" section of the [README](README.md).
 
+> **Updated 2026-10-22: change of plan.** The first version now uses only content written for this project (short lessons and practice tasks), and the official exam papers moved to a later version (see the [README](README.md)). Sections 1 to 8 describe the code on `main` and are not affected. Sections 9 and 10 describe the database work of the earlier, exam-centred plan. The planned data architecture is in section 11.
+
 ---
 
 ## 1. Technology Stack
@@ -115,13 +117,15 @@ On desktop, the app data directory is `System.getProperty("user.home")` plus `.m
 
 `UserPreferencesRepositoryImpl.kt` stores preferences in DataStore. The keys are defined in a private `Keys` object (line 35): `language`, `eng_level`, `is_vpu_enabled`, `exam_date` (stored as epoch days in a `long`), and `setup_completed`. `saveUserPreferences` writes all values in a single `dataStore.edit` transaction (lines 73-80).
 
-The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. On `main`, the toggle has no effect on any timer, because no exam timer exists.
+The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. On `main`, the toggle has no effect on any timer, because no exam timer exists. Under the current plan the VPUS/SNI time extension is dropped, so the toggle and its stored value (`is_vpu_enabled`) will be removed during the onboarding rework (see the [ROADMAP](ROADMAP.md)).
 
 ---
 
 ## 9. Database Layer (unmerged `database` branch only)
 
 The following describes code that exists only on the unmerged `database` branch. None of it is present on `main`.
+
+This design follows the earlier plan (official exam papers as the main content), so the schema is centred on the exam (`ExamEntity`). It will be reworked for the lesson-based structure before it is used; see section 11. Drivers and the seeder idea can be reused.
 
 ### 9.1 Components
 
@@ -175,6 +179,22 @@ The bundled exam file `composeApp/src/commonMain/composeResources/files/HU_MJL_2
 
 ## 10. Extensibility
 
-On the `database` branch, the design intends that new exam years are added as JSON files and imported by `DatabaseSeeder` without SQL schema changes. This has not been tested with more than one bundled exam file.
+Under the earlier plan, the `database` branch was designed so that new exam years could be added as JSON files and imported by `DatabaseSeeder` without schema changes. This was not tested with more than one bundled exam file. Under the current plan, the same idea applies to lessons and tasks: a new subject, lesson or task is new data loaded by an importer, not new code (see section 11).
 
 The `UserProgressEntity` table is intended to store per-attempt answers. No code on `main` writes to it, and no screen reads it.
+
+---
+
+## 11. Planned data architecture (not implemented)
+
+This section describes the target design under the current plan. None of it is present on `main`. The details and the order of work are in the [ROADMAP](ROADMAP.md#data-architecture-offline-first).
+
+The app is offline-first and uses three databases with clear roles:
+
+* **Server database (PostgreSQL):** the source of truth for all content and, later, for accounts and synced user data. The app never talks to it directly; a backend holds the credentials, and passwords are stored hashed.
+* **Content database (SQLite, on the phone):** read-only, shipped inside the app as a prebuilt file, and replaced as a whole when a newer `content_version` exists (check the version, download to a temporary location, verify size and hash, then swap). There is no row-level sync for content.
+* **User database (SQLite, on the phone):** attempts, answers, streak and settings. A content update never touches it. It refers to tasks by UUID only, because there is no foreign key across the two files, and tasks are marked inactive instead of being deleted so old attempts never point to nothing.
+
+User data flows mainly from the phone to the server through an append-only outbox of unsent attempts, so conflicts are rare. The server sends it back only on a new device or a restore. Settings and streak use last write wins. Until accounts exist, the user database is local only.
+
+The SQLite schema is written separately as SQLDelight `.sq` files, because SQLite has no native UUID, boolean, decimal or timestamp types. Table and column names stay identical to PostgreSQL, so the export and the sync stay simple. Lessons and tasks are written as files, loaded by an importer into PostgreSQL, and exported into the prebuilt content file.
