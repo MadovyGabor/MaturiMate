@@ -34,6 +34,9 @@ koin = "4.1.1"
 sqldelight = "2.2.1"
 kotlinSerialization = "1.9.0"
 
+# Content pipeline (tools/content-pipeline)
+postgresql = "42.7.4"
+
 [libraries]
 # For Compose Multiplatform
 jetbrains-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "cmpNavigation3" }
@@ -43,7 +46,7 @@ jetbrains-lifecycle-viewmodel-nav3 = { module = "org.jetbrains.androidx.lifecycl
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # Kotlinx Serialization
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "kotlinSerialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
 
 # Dependency Injection (Koin)
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
@@ -75,6 +78,7 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "a
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 
 [plugins]
@@ -83,6 +87,7 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 #Kotlin Serialization Plugin
 kotlin-Serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

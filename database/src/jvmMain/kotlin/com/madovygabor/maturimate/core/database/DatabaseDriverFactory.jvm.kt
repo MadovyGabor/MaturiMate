@@ -20,4 +20,4 @@ actual class DatabaseDriverFactory(private val appDir: File) {
     }
 }
 
-internal fun foreignKeysOn() = Properties().apply { put("foreign_keys", "true") }
+fun foreignKeysOn() = Properties().apply { put("foreign_keys", "true") }

@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -46,8 +45,7 @@ kotlin {
 
             // JSON & Database
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.sqldelight.runtime)
-            implementation(libs.sqldelight.coroutines)
+            implementation(projects.database)
 
             //DataStore
             api(libs.datastore)
@@ -62,9 +60,6 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
 
-            // SQLDelight Android driver
-            implementation(libs.sqldelight.android.driver)
-
             //Koin Android
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
@@ -77,8 +72,6 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            // SQLDelight JVM driver
-            implementation(libs.sqldelight.jvm.driver)
         }
 
         commonTest.dependencies {
@@ -127,21 +120,6 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.madovygabor.maturimate"
             packageVersion = "1.0.0"
-        }
-    }
-}
-
-sqldelight {
-    databases {
-        // Read-only content database, shipped as a prebuilt file
-        create("ContentDatabase") {
-            packageName.set("com.madovygabor.maturimate.database.content")
-            srcDirs.setFrom("src/commonMain/sqldelight/content")
-        }
-        // User database: progress and settings of the local user
-        create("UserDatabase") {
-            packageName.set("com.madovygabor.maturimate.database.user")
-            srcDirs.setFrom("src/commonMain/sqldelight/user")
         }
     }
 }

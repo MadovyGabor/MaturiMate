@@ -33,3 +33,5 @@ plugins {
 }
 
 include(":composeApp")
+include(":database")
+include(":tools:content-pipeline")
