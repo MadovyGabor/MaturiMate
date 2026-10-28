@@ -1,0 +1,50 @@
+-- Study streak and daily activity of the user. Same tables as in db/postgres/01_ddl.sql,
+-- without the foreign keys to app_user.
+CREATE TABLE user_streak (
+    user_id             INTEGER NOT NULL,
+    current_streak      INTEGER NOT NULL DEFAULT 0,
+    longest_streak      INTEGER NOT NULL DEFAULT 0,
+    last_activity_date  TEXT,
+    CONSTRAINT pk_user_streak PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_streak_values
+        CHECK (current_streak >= 0 AND longest_streak >= current_streak)
+);
+
+CREATE TABLE activity_log (
+    activity_id      INTEGER CONSTRAINT pk_activity_log PRIMARY KEY,
+    user_id          INTEGER NOT NULL,
+    activity_date    TEXT    NOT NULL,
+    xp_earned        INTEGER NOT NULL DEFAULT 0,
+    minutes_studied  INTEGER NOT NULL DEFAULT 0,
+    tasks_answered   INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT uq_activity_log_day UNIQUE (user_id, activity_date),
+    CONSTRAINT ck_activity_log_values
+        CHECK (xp_earned >= 0 AND minutes_studied >= 0 AND tasks_answered >= 0)
+);
+
+selectStreak:
+SELECT * FROM user_streak WHERE user_id = :userId;
+
+upsertStreak:
+INSERT OR REPLACE INTO user_streak VALUES ?;
+
+selectActivity:
+SELECT * FROM activity_log
+WHERE user_id = :userId AND activity_date BETWEEN :fromDate AND :toDate
+ORDER BY activity_date;
+
+-- adds to the day's row, creating it on the first activity of the day
+-- (no ON CONFLICT upsert: the SQLite of Android API 24 is older than 3.24)
+addActivity {
+    INSERT OR IGNORE INTO activity_log (user_id, activity_date)
+    VALUES (:userId, :activityDate);
+
+    UPDATE activity_log SET
+        xp_earned = xp_earned + :xp,
+        minutes_studied = minutes_studied + :minutes,
+        tasks_answered = tasks_answered + :tasks
+    WHERE user_id = :userId AND activity_date = :activityDate;
+}
+
+selectTotalXp:
+SELECT coalesce(sum(xp_earned), 0) FROM activity_log WHERE user_id = :userId;

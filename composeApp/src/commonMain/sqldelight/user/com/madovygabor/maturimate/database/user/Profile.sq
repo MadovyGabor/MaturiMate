@@ -1,0 +1,66 @@
+-- Profile, settings and subjects of the user. Same tables as in db/postgres/01_ddl.sql,
+-- without the foreign keys to app_user and subject (server-only and content-database tables).
+CREATE TABLE user_profile (
+    user_id            INTEGER NOT NULL,
+    first_name         TEXT    NOT NULL,
+    last_name          TEXT    NOT NULL,
+    display_name       TEXT,
+    date_of_birth      TEXT    NOT NULL,
+    school_type        TEXT,
+    teaching_language  TEXT,
+    graduation_date    TEXT,
+    CONSTRAINT pk_user_profile PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_profile_birth CHECK (date_of_birth >= '1900-01-01'),
+    CONSTRAINT ck_user_profile_school_type
+        CHECK (school_type IN ('GYMNASIUM', 'VOCATIONAL', 'OTHER')),
+    CONSTRAINT ck_user_profile_language CHECK (teaching_language IN ('SK', 'HU'))
+);
+
+CREATE TABLE user_settings (
+    user_id             INTEGER NOT NULL,
+    ui_language         TEXT    NOT NULL DEFAULT 'SK',
+    timezone            TEXT    NOT NULL DEFAULT 'Europe/Bratislava',
+    theme               TEXT    NOT NULL DEFAULT 'SYSTEM',
+    daily_goal_minutes  INTEGER DEFAULT 10,
+    reminder_enabled    INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0 CHECK (reminder_enabled IN (0, 1)),
+    reminder_time       TEXT,
+    CONSTRAINT pk_user_settings PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_settings_language CHECK (ui_language IN ('SK', 'HU')),
+    CONSTRAINT ck_user_settings_theme CHECK (theme IN ('LIGHT', 'DARK', 'SYSTEM')),
+    CONSTRAINT ck_user_settings_goal
+        CHECK (daily_goal_minutes BETWEEN 1 AND 240),
+    CONSTRAINT ck_user_settings_reminder
+        CHECK (reminder_enabled = 0 OR reminder_time IS NOT NULL)
+);
+
+CREATE TABLE user_subject (
+    user_id       INTEGER NOT NULL,
+    subject_id    INTEGER NOT NULL,
+    target_score  REAL,
+    source        TEXT    NOT NULL DEFAULT 'CHOSEN',
+    added_at      INTEGER NOT NULL,
+    CONSTRAINT pk_user_subject PRIMARY KEY (user_id, subject_id),
+    CONSTRAINT ck_user_subject_score CHECK (target_score BETWEEN 0 AND 100),
+    CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN'))
+);
+
+selectProfile:
+SELECT * FROM user_profile WHERE user_id = :userId;
+
+upsertProfile:
+INSERT OR REPLACE INTO user_profile VALUES ?;
+
+selectSettings:
+SELECT * FROM user_settings WHERE user_id = :userId;
+
+upsertSettings:
+INSERT OR REPLACE INTO user_settings VALUES ?;
+
+selectSubjects:
+SELECT * FROM user_subject WHERE user_id = :userId ORDER BY added_at;
+
+insertSubject:
+INSERT OR IGNORE INTO user_subject VALUES ?;
+
+deleteSubject:
+DELETE FROM user_subject WHERE user_id = :userId AND subject_id = :subjectId;

@@ -1,0 +1,21 @@
+-- Catalogue of subjects. Same table as `subject` in db/postgres/01_ddl.sql.
+CREATE TABLE subject (
+    subject_id   INTEGER NOT NULL,
+    code         TEXT    NOT NULL,
+    name_hu      TEXT    NOT NULL,
+    name_sk      TEXT    NOT NULL,
+    track        TEXT    NOT NULL,
+    description  TEXT,
+    CONSTRAINT pk_subject      PRIMARY KEY (subject_id),
+    CONSTRAINT uq_subject_code UNIQUE (code),
+    CONSTRAINT ck_subject_track CHECK (track IN ('HU', 'SK', 'BOTH'))
+);
+
+selectAll:
+SELECT * FROM subject ORDER BY subject_id;
+
+selectByCode:
+SELECT * FROM subject WHERE code = :code;
+
+insert:
+INSERT INTO subject VALUES ?;

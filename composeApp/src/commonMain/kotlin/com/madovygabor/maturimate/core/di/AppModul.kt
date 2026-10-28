@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.di
 
+import com.madovygabor.maturimate.core.database.createUserDatabase
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
 import com.madovygabor.maturimate.features.appOnboarding.data.UserPreferencesRepositoryImpl
@@ -23,6 +24,9 @@ expect val platformModule : org.koin.core.module.Module
 val sharedModule = module {
 
     // Data Sources & Repositories
+
+    // Local user database (progress, settings); opened on first use
+    single { createUserDatabase(get()) }
 
     // Binds the implementation to the interface for clean architecture
     singleOf(::UserPreferencesRepositoryImpl) { bind<UserPreferencesRepository>() }

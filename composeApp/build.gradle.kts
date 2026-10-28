@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -126,6 +127,21 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.madovygabor.maturimate"
             packageVersion = "1.0.0"
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        // Read-only content database, shipped as a prebuilt file
+        create("ContentDatabase") {
+            packageName.set("com.madovygabor.maturimate.database.content")
+            srcDirs.setFrom("src/commonMain/sqldelight/content")
+        }
+        // User database: progress and settings of the local user
+        create("UserDatabase") {
+            packageName.set("com.madovygabor.maturimate.database.user")
+            srcDirs.setFrom("src/commonMain/sqldelight/user")
         }
     }
 }

@@ -1,0 +1,17 @@
+-- Catalogue of task formats (choice or typed answer).
+CREATE TABLE task_format (
+    task_format_id  INTEGER NOT NULL,
+    code            TEXT    NOT NULL,
+    name            TEXT    NOT NULL,
+    answer_mode     TEXT    NOT NULL,
+    description     TEXT,
+    CONSTRAINT pk_task_format PRIMARY KEY (task_format_id),
+    CONSTRAINT uq_task_format_code UNIQUE (code),
+    CONSTRAINT ck_task_format_mode CHECK (answer_mode IN ('CHOICE', 'TEXT'))
+);
+
+selectAll:
+SELECT * FROM task_format;
+
+insert:
+INSERT INTO task_format VALUES ?;

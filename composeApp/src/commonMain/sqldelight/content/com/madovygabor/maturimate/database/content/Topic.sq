@@ -1,0 +1,48 @@
+-- Curriculum tree; leaf topics are the units of the learning path.
+CREATE TABLE topic (
+    topic_id         INTEGER NOT NULL,
+    subject_id       INTEGER,
+    parent_topic_id  INTEGER,
+    title            TEXT    NOT NULL,
+    description      TEXT,
+    order_index      INTEGER NOT NULL,
+    is_published     INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0 CHECK (is_published IN (0, 1)),
+    CONSTRAINT pk_topic PRIMARY KEY (topic_id),
+    CONSTRAINT fk_topic_subject FOREIGN KEY (subject_id)
+        REFERENCES subject (subject_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_topic_parent FOREIGN KEY (parent_topic_id)
+        REFERENCES topic (topic_id) ON DELETE RESTRICT,
+    CONSTRAINT uq_topic_parent_order UNIQUE (parent_topic_id, order_index),
+    CONSTRAINT ck_topic_root_subject
+        CHECK ((parent_topic_id IS NULL) = (subject_id IS NOT NULL)),
+    CONSTRAINT ck_topic_not_own_parent CHECK (parent_topic_id <> topic_id)
+);
+
+-- roots of the topic tree are unique per subject
+CREATE UNIQUE INDEX uq_topic_root_order ON topic (subject_id, order_index)
+    WHERE parent_topic_id IS NULL;
+
+selectRootsBySubject:
+SELECT * FROM topic
+WHERE subject_id = :subjectId AND is_published = 1
+ORDER BY order_index;
+
+selectChildren:
+SELECT * FROM topic
+WHERE parent_topic_id = :parentTopicId AND is_published = 1
+ORDER BY order_index;
+
+selectById:
+SELECT * FROM topic WHERE topic_id = :topicId;
+
+-- the topic and every topic below it
+selectSubtreeIds:
+WITH RECURSIVE subtree(id) AS (
+    SELECT topic_id FROM topic WHERE topic_id = :topicId
+    UNION ALL
+    SELECT t.topic_id FROM topic t JOIN subtree s ON t.parent_topic_id = s.id
+)
+SELECT id FROM subtree;
+
+insert:
+INSERT INTO topic VALUES ?;

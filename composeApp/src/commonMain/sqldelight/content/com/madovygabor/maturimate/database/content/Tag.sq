@@ -1,0 +1,35 @@
+-- Keywords (author, work, period, concept) and their links to tasks.
+CREATE TABLE tag (
+    tag_id      INTEGER NOT NULL,
+    name        TEXT    NOT NULL,
+    tag_type    TEXT    NOT NULL DEFAULT 'CONCEPT',
+    created_at  INTEGER NOT NULL,
+    CONSTRAINT pk_tag PRIMARY KEY (tag_id),
+    CONSTRAINT uq_tag_name UNIQUE (name),
+    CONSTRAINT ck_tag_type CHECK (tag_type IN ('AUTHOR', 'WORK', 'PERIOD', 'CONCEPT'))
+);
+
+CREATE TABLE task_tag (
+    task_id   INTEGER NOT NULL,
+    tag_id    INTEGER NOT NULL,
+    added_at  INTEGER NOT NULL,
+    CONSTRAINT pk_task_tag PRIMARY KEY (task_id, tag_id),
+    CONSTRAINT fk_task_tag_task FOREIGN KEY (task_id)
+        REFERENCES task (task_id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_tag_tag FOREIGN KEY (tag_id)
+        REFERENCES tag (tag_id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_task_tag_tag ON task_tag (tag_id);
+
+selectAll:
+SELECT * FROM tag ORDER BY name;
+
+selectByTask:
+SELECT tag.* FROM tag JOIN task_tag USING (tag_id) WHERE task_tag.task_id = :taskId;
+
+insert:
+INSERT INTO tag VALUES ?;
+
+insertTaskTag:
+INSERT INTO task_tag VALUES ?;
