@@ -1,0 +1,28 @@
+{
+  "learning_unit_id": 101,
+  "title": "Gyakorlás",
+  "estimated_minutes": 4,
+  "round_size": 3,
+  "sort_order": 2,
+  "is_published": true,
+  "source_type": "OWN",
+  "tasks": [
+    {
+      "task_id": 1001
+    },
+    {
+      "task_id": 1002
+    },
+    {
+      "task_id": 1003
+    },
+    {
+      "task_id": 1004,
+      "is_core": false
+    },
+    {
+      "task_id": 1005,
+      "is_core": false
+    }
+  ]
+}
