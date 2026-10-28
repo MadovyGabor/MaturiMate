@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -17,10 +18,21 @@ kotlin {
 
     jvm()
 
+    // Android and desktop share the java.io file code of the content installer
+    applyDefaultHierarchyTemplate {
+        common {
+            group("jvmShared") {
+                withAndroidTarget()
+                withJvm()
+            }
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.sqldelight.runtime)
             api(libs.sqldelight.coroutines)
+            implementation(libs.kotlinx.serialization.json)
         }
         androidMain.dependencies {
             implementation(libs.sqldelight.android.driver)

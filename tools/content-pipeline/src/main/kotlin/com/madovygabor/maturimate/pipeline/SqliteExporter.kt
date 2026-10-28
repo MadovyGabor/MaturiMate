@@ -3,6 +3,8 @@ package com.madovygabor.maturimate.pipeline
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.madovygabor.maturimate.core.database.CONTENT_DATABASE_NAME
+import com.madovygabor.maturimate.core.database.ContentManifest
 import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.database.content.ContentDatabase
 import com.madovygabor.maturimate.database.content.Learning_unit
@@ -17,25 +19,12 @@ import com.madovygabor.maturimate.database.content.Task_option
 import com.madovygabor.maturimate.database.content.Task_tag
 import com.madovygabor.maturimate.database.content.Topic
 import com.madovygabor.maturimate.database.content.Unit_task
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import java.io.File
 import java.security.MessageDigest
 import java.sql.DriverManager
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
-/** `content-manifest.json`: tells the app which content file is the newest and how to check it. */
-@Serializable
-data class ContentManifest(
-    @SerialName("content_version") val contentVersion: Long,
-    @SerialName("schema_version") val schemaVersion: Long,
-    @SerialName("file_name") val fileName: String,
-    @SerialName("size_bytes") val sizeBytes: Long,
-    val sha256: String,
-)
 
 class ExportException(message: String) : Exception(message)
 
@@ -79,7 +68,7 @@ class SqliteExporter {
             sizeBytes = bytes.size.toLong(),
             sha256 = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) },
         )
-        File(outDir, MANIFEST_FILE_NAME).writeText(json.encodeToString(ContentManifest.serializer(), manifest) + "\n")
+        File(outDir, ContentManifest.FILE_NAME).writeText(manifest.toJson())
         return manifest
     }
 
@@ -168,8 +157,8 @@ class SqliteExporter {
     private fun checkNothingRemoved(content: ContentSet, previous: File, contentVersion: Long) {
         if (!previous.isFile) throw ExportException("previous release not found: ${previous.path}")
         // the app only installs a file with a higher version
-        File(previous.parentFile, MANIFEST_FILE_NAME).takeIf { it.isFile }?.let { file ->
-            val old = Json.decodeFromString(ContentManifest.serializer(), file.readText())
+        File(previous.parentFile, ContentManifest.FILE_NAME).takeIf { it.isFile }?.let { file ->
+            val old = ContentManifest.fromJson(file.readText())
             if (contentVersion <= old.contentVersion) {
                 throw ExportException("content version $contentVersion must be higher than the previous ${old.contentVersion}")
             }
@@ -206,8 +195,6 @@ class SqliteExporter {
     }
 
     companion object {
-        const val CONTENT_FILE_NAME = "content.db"
-        const val MANIFEST_FILE_NAME = "content-manifest.json"
-        private val json = Json { prettyPrint = true }
+        const val CONTENT_FILE_NAME = CONTENT_DATABASE_NAME
     }
 }

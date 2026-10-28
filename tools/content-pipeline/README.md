@@ -19,6 +19,14 @@ From the repository root:
 * `--previous` is the `content.db` of the last release. The export fails if any subject, topic, learning unit or task of it is missing from the files: switch rows off (`"is_active": false`, `"is_published": false`) instead of removing them, because users' progress refers to them.
 * The schema comes from the shared `:database` module, the same code the app uses. The same files and version give a byte-identical file (same `sha256`).
 
+## Bundle into the app
+
+```bash
+./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801 -PcontentDir=content
+```
+
+Exports into `composeApp/src/commonMain/composeResources/files/` (gitignored). The app installs this file on first start, and on later starts only when its `content_version` is higher than the installed one. A build without bundled content runs, but has no lessons.
+
 ## Import (server copy)
 
 Start the local database (`docker compose up -d`, settings in `.env`), then:

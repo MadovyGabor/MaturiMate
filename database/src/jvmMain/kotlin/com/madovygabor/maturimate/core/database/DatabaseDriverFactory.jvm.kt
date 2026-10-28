@@ -18,6 +18,11 @@ actual class DatabaseDriverFactory(private val appDir: File) {
             schema = UserDatabase.Schema
         )
     }
+
+    actual fun contentStorage(): ContentStorage = FileContentStorage(appDir)
+
+    actual fun createContentDriver(): SqlDriver =
+        JdbcSqliteDriver("jdbc:sqlite:${File(appDir, CONTENT_DATABASE_NAME).absolutePath}", foreignKeysOn())
 }
 
 fun foreignKeysOn() = Properties().apply { put("foreign_keys", "true") }

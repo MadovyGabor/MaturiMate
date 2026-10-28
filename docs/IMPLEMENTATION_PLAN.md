@@ -223,7 +223,7 @@ Size: S = up to a day, M = 2–4 days, L = 1–2 weeks of part-time work. Each s
 | 1.5 | User `.sq` files (8 tables) and queries | 1.3 | M | Query tests |
 | 1.6 | Importer (section 5). **Done:** 25 validator tests, 6 writer tests against PostgreSQL | 1.2 | L | Importer tests |
 | 1.7 | Move the `.sq` files and drivers into a shared `:database` module; exporter and manifest from the files (section 4). **Done:** 9 exporter tests | 1.4, 1.6 | M | Export opens with `ContentDatabase`; same hash twice |
-| 1.8 | Content file delivery in the app | 1.7 | M | Fresh install opens the content |
+| 1.8 | Content file delivery in the app. **Done:** `ContentInstaller` (version, schema, size and SHA-256 checks, replace via a temporary file; reused for downloads later), `ContentDatabaseProvider` installs the bundled file at app start, `bundleContent` Gradle task | 1.7 | M | Fresh install opens the content |
 | 1.9 | Repositories in `commonMain` and Koin wiring | 1.4, 1.5 | M | Repository tests |
 | 1.10 | Update `ARCHITECTURE.md` and `ROADMAP.md` | 1.9 | S | Review |
 
@@ -288,4 +288,4 @@ Content starts in Milestone 1, next to the importer; `--dry-run` checks content 
 | Q3 | Content IDs written in the source files and inserted explicitly (3.1)? | Yes |
 | Q4 | "30 main topics": 30 topics or 30 lessons? | 30 leaf topics |
 | Q5 | English listening: own recordings or transcripts only? | Transcripts first |
-| Q6 | Content in this public repository or a separate private one? | Private; only the first unit and test fixtures here |
+| Q6 | ~~Content in this public repository or a separate private one?~~ | **Decided:** private repository `maturimate-content`, cloned into `content/` and gitignored |

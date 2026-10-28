@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.di
 
+import com.madovygabor.maturimate.core.database.ContentDatabaseProvider
 import com.madovygabor.maturimate.core.database.createUserDatabase
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
@@ -27,6 +28,9 @@ val sharedModule = module {
 
     // Local user database (progress, settings); opened on first use
     single { createUserDatabase(get()) }
+
+    // Read-only content database; installs the bundled content file on first use
+    singleOf(::ContentDatabaseProvider)
 
     // Binds the implementation to the interface for clean architecture
     singleOf(::UserPreferencesRepositoryImpl) { bind<UserPreferencesRepository>() }
