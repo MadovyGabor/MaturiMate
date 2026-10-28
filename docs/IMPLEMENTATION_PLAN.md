@@ -224,7 +224,7 @@ Size: S = up to a day, M = 2–4 days, L = 1–2 weeks of part-time work. Each s
 | 1.6 | Importer (section 5). **Done:** 25 validator tests, 6 writer tests against PostgreSQL | 1.2 | L | Importer tests |
 | 1.7 | Move the `.sq` files and drivers into a shared `:database` module; exporter and manifest from the files (section 4). **Done:** 9 exporter tests | 1.4, 1.6 | M | Export opens with `ContentDatabase`; same hash twice |
 | 1.8 | Content file delivery in the app. **Done:** `ContentInstaller` (version, schema, size and SHA-256 checks, replace via a temporary file; reused for downloads later), `ContentDatabaseProvider` installs the bundled file at app start, `bundleContent` Gradle task | 1.7 | M | Fresh install opens the content |
-| 1.9 | Repositories in `commonMain` and Koin wiring | 1.4, 1.5 | M | Repository tests |
+| 1.9 | Repositories in `commonMain` and Koin wiring. **Done:** `features/learning` with domain models, `ContentRepository` and `ProgressRepository` interfaces (domain), SQLDelight implementations and mappers (data); generated classes stay in the data layer; 15 repository tests | 1.4, 1.5 | M | Repository tests |
 | 1.10 | Update `ARCHITECTURE.md` and `ROADMAP.md` | 1.9 | S | Review |
 
 Risks: two SQLDelight databases in one module (fallback: two Gradle modules); opening a prebuilt file on Android (`user_version`); the importer is the largest task.

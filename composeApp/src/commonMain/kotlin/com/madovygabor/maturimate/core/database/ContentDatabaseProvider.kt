@@ -10,6 +10,11 @@ import maturimate.composeapp.generated.resources.Res
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.MissingResourceException
 
+/** Where the data layer gets the content database from; null when no content is installed. */
+fun interface ContentDatabaseSource {
+    suspend fun get(): ContentDatabase?
+}
+
 /**
  * Gives access to the read-only content database.
  *
@@ -17,7 +22,7 @@ import org.jetbrains.compose.resources.MissingResourceException
  * produced by `./gradlew :tools:content-pipeline:bundleContent`) when it is newer than the installed one,
  * then opens the installed file. Returns null when no content is installed and none is bundled.
  */
-class ContentDatabaseProvider(private val driverFactory: DatabaseDriverFactory) {
+class ContentDatabaseProvider(private val driverFactory: DatabaseDriverFactory) : ContentDatabaseSource {
 
     private val installer = ContentInstaller(driverFactory.contentStorage())
     private val mutex = Mutex()
@@ -27,7 +32,7 @@ class ContentDatabaseProvider(private val driverFactory: DatabaseDriverFactory) 
     var lastInstallResult: ContentInstallResult? = null
         private set
 
-    suspend fun get(): ContentDatabase? = mutex.withLock {
+    override suspend fun get(): ContentDatabase? = mutex.withLock {
         database ?: withContext(Dispatchers.IO) {
             installBundledContent()
             if (installer.installedManifest() == null) return@withContext null
