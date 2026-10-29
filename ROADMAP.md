@@ -2,7 +2,7 @@
 
 > **Updated 2026-10-22: change of plan.** The first version (V1) is a micro-learning app with content written for this project (short lessons and practice tasks). Digitising the official exam papers moved to V2 and depends on permission from the exam authority (NIVAM). The reasons are in the [README](README.md). The milestones of the earlier plan are summarised at the end.
 
-Legend: `[x]` = done and present on `main`; `[/]` = in progress; `[ ]` = planned, not started.
+Legend: `[x]` = done (Milestone 1 is on the branch `feat/database-core` until it is merged into `main`); `[/]` = in progress; `[ ]` = planned, not started.
 
 The order below is the working order: core first, then onboarding, then the unit engine, then content, then release. Subjects follow one after another: Hungarian first, then Slovak, English and Mathematics.
 
@@ -21,36 +21,36 @@ The order below is the working order: core first, then onboarding, then the unit
 
 ## Data architecture (offline-first)
 
-The app works fully offline. There are three databases with clear roles, and a content update never touches the user's progress.
+The app works fully offline. There are three databases with clear roles, and a content update never touches the user's progress. Details: [ARCHITECTURE](ARCHITECTURE.md#9-data-architecture); decisions and reasons: [llm/DECISIONS.md](llm/DECISIONS.md).
 
 | Database | Where | Content | Written by |
 | :--- | :--- | :--- | :--- |
-| Server database (PostgreSQL) | Server | Source of truth: all content and, later, user accounts and synced user data | Backend and the content import |
-| Content database (SQLite) | Phone, read-only | Subjects, topics, lessons, tasks, passages | Shipped inside the app; replaced as a whole |
-| User database (SQLite) | Phone | Attempts, answers, streak, settings | The app only |
+| Content database (SQLite) | Phone, read-only | Subjects, topics, lessons, tasks | Built from the content files; installed as a whole file |
+| User database (SQLite) | Phone | Attempts, progress, streak, settings | The app only |
+| Server database (PostgreSQL) | Server (local Docker until then) | Accounts and synced progress, plus a copy of the content | Backend; the content importer |
 
 How it works:
 
-* **Content flows server to phone only, as a whole file.** The app checks the `content_version`, downloads the new file to a temporary location, verifies size and hash, and swaps it in. There is no row-level sync for content. A prebuilt content file also ships inside the app, so the first start works without a network.
-* **The user database refers to tasks by UUID only.** There is no foreign key across the two files. Tasks are marked inactive instead of being deleted, so old attempts never point to nothing.
-* **User data flows mainly phone to server** through an append-only outbox of unsent attempts, so conflicts are rare. Server to phone only happens on a new device or a restore. Settings and streak use last write wins.
-* **Until accounts exist, the user database is local only.** Nothing is sent anywhere. Login and sync arrive later (Milestone 7), and the user tables are designed for it from the start (UUID ids, `updated_at`).
-* **One schema, two dialects.** The SQLite schema for the app is written separately (SQLDelight `.sq` files) because SQLite has no native UUID, boolean, decimal or timestamp types. Table and column names stay identical to PostgreSQL, so the export and the sync stay simple.
-* **Content pipeline:** lessons and tasks are written as files (Markdown or JSON), checked by an importer into PostgreSQL, and exported into the prebuilt SQLite content file.
+* **The content files are the source of truth.** Lessons and tasks are written as files (Markdown and JSON) in a private repository, checked by a validator, and exported into the content database file. The same files are imported into PostgreSQL, because the user tables there reference content rows.
+* **Content reaches the phone as a whole file.** A prebuilt file ships inside the app, so the first start works without a network. Later the app downloads newer files (checked by version, size and hash) from private storage through signed links, without an app release.
+* **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
+* **Until accounts exist, the user database is local only.** Nothing is sent anywhere. Login and sync arrive with Milestone 7, before the public Hungarian release.
+* **One design, two dialects.** The PostgreSQL schema (`db/postgres/01_ddl.sql`) is final. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
 * **Passwords** are stored hashed, and the app never talks to the server database directly. The backend holds the credentials.
 * **Hosting (later):** a free PostgreSQL tier to start (Neon is the current choice; check pricing and limits before signing up), with occasional `pg_dump` backups. The connection string stays in `DATABASE_URL`, outside the repository. Media (images, later audio) is stored separately in object storage and downloaded and cached by the app.
 
-The schema is allowed to change freely until the first tester installs the app. From then on, changes to the user database need a migration. The few things decided from the start: UUID ids, separate content and user files, `is_active` instead of deleting, and flexible answer data per task (so a new task type does not need a new table).
+The schema is allowed to change freely until the first tester installs the app. From then on, changes to the user database need a migration.
 
 ---
 
 ## Milestone 1: Core and database
 
-* [ ] **1.1. Database design:** tables for subjects, topics, lessons (units), tasks, task formats, passages and user attempts. A simple first version that is refined while the engine is built.
-* [ ] **1.2. Local databases in the app:** SQLDelight content database and user database as described above, with platform drivers for Android and desktop.
-* [ ] **1.3. Content importer:** loads lessons and tasks from files, so material reviewed outside the app (AI drafts, teacher material) never needs direct database access.
-* [ ] **1.4. Provenance on tasks:** every task records its source (own, teacher, AI reviewed by a human, public domain).
-* [ ] **1.5. Review of the `database` branch:** reuse what fits (drivers, seeder idea), rework the exam-centred schema.
+* [x] **1.1. Database design:** the final PostgreSQL schema with 30 tables (`db/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
+* [x] **1.2. Local databases in the app:** SQLDelight content database (13 tables) and user database (8 tables) in a shared `:database` module, with drivers for Android and desktop.
+* [x] **1.3. Content pipeline:** validator, exporter to the content database file, and importer into PostgreSQL (`tools/content-pipeline`). The app installs the bundled content file on first start.
+* [x] **1.4. Provenance on tasks:** every task and lesson records its source in the content files (own, teacher, AI reviewed by a human, public domain); the validator requires it.
+* [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. Deleting the branch (it contains a digitised official paper) waits for the owner's decision.
+* [x] **1.6. Repositories:** domain models and repository interfaces for content and progress, with SQLDelight implementations in the data layer.
 
 ---
 

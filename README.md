@@ -6,7 +6,7 @@
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.9.1-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
 [![Platform](https://img.shields.io/badge/Platform-Android_%7C_Desktop_(JVM)-3DDC84.svg?logo=android&logoColor=white)](https://github.com/MadovyGabor/MaturiMate)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM_%2B_StateFlow-brightgreen.svg)](#architecture)
-[![Database](https://img.shields.io/badge/Database-SQLDelight_(unmerged_branch)-lightgrey.svg)](https://cashapp.github.io/sqldelight/)
+[![Database](https://img.shields.io/badge/Database-SQLDelight_%2B_PostgreSQL-blue.svg)](https://cashapp.github.io/sqldelight/)
 [![DI](https://img.shields.io/badge/DI-Koin_4.1.1-red.svg)](https://insert-koin.io/)
 
 ## Update, 2026-10-22: change of plan
@@ -59,11 +59,11 @@ The app stays offline-first.
 
 ## Current status
 
-This section describes the `main` branch. Work that exists only on the unmerged `database` branch is labelled as such.
+This section describes the code on the branch `feat/database-core` (Milestone 1), which is not merged into `main` yet. Everything under "Built" except the database core is also on `main`.
 
 ### Built
 
-- One Kotlin Multiplatform project with an Android target and a desktop (JVM) target. About 96% of production Kotlin lines (3777 of 3949 non-blank lines) are in `commonMain`.
+- One Kotlin Multiplatform project with an Android target and a desktop (JVM) target. About 95% of production Kotlin lines of the app and the `:database` module (4479 of 4718 non-blank lines) are in `commonMain`.
 - Onboarding: welcome screen, language choice (HU or SK), English level (B1 or B2), graduation date picker with validation, and a VPUS/SNI toggle. The toggle value is stored, but no exam timer exists yet, so it does not change any time limit. The VPUS/SNI time extension is dropped from the plan, so the toggle will be removed during the onboarding rework.
 - User settings are persisted with Jetpack DataStore.
 - Profile screen: days left until the graduation date, and edit dialogs for the date, language and level.
@@ -71,11 +71,17 @@ This section describes the `main` branch. Work that exists only on the unmerged 
 - Navigation3 (alpha) root with serializable route keys, top-level tabs and per-tab back stacks.
 - Koin dependency injection modules, shared and per platform.
 - Android splash screen and a desktop window entry point.
+- Database core (Milestone 1, branch `feat/database-core`):
+  - The final PostgreSQL schema (30 tables, `db/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
+  - Content database (13 tables) and user database (8 tables) with SQLDelight, in a shared `:database` module.
+  - Content pipeline (`tools/content-pipeline`): validates the lesson and task files, exports the content database file for the app, and imports the content into PostgreSQL.
+  - The app installs the bundled content file on first start (checked on the Android emulator).
+  - Content and progress repositories (domain interfaces, SQLDelight implementations), not used by any screen yet.
 
 ### In progress
 
-- On the unmerged `database` branch (not in `main`): SQLDelight schema (four tables), `DatabaseSeeder`, and database-backed subject and exam selection. This branch follows the earlier plan (official exam papers), so its schema will be reworked before it is merged.
-- On `main`, the subject and exam selection screens are a static shell. They read hard-coded subject data and do not load exams.
+- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 3.
+- The real lessons and tasks are written in a separate private repository, cloned into `content/` (gitignored).
 
 ### Planned
 
@@ -103,10 +109,11 @@ Versions are taken from `gradle/libs.versions.toml` on `main`.
 | Navigation3 (`navigation3-ui`) | 1.0.0-alpha06 | **Alpha** |
 | AndroidX lifecycle (`viewmodel-compose`) | 2.10.0-alpha07 | **Alpha** |
 | DataStore Preferences | 1.2.0 | User settings |
-| kotlinx.serialization (JSON) | 1.9.0 | On `main`, used for navigation key polymorphism only |
+| kotlinx.serialization (JSON) | 1.9.0 | Navigation key polymorphism; content manifest and content files |
 | kotlinx.datetime | 0.7.1 | Date handling |
 | kotlinx.coroutines | 1.10.2 | `StateFlow`, `SharedFlow`, `viewModelScope` |
-| SQLDelight | 2.2.1 | Schema and drivers are on the unmerged `database` branch; `main` declares the runtime artifacts but has no `.sq` file |
+| SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
+| PostgreSQL | 16 (Docker), JDBC 42.7.4 | Local development database and content importer; not used by the app |
 | Android | minSdk 24, compileSdk 36, targetSdk 36 | Android Gradle Plugin 8.13.0 |
 | JVM | `jvmTarget` 11 for Android; JDK 21 for the build | See [Setup](#setup) |
 
@@ -119,66 +126,37 @@ One-shot messages (snackbars) go through a singleton `SnackbarController` that w
 Layering is not uniform:
 
 - `features/appOnboarding` has `data`, `domain` and `presentation` packages.
+- `features/learning` has `data` and `domain` packages (content and progress repositories); its screens come later.
 - `features/profileDetails`, `features/subjects` and `features/examTaking` have only `presentation` code.
 - `core/domain` contains the shared `OperationResult` and `Error` types.
 
-Domain on `main`: `UserPreferences`, `UserPreferencesRepository` (interface), `MaturitaValidator`, and the `MaturitaLanguage` and `MaturitaLevel` enums. There is no `Subject` model in the domain package. Two data classes named `Subject` exist in presentation code: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
+Onboarding domain: `UserPreferences`, `UserPreferencesRepository` (interface), `MaturitaValidator`, and the `MaturitaLanguage` and `MaturitaLevel` enums. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
 
-Data on `main`: `UserPreferencesRepositoryImpl` writes the DataStore keys `language`, `eng_level`, `is_vpu_enabled`, `exam_date` and `setup_completed` in one `edit` transaction.
+Onboarding data: `UserPreferencesRepositoryImpl` writes the DataStore keys `language`, `eng_level`, `is_vpu_enabled`, `exam_date` and `setup_completed` in one `edit` transaction.
 
-Platform code (`expect`/`actual`): the platform Koin module (`platformModule`), the empty `DbClient` class, and `Modifier.systemPadding()`.
+Platform code (`expect`/`actual`): the platform Koin module (`platformModule`), `DatabaseDriverFactory` (in `:database`), and `Modifier.systemPadding()`.
 
-Database (unmerged `database` branch only): four SQLDelight tables (`ExamEntity`, `ContentUnitEntity`, `TaskEntity`, `UserProgressEntity`), a `DatabaseSeeder` that inserts one exam from a JSON file inside a transaction, and platform database drivers. The seeder is not idempotent: a second run fails on the primary key and is reported as a parse error. See [ARCHITECTURE.md](ARCHITECTURE.md) for the schema.
+Data: three databases with clear roles. The content database (read-only on the phone) is built from the lesson and task files and installed as a whole file; the user database holds the progress; PostgreSQL holds accounts and synced progress later, plus a copy of the content. See [ARCHITECTURE.md](ARCHITECTURE.md#9-data-architecture).
 
 ## Project structure
 
-Tracked files on `main`, at package level:
-
 ```
 MaturiMate/
-├── .gitignore
 ├── README.md  ARCHITECTURE.md  ROADMAP.md  VISION.md
-├── build.gradle.kts
-├── settings.gradle.kts
-├── gradle.properties
-├── gradle/
-│   ├── libs.versions.toml
-│   └── wrapper/
-├── gradlew
-├── gradlew.bat
-└── composeApp/
-    ├── build.gradle.kts
-    └── src/
-        ├── androidMain/
-        │   ├── AndroidManifest.xml
-        │   ├── res/
-        │   └── kotlin/com/madovygabor/maturimate/
-        │       ├── MainActivity.kt
-        │       ├── core/di/            AppModul.android, DbClient.android, MyApplication
-        │       ├── core/presentation/  androidSystemPadding.android
-        │       └── features/           createDataStore
-        ├── commonMain/
-        │   ├── composeResources/       drawable/, values/, values-hu/, values-sk/
-        │   └── kotlin/com/madovygabor/maturimate/
-        │       ├── App.kt
-        │       ├── core/
-        │       │   ├── di/             AppModul, DbClient (expect), initKoin
-        │       │   ├── domain/error/   Error, OperationResult
-        │       │   └── presentation/
-        │       │       ├── navigation/ (NavigationRoot, Route, MainFrame/)
-        │       │       ├── theme/
-        │       │       ├── uiComponents/
-        │       │       └── utils/      StatickUiSettings, UiText, snackbar/
-        │       └── features/
-        │           ├── appOnboarding/  data/, domain/, presentation/
-        │           ├── examTaking/     ExamWriteScreen (placeholder)
-        │           ├── profileDetails/ presentation/
-        │           └── subjects/       presentation/ (static)
-        ├── commonTest/                 ComposeAppCommonTest (placeholder)
-        └── jvmMain/
-            └── kotlin/com/madovygabor/maturimate/
-                ├── main.kt
-                └── core/               di/ (AppModul.jvm, DbClient.jvm), presentation/
+├── docs/                    IMPLEMENTATION_PLAN.md
+├── llm/                     decisions and notes for planning
+├── db/postgres/             01_ddl.sql (PostgreSQL schema, 30 tables)
+├── docker-compose.yml       local PostgreSQL; settings in .env (see .env.example)
+├── content/                 lesson and task files (private repository, gitignored)
+├── composeApp/              the app (Android and desktop)
+│   └── src/
+│       ├── commonMain/      App.kt, core/ (database, di, domain, presentation), features/
+│       ├── androidMain/     MainActivity, Koin platform module, DataStore
+│       ├── jvmMain/         main.kt, Koin platform module
+│       ├── commonTest/      placeholder test
+│       └── jvmTest/         content provider and repository tests
+├── database/                shared module: SQLDelight .sq files, drivers, content installer
+└── tools/content-pipeline/  content validator, exporter and importer (see its README)
 ```
 
 ## Setup
@@ -191,7 +169,7 @@ Requirements:
 
 Important: `gradle.properties` line 4 sets `org.gradle.java.home` to a JDK 21 (JBR) path under a local Windows user profile. This path exists only on the original development machine. On any other machine, change that line to your JDK 21 location, or remove it and set `JAVA_HOME`.
 
-Commands (names come from the build configuration; they were not executed while writing this section):
+Commands:
 
 ```bash
 # Android debug APK
@@ -203,8 +181,14 @@ Commands (names come from the build configuration; they were not executed while 
 # Compile the desktop (JVM) target
 ./gradlew :composeApp:compileKotlinJvm
 
-# Run the multiplatform tests (one placeholder test)
-./gradlew :composeApp:allTests
+# Tests (database, content pipeline, app)
+./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest
+
+# Bundle the content files into the app (needs the content/ folder)
+./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801
+
+# Local PostgreSQL (copy .env.example to .env first)
+docker compose up -d
 ```
 
 On Windows PowerShell, replace `./gradlew` with `.\gradlew.bat`.
@@ -215,7 +199,7 @@ Desktop packaging is configured for Dmg, Msi and Deb (`composeApp/build.gradle.k
 
 - Placeholders and mock data: `ExamWriteScreen` is a text placeholder; the History entry is a text placeholder; profile subject statistics are hard-coded values; the subject list and the exam list are static, with no data source.
 - Alpha dependencies: `androidx.lifecycle` 2.10.0-alpha07 and Navigation3 1.0.0-alpha06.
-- One placeholder test (`ComposeAppCommonTest`, which checks `1 + 2 == 3`). No tests exist for the onboarding, profile, or navigation code. No coverage tool is configured.
+- Tests cover the database, the content pipeline and the repositories (70 tests). No tests exist for the onboarding, profile, or navigation code. No coverage tool is configured.
 - No CI: the repository has no `.github` directory and no workflow files.
 - Partial localization: 12 strings in `values`, 3 in `values-hu` and 3 in `values-sk`. Some UI text is hard-coded in Kotlin source.
 
@@ -227,4 +211,6 @@ I design the architecture and make the technical decisions myself. AI assistants
 
 - [VISION.md](VISION.md): product goal, target audience, content sources and planned scope, updated for the own-content plan.
 - [ROADMAP.md](ROADMAP.md): milestones in working order, with the offline-first data architecture.
-- [ARCHITECTURE.md](ARCHITECTURE.md): technology, layering, navigation and the database design on the `database` branch. Sections 1 to 8 describe the code on `main`. Sections 9 and 10 describe the exam-centred database design of the earlier plan, and section 11 summarises the planned data architecture.
+- [ARCHITECTURE.md](ARCHITECTURE.md): technology, modules, layering, navigation, and the data architecture with the content pipeline.
+- [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md): the ordered work list with the database details.
+- [tools/content-pipeline/README.md](tools/content-pipeline/README.md): how to write, check and export content.

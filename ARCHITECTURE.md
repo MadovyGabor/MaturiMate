@@ -1,10 +1,10 @@
 # MaturiMate Architecture
 
-This document describes the architecture of the `main` branch and, separately, the database work that exists only on the unmerged `database` branch. Statements about `main` were checked against the code on `main`. Anything marked "on the unmerged `database` branch" is not present on `main`.
+This document describes the architecture of the code in this repository. It was last checked against the code on 2026-10-28, on the branch `feat/database-core` (Milestone 1: core and database). Until that branch is merged, sections 2, 3, 7 and 9 to 11 describe code that is not yet on `main`.
 
-For the current status of each part, see the "Current status" section of the [README](README.md).
+For the current status of each part, see the "Current status" section of the [README](README.md). The ordered work list is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
-> **Updated 2026-10-22: change of plan.** The first version now uses only content written for this project (short lessons and practice tasks), and the official exam papers moved to a later version (see the [README](README.md)). Sections 1 to 8 describe the code on `main` and are not affected. Sections 9 and 10 describe the database work of the earlier, exam-centred plan. The planned data architecture is in section 11.
+> **2026-10-22: change of plan.** The first version uses only content written for this project (short lessons and practice tasks); the official exam papers moved to a later version (see the [README](README.md)). The exam-centred database of the earlier plan (unmerged `database` branch) is not used; its drivers and Gradle setup were reused.
 
 ---
 
@@ -18,10 +18,12 @@ For the current status of each part, see the "Current status" section of the [RE
 | AndroidX Lifecycle (ViewModel) | 2.10.0-alpha07 | Alpha dependency |
 | Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
 | DataStore Preferences | 1.2.0 | Stores user preferences on all targets |
-| kotlinx.serialization | 1.9.0 | On `main`, used for polymorphic navigation routes. No `Json` instance is used on `main`. |
+| kotlinx.serialization | 1.9.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`tools/content-pipeline`) |
 | kotlinx.datetime | 0.7.1 | Used for `LocalDate` and time zone handling |
 | kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
-| SQLDelight | 2.2.1 | On the unmerged `database` branch only |
+| SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
+| PostgreSQL JDBC driver | 42.7.4 | `tools/content-pipeline` only (server copy of the content) |
+| PostgreSQL | 16 (Docker) | Local development database (`docker-compose.yml`); not used by the app |
 
 Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
@@ -29,32 +31,44 @@ Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Androi
 
 ## 2. Module Layout
 
-The source tree on `main` follows the package layout below. Paths are relative to `composeApp/src/`.
+Gradle modules:
+
+| Module | Kind | Contents |
+|---|---|---|
+| `:composeApp` | Kotlin Multiplatform app (Android, desktop) | UI, features, Koin wiring |
+| `:database` | Kotlin Multiplatform library (Android, desktop) | SQLDelight schemas of the content and user databases, platform drivers, content installer |
+| `:tools:content-pipeline` | Kotlin/JVM command-line tool | Validates the content files; exports `content.db`; imports the server copy into PostgreSQL |
+
+Other folders: `db/postgres/01_ddl.sql` (the PostgreSQL schema, 30 tables), `docker-compose.yml` (local PostgreSQL), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` and `llm/` (plans and decisions).
+
+The app source tree, relative to `composeApp/src/`:
 
 ```
 commonMain/kotlin/com/madovygabor/maturimate/
 ├── App.kt
 ├── core/
-│   ├── di/                 # Koin modules (AppModul.kt, DbClient.kt, initKoin.kt)
+│   ├── database/           # ContentDatabaseProvider (installs and opens the content database)
+│   ├── di/                 # Koin modules (AppModul.kt, initKoin.kt)
 │   ├── domain/error/       # Error.kt, OperationResult.kt
 │   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/
 └── features/
     ├── appOnboarding/      # data/, domain/, presentation/
     ├── examTaking/         # ExamWriteScreen.kt (placeholder)
+    ├── learning/           # data/, domain/ (no presentation yet)
     ├── profileDetails/     # presentation/ only
     └── subjects/           # presentation/ only
-androidMain/kotlin/...      # Android actuals (AppModul.android.kt, DbClient.android.kt, ...)
-jvmMain/kotlin/...          # Desktop actuals (AppModul.jvm.kt, DbClient.jvm.kt, ...)
+commonMain/composeResources/files/   # bundled content.db + content-manifest.json (generated, gitignored)
+androidMain/kotlin/...      # Android actuals (AppModul.android.kt, ...)
+jvmMain/kotlin/...          # Desktop actuals (AppModul.jvm.kt, ...)
 commonTest/kotlin/...       # One placeholder test (ComposeAppCommonTest.kt)
+jvmTest/kotlin/...          # Content provider and repository tests
 ```
-
-On `main`, the `core/database`, `features/subjectsAndExams`, and `sqldelight` directories do not exist. The `composeResources/files/` directory is also absent on `main`. These are part of the unmerged `database` branch.
 
 ---
 
 ## 3. Layering
 
-Only `features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split on `main`. The other features contain only presentation code:
+`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 3. The other features contain only presentation code:
 
 * `features/profileDetails` contains only `presentation/`.
 * `features/subjects` contains only `presentation/`.
@@ -62,7 +76,7 @@ Only `features/appOnboarding` has the full `data/`, `domain/`, and `presentation
 
 `appOnboarding` domain contains `UserPreferences`, `UserPreferencesRepository`, `MaturitaValidator`, and `DataError`. The data layer contains `UserPreferencesRepositoryImpl`, which uses DataStore. The presentation layer contains the onboarding ViewModel and screens.
 
-The `Subject` model is in the presentation layer, not in the domain layer. There are two classes named `Subject` on `main`:
+The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
 
 * `core/presentation/utils/StatickUiSettings.kt:20` defines `data class Subject(...)` with the UI fields and a `dbIdMapping` field. A static map of subjects is defined in the same file.
 * `features/subjects/presentation/SubjectListTabScreen.kt:86` defines a second `data class Subject(...)`.
@@ -73,13 +87,13 @@ The subject list in `SubjectListTabScreen.kt` is a static `listOf(...)` (line 40
 
 ## 4. Presentation Pattern
 
-Presentation on `main` follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `ProfileViewModel.kt:40` declares `private val _profileUiState = MutableStateFlow(ProfileUiState())` and `ProfileViewModel.kt:43` exposes `val profileUiState = _profileUiState.asStateFlow()`.
+Presentation follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `ProfileViewModel.kt:40` declares `private val _profileUiState = MutableStateFlow(ProfileUiState())` and `ProfileViewModel.kt:43` exposes `val profileUiState = _profileUiState.asStateFlow()`.
 
-`main` does not use intents, a reducer, or a single-state MVI loop. Screens call ViewModel methods directly.
+The app does not use intents, a reducer, or a single-state MVI loop. Screens call ViewModel methods directly.
 
 One-shot messages (for example, snackbars) go through a singleton `SnackbarController` (`core/presentation/utils/snackbar/SnackbarController.kt:11`), which uses a `MutableSharedFlow` (line 14).
 
-Profile statistics are mock data on `main`. `ProfileViewModel.kt:47` calls `loadMockSubjectStats()`, and the values are hard-coded in lines 164-171.
+Profile statistics are mock data. `ProfileViewModel.kt:47` calls `loadMockSubjectStats()`, and the values are hard-coded in lines 164-171.
 
 ---
 
@@ -89,7 +103,7 @@ Navigation uses JetBrains Navigation3 with `@Serializable` routes. `Route` is a 
 
 `NavigationRoot.kt` registers the polymorphic subclasses for `Main`, `AppOnboarding`, and `ExamWrite` (lines 28-32). `ExamWrite` renders `ExamWriteScreen()` (lines 64-66). `ExamWriteScreen` currently displays the text "Exam Write Screen" (`features/examTaking/ExamWriteScreen.kt:25`). The `History` tab shows a placeholder text (`core/presentation/navigation/MainFrame/MainFrameNavigation.kt:61`).
 
-Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(it)` to the back stack (lines 33-34). `ExamSelectionScreen.kt` reads the subject from the static `SubjectStaticData` (line 44) and has a `// TODO: Use Koin to inject the ViewModel` comment (line 39). The exam list is not connected to a data source on `main`, and tapping an exam does not open `ExamWriteScreen` with an exam ID.
+Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(it)` to the back stack (lines 33-34). `ExamSelectionScreen.kt` reads the subject from the static `SubjectStaticData` (line 44) and has a `// TODO: Use Koin to inject the ViewModel` comment (line 39). The exam list is not connected to a data source, and tapping an exam does not open `ExamWriteScreen` with an exam ID.
 
 ---
 
@@ -103,13 +117,11 @@ Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(
 
 ## 7. Dependency Injection and Platform Code
 
-Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:18`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`.
-
-`DbClient.kt:6` declares an empty `expect` on `main`. Its actuals are `DbClient.android.kt:6` and `DbClient.jvm.kt:4`.
+Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:25`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`. The platform modules provide `DatabaseDriverFactory` (from `:database`); the shared module provides the user database, `ContentDatabaseProvider` (bound as `ContentDatabaseSource`), `ContentRepository` and `ProgressRepository`.
 
 `Modifier.systemPadding` is declared as an `expect` in `core/presentation/androidSystemPadding.kt:5`, with actuals in the Android and JVM source sets (`androidSystemPadding.android.kt:6`, `androidSystemPadding.jvm.kt:5`).
 
-On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`composeApp/src/jvmMain/kotlin/com/madovygabor/maturimate/core/di/AppModul.jvm.kt:18`).
+On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`AppModul.jvm.kt:14` and `:18`); the databases and the DataStore file are stored there. On Android, the databases are in the app's `databases/` folder.
 
 ---
 
@@ -121,80 +133,60 @@ The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. O
 
 ---
 
-## 9. Database Layer (unmerged `database` branch only)
+## 9. Data Architecture
 
-The following describes code that exists only on the unmerged `database` branch. None of it is present on `main`.
+Offline-first, with three databases (decisions and reasons: [llm/DECISIONS.md](llm/DECISIONS.md)):
 
-This design follows the earlier plan (official exam papers as the main content), so the schema is centred on the exam (`ExamEntity`). It will be reworked for the lesson-based structure before it is used; see section 11. Drivers and the seeder idea can be reused.
+| Database | Where | Contents | Written by |
+|---|---|---|---|
+| Content (SQLite, `content.db`) | Phone, read-only | 13 content tables: subjects, topic tree, learning units, tasks with options, keys and accepted answers, tags | The exporter; installed as a whole file |
+| User (SQLite, `maturimate_user.db`) | Phone | 8 user tables: profile, settings, subjects, attempts, unit and task progress, streak, daily activity | The app |
+| Server (PostgreSQL) | Local Docker now; a hosted server later | All 30 tables of `db/postgres/01_ddl.sql`: accounts and synced progress, plus a copy of the content | The importer (content); a backend later (accounts, progress) |
 
-### 9.1 Components
+The PostgreSQL schema in `db/postgres/01_ddl.sql` is the design and is not changed. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `app_user`). The full mapping is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md), section 2.
 
-* SQLDelight 2.2.1 schema files in `composeApp/src/commonMain/sqldelight/com/madovygabor/maturimate/database/` (`ExamEntity.sq`, `ContentUnitEntity.sq`, `TaskEntity.sq`, `UserProgressEntity.sq`).
-* `DatabaseSeeder` in `features/subjectsAndExams/data/DatabaseSeeder.kt`. It parses the bundled JSON with `Json { ignoreUnknownKeys = true; coerceInputValues = true }` (lines 20-23) and writes the data inside `database.transaction` (line 38). Inserts are plain `INSERT` statements (for example `ExamEntity.sq:41-43`), so re-running the seeder against existing data is not expected to succeed. The seeder is not idempotent.
-* `ExamRepositoryImpl` in `features/subjectsAndExams/data/repository/`. It maps exceptions to `DATABASE_ERROR` and `PARSE_ERROR` (lines 87-89 and 107-109).
-* `DatabaseDriverFactory.jvm.kt` creates the database file under the user home directory (line 24) and creates the schema only when the file is new (lines 34 and 39-41). The Android driver is `AndroidSqliteDriver` with the database name `maturimate.db`.
+### 9.1 Content pipeline
 
-### 9.2 Schema
+```
+              ┌─→ export → content.db + content-manifest.json → bundled in the app (later: downloaded)
+Files (Git) ──┤
+              └─→ import → PostgreSQL (server copy; the user tables there reference content by foreign key)
+```
 
-`ExamEntity` (table root):
+* The lesson and task files are the source of truth: Markdown for `SUMMARY` lessons, JSON for tasks and `PRACTICE` units, one folder per leaf topic. All ids are written in the files and never change. Format and rules: [tools/content-pipeline/README.md](tools/content-pipeline/README.md).
+* Both commands use the same loader and `ContentValidator` (format rules of the design, text format, leaf topics, provenance). Nothing is written if a check fails.
+* The exporter creates the file with the generated `ContentDatabase.Schema` from `:database`, so the file matches what the app reads. It sets `PRAGMA user_version` to the schema version and writes a manifest with `content_version`, size and SHA-256. The same files give a byte-identical file. With `--previous`, it fails if a row of the previous release is missing: rows are switched off (`is_active`, `is_published`), never removed.
+* The importer upserts by id in one transaction, replaces the rows a task owns, deactivates rows missing from the files, and moves the identity sequences past the imported ids.
 
-* `id` (primary key, for example `HU_MJL_2025_MARCH_251425`), `subjectId`, `year`, `session`
-* `totalMinutes`, `vpuMinutes`, `taskCount`
+### 9.2 Content in the app
 
-`ContentUnitEntity` (reading passages and other source material):
+* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `composeApp/src/commonMain/composeResources/files/`. These files are gitignored; a build without them runs, but has no content.
+* `ContentInstaller` (`:database`) installs a content file only if its schema version equals the app's, its size and SHA-256 match the manifest, and its `content_version` is higher than the installed one. It writes a temporary file and renames it over the old one, manifest last. The user database is never touched.
+* `ContentDatabaseProvider` (`core/database`) installs the bundled file on first use and opens the installed one; it returns null when there is no content. Checked on the Android emulator (API 37): installed on first start, "up to date" after a restart.
+* Not built yet: downloading newer content files. They will go through the same installer; the open content driver must be closed before a swap.
 
-* `id` (primary key), `examId` (foreign key to `ExamEntity`, `ON DELETE CASCADE`, `ContentUnitEntity.sq:33`)
-* `type`, `title`, `author`, `description`, `contentHtml`, `mediaUrl`, `sharedOptionsJson`
+### 9.3 Repositories
 
-`TaskEntity` (questions):
+`features/learning/domain` holds the domain models (`Subject`, `Topic`, `LearningUnit`, `Task`, `Attempt`, `UnitProgress`, `TaskProgress`, `Streak`, `DailyActivity`), the `ContentRepository` and `ProgressRepository` interfaces, and `LearningError` (`NO_CONTENT`, `NOT_FOUND`, `DATABASE_ERROR`). Results use `OperationResult`.
 
-* `id` (primary key), `examId` (foreign key, `ON DELETE CASCADE`), `contentUnitId` (nullable foreign key, `ON DELETE CASCADE`, `TaskEntity.sq:38-39`)
-* `orderIndex`, `type`, `question`, `points` (default 1), `imageUrl`, `metadataJson` (`NOT NULL`)
-
-`UserProgressEntity` (saved answers):
-
-* Composite primary key `(attemptId, taskId)` (`UserProgressEntity.sq:31`), foreign key `taskId` to `TaskEntity` with `ON DELETE CASCADE` (`UserProgressEntity.sq:34`)
-* `examId`, `userAnswer`, `isCorrect` (mapped to `kotlin.Boolean`), `earnedPoints`, `timestamp`
-
-### 9.3 Stored but not interpreted
-
-On the `database` branch, `contentHtml` and `metadataJson` are stored as strings. They are passed through the mapper (`ExamMapper.kt:82` and `:96`) and are not parsed or rendered. `sharedOptionsJson` is written as `null` by the seeder (`DatabaseSeeder.kt:62`). No code on the `database` branch parses `metadataJson` into typed answer data.
-
-### 9.4 Enum mapping
-
-`TaskType` (`features/subjectsAndExams/domain/model/ExamTypes.kt`) has the values `CHOICE`, `INPUT`, `CHOICE_5`, `WORD_FORMATION`, `GAP_FILL_SELECTION`, and `UNKNOWN`. `ContentUnitType` has `TEXT`, `AUDIO`, `GAP_FILL`, and `UNKNOWN`. `ExamMapper.kt:21-27` converts a string with `TaskType.valueOf` inside a try-catch and returns `UNKNOWN` for any unrecognised value. The bundled `HU_MJL_2025.json` contains two tasks with type `CANCELED`, which is not in the enum, so those two tasks map to `UNKNOWN`.
-
-### 9.5 Subject and exam identifiers
-
-On the `database` branch, `StatickUiSettings.kt` maps UI subjects to database subject IDs through `dbIdMapping`:
-
-* HUNGARIAN maps to `HU_MJL`.
-* SLOVAK maps to `HU_SJSL` (Hungarian school type) or `SK_SJL` (Slovak school type).
-* ENGLISH maps to `AJ_B1` or `AJ_B2`, depending on the selected English level.
-* MATH maps to `HU_MAT` (Hungarian school type) or `SK_MAT` (Slovak school type).
-
-The bundled exam file `composeApp/src/commonMain/composeResources/files/HU_MJL_2025.json` has the exam ID `HU_MJL_2025_MARCH_251425` on line 3. The file is tracked on `origin/database` and is not present on `main`.
+`features/learning/data` holds `ContentRepositoryImpl` (reads through `ContentDatabaseSource`), `ProgressRepositoryImpl` and the mappers. The generated SQLDelight classes do not leave the data layer. In the domain, task keys reference options by label. The phone has one local user; its rows use `LOCAL_USER_ID = 1` until accounts exist. The repositories hold no rules: grading, unlocking and repetition come as use cases with the screens.
 
 ---
 
-## 10. Extensibility
+## 10. Not built yet
 
-Under the earlier plan, the `database` branch was designed so that new exam years could be added as JSON files and imported by `DatabaseSeeder` without schema changes. This was not tested with more than one bundled exam file. Under the current plan, the same idea applies to lessons and tasks: a new subject, lesson or task is new data loaded by an importer, not new code (see section 11).
-
-The `UserProgressEntity` table is intended to store per-attempt answers. No code on `main` writes to it, and no screen reads it.
+* Screens that use the content and progress (Milestone 3). The current subject and exam screens still show static data (sections 3 and 5).
+* Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md) and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)).
+* Migrations of the user database: the schema may change until the first tester installs the app.
 
 ---
 
-## 11. Planned data architecture (not implemented)
+## 11. Tests
 
-This section describes the target design under the current plan. None of it is present on `main`. The details and the order of work are in the [ROADMAP](ROADMAP.md#data-architecture-offline-first).
+| Module | Tests | What they cover |
+|---|---|---|
+| `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
+| `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
+| `:composeApp` (`jvmTest`, `commonTest`) | 18 | Content provider with the bundled file (skipped without it); repositories; placeholder test |
 
-The app is offline-first and uses three databases with clear roles:
-
-* **Server database (PostgreSQL):** the source of truth for all content and, later, for accounts and synced user data. The app never talks to it directly; a backend holds the credentials, and passwords are stored hashed.
-* **Content database (SQLite, on the phone):** read-only, shipped inside the app as a prebuilt file, and replaced as a whole when a newer `content_version` exists (check the version, download to a temporary location, verify size and hash, then swap). There is no row-level sync for content.
-* **User database (SQLite, on the phone):** attempts, answers, streak and settings. A content update never touches it. It refers to tasks by UUID only, because there is no foreign key across the two files, and tasks are marked inactive instead of being deleted so old attempts never point to nothing.
-
-User data flows mainly from the phone to the server through an append-only outbox of unsent attempts, so conflicts are rare. The server sends it back only on a new device or a restore. Settings and streak use last write wins. Until accounts exist, the user database is local only.
-
-The SQLite schema is written separately as SQLDelight `.sq` files, because SQLite has no native UUID, boolean, decimal or timestamp types. Table and column names stay identical to PostgreSQL, so the export and the sync stay simple. Lessons and tasks are written as files, loaded by an importer into PostgreSQL, and exported into the prebuilt content file.
+Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
