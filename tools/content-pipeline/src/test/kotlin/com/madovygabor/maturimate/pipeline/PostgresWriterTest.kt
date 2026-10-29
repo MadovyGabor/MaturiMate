@@ -31,6 +31,8 @@ class PostgresWriterTest {
                 ?: File(repoRoot, "dbServer/.env").readLines().first { it.startsWith("DATABASE_URL=") }.substringAfter("=")
             openDatabase(adminUrl).use { it.createStatement().execute("CREATE DATABASE $testDatabase") }
         } catch (e: Exception) {
+            // CI sets REQUIRE_POSTGRES, so a missing database fails there instead of being skipped
+            if (System.getenv("REQUIRE_POSTGRES") == "true") throw e
             assumeNoException("local PostgreSQL is not available", e)
         }
         connection = openDatabase(adminUrl.replaceDatabase(testDatabase))

@@ -190,3 +190,13 @@ Files (Git) ──┤
 | `:composeApp` (`jvmTest`, `commonTest`) | 18 | Content provider with the bundled file (skipped without it); repositories; placeholder test |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
+
+CI (`.github/workflows/ci.yml`) runs on every push and pull request, with one job per module so a failure points at the part that broke:
+
+| Job | Runs | Notes |
+|---|---|---|
+| Database (SQLDelight) | `:database:jvmTest` | |
+| Content pipeline | `:tools:content-pipeline:test` | PostgreSQL 16 service; `REQUIRE_POSTGRES=true`, so the importer tests fail instead of being skipped |
+| App | `:composeApp:jvmTest`, then the Android APK and the desktop jar | Bundles the test fixture as content, so the content provider test runs too |
+
+Each job publishes its JUnit results as its own check and as a table (every test, passed or failed) in the run summary.

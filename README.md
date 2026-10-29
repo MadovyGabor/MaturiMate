@@ -198,7 +198,7 @@ Desktop packaging is configured for Dmg, Msi and Deb (`composeApp/build.gradle.k
 - Placeholders and mock data: `ExamWriteScreen` is a text placeholder; the History entry is a text placeholder; profile subject statistics are hard-coded values; the subject list and the exam list are static, with no data source.
 - Alpha dependencies: `androidx.lifecycle` 2.10.0-alpha07 and Navigation3 1.0.0-alpha06.
 - Tests cover the database, the content pipeline and the repositories (70 tests). No tests exist for the onboarding, profile, or navigation code. No coverage tool is configured.
-- No CI: the repository has no `.github` directory and no workflow files.
+- CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every push and pull request in three separate jobs: database, content pipeline (with a PostgreSQL 16 service), and app (tests plus the Android APK and desktop jar). Each job shows its test results as a table in the run summary and as its own check.
 - Partial localization: 12 strings in `values`, 3 in `values-hu` and 3 in `values-sk`. Some UI text is hard-coded in Kotlin source.
 
 ## Development approach
