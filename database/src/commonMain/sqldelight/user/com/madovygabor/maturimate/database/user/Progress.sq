@@ -1,0 +1,98 @@
+-- Practice rounds and progress of the user. Same tables as in dbServer/postgres/01_ddl.sql,
+-- without the foreign keys to app_user and to content tables (topic, learning_unit, task).
+CREATE TABLE attempt (
+    attempt_id        INTEGER CONSTRAINT pk_attempt PRIMARY KEY,
+    user_id           INTEGER NOT NULL,
+    attempt_type      TEXT    NOT NULL,
+    topic_id          INTEGER,
+    learning_unit_id  INTEGER,
+    status            TEXT    NOT NULL DEFAULT 'IN_PROGRESS',
+    started_at        INTEGER NOT NULL,
+    finished_at       INTEGER,
+    earned_points     INTEGER,
+    max_points        INTEGER,
+    CONSTRAINT ck_attempt_type
+        CHECK (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE', 'REVIEW')),
+    CONSTRAINT ck_attempt_status
+        CHECK (status IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')),
+    -- unit rounds need the unit, a review needs the topic; never both
+    CONSTRAINT ck_attempt_scope CHECK (
+        (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE')
+            AND learning_unit_id IS NOT NULL AND topic_id IS NULL) OR
+        (attempt_type = 'REVIEW'
+            AND topic_id IS NOT NULL AND learning_unit_id IS NULL)),
+    CONSTRAINT ck_attempt_finished CHECK (finished_at IS NULL OR finished_at >= started_at),
+    CONSTRAINT ck_attempt_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
+CREATE TABLE user_unit_progress (
+    user_id           INTEGER NOT NULL,
+    learning_unit_id  INTEGER NOT NULL,
+    status            TEXT    NOT NULL DEFAULT 'IN_PROGRESS',
+    started_at        INTEGER NOT NULL,
+    completed_at      INTEGER,
+    CONSTRAINT pk_user_unit_progress PRIMARY KEY (user_id, learning_unit_id),
+    CONSTRAINT ck_user_unit_progress_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED')),
+    CONSTRAINT ck_user_unit_progress_completed CHECK (
+        (status = 'COMPLETED') = (completed_at IS NOT NULL))
+);
+
+CREATE TABLE user_task_progress (
+    user_id           INTEGER NOT NULL,
+    task_id           INTEGER NOT NULL,
+    times_correct     INTEGER NOT NULL DEFAULT 0,
+    times_wrong       INTEGER NOT NULL DEFAULT 0,
+    correct_streak    INTEGER NOT NULL DEFAULT 0,
+    last_answered_at  INTEGER NOT NULL,
+    next_review_at    INTEGER,
+    status            TEXT    NOT NULL DEFAULT 'LEARNING',
+    CONSTRAINT pk_user_task_progress PRIMARY KEY (user_id, task_id),
+    CONSTRAINT ck_user_task_progress_counts
+        CHECK (times_correct >= 0 AND times_wrong >= 0 AND correct_streak >= 0),
+    CONSTRAINT ck_user_task_progress_status CHECK (status IN ('LEARNING', 'MASTERED'))
+);
+
+CREATE INDEX ix_attempt_user_started    ON attempt (user_id, started_at);
+CREATE INDEX ix_attempt_unit            ON attempt (learning_unit_id);
+CREATE INDEX ix_user_unit_progress_unit ON user_unit_progress (learning_unit_id);
+CREATE INDEX ix_user_task_progress_due  ON user_task_progress (user_id, next_review_at);
+CREATE INDEX ix_user_task_progress_task ON user_task_progress (task_id);
+
+-- attempt_id is assigned by SQLite (INTEGER PRIMARY KEY is the rowid)
+insertAttempt:
+INSERT INTO attempt (user_id, attempt_type, topic_id, learning_unit_id, status, started_at)
+VALUES (?, ?, ?, ?, 'IN_PROGRESS', ?);
+
+lastInsertedId:
+SELECT last_insert_rowid();
+
+finishAttempt:
+UPDATE attempt
+SET status = :status, finished_at = :finishedAt, earned_points = :earnedPoints, max_points = :maxPoints
+WHERE attempt_id = :attemptId;
+
+selectAttempts:
+SELECT * FROM attempt WHERE user_id = :userId ORDER BY started_at DESC;
+
+selectAttemptsByUnit:
+SELECT * FROM attempt
+WHERE user_id = :userId AND learning_unit_id = :learningUnitId
+ORDER BY started_at DESC;
+
+selectUnitProgress:
+SELECT * FROM user_unit_progress WHERE user_id = :userId;
+
+upsertUnitProgress:
+INSERT OR REPLACE INTO user_unit_progress VALUES ?;
+
+selectTaskProgress:
+SELECT * FROM user_task_progress WHERE user_id = :userId AND task_id = :taskId;
+
+selectDueTasks:
+SELECT * FROM user_task_progress
+WHERE user_id = :userId AND next_review_at IS NOT NULL AND next_review_at <= :now
+ORDER BY times_wrong DESC, next_review_at;
+
+upsertTaskProgress:
+INSERT OR REPLACE INTO user_task_progress VALUES ?;

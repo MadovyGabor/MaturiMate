@@ -1,0 +1,112 @@
+-- One practice task of the task bank, with its options, keys, accepted answers and attachments.
+CREATE TABLE task (
+    task_id            INTEGER NOT NULL,
+    topic_id           INTEGER NOT NULL,
+    task_format_id     INTEGER NOT NULL,
+    question_text      TEXT    NOT NULL,
+    explanation        TEXT,
+    max_points         INTEGER NOT NULL DEFAULT 1,
+    answer_word_limit  INTEGER,
+    is_active          INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    created_at         INTEGER NOT NULL,
+    CONSTRAINT pk_task PRIMARY KEY (task_id),
+    CONSTRAINT fk_task_topic FOREIGN KEY (topic_id)
+        REFERENCES topic (topic_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_task_format FOREIGN KEY (task_format_id)
+        REFERENCES task_format (task_format_id) ON DELETE RESTRICT,
+    CONSTRAINT ck_task_points CHECK (max_points >= 1),
+    CONSTRAINT ck_task_word_limit CHECK (answer_word_limit > 0)
+);
+
+CREATE TABLE task_option (
+    option_id     INTEGER NOT NULL,
+    task_id       INTEGER NOT NULL,
+    option_role   TEXT    NOT NULL DEFAULT 'ANSWER',
+    option_label  TEXT    NOT NULL,
+    option_text   TEXT    NOT NULL,
+    CONSTRAINT pk_task_option PRIMARY KEY (option_id),
+    CONSTRAINT fk_task_option_task FOREIGN KEY (task_id)
+        REFERENCES task (task_id) ON DELETE CASCADE,
+    CONSTRAINT uq_task_option_task_option UNIQUE (task_id, option_id),
+    CONSTRAINT uq_task_option_label UNIQUE (task_id, option_role, option_label),
+    CONSTRAINT ck_task_option_role CHECK (option_role IN ('ANSWER', 'PROMPT'))
+);
+
+CREATE TABLE task_key (
+    task_id           INTEGER NOT NULL,
+    answer_slot       INTEGER NOT NULL DEFAULT 1,
+    prompt_option_id  INTEGER,
+    option_id         INTEGER NOT NULL,
+    CONSTRAINT pk_task_key PRIMARY KEY (task_id, answer_slot),
+    CONSTRAINT fk_task_key_task FOREIGN KEY (task_id)
+        REFERENCES task (task_id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_key_option FOREIGN KEY (task_id, option_id)
+        REFERENCES task_option (task_id, option_id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_key_prompt FOREIGN KEY (task_id, prompt_option_id)
+        REFERENCES task_option (task_id, option_id) ON DELETE CASCADE,
+    CONSTRAINT ck_task_key_slot CHECK (answer_slot >= 1)
+);
+
+CREATE TABLE task_accepted_answer (
+    accepted_answer_id  INTEGER NOT NULL,
+    task_id             INTEGER NOT NULL,
+    answer_slot         INTEGER NOT NULL DEFAULT 1,
+    answer_text         TEXT    NOT NULL,
+    case_sensitive      INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0 CHECK (case_sensitive IN (0, 1)),
+    CONSTRAINT pk_task_accepted_answer PRIMARY KEY (accepted_answer_id),
+    CONSTRAINT fk_task_accepted_answer_task FOREIGN KEY (task_id)
+        REFERENCES task (task_id) ON DELETE CASCADE,
+    CONSTRAINT uq_task_accepted_answer UNIQUE (task_id, answer_slot, answer_text),
+    CONSTRAINT ck_task_accepted_answer_slot CHECK (answer_slot >= 1)
+);
+
+CREATE TABLE task_attachment (
+    attachment_id  INTEGER NOT NULL,
+    task_id        INTEGER NOT NULL,
+    file_url       TEXT    NOT NULL,
+    media_type     TEXT    NOT NULL,
+    alt_text       TEXT,
+    CONSTRAINT pk_task_attachment PRIMARY KEY (attachment_id),
+    CONSTRAINT fk_task_attachment_task FOREIGN KEY (task_id)
+        REFERENCES task (task_id) ON DELETE CASCADE,
+    CONSTRAINT ck_task_attachment_media CHECK (media_type IN ('IMAGE', 'DIAGRAM', 'AUDIO'))
+);
+
+CREATE INDEX ix_task_topic           ON task (topic_id);
+CREATE INDEX ix_task_format          ON task (task_format_id);
+CREATE INDEX ix_task_attachment_task ON task_attachment (task_id);
+
+selectById:
+SELECT task.*, task_format.code AS format_code, task_format.answer_mode
+FROM task JOIN task_format USING (task_format_id)
+WHERE task_id = :taskId;
+
+selectActiveByTopic:
+SELECT * FROM task WHERE topic_id = :topicId AND is_active = 1 ORDER BY task_id;
+
+selectOptions:
+SELECT * FROM task_option WHERE task_id = :taskId ORDER BY option_role, option_label;
+
+selectKeys:
+SELECT * FROM task_key WHERE task_id = :taskId ORDER BY answer_slot;
+
+selectAcceptedAnswers:
+SELECT * FROM task_accepted_answer WHERE task_id = :taskId ORDER BY answer_slot;
+
+selectAttachments:
+SELECT * FROM task_attachment WHERE task_id = :taskId;
+
+insert:
+INSERT INTO task VALUES ?;
+
+insertOption:
+INSERT INTO task_option VALUES ?;
+
+insertKey:
+INSERT INTO task_key VALUES ?;
+
+insertAcceptedAnswer:
+INSERT INTO task_accepted_answer VALUES ?;
+
+insertAttachment:
+INSERT INTO task_attachment VALUES ?;

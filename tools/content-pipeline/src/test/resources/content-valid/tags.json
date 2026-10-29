@@ -1,0 +1,12 @@
+[
+  {
+    "tag_id": 1,
+    "name": "metafora",
+    "tag_type": "CONCEPT"
+  },
+  {
+    "tag_id": 2,
+    "name": "hasonlat",
+    "tag_type": "CONCEPT"
+  }
+]

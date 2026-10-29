@@ -2,16 +2,16 @@ package com.madovygabor.maturimate.core.di
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.madovygabor.maturimate.core.database.DatabaseDriverFactory
 import com.madovygabor.maturimate.features.appOnboarding.data.DATA_STORE_FILE_NAME
 import com.madovygabor.maturimate.features.appOnboarding.data.createDataStore
-import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 import java.io.File
 
 actual val platformModule = module {
 
-    singleOf(::DbClient)
+    single { DatabaseDriverFactory(File(System.getProperty("user.home"), ".maturimate")) }
 
     single<DataStore<Preferences>> {
         createDataStore {

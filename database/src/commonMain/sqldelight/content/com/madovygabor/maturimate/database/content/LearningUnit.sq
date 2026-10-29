@@ -1,0 +1,76 @@
+-- Lesson steps of a leaf topic (summary or practice) and their links to tasks and tags.
+CREATE TABLE learning_unit (
+    learning_unit_id   INTEGER NOT NULL,
+    topic_id           INTEGER NOT NULL,
+    unit_type          TEXT    NOT NULL,
+    title              TEXT    NOT NULL,
+    body_text          TEXT,
+    estimated_minutes  INTEGER NOT NULL,
+    round_size         INTEGER NOT NULL DEFAULT 5,
+    xp_reward          INTEGER NOT NULL DEFAULT 10,
+    sort_order         INTEGER NOT NULL,
+    is_published       INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0 CHECK (is_published IN (0, 1)),
+    created_at         INTEGER NOT NULL,
+    CONSTRAINT pk_learning_unit PRIMARY KEY (learning_unit_id),
+    CONSTRAINT fk_learning_unit_topic FOREIGN KEY (topic_id)
+        REFERENCES topic (topic_id) ON DELETE RESTRICT,
+    CONSTRAINT uq_learning_unit_order UNIQUE (topic_id, sort_order),
+    CONSTRAINT ck_learning_unit_type CHECK (unit_type IN ('SUMMARY', 'PRACTICE')),
+    CONSTRAINT ck_learning_unit_body CHECK (
+        (unit_type = 'SUMMARY'  AND body_text IS NOT NULL) OR
+        (unit_type = 'PRACTICE' AND body_text IS NULL)),
+    CONSTRAINT ck_learning_unit_minutes CHECK (estimated_minutes > 0),
+    CONSTRAINT ck_learning_unit_round CHECK (round_size > 0),
+    CONSTRAINT ck_learning_unit_xp CHECK (xp_reward >= 0)
+);
+
+CREATE TABLE unit_task (
+    learning_unit_id  INTEGER NOT NULL,
+    task_id           INTEGER NOT NULL,
+    sort_order        INTEGER NOT NULL,
+    is_core           INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (is_core IN (0, 1)),
+    CONSTRAINT pk_unit_task PRIMARY KEY (learning_unit_id, task_id),
+    CONSTRAINT fk_unit_task_unit FOREIGN KEY (learning_unit_id)
+        REFERENCES learning_unit (learning_unit_id) ON DELETE CASCADE,
+    CONSTRAINT fk_unit_task_task FOREIGN KEY (task_id)
+        REFERENCES task (task_id) ON DELETE RESTRICT,
+    CONSTRAINT uq_unit_task_order UNIQUE (learning_unit_id, sort_order)
+);
+
+CREATE TABLE unit_tag (
+    learning_unit_id  INTEGER NOT NULL,
+    tag_id            INTEGER NOT NULL,
+    added_at          INTEGER NOT NULL,
+    CONSTRAINT pk_unit_tag PRIMARY KEY (learning_unit_id, tag_id),
+    CONSTRAINT fk_unit_tag_unit FOREIGN KEY (learning_unit_id)
+        REFERENCES learning_unit (learning_unit_id) ON DELETE CASCADE,
+    CONSTRAINT fk_unit_tag_tag FOREIGN KEY (tag_id)
+        REFERENCES tag (tag_id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_unit_task_task ON unit_task (task_id);
+CREATE INDEX ix_unit_tag_tag   ON unit_tag (tag_id);
+
+selectPublishedByTopic:
+SELECT * FROM learning_unit
+WHERE topic_id = :topicId AND is_published = 1
+ORDER BY sort_order;
+
+selectById:
+SELECT * FROM learning_unit WHERE learning_unit_id = :learningUnitId;
+
+-- tasks of a practice unit: core tasks first, then reserve, each in unit order
+selectUnitTasks:
+SELECT unit_task.*, task.is_active
+FROM unit_task JOIN task USING (task_id)
+WHERE unit_task.learning_unit_id = :learningUnitId
+ORDER BY unit_task.is_core DESC, unit_task.sort_order;
+
+insert:
+INSERT INTO learning_unit VALUES ?;
+
+insertUnitTask:
+INSERT INTO unit_task VALUES ?;
+
+insertUnitTag:
+INSERT INTO unit_tag VALUES ?;

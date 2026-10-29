@@ -1,0 +1,130 @@
+[
+  {
+    "task_id": 1001,
+    "format": "MC_SINGLE",
+    "question_text": "Melyik szókép azonosít két dolgot?",
+    "explanation": "A metafora azonosít, a hasonlat összehasonlít.",
+    "options": [
+      {
+        "label": "A",
+        "text": "hasonlat"
+      },
+      {
+        "label": "B",
+        "text": "metafora"
+      },
+      {
+        "label": "C",
+        "text": "megszemélyesítés"
+      }
+    ],
+    "key": [
+      {
+        "option": "B"
+      }
+    ],
+    "tags": [
+      "metafora"
+    ],
+    "source_type": "OWN"
+  },
+  {
+    "task_id": 1002,
+    "format": "TRUE_FALSE",
+    "question_text": "A hasonlatban gyakran szerepel a *mint* kötőszó.",
+    "options": [
+      {
+        "label": "I",
+        "text": "igaz"
+      },
+      {
+        "label": "H",
+        "text": "hamis"
+      }
+    ],
+    "key": [
+      {
+        "option": "I"
+      }
+    ],
+    "tags": [
+      "hasonlat"
+    ],
+    "source_type": "OWN"
+  },
+  {
+    "task_id": 1003,
+    "format": "SHORT_ANSWER",
+    "question_text": "Hogy hívjuk azt a szóképet, amely élettelen dolgot emberi tulajdonsággal ruház fel?",
+    "answer_word_limit": 1,
+    "accepted_answers": [
+      {
+        "text": "megszemélyesítés"
+      },
+      {
+        "text": "perszonifikáció"
+      }
+    ],
+    "source_type": "AI_REVIEWED",
+    "reviewed_at": "2026-10-28"
+  },
+  {
+    "task_id": 1004,
+    "format": "MATCHING",
+    "question_text": "Párosítsd a példát a szóképpel!",
+    "max_points": 2,
+    "options": [
+      {
+        "label": "1",
+        "text": "Olyan, mint a tűz.",
+        "role": "PROMPT"
+      },
+      {
+        "label": "2",
+        "text": "Te vagy a napom.",
+        "role": "PROMPT"
+      },
+      {
+        "label": "A",
+        "text": "hasonlat"
+      },
+      {
+        "label": "B",
+        "text": "metafora"
+      }
+    ],
+    "key": [
+      {
+        "slot": 1,
+        "prompt": "1",
+        "option": "A"
+      },
+      {
+        "slot": 2,
+        "prompt": "2",
+        "option": "B"
+      }
+    ],
+    "source_type": "OWN"
+  },
+  {
+    "task_id": 1005,
+    "format": "GAP_FILL",
+    "question_text": "A metafora két dolgot [[1]], a hasonlat [[2]].",
+    "accepted_answers": [
+      {
+        "slot": 1,
+        "text": "azonosít"
+      },
+      {
+        "slot": 2,
+        "text": "összehasonlít"
+      },
+      {
+        "slot": 2,
+        "text": "összehasonlítja őket"
+      }
+    ],
+    "source_type": "OWN"
+  }
+]

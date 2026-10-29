@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write # test reports appear as separate checks
+
+# One job per part, so a red job shows at once which part broke.
+# Each job publishes its JUnit results as a check and as a table in the run summary.
+jobs:
+  database:
+    name: Database (SQLDelight)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests
+        run: ./gradlew :database:jvmTest
+
+      - name: Test report
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: Database tests
+          report_paths: database/build/test-results/jvmTest/*.xml
+          detailed_summary: true
+          include_passed: true
+          require_tests: true
+
+  content-pipeline:
+    name: Content pipeline (validator, exporter, PostgreSQL importer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Throwaway PostgreSQL for the importer tests; they load dbServer/postgres/01_ddl.sql themselves
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: maturimate
+          POSTGRES_USER: maturimate
+          POSTGRES_PASSWORD: ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U maturimate"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://maturimate:ci-only@localhost:5432/maturimate
+      REQUIRE_POSTGRES: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests
+        run: ./gradlew :tools:content-pipeline:test
+
+      - name: Test report
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: Content pipeline tests
+          report_paths: tools/content-pipeline/build/test-results/test/*.xml
+          detailed_summary: true
+          include_passed: true
+          require_tests: true
+
+  app:
+    name: App (repositories, Android and desktop build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Bundle the made-up test content, so the app's content provider test runs too
+      - name: Bundle test content
+        run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101
+
+      - name: Tests
+        run: ./gradlew :composeApp:jvmTest
+
+      - name: Test report
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: App tests
+          report_paths: composeApp/build/test-results/jvmTest/*.xml
+          detailed_summary: true
+          include_passed: true
+          require_tests: true
+
+      - name: Build Android and desktop
+        run: ./gradlew :composeApp:assembleDebug :composeApp:jvmJar

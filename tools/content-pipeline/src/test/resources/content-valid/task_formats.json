@@ -1,0 +1,45 @@
+[
+  {
+    "task_format_id": 1,
+    "code": "MC_SINGLE",
+    "name": "Multiple choice",
+    "answer_mode": "CHOICE",
+    "description": "ABCD, one correct option"
+  },
+  {
+    "task_format_id": 2,
+    "code": "TRUE_FALSE",
+    "name": "True or false",
+    "answer_mode": "CHOICE"
+  },
+  {
+    "task_format_id": 3,
+    "code": "MATCHING",
+    "name": "Matching",
+    "answer_mode": "CHOICE"
+  },
+  {
+    "task_format_id": 4,
+    "code": "ORDERING",
+    "name": "Ordering",
+    "answer_mode": "CHOICE"
+  },
+  {
+    "task_format_id": 5,
+    "code": "GAP_CHOICE",
+    "name": "Gaps from a word list",
+    "answer_mode": "CHOICE"
+  },
+  {
+    "task_format_id": 6,
+    "code": "GAP_FILL",
+    "name": "Gaps filled by typing",
+    "answer_mode": "TEXT"
+  },
+  {
+    "task_format_id": 7,
+    "code": "SHORT_ANSWER",
+    "name": "Short answer",
+    "answer_mode": "TEXT"
+  }
+]
