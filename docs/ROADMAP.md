@@ -1,6 +1,6 @@
 # MaturiMate Roadmap
 
-> **Updated 2026-10-22: change of plan.** The first version (V1) is a micro-learning app with content written for this project (short lessons and practice tasks). Digitising the official exam papers moved to V2 and depends on permission from the exam authority (NIVAM). The reasons are in the [README](README.md). The milestones of the earlier plan are summarised at the end.
+> **Updated 2026-10-22: change of plan.** The first version (V1) is a micro-learning app with content written for this project (short lessons and practice tasks). Digitising the official exam papers moved to V2 and depends on permission from the exam authority (NIVAM). The reasons are in the [README](../README.md). The milestones of the earlier plan are summarised at the end.
 
 Legend: `[x]` = done (Milestone 1 is on the branch `feat/database-core` until it is merged into `main`); `[/]` = in progress; `[ ]` = planned, not started.
 
@@ -21,7 +21,7 @@ The order below is the working order: core first, then onboarding, then the unit
 
 ## Data architecture (offline-first)
 
-The app works fully offline. There are three databases with clear roles, and a content update never touches the user's progress. Details: [ARCHITECTURE](ARCHITECTURE.md#9-data-architecture); decisions and reasons: [llm/DECISIONS.md](llm/DECISIONS.md).
+The app works fully offline. There are three databases with clear roles, and a content update never touches the user's progress. Details: [ARCHITECTURE](ARCHITECTURE.md#9-data-architecture).
 
 | Database | Where | Content | Written by |
 | :--- | :--- | :--- | :--- |
@@ -35,7 +35,7 @@ How it works:
 * **Content reaches the phone as a whole file.** A prebuilt file ships inside the app, so the first start works without a network. Later the app downloads newer files (checked by version, size and hash) from private storage through signed links, without an app release.
 * **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
 * **Until accounts exist, the user database is local only.** Nothing is sent anywhere. Login and sync arrive with Milestone 7, before the public Hungarian release.
-* **One design, two dialects.** The PostgreSQL schema (`db/postgres/01_ddl.sql`) is final. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
+* **One design, two dialects.** The PostgreSQL schema (`../dbServer/postgres/01_ddl.sql`) is final. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
 * **Passwords** are stored hashed, and the app never talks to the server database directly. The backend holds the credentials.
 * **Hosting (later):** a free PostgreSQL tier to start (Neon is the current choice; check pricing and limits before signing up), with occasional `pg_dump` backups. The connection string stays in `DATABASE_URL`, outside the repository. Media (images, later audio) is stored separately in object storage and downloaded and cached by the app.
 
@@ -45,9 +45,9 @@ The schema is allowed to change freely until the first tester installs the app. 
 
 ## Milestone 1: Core and database
 
-* [x] **1.1. Database design:** the final PostgreSQL schema with 30 tables (`db/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
+* [x] **1.1. Database design:** the final PostgreSQL schema with 30 tables (`../dbServer/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
 * [x] **1.2. Local databases in the app:** SQLDelight content database (13 tables) and user database (8 tables) in a shared `:database` module, with drivers for Android and desktop.
-* [x] **1.3. Content pipeline:** validator, exporter to the content database file, and importer into PostgreSQL (`tools/content-pipeline`). The app installs the bundled content file on first start.
+* [x] **1.3. Content pipeline:** validator, exporter to the content database file, and importer into PostgreSQL (`../tools/content-pipeline`). The app installs the bundled content file on first start.
 * [x] **1.4. Provenance on tasks:** every task and lesson records its source in the content files (own, teacher, AI reviewed by a human, public domain); the validator requires it.
 * [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. Deleting the branch (it contains a digitised official paper) waits for the owner's decision.
 * [x] **1.6. Repositories:** domain models and repository interfaces for content and progress, with SQLDelight implementations in the data layer.

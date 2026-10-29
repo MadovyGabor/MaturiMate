@@ -29,7 +29,7 @@ Exports into `composeApp/src/commonMain/composeResources/files/` (gitignored). T
 
 ## Import (server copy)
 
-Start the local database (`docker compose up -d`, settings in `.env`), then:
+Start the local database (`docker compose -f dbServer/docker-compose.yml up -d`, settings in `dbServer/.env`; see [dbServer/README.md](../../dbServer/README.md)), then:
 
 ```bash
 ./gradlew :tools:content-pipeline:run --args="import content --dry-run"

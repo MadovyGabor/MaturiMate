@@ -1,6 +1,6 @@
 # MaturiMate
 
-> Kotlin Multiplatform app for Android and desktop (JVM), in early development. The product goal is an offline-first learning app (short lessons and practice tasks) for high school students who prepare for the graduation exam (*maturita*) in Slovakia. [VISION.md](VISION.md) still describes the earlier plan; see the update below.
+> Kotlin Multiplatform app for Android and desktop (JVM), in early development. The product goal is an offline-first learning app (short lessons and practice tasks) for high school students who prepare for the graduation exam (*maturita*) in Slovakia. [VISION.md](docs/VISION.md) still describes the earlier plan; see the update below.
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.9.1-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
@@ -11,7 +11,7 @@
 
 ## Update, 2026-10-22: change of plan
 
-**The plan changed.** The original plan was that the first version digitises the official Slovak graduation exam papers. The new first version (V1) uses only content written for this project. The official papers move to a later V2, and only if the exam authority (NIVAM) gives permission. The "Current status" section below describes the code on `main`; the "Planned" section, [VISION.md](VISION.md), [ROADMAP.md](ROADMAP.md) and [ARCHITECTURE.md](ARCHITECTURE.md) follow the new plan.
+**The plan changed.** The original plan was that the first version digitises the official Slovak graduation exam papers. The new first version (V1) uses only content written for this project. The official papers move to a later V2, and only if the exam authority (NIVAM) gives permission. The "Current status" section below describes the code on `main`; the "Planned" section, [VISION.md](docs/VISION.md), [ROADMAP.md](docs/ROADMAP.md) and [ARCHITECTURE.md](docs/ARCHITECTURE.md) follow the new plan.
 
 ### Why: the problems and barriers
 
@@ -72,7 +72,7 @@ This section describes the code on the branch `feat/database-core` (Milestone 1)
 - Koin dependency injection modules, shared and per platform.
 - Android splash screen and a desktop window entry point.
 - Database core (Milestone 1, branch `feat/database-core`):
-  - The final PostgreSQL schema (30 tables, `db/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
+  - The final PostgreSQL schema (30 tables, `dbServer/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
   - Content database (13 tables) and user database (8 tables) with SQLDelight, in a shared `:database` module.
   - Content pipeline (`tools/content-pipeline`): validates the lesson and task files, exports the content database file for the app, and imports the content into PostgreSQL.
   - The app installs the bundled content file on first start (checked on the Android emulator).
@@ -91,7 +91,7 @@ Under the new plan (see the update above):
 - Daily streak and simple progress based on real attempt data.
 - Offline-first storage: content shipped with the app, user progress stored separately.
 - Full localization of UI strings.
-- More subjects and platforms later, see [ROADMAP.md](ROADMAP.md).
+- More subjects and platforms later, see [ROADMAP.md](docs/ROADMAP.md).
 
 Postponed to V2, only with permission from the exam authority: official exam papers and the exam-specific subject content (`SK_SJL`, English B1/B2, Mathematics).
 
@@ -136,17 +136,15 @@ Onboarding data: `UserPreferencesRepositoryImpl` writes the DataStore keys `lang
 
 Platform code (`expect`/`actual`): the platform Koin module (`platformModule`), `DatabaseDriverFactory` (in `:database`), and `Modifier.systemPadding()`.
 
-Data: three databases with clear roles. The content database (read-only on the phone) is built from the lesson and task files and installed as a whole file; the user database holds the progress; PostgreSQL holds accounts and synced progress later, plus a copy of the content. See [ARCHITECTURE.md](ARCHITECTURE.md#9-data-architecture).
+Data: three databases with clear roles. The content database (read-only on the phone) is built from the lesson and task files and installed as a whole file; the user database holds the progress; PostgreSQL holds accounts and synced progress later, plus a copy of the content. See [ARCHITECTURE.md](docs/ARCHITECTURE.md#9-data-architecture).
 
 ## Project structure
 
 ```
 MaturiMate/
-├── README.md  ARCHITECTURE.md  ROADMAP.md  VISION.md
-├── docs/                    IMPLEMENTATION_PLAN.md
-├── llm/                     decisions and notes for planning
-├── db/postgres/             01_ddl.sql (PostgreSQL schema, 30 tables)
-├── docker-compose.yml       local PostgreSQL; settings in .env (see .env.example)
+├── README.md
+├── docs/                    VISION.md, ROADMAP.md, ARCHITECTURE.md
+├── dbServer/                local PostgreSQL: docker-compose.yml, .env.example, postgres/01_ddl.sql (30 tables)
 ├── content/                 lesson and task files (private repository, gitignored)
 ├── composeApp/              the app (Android and desktop)
 │   └── src/
@@ -187,8 +185,8 @@ Commands:
 # Bundle the content files into the app (needs the content/ folder)
 ./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801
 
-# Local PostgreSQL (copy .env.example to .env first)
-docker compose up -d
+# Local PostgreSQL (copy dbServer/.env.example to dbServer/.env first; see dbServer/README.md)
+docker compose -f dbServer/docker-compose.yml up -d
 ```
 
 On Windows PowerShell, replace `./gradlew` with `.\gradlew.bat`.
@@ -209,8 +207,7 @@ I design the architecture and make the technical decisions myself. AI assistants
 
 ## Documentation
 
-- [VISION.md](VISION.md): product goal, target audience, content sources and planned scope, updated for the own-content plan.
-- [ROADMAP.md](ROADMAP.md): milestones in working order, with the offline-first data architecture.
-- [ARCHITECTURE.md](ARCHITECTURE.md): technology, modules, layering, navigation, and the data architecture with the content pipeline.
-- [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md): the ordered work list with the database details.
+- [VISION.md](docs/VISION.md): product goal, target audience, content sources and planned scope, updated for the own-content plan.
+- [ROADMAP.md](docs/ROADMAP.md): milestones in working order, with the offline-first data architecture.
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md): technology, modules, layering, navigation, and the data architecture with the content pipeline.
 - [tools/content-pipeline/README.md](tools/content-pipeline/README.md): how to write, check and export content.

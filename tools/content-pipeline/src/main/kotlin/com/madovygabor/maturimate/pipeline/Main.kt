@@ -15,7 +15,7 @@ private const val USAGE = """Usage:
   import <content folder> [--dry-run]
       Writes the content into PostgreSQL (the server copy).
       --dry-run    only validate, write nothing
-      The database is read from DATABASE_URL (environment or the .env file in the current folder)."""
+      The database is read from DATABASE_URL (environment or dbServer/.env)."""
 
 fun main(args: Array<String>) {
     val positional = args.filterNot { it.startsWith("--") }
@@ -79,14 +79,14 @@ private fun fail(message: String, code: Int = 1): Nothing {
     exitProcess(code)
 }
 
-/** DATABASE_URL from the environment, or from a `.env` file in the current folder. */
+/** DATABASE_URL from the environment, or from `dbServer/.env` (the tool runs in the repository root). */
 fun databaseUrl(): String =
     System.getenv("DATABASE_URL")
-        ?: File(".env").takeIf { it.isFile }?.readLines()
+        ?: File("dbServer/.env").takeIf { it.isFile }?.readLines()
             ?.map { it.trim() }
             ?.firstOrNull { it.startsWith("DATABASE_URL=") }
             ?.substringAfter("=")
-        ?: error("DATABASE_URL is not set (environment or .env)")
+        ?: error("DATABASE_URL is not set (environment or dbServer/.env)")
 
 /** Opens a `postgresql://user:password@host:port/database` URL with the JDBC driver. */
 fun openDatabase(url: String): Connection {

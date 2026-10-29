@@ -1,4 +1,4 @@
--- Study streak and daily activity of the user. Same tables as in db/postgres/01_ddl.sql,
+-- Study streak and daily activity of the user. Same tables as in dbServer/postgres/01_ddl.sql,
 -- without the foreign keys to app_user.
 CREATE TABLE user_streak (
     user_id             INTEGER NOT NULL,

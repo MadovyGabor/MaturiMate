@@ -1,4 +1,5 @@
-# Local development database. The DDL in db/postgres runs once, when the volume is created.
+# Local development database. The DDL in postgres/ runs once, when the volume is created.
+name: maturimate
 services:
   postgres:
     image: postgres:16
@@ -9,7 +10,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ./db/postgres:/docker-entrypoint-initdb.d:ro
+      - ./postgres:/docker-entrypoint-initdb.d:ro
       - pgdata:/var/lib/postgresql/data
 
 volumes:

@@ -1,6 +1,6 @@
 # MaturiMate — Project Overview & Scope
 
-> **Status:** This document describes the intended product and its planned scope. It was updated on 2026-10-22 after the change of plan described in the [README](README.md): the first version uses only content written for this project, and the official exam papers moved to a later version. For what is implemented on `main`, see the "Current status" section of the README. For the order of the work, see the [ROADMAP](ROADMAP.md). Sections 4 and 5 describe planned work.
+> **Status:** This document describes the intended product and its planned scope. It was updated on 2026-10-22 after the change of plan described in the [README](../README.md): the first version uses only content written for this project, and the official exam papers moved to a later version. For what is implemented on `main`, see the "Current status" section of the README. For the order of the work, see the [ROADMAP](ROADMAP.md). Sections 4 and 5 describe planned work.
 
 A planned offline-first learning app for high school students in Slovakia who prepare for the graduation exam (*maturita*). It offers short lessons and practice tasks, so that preparation becomes a daily habit instead of a last-minute effort.
 

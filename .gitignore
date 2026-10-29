@@ -30,3 +30,6 @@ composeApp/src/commonMain/composeResources/files/content-manifest.json
 
 # Lesson and task files: a separate private repository cloned here (see llm/DECISIONS.md)
 /content/
+
+# Planning notes for the AI assistant (kept locally)
+/llm/

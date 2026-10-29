@@ -2,15 +2,15 @@
 
 This document describes the architecture of the code in this repository. It was last checked against the code on 2026-10-28, on the branch `feat/database-core` (Milestone 1: core and database). Until that branch is merged, sections 2, 3, 7 and 9 to 11 describe code that is not yet on `main`.
 
-For the current status of each part, see the "Current status" section of the [README](README.md). The ordered work list is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
+For the current status of each part, see the "Current status" section of the [README](../README.md).
 
-> **2026-10-22: change of plan.** The first version uses only content written for this project (short lessons and practice tasks); the official exam papers moved to a later version (see the [README](README.md)). The exam-centred database of the earlier plan (unmerged `database` branch) is not used; its drivers and Gradle setup were reused.
+> **2026-10-22: change of plan.** The first version uses only content written for this project (short lessons and practice tasks); the official exam papers moved to a later version (see the [README](../README.md)). The exam-centred database of the earlier plan (unmerged `database` branch) is not used; its drivers and Gradle setup were reused.
 
 ---
 
 ## 1. Technology Stack
 
-| Component | Version (from `gradle/libs.versions.toml`) | Notes |
+| Component | Version (from `../gradle/libs.versions.toml`) | Notes |
 |---|---|---|
 | Kotlin Multiplatform | Kotlin 2.2.20 | Android target and desktop `jvm()` target |
 | Compose Multiplatform | 1.9.1 | Shared UI for Android and desktop |
@@ -18,12 +18,12 @@ For the current status of each part, see the "Current status" section of the [RE
 | AndroidX Lifecycle (ViewModel) | 2.10.0-alpha07 | Alpha dependency |
 | Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
 | DataStore Preferences | 1.2.0 | Stores user preferences on all targets |
-| kotlinx.serialization | 1.9.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`tools/content-pipeline`) |
+| kotlinx.serialization | 1.9.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
 | kotlinx.datetime | 0.7.1 | Used for `LocalDate` and time zone handling |
 | kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
 | SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
-| PostgreSQL JDBC driver | 42.7.4 | `tools/content-pipeline` only (server copy of the content) |
-| PostgreSQL | 16 (Docker) | Local development database (`docker-compose.yml`); not used by the app |
+| PostgreSQL JDBC driver | 42.7.4 | `../tools/content-pipeline` only (server copy of the content) |
+| PostgreSQL | 16 (Docker) | Local development database (`../dbServer/docker-compose.yml`); not used by the app |
 
 Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
@@ -39,9 +39,9 @@ Gradle modules:
 | `:database` | Kotlin Multiplatform library (Android, desktop) | SQLDelight schemas of the content and user databases, platform drivers, content installer |
 | `:tools:content-pipeline` | Kotlin/JVM command-line tool | Validates the content files; exports `content.db`; imports the server copy into PostgreSQL |
 
-Other folders: `db/postgres/01_ddl.sql` (the PostgreSQL schema, 30 tables), `docker-compose.yml` (local PostgreSQL), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` and `llm/` (plans and decisions).
+Other folders: `dbServer/` (local PostgreSQL: `docker-compose.yml`, `.env.example`, and the schema `postgres/01_ddl.sql` with 30 tables; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
 
-The app source tree, relative to `composeApp/src/`:
+The app source tree, relative to `../composeApp/src`:
 
 ```
 commonMain/kotlin/com/madovygabor/maturimate/
@@ -135,15 +135,15 @@ The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. O
 
 ## 9. Data Architecture
 
-Offline-first, with three databases (decisions and reasons: [llm/DECISIONS.md](llm/DECISIONS.md)):
+Offline-first, with three databases:
 
 | Database | Where | Contents | Written by |
 |---|---|---|---|
 | Content (SQLite, `content.db`) | Phone, read-only | 13 content tables: subjects, topic tree, learning units, tasks with options, keys and accepted answers, tags | The exporter; installed as a whole file |
 | User (SQLite, `maturimate_user.db`) | Phone | 8 user tables: profile, settings, subjects, attempts, unit and task progress, streak, daily activity | The app |
-| Server (PostgreSQL) | Local Docker now; a hosted server later | All 30 tables of `db/postgres/01_ddl.sql`: accounts and synced progress, plus a copy of the content | The importer (content); a backend later (accounts, progress) |
+| Server (PostgreSQL) | Local Docker now; a hosted server later | All 30 tables of `../dbServer/postgres/01_ddl.sql`: accounts and synced progress, plus a copy of the content | The importer (content); a backend later (accounts, progress) |
 
-The PostgreSQL schema in `db/postgres/01_ddl.sql` is the design and is not changed. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `app_user`). The full mapping is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md), section 2.
+The PostgreSQL schema in `dbServer/postgres/01_ddl.sql` is the design and is not changed. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `app_user`).
 
 ### 9.1 Content pipeline
 
@@ -153,14 +153,14 @@ Files (Git) ──┤
               └─→ import → PostgreSQL (server copy; the user tables there reference content by foreign key)
 ```
 
-* The lesson and task files are the source of truth: Markdown for `SUMMARY` lessons, JSON for tasks and `PRACTICE` units, one folder per leaf topic. All ids are written in the files and never change. Format and rules: [tools/content-pipeline/README.md](tools/content-pipeline/README.md).
+* The lesson and task files are the source of truth: Markdown for `SUMMARY` lessons, JSON for tasks and `PRACTICE` units, one folder per leaf topic. All ids are written in the files and never change. Format and rules: [tools/content-pipeline/README.md](../tools/content-pipeline/README.md).
 * Both commands use the same loader and `ContentValidator` (format rules of the design, text format, leaf topics, provenance). Nothing is written if a check fails.
 * The exporter creates the file with the generated `ContentDatabase.Schema` from `:database`, so the file matches what the app reads. It sets `PRAGMA user_version` to the schema version and writes a manifest with `content_version`, size and SHA-256. The same files give a byte-identical file. With `--previous`, it fails if a row of the previous release is missing: rows are switched off (`is_active`, `is_published`), never removed.
 * The importer upserts by id in one transaction, replaces the rows a task owns, deactivates rows missing from the files, and moves the identity sequences past the imported ids.
 
 ### 9.2 Content in the app
 
-* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `composeApp/src/commonMain/composeResources/files/`. These files are gitignored; a build without them runs, but has no content.
+* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `../composeApp/src/commonMain/composeResources/files`. These files are gitignored; a build without them runs, but has no content.
 * `ContentInstaller` (`:database`) installs a content file only if its schema version equals the app's, its size and SHA-256 match the manifest, and its `content_version` is higher than the installed one. It writes a temporary file and renames it over the old one, manifest last. The user database is never touched.
 * `ContentDatabaseProvider` (`core/database`) installs the bundled file on first use and opens the installed one; it returns null when there is no content. Checked on the Android emulator (API 37): installed on first start, "up to date" after a restart.
 * Not built yet: downloading newer content files. They will go through the same installer; the open content driver must be closed before a swap.
@@ -176,7 +176,7 @@ Files (Git) ──┤
 ## 10. Not built yet
 
 * Screens that use the content and progress (Milestone 3). The current subject and exam screens still show static data (sections 3 and 5).
-* Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md) and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)).
+* Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md)).
 * Migrations of the user database: the schema may change until the first tester installs the app.
 
 ---

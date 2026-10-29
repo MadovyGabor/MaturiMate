@@ -1,4 +1,4 @@
--- Practice rounds and progress of the user. Same tables as in db/postgres/01_ddl.sql,
+-- Practice rounds and progress of the user. Same tables as in dbServer/postgres/01_ddl.sql,
 -- without the foreign keys to app_user and to content tables (topic, learning_unit, task).
 CREATE TABLE attempt (
     attempt_id        INTEGER CONSTRAINT pk_attempt PRIMARY KEY,

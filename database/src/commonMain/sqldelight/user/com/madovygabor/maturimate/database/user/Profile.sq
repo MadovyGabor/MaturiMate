@@ -1,4 +1,4 @@
--- Profile, settings and subjects of the user. Same tables as in db/postgres/01_ddl.sql,
+-- Profile, settings and subjects of the user. Same tables as in dbServer/postgres/01_ddl.sql,
 -- without the foreign keys to app_user and subject (server-only and content-database tables).
 CREATE TABLE user_profile (
     user_id            INTEGER NOT NULL,

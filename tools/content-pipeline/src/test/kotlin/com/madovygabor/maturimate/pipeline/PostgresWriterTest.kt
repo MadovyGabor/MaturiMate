@@ -28,13 +28,13 @@ class PostgresWriterTest {
     fun createDatabase() {
         try {
             adminUrl = System.getenv("DATABASE_URL")
-                ?: File(repoRoot, ".env").readLines().first { it.startsWith("DATABASE_URL=") }.substringAfter("=")
+                ?: File(repoRoot, "dbServer/.env").readLines().first { it.startsWith("DATABASE_URL=") }.substringAfter("=")
             openDatabase(adminUrl).use { it.createStatement().execute("CREATE DATABASE $testDatabase") }
         } catch (e: Exception) {
             assumeNoException("local PostgreSQL is not available", e)
         }
         connection = openDatabase(adminUrl.replaceDatabase(testDatabase))
-        connection.createStatement().use { it.execute(File(repoRoot, "db/postgres/01_ddl.sql").readText()) }
+        connection.createStatement().use { it.execute(File(repoRoot, "dbServer/postgres/01_ddl.sql").readText()) }
     }
 
     @After
