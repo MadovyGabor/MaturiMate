@@ -28,8 +28,12 @@ composeApp/src/commonMain/composeResources/files/*_private.json
 composeApp/src/commonMain/composeResources/files/content.db
 composeApp/src/commonMain/composeResources/files/content-manifest.json
 
-# Lesson and task files: a separate private repository cloned here (see llm/DECISIONS.md)
+# Lesson and task files: a separate private repository cloned here (see docs/DECISIONS.md)
 /content/
 
 # Planning notes for the AI assistant (kept locally)
 /llm/
+
+# Personal Claude Code settings and notes
+.claude/settings.local.json
+CLAUDE.local.md
