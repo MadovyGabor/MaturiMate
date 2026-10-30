@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 // surface and onSurface use the background tokens: the design system has one base surface.
 private val lightScheme = lightColorScheme(
@@ -92,10 +93,13 @@ fun AppTheme(
       darkTheme -> darkScheme
       else -> lightScheme
   }
+  val extendedColors = if (darkTheme) extendedColorsDark else extendedColorsLight
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = AppTypography,
-    content = content
-  )
+  CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+    MaterialTheme(
+      colorScheme = colorScheme,
+      typography = AppTypography,
+      content = content
+    )
+  }
 }
