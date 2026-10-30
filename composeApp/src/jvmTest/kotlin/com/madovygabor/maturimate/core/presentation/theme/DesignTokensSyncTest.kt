@@ -1,6 +1,9 @@
 package com.madovygabor.maturimate.core.presentation.theme
 
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -15,7 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Checks that the theme colors and type styles match docs/design-system/tokens.json, the source of the
+ * Checks that the theme colors, type styles, radii and spacing steps match docs/design-system/tokens.json, the source of the
  * design system. When this fails, a value was changed in only one of the two places.
  */
 class DesignTokensSyncTest {
@@ -124,6 +127,40 @@ class DesignTokensSyncTest {
             assertEquals(token["letterSpacing"]?.let { token.px("letterSpacing") } ?: 0f, code.letterSpacing.value, "$name letter spacing")
         }
     }
+
+    @Test
+    fun everyRadiusAndSpacingStepMatchesTheCode() {
+        fun CornerBasedShape.radius() = topStart.toPx(Size(1000f, 1000f), Density(1f))
+        val codeRadii = mapOf(
+            "radius-xs" to AppShapes.extraSmall.radius(),
+            "radius-sm" to AppShapes.small.radius(),
+            "radius-md" to AppShapes.medium.radius(),
+            "radius-lg" to AppShapes.large.radius(),
+            "radius-xl" to AppShapes.extraLarge.radius(),
+        )
+        val spacing = Spacing()
+        val codeSpacing = mapOf(
+            "space-1" to spacing.space1.value,
+            "space-2" to spacing.space2.value,
+            "space-3" to spacing.space3.value,
+            "space-4" to spacing.space4.value,
+            "space-6" to spacing.space6.value,
+            "space-8" to spacing.space8.value,
+        )
+
+        // radius-full (pill) has no Material 3 role; the components set it.
+        val radii = tokenList("radius").filterKeys { it != "radius-full" }
+        assertEquals(radii.keys, codeRadii.keys, "Radius names in tokens.json and in the code differ")
+        radii.forEach { (name, token) -> assertEquals(token.px("value"), codeRadii.getValue(name), name) }
+
+        val steps = tokenList("spacing")
+        assertEquals(steps.keys, codeSpacing.keys, "Spacing names in tokens.json and in the code differ")
+        steps.forEach { (name, token) -> assertEquals(token.px("value"), codeSpacing.getValue(name), name) }
+    }
+
+    private fun tokenList(family: String): Map<String, JsonObject> =
+        tokens().getValue(family).jsonObject.getValue("tokens").jsonArray
+            .associate { it.jsonObject.getValue("name").jsonPrimitive.content to it.jsonObject }
 
     private fun tokens() = Json.parseToJsonElement(File("../docs/design-system/tokens.json").readText()).jsonObject
 

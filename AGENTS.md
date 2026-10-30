@@ -35,7 +35,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 ## Rules
 
 - **Layers:** screens talk to ViewModels, ViewModels to repository interfaces in `domain/`. Generated SQLDelight classes stay in `data/`. The UI never calls a database directly.
-- **Design system:** screens use theme values only (`MaterialTheme.colorScheme`, `typography`, `shapes`, and the extended colors). No `Color(0xFF…)`, font size or corner radius written directly in a screen. A new color or style goes into `docs/design-system/tokens.json` first.
+- **Design system:** screens use theme values only (`MaterialTheme.colorScheme`, `typography`, `shapes`, `extendedColors`, `extendedTypography` and `spacing`). No `Color(0xFF…)`, font size, corner radius or spacing value written directly in a screen. A new color or style goes into `docs/design-system/tokens.json` first.
 - **Content ids never change and content rows are never deleted**, only switched off.
 - **No official exam content** (NIVAM papers, answer keys, audio) in this repository or in the app. V1 uses only content written for this project.
 - **Lessons and tasks live in a separate private repository**, cloned into `content/` (gitignored). Tests use the fixtures under `tools/content-pipeline/src/test/resources/`.
