@@ -7,6 +7,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 | Before you… | Read |
 | :--- | :--- |
 | change anything | [docs/ROADMAP.md](docs/ROADMAP.md) (where we are, what comes next) |
+| change a design or a past decision | [docs/DECISIONS.md](docs/DECISIONS.md) (what was decided and why) |
 | touch modules, layers, navigation or data | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | build or change UI | [docs/design-system/README.md](docs/design-system/README.md) and [tokens.json](docs/design-system/tokens.json) |
 | touch content, the validator, exporter or importer | [tools/content-pipeline/README.md](tools/content-pipeline/README.md) |
@@ -16,6 +17,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 
 - **Plan first, code second.** For anything beyond a small fix, write a short plan and wait for the owner's approval before writing code.
 - **Small steps.** One roadmap step per change. Update the roadmap checkbox when a step is done.
+- **Record decisions.** When the owner decides something lasting, add a short entry to `docs/DECISIONS.md` (what and why). Mark replaced entries instead of deleting them.
 - **Branches:** never commit to `main`. Use `feat/…`, `fix/…`, `docs/…`, `chore/…`. Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`).
 - Documentation, code and comments are in **English**. App text is Hungarian and Slovak, in `composeResources/values-hu` and `values-sk`.
 
@@ -41,5 +43,5 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 
 ## Local, uncommitted folders
 
-- `llm/`: the owner's local planning notes, design inspiration and outputs of AI sessions (`llm/outputs/`). Read it when useful; put scratch output in `llm/outputs/`. Screenshots of other apps in it are licensed and must never be committed.
+- `llm/`: the owner's local planning notes, design inspiration and outputs of AI sessions (`llm/outputs/`). Read it when useful, but `docs/` is the source of truth; put scratch output in `llm/outputs/`. Screenshots of other apps in it are licensed and must never be committed.
 - `content/`: the private content repository (see above).
