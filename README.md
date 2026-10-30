@@ -59,7 +59,7 @@ The app stays offline-first.
 
 ## Current status
 
-This section describes the code on the branch `feat/database-core` (Milestone 1), which is not merged into `main` yet. Everything under "Built" except the database core is also on `main`.
+This section describes the code on `main`, after Milestone 1 (core and database).
 
 ### Built
 
@@ -71,7 +71,7 @@ This section describes the code on the branch `feat/database-core` (Milestone 1)
 - Navigation3 (alpha) root with serializable route keys, top-level tabs and per-tab back stacks.
 - Koin dependency injection modules, shared and per platform.
 - Android splash screen and a desktop window entry point.
-- Database core (Milestone 1, branch `feat/database-core`):
+- Database core (Milestone 1):
   - The final PostgreSQL schema (30 tables, `dbServer/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
   - Content database (13 tables) and user database (8 tables) with SQLDelight, in a shared `:database` module.
   - Content pipeline (`tools/content-pipeline`): validates the lesson and task files, exports the content database file for the app, and imports the content into PostgreSQL.
@@ -80,7 +80,8 @@ This section describes the code on the branch `feat/database-core` (Milestone 1)
 
 ### In progress
 
-- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 3.
+- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 6.
+- Next: the design system in the code (Milestone 2), then the onboarding rework with Supabase accounts (Milestones 3 to 5). See [ROADMAP.md](docs/ROADMAP.md).
 - The real lessons and tasks are written in a separate private repository, cloned into `content/` (gitignored).
 
 ### Planned
