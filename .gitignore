@@ -33,3 +33,7 @@ composeApp/src/commonMain/composeResources/files/content-manifest.json
 
 # Planning notes for the AI assistant (kept locally)
 /llm/
+
+# Personal Claude Code settings and notes
+.claude/settings.local.json
+CLAUDE.local.md

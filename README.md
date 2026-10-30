@@ -211,3 +211,5 @@ I design the architecture and make the technical decisions myself. AI assistants
 - [ROADMAP.md](docs/ROADMAP.md): milestones in working order, with the offline-first data architecture.
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md): technology, modules, layering, navigation, and the data architecture with the content pipeline.
 - [tools/content-pipeline/README.md](tools/content-pipeline/README.md): how to write, check and export content.
+- [docs/design-system/](docs/design-system/README.md): colors, typography, shapes and components; `tokens.json` is the source of truth for the theme.
+- [AGENTS.md](AGENTS.md): working rules for AI agents (`CLAUDE.md` imports it).
