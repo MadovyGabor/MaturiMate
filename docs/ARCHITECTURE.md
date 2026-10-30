@@ -1,6 +1,6 @@
 # MaturiMate Architecture
 
-This document describes the architecture of the code in this repository. It was last checked against the code on 2026-10-28, on the branch `feat/database-core` (Milestone 1: core and database). Until that branch is merged, sections 2, 3, 7 and 9 to 11 describe code that is not yet on `main`.
+This document describes the architecture of the code in this repository. It was last checked against the code on 2026-10-28, after Milestone 1 (core and database), which is merged into `main`.
 
 For the current status of each part, see the "Current status" section of the [README](../README.md).
 
@@ -68,7 +68,7 @@ jvmTest/kotlin/...          # Content provider and repository tests
 
 ## 3. Layering
 
-`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 3. The other features contain only presentation code:
+`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 6. The other features contain only presentation code:
 
 * `features/profileDetails` contains only `presentation/`.
 * `features/subjects` contains only `presentation/`.
@@ -175,7 +175,7 @@ Files (Git) ──┤
 
 ## 10. Not built yet
 
-* Screens that use the content and progress (Milestone 3). The current subject and exam screens still show static data (sections 3 and 5).
+* Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
 * Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md)).
 * Migrations of the user database: the schema may change until the first tester installs the app.
 
