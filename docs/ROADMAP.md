@@ -60,12 +60,12 @@ The schema is allowed to change freely until the first tester installs the app. 
 
 Branch: `feat/theme`. The source is [docs/design-system](design-system/README.md); the Compose theme follows `tokens.json`.
 
-* [ ] **2.1.** `Color.kt` and `Theme.kt`: the new light and dark palette on the Material 3 roles; the old teal and the unused contrast variants are removed.
-* [ ] **2.2.** Extended colors (`brand-gold`, the `success` family, `focus-ring`) in an `ExtendedColors` class provided through a `CompositionLocal`.
-* [ ] **2.3.** Fonts: Literata and Manrope bundled as resources; `Type.kt` with the type scale and the `reading` style.
-* [ ] **2.4.** `Shapes` with the radius scale.
-* [ ] **2.5.** Components the onboarding needs: button variants, choice chip, progress bar, text field.
-* [ ] **2.6.** A component catalogue screen (desktop) to check every component in both themes.
+* [x] **2.1.** `Color.kt` and `Theme.kt`: the new light and dark palette on the Material 3 roles; the old teal and the unused contrast variants are removed.
+* [x] **2.2.** Extended colors (`brand-gold`, the `success` family, `focus-ring`) in an `ExtendedColors` class provided through a `CompositionLocal`.
+* [x] **2.3.** Fonts: Literata and Manrope bundled as resources; `Type.kt` with the type scale and the `reading` style.
+* [x] **2.4.** `Shapes` with the radius scale (adds `radius-xs`) and the spacing steps (`MaterialTheme.spacing`). A test checks the theme against `tokens.json`.
+
+Components are not built in advance. Each screen builds the components it needs in `core/presentation/uiComponents/` from theme values, documented in `docs/design-system/components/`, so later screens reuse them. A component catalogue screen comes later, once there are enough components.
 
 ---
 
@@ -94,6 +94,8 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 ---
 
 ## Milestone 5: Onboarding rework
+
+Each screen step also builds the components it needs (buttons, chips, progress bar, text field), as described under Milestone 2.
 
 * [ ] **5.1.** Remove the VPUS/SNI toggle and its stored value.
 * [ ] **5.2.** Profile and settings move to the user database; DataStore is removed.
