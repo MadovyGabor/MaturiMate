@@ -39,7 +39,7 @@ A change starts in `tokens.json`. The Compose theme (`composeApp/.../core/presen
 
 ## Shape and spacing
 
-- Corners follow the Material 3 scale: `radius-sm` chip, `radius-md` answer option and text field, `radius-lg` card, `radius-xl` bottom sheet and dialog, `radius-full` button.
+- Corners follow the Material 3 scale: `radius-xs` snackbar and menu, `radius-sm` chip, `radius-md` answer option and text field, `radius-lg` card, `radius-xl` bottom sheet and dialog, `radius-full` button.
 - Screen side margin and card padding are `space-4`. Answer options are `space-3` apart, sections `space-6`.
 - Touch targets are at least 48 dp tall.
 
@@ -60,5 +60,7 @@ A change starts in `tokens.json`. The Compose theme (`composeApp/.../core/presen
 - Each color token is the `ColorScheme` field of the same name in camelCase: `primary-container` → `primaryContainer`, `on-surface-variant` → `onSurfaceVariant`. The `background` value also goes into `surface`.
 - `brand-gold`, the `success` family and `focus-ring` are not M3 roles. They go into an `ExtendedColors` class provided through a `CompositionLocal`.
 - Type styles are the `Typography` fields of the same name (`headline-medium` → `headlineMedium`). `reading` is an extension.
-- Radii are the `small`, `medium`, `large` and `extraLarge` fields of `Shapes`.
+- Radii are the `extraSmall`, `small`, `medium`, `large` and `extraLarge` fields of `Shapes` (`radius-xs` to `radius-xl`). `radius-full` (pill) is set by the components that use it.
+- Spacing steps are `MaterialTheme.spacing` (`space-4` → `spacing.space4`).
+- `DesignTokensSyncTest` checks that the code matches `tokens.json`; it fails when a value is changed in only one place.
 - Screens use theme values only. No `Color(0xFF...)`, font size or corner radius is written directly in a screen.
