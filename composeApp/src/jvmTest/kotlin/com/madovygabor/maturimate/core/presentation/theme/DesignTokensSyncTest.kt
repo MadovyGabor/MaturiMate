@@ -2,7 +2,11 @@ package com.madovygabor.maturimate.core.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -11,8 +15,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Checks that the theme colors match docs/design-system/tokens.json, the source of the design system.
- * When this fails, a color was changed in only one of the two places.
+ * Checks that the theme colors and type styles match docs/design-system/tokens.json, the source of the
+ * design system. When this fails, a value was changed in only one of the two places.
  */
 class DesignTokensSyncTest {
 
@@ -62,9 +66,7 @@ class DesignTokensSyncTest {
 
     @Test
     fun everyColorTokenMatchesTheCode() {
-        val tokensFile = File("../docs/design-system/tokens.json")
-        val tokens = Json.parseToJsonElement(tokensFile.readText())
-            .jsonObject.getValue("color").jsonObject.getValue("tokens").jsonArray
+        val tokens = tokens().getValue("color").jsonObject.getValue("tokens").jsonArray
             .associate { token ->
                 val value = token.jsonObject.getValue("value").jsonObject
                 token.jsonObject.getValue("name").jsonPrimitive.content to
@@ -78,6 +80,54 @@ class DesignTokensSyncTest {
             assertEquals(hex.second.lowercase(), dark.toHex(), "$name (dark)")
         }
     }
+
+    @Test
+    fun everyTypeStyleMatchesTheCode() {
+        val serif = FontFamily.Serif
+        val sans = FontFamily.SansSerif
+        val families = mapOf("serif" to serif, "sans" to sans)
+        val typography = appTypography(serif, sans)
+        val codeStyles: Map<String, TextStyle> = mapOf(
+            "display-large" to typography.displayLarge,
+            "display-medium" to typography.displayMedium,
+            "display-small" to typography.displaySmall,
+            "headline-large" to typography.headlineLarge,
+            "headline-medium" to typography.headlineMedium,
+            "headline-small" to typography.headlineSmall,
+            "title-large" to typography.titleLarge,
+            "title-medium" to typography.titleMedium,
+            "title-small" to typography.titleSmall,
+            "body-large" to typography.bodyLarge,
+            "body-medium" to typography.bodyMedium,
+            "body-small" to typography.bodySmall,
+            "label-large" to typography.labelLarge,
+            "label-medium" to typography.labelMedium,
+            "label-small" to typography.labelSmall,
+            "reading" to appExtendedTypography(serif).reading,
+        )
+
+        val groups = tokens().getValue("type").jsonObject.getValue("groups").jsonArray
+        val tokenStyles = groups.flatMap { group ->
+            val groupFamily = group.jsonObject.getValue("family").jsonPrimitive.content
+            group.jsonObject.getValue("styles").jsonArray.map { it.jsonObject to groupFamily }
+        }.associateBy { (style, _) -> style.getValue("name").jsonPrimitive.content }
+
+        assertEquals(tokenStyles.keys, codeStyles.keys, "Type style names in tokens.json and in the code differ")
+        for ((name, entry) in tokenStyles) {
+            val (token, groupFamily) = entry
+            val code = codeStyles.getValue(name)
+            val family = token["family"]?.jsonPrimitive?.content ?: groupFamily
+            assertEquals(families.getValue(family), code.fontFamily, "$name font family")
+            assertEquals(token.px("fontSize"), code.fontSize.value, "$name font size")
+            assertEquals(token.px("lineHeight"), code.lineHeight.value, "$name line height")
+            assertEquals(token.getValue("fontWeight").jsonPrimitive.int, code.fontWeight?.weight, "$name font weight")
+            assertEquals(token["letterSpacing"]?.let { token.px("letterSpacing") } ?: 0f, code.letterSpacing.value, "$name letter spacing")
+        }
+    }
+
+    private fun tokens() = Json.parseToJsonElement(File("../docs/design-system/tokens.json").readText()).jsonObject
+
+    private fun JsonObject.px(key: String): Float = getValue(key).jsonPrimitive.content.removeSuffix("px").toFloat()
 
     private fun Color.toHex(): String = "#%06x".format(toArgb() and 0xFFFFFF)
 }

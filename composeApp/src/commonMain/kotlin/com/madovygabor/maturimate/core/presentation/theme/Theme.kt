@@ -94,11 +94,16 @@ fun AppTheme(
       else -> lightScheme
   }
   val extendedColors = if (darkTheme) extendedColorsDark else extendedColorsLight
+  val serif = serifFontFamily()
+  val sans = sansFontFamily()
 
-  CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+  CompositionLocalProvider(
+    LocalExtendedColors provides extendedColors,
+    LocalExtendedTypography provides appExtendedTypography(serif),
+  ) {
     MaterialTheme(
       colorScheme = colorScheme,
-      typography = AppTypography,
+      typography = appTypography(serif, sans),
       content = content
     )
   }
