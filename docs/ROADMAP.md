@@ -36,7 +36,7 @@ How it works:
 * **The content files are the source of truth.** Lessons and tasks are written as files (Markdown and JSON) in a private repository, checked by a validator, and exported into the content database file. The same files are imported into PostgreSQL, because the user tables there reference content rows.
 * **Content reaches the phone as a whole file.** A prebuilt file ships inside the app, so the first start works without a network. Later the app downloads newer files (checked by version, size and hash) from private storage through signed links, without an app release.
 * **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
-* **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth, starting with an anonymous account. Sync of user data arrives with Milestone 10, before the public Hungarian release.
+* **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 10, before the public Hungarian release.
 * **One design, two dialects.** The PostgreSQL schema (`../dbServer/postgres/01_ddl.sql`) is final. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
 * **Passwords** are handled by Supabase Auth. The app holds only the public key; row level security decides which rows a user may read or write.
 * **Hosting:** Supabase (PostgreSQL, Auth and Storage in one; check pricing and limits before signing up), with occasional `pg_dump` backups. The connection string stays in `DATABASE_URL`, outside the repository. Media (images, later audio) is stored separately in object storage and downloaded and cached by the app.
@@ -87,8 +87,8 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 * [x] **4.1.** Check pricing and free-tier limits; the owner creates the project.
 * [ ] **4.2.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). A new `user_consent` table records which terms and privacy version was accepted and when, the age confirmation and the marketing consent. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [ ] **4.3.** Apply the schema to Supabase; keep the local Docker database in line.
-* [ ] **4.4.** Row level security policies on every user table, with tests. Policies check the `is_anonymous` claim where anonymous users must be limited.
-* [ ] **4.5.** Enable anonymous, e-mail and Google sign-in, and manual identity linking (needed to turn an anonymous account into a permanent one).
+* [ ] **4.4.** Row level security policies on every user table, with tests. Only signed-in users can read or write, and only their own rows.
+* [ ] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off.
 * [ ] **4.6.** Key handling: only the public key in the app, secrets outside the repository.
 
 ---
@@ -99,13 +99,13 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 
 * [ ] **5.1.** Remove the VPUS/SNI toggle and its stored value.
 * [ ] **5.2.** Profile and settings move to the user database; DataStore is removed.
-* [ ] **5.3.** `supabase-kt` in the app; anonymous sign-in on first start (later if offline).
+* [ ] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
 * [ ] **5.4.** Welcome screen.
 * [ ] **5.5.** Teaching language (HU/SK).
 * [ ] **5.6.** Graduation date.
 * [ ] **5.7.** English level (B1/B2).
 * [ ] **5.8.** Daily goal.
-* [ ] **5.9.** Sign-in screen: Google and e-mail, plus a small "Körülnézek" button that keeps the anonymous account.
+* [ ] **5.9.** Sign-in screen: Google and e-mail, plus a small "Körülnézek" button that continues as a local guest.
 * [ ] **5.10.** The start screen is chosen from the user database (onboarding or home).
 * [ ] **5.11.** Profile screen update and tests.
 
@@ -119,7 +119,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **6.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
 * [ ] **6.3. Reading passage view:** a text shown together with its tasks.
 * [ ] **6.4.** Loading the first unit through the importer and the content database.
-* [ ] **6.5. Required sign-in after the first lesson:** no "later" button; the anonymous account is linked to the real one, so no progress is lost.
+* [ ] **6.5. Required sign-in after the first lesson:** no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none.
 
 ---
 
@@ -153,7 +153,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **10.1.** Sync of user data between the phone and Supabase.
 * [ ] **10.2.** The content update flow described under "Data architecture" (signed links from Supabase Storage).
 * [ ] **10.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
-* [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on anonymous sign-in and sign-up, a scheduled job that deletes anonymous accounts unused for 30 days, and a review of the auth rate limits.
+* [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent.
 * [ ] **10.4.** Public release of the Hungarian subject.
 
 ---

@@ -2,11 +2,16 @@
 
 What was decided and why. Newest first. A decision that changes is not deleted: it is marked *Replaced by* with the date of the newer entry.
 
+## 2026-10-31
+
+* **Local guest instead of Supabase anonymous accounts.** "Körülnézek" keeps the user's data on the phone only, under a temporary local id; no account is created on the server. After the first lesson, signing up is required, and the local rows move to the new account id. Reasons: the same experience with much less work and risk: no anonymous users on the server, so no identity linking, no CAPTCHA for anonymous sign-ins, no cleanup job and no `is_anonymous` rules; and no personal data reaches the server before the user accepts the terms. Sync only arrives in Milestone 10, so nothing is lost by keeping guest data local. Anonymous sign-ins stay off in Supabase.
+* **The guest gate is not a security boundary.** A technical user could skip the required sign-in on their own phone; this only affects themselves, because the server is reachable only with an account and the content on the phone is already readable (see the content protection entry of 2026-10-28). Data that comes from the phone in a later sync is checked on the server.
+
 ## 2026-10-30
 
 * **Accounts come with the onboarding rework, not in Milestone 7.** Building the onboarding without them would mean rebuilding it later, and every local row would need a new `user_id`. Supersedes the 2026-10-28 entry "Login and registration come before the Hungarian release" in timing.
-* **Sign-in flow:** the onboarding ends with a sign-in screen (Google and e-mail) and a small "Körülnézek" (look around) button. That button signs the user in anonymously, so progress is saved from the start. After the first lesson, signing in is required: there is no "later" button, and the anonymous account is linked to the real one, so no progress is lost.
-* **Supabase instead of Neon.** One service for PostgreSQL, authentication (including anonymous sign-in) and file storage with signed links, so no own API server is needed. Access is protected with row level security policies. Consequence: `user_id` becomes a UUID on the server and on the phone, and `auth.users` replaces the own user and password tables. Check pricing and free-tier limits before creating the project.
+* **Sign-in flow:** the onboarding ends with a sign-in screen (Google and e-mail) and a small "Körülnézek" (look around) button. After the first lesson, signing in is required: there is no "later" button. *How "Körülnézek" works was replaced: 2026-10-31 (local guest instead of an anonymous account).*
+* **Supabase instead of Neon.** One service for PostgreSQL, authentication and file storage with signed links, so no own API server is needed. Access is protected with row level security policies. Consequence: `user_id` becomes a UUID on the server and on the phone, and `auth.users` replaces the own user and password tables. Check pricing and free-tier limits before creating the project.
 * **Onboarding asks:** teaching language (HU/SK), exact graduation date, English level (B1/B2) and daily goal in minutes. Settings move from DataStore to the user database; DataStore is removed.
 * **Design system first.** A warm gold, brown and graphite palette on the Material 3 roles, light and dark (the old teal is dropped), Literata and Manrope. [docs/design-system](design-system/README.md) is the source; the Compose theme follows `tokens.json`.
 * **One instruction file for all AI tools.** Rules live in `AGENTS.md`; `CLAUDE.md` only imports it. Local notes and AI outputs stay in the gitignored `llm/` folder; lasting decisions go into this file.

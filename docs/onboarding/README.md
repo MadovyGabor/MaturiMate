@@ -8,7 +8,7 @@ Patterns seen in well-known learning and habit apps (Duolingo, Babbel, Brilliant
 
 | Pattern | Who does it | Take it? |
 | :--- | :--- | :--- |
-| **Value before the account.** Questions and often a first lesson come first; the account is asked for afterwards, with "later" allowed until a natural point. | Duolingo, Brilliant | **Yes.** Matches our anonymous sign-in and the required sign-in after the first lesson. |
+| **Value before the account.** Questions and often a first lesson come first; the account is asked for afterwards, with "later" allowed until a natural point. | Duolingo, Brilliant | **Yes.** Matches our local guest ("Körülnézek") and the required sign-in after the first lesson. |
 | **Account first** (sign-up form before anything else). | Quizlet, Babbel, most shops | **No.** Students drop off before they see what the app does. |
 | **"Get started" and "I already have an account" on the welcome screen.** | Duolingo, most apps | **Yes.** A returning user (new phone) must be able to skip the questions. |
 | **One question per screen**, a progress bar on top, a back button. | Duolingo, Babbel, Headspace | **Yes.** Short screens, clear progress, easy to fix a wrong answer. |
@@ -31,7 +31,7 @@ Patterns seen in well-known learning and habit apps (Duolingo, Babbel, Brilliant
 3. **Defaults everywhere they are safe**: daily goal 10 minutes, the next exam date suggested.
 4. **Every question says why it is asked**, in one short line under the question.
 5. **Back is always possible; nothing is lost.** Answers are saved to the user database after each screen.
-6. **Works offline.** If there is no network, the anonymous account is created later; the questions still work.
+6. **Works offline until the account step.** The questions and the guest mode need no network; creating an account does.
 7. **The account screen is the last step**, with a quiet "Körülnézek" option. Signing in becomes required after the first lesson (Milestone 6.5).
 8. **No dark patterns**: no pre-ticked marketing consent, no fake urgency, "not now" is always visible on permission screens.
 9. **Design system only**: one main button per screen, step counter as text above the progress bar, `headline-medium` questions.
@@ -70,7 +70,7 @@ Ask only for what is used. Everything is stored per account; the account id come
 
 Not asked: date of birth (the age is confirmed instead; V1 is for users aged 16 or older, the GDPR consent age in Slovakia and Hungary), school type, school name. `date_of_birth` becomes nullable in the schema (step 4.2).
 
-The anonymous account ("Körülnézek") has no name or e-mail until the user signs in; signing in is required after the first lesson.
+A guest ("Körülnézek") has no server account, name or e-mail: the answers stay on the phone under a temporary local id. Nothing is sent to the server before the user signs up and accepts the terms. Signing in is required after the first lesson.
 
 Before the public release (Milestone 10), the privacy notice and the terms of use are checked by a legal professional.
 
@@ -80,7 +80,7 @@ One question per screen. Every answer is saved to the user database at once, so 
 
 | # | Screen | Shown to | Content | Skip |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | **Welcome** | everyone | Logo, one sentence on what the app gives. "Kezdjük" starts the questions; "Már van fiókom" signs in (Google or e-mail), loads the profile and goes straight to home. An anonymous account is created in the background (later if offline). | |
+| 1 | **Welcome** | everyone | Logo, one sentence on what the app gives. "Kezdjük" starts the questions; "Már van fiókom" signs in (Google or e-mail), loads the profile and goes straight to home. | |
 | 2 | **Language** | everyone | "Melyik tagozatra jársz?" Hungarian or Slovak. Also sets the app language. | |
 | 3 | **Role** | everyone | "Mire szeretnéd használni az appot?" Student, learner or teacher (section 3). | |
 | 4 | **Subjects** | everyone | Compulsory subjects preselected and locked, English level below English (B1 / B2 / I don't know yet → B1), optional subjects, "Hamarosan" labels. The question reads "Miből érettségizel?", for teachers "Mit tanítasz?", for learners "Mit szeretnél tanulni?". | |
@@ -88,13 +88,13 @@ One question per screen. Every answer is saved to the user database at once, so 
 | 6 | **Daily goal** | students, learners | 5 / 10 / 15 / 20 minutes, 10 preselected. | |
 | 7 | **Reminder** | everyone | "Emlékeztessünk naponta?" Time picker, then the Android permission prompt. | "Most nem" |
 | 8 | **Your plan** | everyone | Students: days until the exam, daily goal, total practice time ("185 nap, napi 10 perc, kb. 30 óra"). Learners: goal and subjects. Teachers: subjects. | |
-| 9 | **Account** | everyone | First and last name (prefilled from Google), Google or e-mail and password, a required checkbox "I am 16 or older and accept the terms and the privacy notice" (with links), an optional unticked checkbox for news by e-mail. | "Körülnézek" (stays anonymous) |
+| 9 | **Account** | everyone | First and last name (prefilled from Google), Google or e-mail and password, a required checkbox "I am 16 or older and accept the terms and the privacy notice" (with links), an optional unticked checkbox for news by e-mail. | "Körülnézek" (continues as a local guest) |
 
 Then the home screen with the first lesson. Students see 9 screens, learners 8, teachers 7: about one to one and a half minutes.
 
 **After the onboarding**
 
-* **After the first lesson**, an anonymous user must create an account: the account screen without "Körülnézek". The anonymous account is linked to the new one, so no progress is lost (step 6.5).
+* **After the first lesson**, a guest must create an account or sign in: the account screen without "Körülnézek". The guest's local data moves to the new account id, so no progress is lost (step 6.5).
 * **Back** works on every screen and keeps the answers. Only the reminder and the account screen can be skipped; every other question has a default or a clear choice.
 * **Everything can be changed later** in the profile: language, role, subjects, English level, exam date, goal, reminder, name.
 
@@ -264,5 +264,5 @@ The system permission dialog itself is Android's and follows the phone's languag
 
 | Key | Hungarian | Slovak |
 | :--- | :--- | :--- |
-| `home_anonymous_banner` | Fiók nélkül nézel körül. Az első lecke után létrehozzuk a fiókodat, hogy ne vesszen el a haladásod. | Prezeráš si aplikáciu bez účtu. Po prvej lekcii si vytvoríš účet, aby sa tvoj pokrok nestratil. |
+| `home_guest_banner` | Fiók nélkül nézel körül. Az első lecke után létrehozzuk a fiókodat, hogy ne vesszen el a haladásod. | Prezeráš si aplikáciu bez účtu. Po prvej lekcii si vytvoríš účet, aby sa tvoj pokrok nestratil. |
 | `home_returning_banner` | Betöltöttük a profilodat és a haladásodat. | Načítali sme tvoj profil aj pokrok. |
