@@ -13,6 +13,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalScreen
+import com.madovygabor.maturimate.features.appOnboarding.presentation.plan.PlanScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.ReminderScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
@@ -49,6 +50,7 @@ fun AppOnboardingNavigation(
                     subclass(Route.AppOnboarding.Date::class, Route.AppOnboarding.Date.serializer())
                     subclass(Route.AppOnboarding.Goal::class, Route.AppOnboarding.Goal.serializer())
                     subclass(Route.AppOnboarding.Reminder::class, Route.AppOnboarding.Reminder.serializer())
+                    subclass(Route.AppOnboarding.Plan::class, Route.AppOnboarding.Plan.serializer())
                 }
             }
         },
@@ -111,6 +113,11 @@ fun AppOnboardingNavigation(
             // 7. Daily reminder
             entry<Route.AppOnboarding.Reminder> {
                 ReminderScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.REMINDER, role) })
+            }
+
+            // 8. "A te terved"
+            entry<Route.AppOnboarding.Plan> {
+                PlanScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.PLAN, role) })
             }
         }
     )

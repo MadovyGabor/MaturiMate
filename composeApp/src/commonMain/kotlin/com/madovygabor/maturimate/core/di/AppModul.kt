@@ -11,6 +11,7 @@ import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidato
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingNavigationViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalViewModel
+import com.madovygabor.maturimate.features.appOnboarding.presentation.plan.PlanViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.ReminderViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
@@ -80,6 +81,7 @@ val sharedModule = module {
     viewModel { DateViewModel(get(), get()) }
     viewModelOf(::GoalViewModel)
     viewModelOf(::ReminderViewModel)
+    viewModel { PlanViewModel(get()) }
     viewModelOf(::ProfileViewModel)
 }
 

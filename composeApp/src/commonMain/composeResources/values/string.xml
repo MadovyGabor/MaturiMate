@@ -116,6 +116,29 @@
     <string name="reminder_turn_on">Zapnúť</string>
     <string name="reminder_not_now">Teraz nie</string>
 
+    <!-- Onboarding: your plan -->
+    <string name="plan_title">Tvoj plán</string>
+    <string name="plan_until_exam">Do maturity</string>
+    <plurals name="plan_days">
+        <item quantity="one">%1$d deň</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d); the goals are 5 to 20 minutes -->
+    <plurals name="plan_student_total">
+        <item quantity="one">Pri %1$d minútach denne je to približne %2$d hodina precvičovania.</item>
+        <item quantity="few">Pri %1$d minútach denne je to približne %2$d hodiny precvičovania.</item>
+        <item quantity="other">Pri %1$d minútach denne je to približne %2$d hodín precvičovania.</item>
+    </plurals>
+    <string name="plan_daily_goal">Denný cieľ</string>
+    <plurals name="plan_learner_year">
+        <item quantity="one">Za rok približne %1$d hodina.</item>
+        <item quantity="few">Za rok približne %1$d hodiny.</item>
+        <item quantity="other">Za rok približne %1$d hodín.</item>
+    </plurals>
+    <string name="plan_reminder">Pripomienka každý deň o %1$s</string>
+    <string name="plan_change_later">Všetko môžeš neskôr zmeniť vo svojom profile.</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

@@ -110,7 +110,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.8.** Graduation date (students only): the next two spring exams as cards and "Más dátum" with a calendar limited to the next three years (`AppDatePickerDialog`). The old setup screen and its `OnboardingViewModel` are removed.
 * [x] **5.9.** Daily goal (students and learners): 5, 10, 15 or 20 minutes as chips, 10 preselected, with the hours in a year. The goal stays empty in the database until it is answered.
 * [x] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it. Only the setting is saved (`reminder_enabled`, `reminder_time`); sending the daily notification comes with the streak (8.1).
-* [ ] **5.11.** "A te terved" summary.
+* [x] **5.11.** "A te terved" summary: days until the exam with the hours of practice (students), the daily goal and its hours in a year (learners), the subjects with the English level, and the reminder.
 * [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen and shows the "Már van fiókom" button on the welcome screen (`onHaveAccount` in `AppOnboardingNavigation`).
 * [ ] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped. *Started in 5.5: `App` picks the start screen from the profile, and `onboardingBackStack` resumes after the language step; each new step adds its line.*
 * [ ] **5.14.** Profile screen update and tests.
