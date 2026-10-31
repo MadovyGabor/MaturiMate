@@ -127,6 +127,8 @@ Koin modules are in `core/di/`. The platform module is declared as an `expect` i
 
 The Supabase client is built in `core/network/SupabaseClientFactory.kt` from `SupabaseConfig`, with the Auth plugin (PKCE flow) and ComposeAuth (native Google sign-in on Android). `platformAuthConfig()` is an `expect`: on desktop the browser returns from an OAuth sign-in to a local server on port 47613 (`DESKTOP_AUTH_CALLBACK_PORT`); Android needs nothing yet. The session is kept by the library's default storage: SharedPreferences on Android, Java Preferences on desktop.
 
+`rememberNotificationPermissionRequest` (`core/presentation/NotificationPermission.kt`) is an `expect`: Android asks for `POST_NOTIFICATIONS` from Android 13; desktop needs no permission.
+
 `Modifier.systemPadding` is declared as an `expect` in `core/presentation/androidSystemPadding.kt:5`, with actuals in the Android and JVM source sets (`androidSystemPadding.android.kt:6`, `androidSystemPadding.jvm.kt:5`).
 
 On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`AppModul.jvm.kt`); the databases are stored there. On Android, the databases are in the app's `databases/` folder.
@@ -194,7 +196,7 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 97 | Content provider with the bundled file (skipped without it); design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date and goal screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:composeApp` (`jvmTest`, `commonTest`) | 103 | Content provider with the bundled file (skipped without it); design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal and reminder screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
 

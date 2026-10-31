@@ -84,7 +84,7 @@ INSERT OR REPLACE INTO user_profile VALUES ?;
 -- profile and settings of one user; empty until the first save creates both rows
 selectUserProfile:
 SELECT p.teaching_language, p.graduation_date, p.onboarding_completed_at,
-       s.ui_language, s.daily_goal_minutes, s.timezone
+       s.ui_language, s.daily_goal_minutes, s.timezone, s.reminder_enabled, s.reminder_time
 FROM user_profile p
 JOIN user_settings s ON s.user_id = p.user_id
 WHERE p.user_id = :userId;
@@ -107,6 +107,9 @@ UPDATE user_profile SET onboarding_completed_at = :completedAt WHERE user_id = :
 
 updateUiLanguage:
 UPDATE user_settings SET ui_language = :language WHERE user_id = :userId;
+
+updateReminder:
+UPDATE user_settings SET reminder_enabled = :enabled, reminder_time = :time WHERE user_id = :userId;
 
 updateDailyGoal:
 UPDATE user_settings SET daily_goal_minutes = :minutes WHERE user_id = :userId;

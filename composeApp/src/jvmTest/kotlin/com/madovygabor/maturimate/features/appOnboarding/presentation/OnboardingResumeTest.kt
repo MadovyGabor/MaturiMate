@@ -76,6 +76,9 @@ class OnboardingResumeTest {
         // learners have no exam date, teachers neither a daily goal
         assertEquals(Route.AppOnboarding.Goal, nextRoute(OnboardingStep.SUBJECTS, UserRole.LEARNER))
         assertEquals(Route.AppOnboarding.Goal, nextRoute(OnboardingStep.DATE, UserRole.STUDENT))
+        // teachers have neither: the reminder comes after the subjects
+        assertEquals(Route.AppOnboarding.Reminder, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER))
+        assertEquals(Route.AppOnboarding.Reminder, nextRoute(OnboardingStep.GOAL, UserRole.LEARNER))
     }
 
     @Test
@@ -84,5 +87,13 @@ class OnboardingResumeTest {
         assertEquals(8, onboardingSteps(UserRole.STUDENT).size)
         assertEquals(OnboardingStep.entries - OnboardingStep.DATE, onboardingSteps(UserRole.LEARNER))
         assertEquals(OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL, onboardingSteps(UserRole.TEACHER))
+    }
+
+    @Test
+    fun answeredGoalContinuesWithTheReminderEveryTime() {
+        val learner = profile(TeachingLanguage.HU, UserRole.LEARNER)
+            .copy(subjects = listOf(UserSubject(4, compulsory = false)), dailyGoalMinutes = 15, reminderEnabled = true)
+        // the reminder has no answer of its own, so a resumed onboarding asks it again
+        assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(learner).last())
     }
 }

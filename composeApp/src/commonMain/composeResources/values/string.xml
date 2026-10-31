@@ -108,6 +108,14 @@
         <item quantity="other">%1$d minút denne je za rok približne %2$d hodín precvičovania.</item>
     </plurals>
 
+    <!-- Onboarding: reminder -->
+    <string name="reminder_title">Máme ti každý deň pripomenúť učenie?</string>
+    <string name="reminder_why">Krátke upozornenie vo zvolenom čase ti pomôže udržať sériu.</string>
+    <string name="reminder_time">V akom čase?</string>
+    <string name="reminder_permission_hint">V ďalšom kroku ťa telefón požiada o povolenie upozornení.</string>
+    <string name="reminder_turn_on">Zapnúť</string>
+    <string name="reminder_not_now">Teraz nie</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

@@ -109,7 +109,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`. With `AppChoiceChip`; the next step now follows the role (`nextRoute`), and the onboarding ends after the last step built so far.
 * [x] **5.8.** Graduation date (students only): the next two spring exams as cards and "Más dátum" with a calendar limited to the next three years (`AppDatePickerDialog`). The old setup screen and its `OnboardingViewModel` are removed.
 * [x] **5.9.** Daily goal (students and learners): 5, 10, 15 or 20 minutes as chips, 10 preselected, with the hours in a year. The goal stays empty in the database until it is answered.
-* [ ] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it.
+* [x] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it. Only the setting is saved (`reminder_enabled`, `reminder_time`); sending the daily notification comes with the streak (8.1).
 * [ ] **5.11.** "A te terved" summary.
 * [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen and shows the "Már van fiókom" button on the welcome screen (`onHaveAccount` in `AppOnboardingNavigation`).
 * [ ] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped. *Started in 5.5: `App` picks the start screen from the profile, and `onboardingBackStack` resumes after the language step; each new step adds its line.*
@@ -141,7 +141,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 
 ## Milestone 8: Streak, progress and the Hungarian content
 
-* [ ] **8.1.** Daily streak and per-topic progress, stored locally.
+* [ ] **8.1.** Daily streak and per-topic progress, stored locally; the daily reminder notification at the time saved in the onboarding (5.10).
 * [ ] **8.2.** Hungarian units, written together with the engine. *Open question: the planned "30 main topics". It is not decided yet whether this means 30 topics or 30 lessons.*
 * [ ] **8.3.** Review of missed tasks (error vault) as a later addition.
 

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -97,6 +98,11 @@ class UserProfileRepositoryImpl(
         queries.updateDailyGoal(minutes.toLong(), userId)
     }
 
+    override suspend fun saveReminder(enabled: Boolean, time: LocalTime?) = save { userId ->
+        // hours and minutes only: "18:00"
+        queries.updateReminder(enabled, time?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }, userId)
+    }
+
     override suspend fun completeOnboarding(at: Instant) = save { userId ->
         queries.updateOnboardingCompletedAt(at.toEpochMilliseconds(), userId)
     }
@@ -137,5 +143,7 @@ class UserProfileRepositoryImpl(
         timezone = timezone,
         onboardingCompletedAt = onboarding_completed_at?.let { Instant.fromEpochMilliseconds(it) },
         subjects = subjects,
+        reminderEnabled = reminder_enabled,
+        reminderTime = reminder_time?.let { LocalTime.parse(it) },
     )
 }

@@ -102,6 +102,14 @@
         <item quantity="other">Napi %1$d perc egy év alatt körülbelül %2$d óra gyakorlás.</item>
     </plurals>
 
+    <!-- Onboarding: reminder -->
+    <string name="reminder_title">Emlékeztessünk naponta?</string>
+    <string name="reminder_why">Egy rövid értesítés a választott időben segít, hogy ne szakadjon meg a sorozatod.</string>
+    <string name="reminder_time">Melyik időpontban?</string>
+    <string name="reminder_permission_hint">A következő lépésben a telefon engedélyt kér az értesítésekhez.</string>
+    <string name="reminder_turn_on">Bekapcsolom</string>
+    <string name="reminder_not_now">Most nem</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.userProfile.domain
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -41,6 +42,9 @@ data class UserProfile(
     /** When the onboarding was finished; empty while it is not. */
     val onboardingCompletedAt: Instant?,
     val subjects: List<UserSubject> = emptyList(),
+    /** The daily reminder; [reminderTime] is kept when it is off, to offer it again. */
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime? = null,
 ) {
     val isOnboardingCompleted: Boolean get() = onboardingCompletedAt != null
 }

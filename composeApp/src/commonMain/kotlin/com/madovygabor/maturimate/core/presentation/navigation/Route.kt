@@ -24,6 +24,8 @@ sealed interface Route : NavKey {
         data object Date : Route // Exam date, students only (step 4)
         @Serializable
         data object Goal : Route // Daily goal, students and learners
+        @Serializable
+        data object Reminder : Route // Daily reminder
     }
     @Serializable
     data class ExamWrite(val examId: String) : Route // Fullscreen exam writing screen

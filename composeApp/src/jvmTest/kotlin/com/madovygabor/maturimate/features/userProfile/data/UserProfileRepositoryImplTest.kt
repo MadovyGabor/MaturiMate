@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -171,5 +172,19 @@ class UserProfileRepositoryImplTest {
         repository.saveSubjects(listOf(UserSubject(4, compulsory = false))).ok()
 
         assertEquals(listOf(UserSubject(4, compulsory = false)), current().subjects)
+    }
+
+    @Test
+    fun reminderIsSavedOnAndOff() = runBlocking {
+        repository.saveReminder(true, LocalTime(7, 30)).ok()
+        assertTrue(current().reminderEnabled)
+        assertEquals(LocalTime(7, 30), current().reminderTime)
+        assertEquals("07:30", database.profileQueries.selectSettings("guest-1").executeAsOne().reminder_time)
+
+        repository.saveReminder(false, LocalTime(7, 30)).ok()
+
+        assertFalse(current().reminderEnabled)
+        // the time is kept to offer it again
+        assertEquals(LocalTime(7, 30), current().reminderTime)
     }
 }
