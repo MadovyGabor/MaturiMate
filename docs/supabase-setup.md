@@ -19,7 +19,7 @@ How the Supabase project is configured, so it can be checked or rebuilt. No secr
 | Setting | Value | Why |
 | :--- | :--- | :--- |
 | Email provider | on | e-mail and password sign-up |
-| Confirm email | **off until step 4.7**, then on | the built-in sender cannot use our code template |
+| Confirm email | on | sign-up is confirmed with a 6-digit code |
 | Allow anonymous sign-ins | off | guests stay local on the phone ([DECISIONS](DECISIONS.md) 2026-10-31) |
 | Secure email change | on | an e-mail change is confirmed on the old and the new address |
 | Secure password change | on | changing the password needs a sign-in within 24 hours |
@@ -40,4 +40,14 @@ Supabase's Google provider lists both client ids (web first). A release build ne
 
 ## E-mail sending
 
-The built-in sender reaches only the project team and a few e-mails an hour, and its templates cannot be changed. Step 4.7 sets up Resend with the `maturimate.madovygabor.com` subdomain as custom SMTP; then "Confirm email" goes back on with the code templates.
+Supabase sends auth e-mails through Resend (custom SMTP); the built-in sender only reached the project team and its templates could not be changed.
+
+| Setting | Value |
+| :--- | :--- |
+| Resend domain | `maturimate.madovygabor.com`, region Ireland (`eu-west-1`), DNS on Cloudflare |
+| DNS records | DKIM `resend._domainkey.maturimate`, MX and SPF `send.maturimate` (added by Resend's auto configure), DMARC `_dmarc.maturimate` = `v=DMARC1; p=none;` |
+| Resend API key | "Supabase SMTP", sending access to this domain only; stored in Supabase only |
+| Supabase SMTP | sender `noreply@maturimate.madovygabor.com` ("MaturiMate"), host `smtp.resend.com`, port 465, user `resend` |
+| Templates | "Confirm signup" and "Reset password" show `{{ .Token }}` (the 6-digit code), in Hungarian and Slovak |
+
+Changing the provider later only changes these SMTP settings. Once the beta runs, DMARC can move from `p=none` to `p=quarantine`.
