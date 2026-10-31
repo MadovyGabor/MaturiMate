@@ -75,7 +75,7 @@ Branch: `feat/onboarding-rework` (Milestones 3 to 5).
 
 * [x] **3.1.** Inspiration: onboarding and sign-up screens of well-known apps, summarised in a few points.
 * [x] **3.2.** The order of the screens and where a step can be skipped.
-* [ ] **3.3.** A clickable prototype in the design system.
+* [x] **3.3.** A clickable prototype in the design system.
 * [ ] **3.4.** Final Hungarian and Slovak texts.
 
 ---

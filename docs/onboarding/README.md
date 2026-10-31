@@ -100,7 +100,13 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 ## 6. Prototype (3.3)
 
-*To be added.*
+[prototype.html](prototype.html) is a clickable prototype of the flow above. Open it in a browser from this folder (it loads the logo from `composeApp/` and the fonts from Google Fonts).
+
+* **Phone, Tablet, PC** switch the same app between three layouts, following the app's breakpoints: one column below 600 dp; a centred, wider column with the buttons on the right from 600 dp; from about 1000 dp two panes, with the logo and a step list on the left and the question on the right.
+* **Light and dark** follow the design system tokens. On dark surfaces the logo sits on a cream tile.
+* The exam date step offers the next two spring exams as cards (with the days left) and "Más dátum", which opens a calendar. In the app this is the Material 3 date picker.
+* The notes panel shows the data the app would save from the answers.
+* Mock only: sign-in, the notification permission prompt and saving. Text is Hungarian only. The spring exam dates (15 March) are examples until the official dates are checked.
 
 ## 7. Texts (3.4)
 
