@@ -1,20 +1,25 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.theme.layout
 
-/** The variants of [AppButton] built so far; tonal and outlined come when a screen needs them. */
+/** The variants of [AppButton] built so far; tonal comes when a screen needs it. */
 enum class AppButtonVariant {
     /** The screen's one main action. */
     FILLED,
+
+    /** A third-level action, for example "Folytatás Google-lel". */
+    OUTLINED,
 
     /** A quiet action, for example "Már van fiókom". */
     TEXT,
@@ -45,6 +50,14 @@ fun AppButton(
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
+            content = { label() },
+        )
+        AppButtonVariant.OUTLINED -> OutlinedButton(
+            onClick = onClick,
+            modifier = sizedModifier,
+            enabled = enabled,
+            shape = CircleShape,
+            border = BorderStroke(MaterialTheme.layout.borderThin, MaterialTheme.colorScheme.outline),
             content = { label() },
         )
         AppButtonVariant.TEXT -> TextButton(

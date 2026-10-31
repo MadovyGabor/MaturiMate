@@ -252,7 +252,8 @@ The system permission dialog itself is Android's and follows the phone's languag
 | `account_last_name` | Vezetéknév | Priezvisko |
 | `account_first_name` | Keresztnév | Meno |
 | `account_email` | E-mail cím | E-mailová adresa |
-| `account_password` | Jelszó (legalább 8 karakter, kis- és nagybetű, szám) | Heslo (aspoň 8 znakov, malé a veľké písmeno, číslica) |
+| `signin_password` (label) | Jelszó | Heslo |
+| `account_password_hint` (under the field; replaces `account_password`) | Legalább 8 karakter, kis- és nagybetűvel és számmal. | Aspoň 8 znakov, s malým a veľkým písmenom a číslicou. |
 | `account_consent` | Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót. | Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov. |
 | `account_news` | Kérek híreket és újdonságokat e-mailben. | Chcem dostávať novinky e-mailom. |
 | `account_create` | Fiók létrehozása | Vytvoriť účet |
@@ -263,6 +264,21 @@ The system permission dialog itself is Android's and follows the phone's languag
 | `error_password_weak` | A jelszó legalább 8 karakter legyen, és tartalmazzon kisbetűt, nagybetűt és számot. | Heslo musí mať aspoň 8 znakov a obsahovať malé a veľké písmeno a číslicu. |
 | `error_email_taken` | Ezzel az e-mail címmel már van fiók. Lépj be helyette. | S týmto e-mailom už účet existuje. Prihlás sa. |
 | `error_network` | Nincs internetkapcsolat. Próbáld újra, ha újra van net. | Nie si pripojený na internet. Skús to znova, keď budeš online. |
+
+New in step 5.12 (not in the prototype; please review):
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `code_title` | Írd be a kódot | Zadaj kód |
+| `code_sent` | Elküldtük a 6 jegyű kódot ide: %1$s. Nézd meg a levélszemetet is. | Poslali sme 6-miestny kód na adresu %1$s. Pozri aj priečinok so spamom. |
+| `code_label` | 6 jegyű kód | 6-miestny kód |
+| `code_confirm` | Megerősítés | Potvrdiť |
+| `code_resend` | Új kódot kérek | Poslať nový kód |
+| `error_email_not_confirmed` | Ezt a fiókot még nem erősítetted meg. Írd be a levélben kapott kódot. | Tento účet ešte nie je potvrdený. Zadaj kód z e-mailu. |
+| `error_code_invalid` | Hibás vagy lejárt kód. Ellenőrizd, vagy kérj újat. | Kód je nesprávny alebo vypršal. Skontroluj ho alebo si vyžiadaj nový. |
+| `error_same_password` | Az új jelszó nem lehet ugyanaz, mint a régi. | Nové heslo nemôže byť rovnaké ako staré. |
+| `error_too_many` | Túl sok próbálkozás. Várj egy kicsit, és próbáld újra. | Príliš veľa pokusov. Chvíľu počkaj a skús to znova. |
+| `error_unknown` | Valami nem sikerült. Próbáld újra. | Niečo sa nepodarilo. Skús to znova. |
 
 ### Sign-in ("Már van fiókom")
 

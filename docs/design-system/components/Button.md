@@ -10,4 +10,4 @@ Pill-shaped button in four variants. One `filled` main button per screen.
 - Disabled: `surface-container-highest` fill, `on-surface-variant` text.
 - `radius-full` corners, `label-large` text.
 - At least `touch-target` (48 dp) tall.
-- Compose: `AppButton` in `core/presentation/uiComponents/AppButton.kt`, with `AppButtonVariant.FILLED` (`Button`) and `AppButtonVariant.TEXT` (`TextButton`). `tonal` (`FilledTonalButton`) and `outlined` (`OutlinedButton`) are added when a screen needs them.
+- Compose: `AppButton` in `core/presentation/uiComponents/AppButton.kt`, with `AppButtonVariant.FILLED` (`Button`), `OUTLINED` (`OutlinedButton`) and `TEXT` (`TextButton`). `tonal` (`FilledTonalButton`) is added when a screen needs it.

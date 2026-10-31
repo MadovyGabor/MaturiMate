@@ -14,6 +14,7 @@ import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.plan.PlanScreen
+import com.madovygabor.maturimate.features.auth.presentation.AccountScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.ReminderScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
@@ -51,6 +52,7 @@ fun AppOnboardingNavigation(
                     subclass(Route.AppOnboarding.Goal::class, Route.AppOnboarding.Goal.serializer())
                     subclass(Route.AppOnboarding.Reminder::class, Route.AppOnboarding.Reminder.serializer())
                     subclass(Route.AppOnboarding.Plan::class, Route.AppOnboarding.Plan.serializer())
+                    subclass(Route.AppOnboarding.Account::class, Route.AppOnboarding.Account.serializer())
                 }
             }
         },
@@ -78,7 +80,7 @@ fun AppOnboardingNavigation(
             // the role saved on step 2, for the steps after it
             val role = navigationViewModel.role.value
 
-            // the onboarding steps; after the last one built so far the onboarding ends
+            // the onboarding steps; the account step finishes the onboarding itself
             fun goNext(step: OnboardingStep, role: UserRole?) {
                 val next = nextRoute(step, role)
                 if (next == null) navigationViewModel.finish() else onboardingBackStack.add(next)
@@ -118,6 +120,11 @@ fun AppOnboardingNavigation(
             // 8. "A te terved"
             entry<Route.AppOnboarding.Plan> {
                 PlanScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.PLAN, role) })
+            }
+
+            // 9. Account, or "Körülnézek"; both finish the onboarding
+            entry<Route.AppOnboarding.Account> {
+                AccountScreen(role = role, onBack = back)
             }
         }
     )

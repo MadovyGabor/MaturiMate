@@ -12,9 +12,11 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserProfileReposit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /** [AccountSetup] over the local user database and the account's rows on the server. */
 @OptIn(ExperimentalTime::class)
@@ -26,19 +28,30 @@ class AccountSetupImpl(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AccountSetup {
 
-    override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean): OperationResult<Unit, AuthError> {
+    // Both run to the end even when the screen that started them goes away: saving a new app
+    // language or the end of the onboarding rebuilds the screens while the work is still running.
+    override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant) =
+        withContext(dispatcher + NonCancellable) { signUp(firstName, lastName, marketing, finishedAt) }
+
+    override suspend fun completeSignIn() = withContext(dispatcher + NonCancellable) { signIn() }
+
+    private suspend fun signUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> {
         val accountId = auth.currentUser()?.id ?: return OperationResult.Error(AuthError.INVALID_CREDENTIALS)
         adopt(accountId)
         if (profiles.saveNames(firstName, lastName) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
         val profile = profiles.profile.first() ?: return OperationResult.Error(AuthError.UNKNOWN)
-        val uploaded = account.uploadProfile(profile, firstName, lastName)
+        val uploaded = account.uploadProfile(profile.copy(onboardingCompletedAt = finishedAt), firstName, lastName)
         if (uploaded is OperationResult.Error) return uploaded
         val consents = setOf(ConsentType.TERMS, ConsentType.PRIVACY, ConsentType.AGE_16) +
             if (marketing) setOf(ConsentType.MARKETING) else emptySet()
-        return account.recordConsents(consents)
+        val recorded = account.recordConsents(consents)
+        if (recorded is OperationResult.Error) return recorded
+        // last: finishing the onboarding takes the app to the home screen
+        if (profiles.completeOnboarding(finishedAt) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
+        return OperationResult.Success(Unit)
     }
 
-    override suspend fun completeSignIn(): OperationResult<Boolean, AuthError> {
+    private suspend fun signIn(): OperationResult<Boolean, AuthError> {
         val accountId = auth.currentUser()?.id ?: return OperationResult.Error(AuthError.INVALID_CREDENTIALS)
         adopt(accountId)
         val remote = when (val result = account.downloadProfile()) {
@@ -51,7 +64,7 @@ class AccountSetupImpl(
         return OperationResult.Success(remote.profile.isOnboardingCompleted)
     }
 
-    private suspend fun adopt(accountId: String) = withContext(dispatcher) { localUser.adoptAccount(accountId) }
+    private fun adopt(accountId: String) = localUser.adoptAccount(accountId)
 
     /** The account's answers from the server replace the ones on this phone; false when a save fails. */
     private suspend fun write(profile: UserProfile): Boolean {

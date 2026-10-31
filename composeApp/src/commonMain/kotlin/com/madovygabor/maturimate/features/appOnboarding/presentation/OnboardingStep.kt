@@ -37,8 +37,8 @@ fun onboardingSteps(role: UserRole? = null): List<OnboardingStep> = when (role) 
     UserRole.TEACHER -> OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL
 }
 
-/** The screen of a step; null while the step is not built yet (the onboarding ends before it). */
-val OnboardingStep.route: Route?
+/** The screen of a step. */
+val OnboardingStep.route: Route
     get() = when (this) {
         OnboardingStep.LANGUAGE -> Route.AppOnboarding.Language
         OnboardingStep.ROLE -> Route.AppOnboarding.Role
@@ -47,10 +47,10 @@ val OnboardingStep.route: Route?
         OnboardingStep.GOAL -> Route.AppOnboarding.Goal
         OnboardingStep.REMINDER -> Route.AppOnboarding.Reminder
         OnboardingStep.PLAN -> Route.AppOnboarding.Plan
-        else -> null
+        OnboardingStep.ACCOUNT -> Route.AppOnboarding.Account
     }
 
-/** The screen after [step] for this role; null when the onboarding ends there. */
+/** The screen after [step] for this role; null after the last step. */
 fun nextRoute(step: OnboardingStep, role: UserRole?): Route? {
     val steps = onboardingSteps(role)
     return steps.getOrNull(steps.indexOf(step) + 1)?.route

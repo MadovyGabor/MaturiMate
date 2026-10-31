@@ -24,8 +24,7 @@ fun onboardingBackStack(profile: UserProfile?): List<Route> = buildList {
     add(Route.AppOnboarding.Welcome)
     if (profile?.teachingLanguage == null) return@buildList
     for (step in onboardingSteps(profile.role)) {
-        // the onboarding ends before a step that is not built yet
-        add(step.route ?: break)
+        add(step.route)
         if (!step.isAnswered(profile)) break
     }
 }

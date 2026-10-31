@@ -62,6 +62,10 @@ class AuthRepositoryImpl(private val auth: Auth) : AuthRepository {
         auth.verifyEmailOtp(type = OtpType.Email.SIGNUP, email = email, token = code)
     }
 
+    override suspend fun resendSignUpCode(email: String) = call {
+        auth.resendEmail(OtpType.Email.SIGNUP, email)
+    }
+
     override suspend fun signIn(email: String, password: String) = call {
         auth.signInWith(Email) {
             this.email = email

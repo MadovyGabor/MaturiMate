@@ -61,6 +61,8 @@ interface AuthRepository {
     /** Creates the account and sends the sign-up code; the user is signed in by [confirmSignUp]. */
     suspend fun signUp(email: String, password: String): OperationResult<Unit, AuthError>
     suspend fun confirmSignUp(email: String, code: String): OperationResult<Unit, AuthError>
+    /** Sends the sign-up code again. */
+    suspend fun resendSignUpCode(email: String): OperationResult<Unit, AuthError>
 
     suspend fun signIn(email: String, password: String): OperationResult<Unit, AuthError>
     suspend fun signOut(): OperationResult<Unit, AuthError>

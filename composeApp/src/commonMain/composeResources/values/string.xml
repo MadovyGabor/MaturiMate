@@ -139,6 +139,39 @@
     <string name="plan_reminder">Pripomienka každý deň o %1$s</string>
     <string name="plan_change_later">Všetko môžeš neskôr zmeniť vo svojom profile.</string>
 
+    <!-- Onboarding: account. The code step and some errors are new; see docs/onboarding/README.md. -->
+    <string name="account_title">Vytvor si účet</string>
+    <string name="account_why">Tak o svoj pokrok neprídeš a môžeš pokračovať aj na inom telefóne.</string>
+    <string name="account_google">Pokračovať cez Google</string>
+    <string name="account_google_signed">Účet Google: %1$s</string>
+    <string name="account_or_email">alebo e-mailom</string>
+    <string name="account_last_name">Priezvisko</string>
+    <string name="account_first_name">Meno</string>
+    <string name="account_email">E-mailová adresa</string>
+    <string name="signin_password">Heslo</string>
+    <string name="account_password_hint">Aspoň 8 znakov, s malým a veľkým písmenom a číslicou.</string>
+    <string name="account_consent">Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov.</string>
+    <string name="account_news">Chcem dostávať novinky e-mailom.</string>
+    <string name="account_create">Vytvoriť účet</string>
+    <string name="account_browse">Najprv sa poobzerám</string>
+    <string name="code_title">Zadaj kód</string>
+    <string name="code_sent">Poslali sme 6-miestny kód na adresu %1$s. Pozri aj priečinok so spamom.</string>
+    <string name="code_label">6-miestny kód</string>
+    <string name="code_confirm">Potvrdiť</string>
+    <string name="code_resend">Poslať nový kód</string>
+    <string name="error_last_name_empty">Zadaj priezvisko.</string>
+    <string name="error_first_name_empty">Zadaj meno.</string>
+    <string name="error_email_invalid">Toto nevyzerá ako e-mailová adresa. Skontroluj ju.</string>
+    <string name="error_password_weak">Heslo musí mať aspoň 8 znakov a obsahovať malé a veľké písmeno a číslicu.</string>
+    <string name="error_email_taken">S týmto e-mailom už účet existuje. Prihlás sa.</string>
+    <string name="error_network">Nie si pripojený na internet. Skús to znova, keď budeš online.</string>
+    <string name="error_signin">Nesprávny e-mail alebo heslo.</string>
+    <string name="error_email_not_confirmed">Tento účet ešte nie je potvrdený. Zadaj kód z e-mailu.</string>
+    <string name="error_code_invalid">Kód je nesprávny alebo vypršal. Skontroluj ho alebo si vyžiadaj nový.</string>
+    <string name="error_same_password">Nové heslo nemôže byť rovnaké ako staré.</string>
+    <string name="error_too_many">Príliš veľa pokusov. Chvíľu počkaj a skús to znova.</string>
+    <string name="error_unknown">Niečo sa nepodarilo. Skús to znova.</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

@@ -149,6 +149,7 @@ class AccountTest {
         private val ok: OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun signUp(email: String, password: String) = ok
         override suspend fun confirmSignUp(email: String, code: String) = ok
+        override suspend fun resendSignUpCode(email: String) = ok
         override suspend fun signIn(email: String, password: String) = ok
         override suspend fun signOut() = ok
         override suspend fun sendPasswordResetCode(email: String) = ok
@@ -185,9 +186,11 @@ class AccountTest {
         val account = FakeAccount()
 
         val result = AccountSetupImpl(FakeAuth(), account, profiles, provider, Dispatchers.Unconfined)
-            .completeSignUp("Anna", "Kovács", marketing = true)
+            .completeSignUp("Anna", "Kovács", marketing = true, finishedAt = Instant.fromEpochMilliseconds(9_000))
 
         assertEquals(OperationResult.Success(Unit), result)
+        assertEquals(Instant.fromEpochMilliseconds(9_000), account.uploaded?.first?.onboardingCompletedAt)
+        assertTrue(profiles.profile.first()!!.isOnboardingCompleted)
         assertEquals(USER_ID, provider.userId())
         assertEquals(UserRole.LEARNER, account.uploaded?.first?.role)
         assertEquals("Anna", account.uploaded?.second)

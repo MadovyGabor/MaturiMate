@@ -86,8 +86,10 @@ class PlanTest {
     }
 
     @Test
-    fun planComesAfterTheReminder() {
+    fun planComesAfterTheReminderAndTheAccountAfterThePlan() {
         assertEquals(Route.AppOnboarding.Plan, nextRoute(OnboardingStep.REMINDER, UserRole.TEACHER))
+        assertEquals(Route.AppOnboarding.Account, nextRoute(OnboardingStep.PLAN, UserRole.TEACHER))
+        assertEquals(null, nextRoute(OnboardingStep.ACCOUNT, UserRole.STUDENT))
     }
 
     @Test
