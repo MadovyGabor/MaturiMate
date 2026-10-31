@@ -41,7 +41,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 - **Content ids never change and content rows are never deleted**, only switched off.
 - **No official exam content** (NIVAM papers, answer keys, audio) in this repository or in the app. V1 uses only content written for this project.
 - **Lessons and tasks live in a separate private repository**, cloned into `content/` (gitignored). Tests use the fixtures under `tools/content-pipeline/src/test/resources/`.
-- **Secrets** (connection strings, keys) stay in `.env` or `local.properties`, never in the repository.
+- **Secrets** (connection strings, secret keys) stay in `.env` or `local.properties`, never in the repository. The app holds only public values (`core/config/SupabaseConfig.kt`); everything else is protected by row level security.
 
 ## Local, uncommitted folders
 

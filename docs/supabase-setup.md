@@ -12,6 +12,10 @@ How the Supabase project is configured, so it can be checked or rebuilt. No secr
 | Region | West EU (Ireland), `eu-west-1` |
 | Schema | `supabase/migrations`, applied in name order (see [dbServer/README.md](../dbServer/README.md)) |
 
+## Keys in the app
+
+`composeApp/.../core/config/SupabaseConfig.kt` holds the only Supabase values the app needs: the API URL, the publishable key (`sb_publishable_...`) and the Google web client id. They are public by design; row level security protects the data. Never put the secret key (`sb_secret_...` / service_role), the database password, the Resend API key or the Google client secret into the app or the repository: the importer and other server tools read secrets from `.env` files, which are gitignored.
+
 ## Authentication
 
 **Sign In / Providers**
