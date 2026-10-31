@@ -90,7 +90,8 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 * **4.2 in short.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). `user_consent` (already in the design) records which terms and privacy version was accepted and when, and the marketing consent; it gets an `AGE_16` type for the age confirmation. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [x] **4.3.** Apply the schema to Supabase; keep the local Docker database in line. Applied through the Supabase connector; the migration file names match the versions Supabase recorded. A second migration fixes the database advisors' findings (fixed `search_path` on the trigger functions, `rls_auto_enable()` not callable through the API, indexes on five foreign keys).
 * [x] **4.4.** Row level security policies, with tests (`supabase/tests/rls_test.sql`, run in CI). Signed-in users read and write only their own rows; they can give themselves only the student, learner or teacher role; consents can be added and withdrawn, not rewritten; content reports are resolved by curators and admins; the leaderboard is read-only. Content tables have no policy, so the API does not expose them. Not signed in: no access.
-* [ ] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off.
+* [x] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off. Settings: [supabase-setup.md](supabase-setup.md).
+* [ ] **4.7.** E-mail sending through Resend with the `maturimate.madovygabor.com` subdomain (custom SMTP); then "Confirm email" back on with templates that carry the 6-digit code (sign-up confirmation, password reset). Needed before the account screen of Milestone 5 can be tested.
 * [ ] **4.6.** Key handling: only the public key in the app, secrets outside the repository.
 
 ---
@@ -145,7 +146,6 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 
 * [ ] **9.1.** Animations, reading view polish, accessibility checks.
 * [ ] **9.2.** Review of the user database tables before the first testers install the app.
-* [ ] **9.2a.** Own e-mail sending (SMTP) for Supabase Auth, with an own domain: the built-in sender only reaches the project team and a few e-mails an hour.
 * [ ] **9.3.** Closed beta of the Hungarian subject on Android.
 * [ ] **9.4.** Localization of the UI strings (Slovak and Hungarian).
 
