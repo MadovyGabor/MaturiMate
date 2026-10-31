@@ -14,10 +14,12 @@ import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
+import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.common_next
 import maturimate.composeapp.generated.resources.language_hu
@@ -42,24 +44,28 @@ fun LanguageScreen(
     viewModel: LanguageViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val role by viewModel.role.collectAsState()
     LanguageContent(
         state = state,
+        role = role,
         onSelected = viewModel::onSelected,
         onBack = onBack,
-        onNext = { viewModel.onNext(onSaved = onNext) },
+        onNext = { viewModel.onNext { onNext() } },
     )
 }
 
 @Composable
 fun LanguageContent(
-    state: LanguageUiState,
+    state: QuestionUiState<TeachingLanguage>,
+    /** The saved role, if any: it sets the number of steps. */
+    role: UserRole?,
     onSelected: (TeachingLanguage) -> Unit,
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
     OnboardingScaffold(
         actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
-        progress = OnboardingProgress(OnboardingStep.LANGUAGE, onboardingSteps(state.role), onBack),
+        progress = OnboardingProgress(OnboardingStep.LANGUAGE, onboardingSteps(role), onBack),
     ) {
         Text(
             text = stringResource(Res.string.language_title),
@@ -103,6 +109,6 @@ fun LanguageContent(
 @Preview
 private fun LanguageContentPreview() {
     AppTheme(darkTheme = false) {
-        LanguageContent(LanguageUiState(selected = TeachingLanguage.HU), onSelected = {}, onBack = {}, onNext = {})
+        LanguageContent(QuestionUiState(selected = TeachingLanguage.HU), role = null, onSelected = {}, onBack = {}, onNext = {})
     }
 }

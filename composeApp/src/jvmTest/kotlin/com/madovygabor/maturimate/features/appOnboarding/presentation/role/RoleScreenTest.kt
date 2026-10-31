@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
+import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.runBlocking
 import maturimate.composeapp.generated.resources.Res
@@ -47,7 +48,7 @@ class RoleScreenTest {
 
     @Test
     fun nextIsDisabledUntilARoleIsPicked() = runComposeUiTest {
-        var state by mutableStateOf(RoleUiState())
+        var state by mutableStateOf(QuestionUiState<UserRole>())
         var next = 0
         setContent {
             AppTheme(darkTheme = false) {
@@ -67,7 +68,7 @@ class RoleScreenTest {
     fun savedRoleIsSelected() = runComposeUiTest {
         setContent {
             AppTheme(darkTheme = false) {
-                RoleContent(RoleUiState(selected = UserRole.TEACHER), onSelected = {}, onBack = {}, onNext = {})
+                RoleContent(QuestionUiState(selected = UserRole.TEACHER), onSelected = {}, onBack = {}, onNext = {})
             }
         }
 
@@ -77,7 +78,7 @@ class RoleScreenTest {
 
     @Test
     fun stepCountFollowsThePickedRole() = runComposeUiTest {
-        var state by mutableStateOf(RoleUiState())
+        var state by mutableStateOf(QuestionUiState<UserRole>())
         setContent {
             AppTheme(darkTheme = false) {
                 RoleContent(state, onSelected = { state = state.copy(selected = it) }, onBack = {}, onNext = {})
@@ -102,7 +103,7 @@ class RoleScreenTest {
                 runDesktopComposeUiTest(size.first, size.second) {
                     setContent {
                         AppTheme(darkTheme = dark) {
-                            RoleContent(RoleUiState(selected = UserRole.STUDENT), onSelected = {}, onBack = {}, onNext = {})
+                            RoleContent(QuestionUiState(selected = UserRole.STUDENT), onSelected = {}, onBack = {}, onNext = {})
                         }
                     }
                     onNodeWithText(text(Res.string.role_title)).assertExists()

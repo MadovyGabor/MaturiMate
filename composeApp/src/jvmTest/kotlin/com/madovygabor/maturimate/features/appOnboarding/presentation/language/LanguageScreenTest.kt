@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
+import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import kotlinx.coroutines.runBlocking
 import maturimate.composeapp.generated.resources.Res
@@ -46,11 +47,11 @@ class LanguageScreenTest {
 
     @Test
     fun nextIsDisabledUntilALanguageIsPicked() = runComposeUiTest {
-        var state by mutableStateOf(LanguageUiState())
+        var state by mutableStateOf(QuestionUiState<TeachingLanguage>())
         var next = 0
         setContent {
             AppTheme(darkTheme = false) {
-                LanguageContent(state, onSelected = { state = state.copy(selected = it) }, onBack = {}, onNext = { next++ })
+                LanguageContent(state, role = null, onSelected = { state = state.copy(selected = it) }, onBack = {}, onNext = { next++ })
             }
         }
 
@@ -66,7 +67,7 @@ class LanguageScreenTest {
     fun savedLanguageIsSelected() = runComposeUiTest {
         setContent {
             AppTheme(darkTheme = false) {
-                LanguageContent(LanguageUiState(selected = TeachingLanguage.HU), onSelected = {}, onBack = {}, onNext = {})
+                LanguageContent(QuestionUiState(selected = TeachingLanguage.HU), role = null, onSelected = {}, onBack = {}, onNext = {})
             }
         }
 
@@ -80,7 +81,7 @@ class LanguageScreenTest {
         var back = 0
         setContent {
             AppTheme(darkTheme = false) {
-                LanguageContent(LanguageUiState(), onSelected = {}, onBack = { back++ }, onNext = {})
+                LanguageContent(QuestionUiState(), role = null, onSelected = {}, onBack = { back++ }, onNext = {})
             }
         }
 
@@ -93,7 +94,7 @@ class LanguageScreenTest {
     fun nextIsDisabledWhileSaving() = runComposeUiTest {
         setContent {
             AppTheme(darkTheme = false) {
-                LanguageContent(LanguageUiState(TeachingLanguage.SK, saving = true), onSelected = {}, onBack = {}, onNext = {})
+                LanguageContent(QuestionUiState(TeachingLanguage.SK, saving = true), role = null, onSelected = {}, onBack = {}, onNext = {})
             }
         }
 
@@ -111,7 +112,7 @@ class LanguageScreenTest {
                 runDesktopComposeUiTest(size.first, size.second) {
                     setContent {
                         AppTheme(darkTheme = dark) {
-                            LanguageContent(LanguageUiState(selected = TeachingLanguage.HU), onSelected = {}, onBack = {}, onNext = {})
+                            LanguageContent(QuestionUiState(selected = TeachingLanguage.HU), role = null, onSelected = {}, onBack = {}, onNext = {})
                         }
                     }
                     onNodeWithText(text(Res.string.language_title)).assertExists()

@@ -55,9 +55,6 @@ fun AppOnboardingNavigation(
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
-            // Shared ViewModel for the entire onboarding flow, scoped to the backstack
-            val onboardingViewModel = koinViewModel<OnboardingViewModel>()
-
             // 1. Welcome Screen
             entry<Route.AppOnboarding.Welcome> {
                 WelcomeScreen(
@@ -89,7 +86,8 @@ fun AppOnboardingNavigation(
             // 4. Profile Setup Screen (old; replaced step by step)
             entry<Route.AppOnboarding.ProfileSetup> {
                 ProfileSetupScreen(
-                    viewModel = onboardingViewModel,
+                    // created with this screen, so it starts from the answers saved on the steps before
+                    viewModel = koinViewModel<OnboardingViewModel>(),
                     onProfileSetupComplete = {
                         onAppOnboardingComplete()
                     }

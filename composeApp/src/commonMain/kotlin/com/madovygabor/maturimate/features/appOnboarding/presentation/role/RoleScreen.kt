@@ -19,6 +19,7 @@ import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
+import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
@@ -39,7 +40,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Step 2 of the onboarding: what the app is for. The answer decides which questions follow. */
+/**
+ * Step 2 of the onboarding: what the app is for. The answer decides which questions follow;
+ * a student goes on with [onStudentNext], learners and teachers finish here for now.
+ */
 @Composable
 fun RoleScreen(
     onBack: () -> Unit,
@@ -51,7 +55,7 @@ fun RoleScreen(
         state = state,
         onSelected = viewModel::onSelected,
         onBack = onBack,
-        onNext = { viewModel.onNext(onStudent = onStudentNext) },
+        onNext = { viewModel.onNext { role -> if (role == UserRole.STUDENT) onStudentNext() } },
     )
 }
 
@@ -65,7 +69,7 @@ private val roleOptions = listOf(
 
 @Composable
 fun RoleContent(
-    state: RoleUiState,
+    state: QuestionUiState<UserRole>,
     onSelected: (UserRole) -> Unit,
     onBack: () -> Unit,
     onNext: () -> Unit,
@@ -111,6 +115,6 @@ fun RoleContent(
 @Preview
 private fun RoleContentPreview() {
     AppTheme(darkTheme = false) {
-        RoleContent(RoleUiState(selected = UserRole.STUDENT), onSelected = {}, onBack = {}, onNext = {})
+        RoleContent(QuestionUiState(selected = UserRole.STUDENT), onSelected = {}, onBack = {}, onNext = {})
     }
 }
