@@ -34,7 +34,7 @@ The app works fully offline. There are three databases with clear roles, and a c
 How it works:
 
 * **The content files are the source of truth.** Lessons and tasks are written as files (Markdown and JSON) in a private repository, checked by a validator, and exported into the content database file. The same files are imported into PostgreSQL, because the user tables there reference content rows.
-* **Content reaches the phone as a whole file.** A prebuilt file ships inside the app, so the first start works without a network. Later the app downloads newer files (checked by version, size and hash) from private storage through signed links, without an app release.
+* **Content reaches the phone as a whole file, in two stages.** The app ships only a small starter pack (the first lesson), so the first start and the guest work without a network. After sign-up the app downloads the full content file from private Supabase Storage (served through its CDN) with a short-lived signed link, checks it by version, size and hash, and installs it in place of the starter pack. Newer files arrive the same way, without an app release.
 * **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
 * **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 10, before the public Hungarian release.
 * **One design, two dialects.** The PostgreSQL schema (`../dbServer/postgres/01_ddl.sql`) is final. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
@@ -118,8 +118,8 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **6.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time.
 * [ ] **6.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
 * [ ] **6.3. Reading passage view:** a text shown together with its tasks.
-* [ ] **6.4.** Loading the first unit through the importer and the content database.
-* [ ] **6.5. Required sign-in after the first lesson:** no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none.
+* [ ] **6.4.** Loading the first unit through the importer and the content database. The exporter builds two files: the starter pack bundled in the app (first lesson only) and the full content file.
+* [ ] **6.5. Required sign-in after the first lesson:** no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
 
 ---
 
@@ -151,9 +151,9 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 ## Milestone 10: Sync and the public Hungarian release
 
 * [ ] **10.1.** Sync of user data between the phone and Supabase.
-* [ ] **10.2.** The content update flow described under "Data architecture" (signed links from Supabase Storage).
+* [ ] **10.2.** Content download after sign-up and later updates, as described under "Data architecture": a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. Large downloads ask before using mobile data.
 * [ ] **10.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
-* [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent.
+* [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download.
 * [ ] **10.4.** Public release of the Hungarian subject.
 
 ---
