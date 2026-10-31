@@ -72,7 +72,7 @@ This section describes the code on `main`, after Milestone 1 (core and database)
 - Koin dependency injection modules, shared and per platform.
 - Android splash screen and a desktop window entry point.
 - Database core (Milestone 1):
-  - The final PostgreSQL schema (30 tables, `dbServer/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
+  - The PostgreSQL schema (originally 30 tables, now 27 in `supabase/migrations` with Supabase Auth) and a local PostgreSQL in Docker.
   - Content database (13 tables) and user database (8 tables) with SQLDelight, in a shared `:database` module.
   - Content pipeline (`tools/content-pipeline`): validates the lesson and task files, exports the content database file for the app, and imports the content into PostgreSQL.
   - The app installs the bundled content file on first start (checked on the Android emulator).
@@ -145,7 +145,8 @@ Data: three databases with clear roles. The content database (read-only on the p
 MaturiMate/
 ├── README.md
 ├── docs/                    VISION.md, ROADMAP.md, ARCHITECTURE.md
-├── dbServer/                local PostgreSQL: docker-compose.yml, .env.example, postgres/01_ddl.sql (30 tables)
+├── supabase/                Supabase settings and the schema migrations (27 tables)
+├── dbServer/                local PostgreSQL in Docker with the same schema
 ├── content/                 lesson and task files (private repository, gitignored)
 ├── composeApp/              the app (Android and desktop)
 │   └── src/

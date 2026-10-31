@@ -37,7 +37,7 @@ How it works:
 * **Content reaches the phone as a whole file, in two stages.** The app ships only a small starter pack (the first lesson), so the first start and the guest work without a network. After sign-up the app downloads the full content file from private Supabase Storage (served through its CDN) with a short-lived signed link, checks it by version, size and hash, and installs it in place of the starter pack. Newer files arrive the same way, without an app release.
 * **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
 * **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 10, before the public Hungarian release.
-* **One design, two dialects.** The PostgreSQL schema (`../dbServer/postgres/01_ddl.sql`) is final. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
+* **One design, two dialects.** The PostgreSQL schema lives in `../supabase/migrations`; changes are new migrations. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
 * **Passwords** are handled by Supabase Auth. The app holds only the public key; row level security decides which rows a user may read or write.
 * **Hosting:** Supabase (PostgreSQL, Auth and Storage in one; check pricing and limits before signing up), with occasional `pg_dump` backups. The connection string stays in `DATABASE_URL`, outside the repository. Media (images, later audio) is stored separately in object storage and downloaded and cached by the app.
 
@@ -85,7 +85,9 @@ Branch: `feat/onboarding-rework` (Milestones 3 to 5).
 See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 
 * [x] **4.1.** Check pricing and free-tier limits; the owner creates the project.
-* [ ] **4.2.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). A new `user_consent` table records which terms and privacy version was accepted and when, the age confirmation and the marketing consent. `date_of_birth` becomes nullable; the user role is added to the phone database.
+* [x] **4.2a.** Server schema as a Supabase migration (`supabase/migrations`), replacing `dbServer/postgres/01_ddl.sql`: the changes below, row level security enabled on every table (no policies yet), the role catalogue seeded.
+* [ ] **4.2b.** The same changes in the phone databases (SQLDelight): `user_id` as text, the guest's temporary local id, the user role.
+* **4.2 in short.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). `user_consent` (already in the design) records which terms and privacy version was accepted and when, and the marketing consent; it gets an `AGE_16` type for the age confirmation. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [ ] **4.3.** Apply the schema to Supabase; keep the local Docker database in line.
 * [ ] **4.4.** Row level security policies on every user table, with tests. Only signed-in users can read or write, and only their own rows.
 * [ ] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off.

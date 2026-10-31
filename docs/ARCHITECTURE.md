@@ -23,7 +23,8 @@ For the current status of each part, see the "Current status" section of the [RE
 | kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
 | SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
 | PostgreSQL JDBC driver | 42.7.4 | `../tools/content-pipeline` only (server copy of the content) |
-| PostgreSQL | 16 (Docker) | Local development database (`../dbServer/docker-compose.yml`); not used by the app |
+| PostgreSQL | 17 (Supabase), 16 (Docker) | Server database on Supabase; a local copy in Docker (`../dbServer/docker-compose.yml`) for development and the importer |
+| Supabase CLI | 2.122.0 | Schema migrations (`../supabase/migrations`) |
 
 Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
@@ -39,7 +40,7 @@ Gradle modules:
 | `:database` | Kotlin Multiplatform library (Android, desktop) | SQLDelight schemas of the content and user databases, platform drivers, content installer |
 | `:tools:content-pipeline` | Kotlin/JVM command-line tool | Validates the content files; exports `content.db`; imports the server copy into PostgreSQL |
 
-Other folders: `dbServer/` (local PostgreSQL: `docker-compose.yml`, `.env.example`, and the schema `postgres/01_ddl.sql` with 30 tables; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
+Other folders: `supabase/` (Supabase project settings `config.toml` and the schema in `migrations/`, 27 tables), `dbServer/` (local PostgreSQL in Docker with the same schema and a stand-in for Supabase Auth; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
 
 The app source tree, relative to `../composeApp/src`:
 
@@ -141,9 +142,9 @@ Offline-first, with three databases:
 |---|---|---|---|
 | Content (SQLite, `content.db`) | Phone, read-only | 13 content tables: subjects, topic tree, learning units, tasks with options, keys and accepted answers, tags | The exporter; installed as a whole file |
 | User (SQLite, `maturimate_user.db`) | Phone | 8 user tables: profile, settings, subjects, attempts, unit and task progress, streak, daily activity | The app |
-| Server (PostgreSQL) | Local Docker now; a hosted server later | All 30 tables of `../dbServer/postgres/01_ddl.sql`: accounts and synced progress, plus a copy of the content | The importer (content); a backend later (accounts, progress) |
+| Server (PostgreSQL) | Supabase; a local copy in Docker | The 27 tables of `../supabase/migrations`: synced progress, plus a copy of the content. Accounts are Supabase Auth users (`auth.users`) | The importer (content); the app through Supabase, protected by row level security (accounts, progress) |
 
-The PostgreSQL schema in `dbServer/postgres/01_ddl.sql` is the design and is not changed. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `app_user`).
+The PostgreSQL schema in `supabase/migrations` comes from the original 30-table design: the design's own sign-in tables (`app_user`, `user_session`, `password_reset_token`) are replaced by Supabase Auth, every `user_id` is a `uuid` referencing `auth.users`, `user_profile.date_of_birth` is optional, and `user_consent` also records the age confirmation (`AGE_16`). Schema changes are new migration files; an applied migration is never edited. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `auth.users`).
 
 ### 9.1 Content pipeline
 

@@ -4,6 +4,7 @@ What was decided and why. Newest first. A decision that changes is not deleted: 
 
 ## 2026-10-31
 
+* **The schema lives in Supabase migrations.** `supabase/migrations` replaces `dbServer/postgres/01_ddl.sql` (a copy of the course design, so it may change). The local Docker database applies the same migrations with a small stand-in for `auth.users`. Changes are new migration files; an applied migration is never edited.
 * **Local guest instead of Supabase anonymous accounts.** "Körülnézek" keeps the user's data on the phone only, under a temporary local id; no account is created on the server. After the first lesson, signing up is required, and the local rows move to the new account id. Reasons: the same experience with much less work and risk: no anonymous users on the server, so no identity linking, no CAPTCHA for anonymous sign-ins, no cleanup job and no `is_anonymous` rules; and no personal data reaches the server before the user accepts the terms. Sync only arrives in Milestone 10, so nothing is lost by keeping guest data local. Anonymous sign-ins stay off in Supabase.
 * **The guest gate is not a security boundary.** A technical user could skip the required sign-in on their own phone; this only affects themselves, because the server is reachable only with an account and the content on the phone is already readable (see the content protection entry of 2026-10-28). Data that comes from the phone in a later sync is checked on the server.
 
