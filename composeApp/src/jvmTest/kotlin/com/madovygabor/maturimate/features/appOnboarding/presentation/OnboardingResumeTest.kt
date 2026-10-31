@@ -5,8 +5,10 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -95,5 +97,28 @@ class OnboardingResumeTest {
             .copy(subjects = listOf(UserSubject(4, compulsory = false)), dailyGoalMinutes = 15, reminderEnabled = true)
         // the reminder has no answer of its own, so a resumed onboarding asks it again
         assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(learner).last())
+    }
+
+    @Test
+    fun everyRoleResumesAtItsFirstUnansweredStep() {
+        val base = profile(TeachingLanguage.HU, UserRole.STUDENT).copy(subjects = listOf(UserSubject(1, true)))
+        val withDate = base.copy(graduationDate = LocalDate(2027, 3, 15))
+        val withGoal = withDate.copy(dailyGoalMinutes = 10)
+        assertEquals(Route.AppOnboarding.Date, onboardingBackStack(base).last())
+        assertEquals(Route.AppOnboarding.Goal, onboardingBackStack(withDate).last())
+        // the reminder, the plan and the account have no stored answer: a resumed onboarding asks the reminder again
+        assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(withGoal).last())
+        // Back walks through every earlier screen
+        assertEquals(
+            listOf(
+                Route.AppOnboarding.Welcome, Route.AppOnboarding.Language, Route.AppOnboarding.Role, Route.AppOnboarding.Subjects,
+                Route.AppOnboarding.Date, Route.AppOnboarding.Goal, Route.AppOnboarding.Reminder,
+            ),
+            onboardingBackStack(withGoal),
+        )
+
+        val teacher = profile(TeachingLanguage.SK, UserRole.TEACHER).copy(subjects = listOf(UserSubject(4, false)))
+        assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(teacher).last())
+        assertTrue(Route.AppOnboarding.Date !in onboardingBackStack(teacher) && Route.AppOnboarding.Goal !in onboardingBackStack(teacher))
     }
 }
