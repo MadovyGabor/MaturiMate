@@ -84,7 +84,7 @@ Branch: `feat/onboarding-rework` (Milestones 3 to 5).
 
 See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 
-* [ ] **4.1.** Check pricing and free-tier limits; the owner creates the project.
+* [x] **4.1.** Check pricing and free-tier limits; the owner creates the project.
 * [ ] **4.2.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). A new `user_consent` table records which terms and privacy version was accepted and when, the age confirmation and the marketing consent. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [ ] **4.3.** Apply the schema to Supabase; keep the local Docker database in line.
 * [ ] **4.4.** Row level security policies on every user table, with tests.
