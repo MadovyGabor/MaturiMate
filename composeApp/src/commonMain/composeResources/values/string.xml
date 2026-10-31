@@ -172,6 +172,17 @@
     <string name="error_too_many">Príliš veľa pokusov. Chvíľu počkaj a skús to znova.</string>
     <string name="error_unknown">Niečo sa nepodarilo. Skús to znova.</string>
 
+    <!-- Sign-in ("Už mám účet") and forgotten password; the reset texts are new -->
+    <string name="signin_title">Prihlásenie</string>
+    <string name="signin_why">Prihlás sa a načítame tvoj profil aj pokrok.</string>
+    <string name="signin_button">Prihlásiť sa</string>
+    <string name="signin_forgot">Zabudnuté heslo?</string>
+    <string name="reset_title">Nové heslo</string>
+    <string name="reset_why">Pošleme ti 6-miestny kód na e-mail, s ním si nastavíš nové heslo.</string>
+    <string name="reset_send">Poslať kód</string>
+    <string name="reset_new_password">Nové heslo</string>
+    <string name="reset_save">Uložiť heslo</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

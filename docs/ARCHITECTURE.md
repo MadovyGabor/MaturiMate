@@ -186,7 +186,7 @@ Files (Git) ──┤
 ## 10. Not built yet
 
 * Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
-* Content updates by download and sync (see the [ROADMAP](ROADMAP.md)). Accounts exist in the data layer (`AuthRepository`); their screens come with the onboarding (steps 5.4 and 5.12).
+* Content updates by download and sync of progress (see the [ROADMAP](ROADMAP.md)). Accounts exist: sign-up, sign-in and the profile on the server (step 5.12).
 
 ---
 
@@ -196,7 +196,7 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 123 | Content provider with the bundled file (skipped without it); design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan and account screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:composeApp` (`jvmTest`, `commonTest`) | 128 | Content provider with the bundled file (skipped without it); design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
 

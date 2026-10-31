@@ -63,6 +63,7 @@ data class OnboardingAction(
  * @param stackedActions True: the buttons fill the width, one under the other, at every size
  *   (welcome, account). False: from `breakpoint-medium` they sit in a row on the right.
  * @param progress Shows the back button, the step count and the step list; null on the welcome screen.
+ * @param onBack A back button without a step count, for screens outside the steps (sign-in).
  * @param content The screen's own content, scrolled when it does not fit.
  */
 @Composable
@@ -71,6 +72,7 @@ fun OnboardingScaffold(
     modifier: Modifier = Modifier,
     stackedActions: Boolean = false,
     progress: OnboardingProgress? = null,
+    onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(
@@ -85,10 +87,10 @@ fun OnboardingScaffold(
             Row(Modifier.fillMaxSize()) {
                 SidePanel(progress, Modifier.width(layout.sidePanelWidth).fillMaxHeight())
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                MainColumn(wide = true, actions, stackedActions, progress, content)
+                MainColumn(wide = true, actions, stackedActions, progress, onBack, content)
             }
         } else {
-            MainColumn(wide, actions, stackedActions, progress, content)
+            MainColumn(wide, actions, stackedActions, progress, onBack, content)
         }
     }
 }
@@ -99,6 +101,7 @@ private fun MainColumn(
     actions: List<OnboardingAction>,
     stackedActions: Boolean,
     progress: OnboardingProgress?,
+    onBack: (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val spacing = MaterialTheme.spacing
@@ -109,8 +112,11 @@ private fun MainColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val headerModifier = columnModifier.padding(start = spacing.space2, end = sideMargin, top = spacing.space3)
         if (progress != null) {
-            StepHeader(progress, columnModifier.padding(start = spacing.space2, end = sideMargin, top = spacing.space3))
+            StepHeader(progress, headerModifier)
+        } else if (onBack != null) {
+            Row(headerModifier) { BackButton(onBack) }
         }
         Column(
             modifier = Modifier
@@ -146,6 +152,17 @@ private fun ActionButton(action: OnboardingAction, modifier: Modifier) {
     )
 }
 
+@Composable
+private fun BackButton(onBack: () -> Unit) {
+    IconButton(onClick = onBack) {
+        Icon(
+            Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = stringResource(Res.string.common_back),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 /** Back button, "1. lépés / 8" and the progress bar. */
 @Composable
 private fun StepHeader(progress: OnboardingProgress, modifier: Modifier) {
@@ -154,13 +171,7 @@ private fun StepHeader(progress: OnboardingProgress, modifier: Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2),
     ) {
-        IconButton(onClick = progress.onBack) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = stringResource(Res.string.common_back),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        BackButton(progress.onBack)
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2),

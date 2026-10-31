@@ -15,6 +15,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateS
 import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.plan.PlanScreen
 import com.madovygabor.maturimate.features.auth.presentation.AccountScreen
+import com.madovygabor.maturimate.features.auth.presentation.SignInScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.ReminderScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
@@ -53,6 +54,7 @@ fun AppOnboardingNavigation(
                     subclass(Route.AppOnboarding.Reminder::class, Route.AppOnboarding.Reminder.serializer())
                     subclass(Route.AppOnboarding.Plan::class, Route.AppOnboarding.Plan.serializer())
                     subclass(Route.AppOnboarding.Account::class, Route.AppOnboarding.Account.serializer())
+                    subclass(Route.AppOnboarding.SignIn::class, Route.AppOnboarding.SignIn.serializer())
                 }
             }
         },
@@ -72,8 +74,7 @@ fun AppOnboardingNavigation(
                     onStart = {
                         onboardingBackStack.add(Route.AppOnboarding.Language)
                     },
-                    // hidden until the sign-in screen exists (roadmap step 5.12)
-                    onHaveAccount = null,
+                    onHaveAccount = { onboardingBackStack.add(Route.AppOnboarding.SignIn) },
                 )
             }
 
@@ -120,6 +121,21 @@ fun AppOnboardingNavigation(
             // 8. "A te terved"
             entry<Route.AppOnboarding.Plan> {
                 PlanScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.PLAN, role) })
+            }
+
+            // "Már van fiókom": an account that finished the onboarding goes home by itself (its
+            // saved end rebuilds the app); otherwise the onboarding continues from its answers
+            entry<Route.AppOnboarding.SignIn> {
+                SignInScreen(
+                    onBack = back,
+                    onSignedIn = { finished ->
+                        if (!finished) {
+                            val resumed = navigationViewModel.backStack.value ?: listOf(Route.AppOnboarding.Welcome)
+                            onboardingBackStack.clear()
+                            onboardingBackStack.addAll(resumed)
+                        }
+                    },
+                )
             }
 
             // 9. Account, or "Körülnézek"; both finish the onboarding

@@ -103,7 +103,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.0.** Schema: `user_subject.level` (English level) and `user_profile.onboarding_completed_at`, in a new Supabase migration and in the local user database.
 * [x] **5.1–5.2.** Profile and settings move to the user database; DataStore is removed, and with it the VPUS/SNI toggle and its stored value. *Merged into one step on 2026-10-31: the old onboarding is rebuilt anyway, so the toggle is not removed from it separately.*
 * [x] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
-* [x] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom", with the shared onboarding frame (`OnboardingScaffold`) and `AppButton`. "Már van fiókom" stays hidden until the sign-in screen exists (5.12).
+* [x] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom", with the shared onboarding frame (`OnboardingScaffold`) and `AppButton`. "Már van fiókom" opens the sign-in since 5.12.
 * [x] **5.5.** Teaching language (HU/SK); also sets the app language. With `AppChoiceCard`, `AppProgressBar`, the step header and the step list.
 * [x] **5.6.** Role: student, learner or teacher, saved in `user_role`; the number of steps follows the role (8, 7 or 6). *For now learners and teachers finish the onboarding after the role, and students go on to the old setup screen; steps 5.7 to 5.12 fill the gap.*
 * [x] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`. With `AppChoiceChip`; the next step now follows the role (`nextRoute`), and the onboarding ends after the last step built so far.
@@ -111,7 +111,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.9.** Daily goal (students and learners): 5, 10, 15 or 20 minutes as chips, 10 preselected, with the hours in a year. The goal stays empty in the database until it is answered.
 * [x] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it. Only the setting is saved (`reminder_enabled`, `reminder_time`); sending the daily notification comes with the streak (8.1).
 * [x] **5.11.** "A te terved" summary: days until the exam with the hours of practice (students), the daily goal and its hours in a year (learners), the subjects with the English level, and the reminder.
-* [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen and shows the "Már van fiókom" button on the welcome screen (`onHaveAccount` in `AppOnboardingNavigation`).
+* [x] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen with the forgotten password, and shows the "Már van fiókom" button on the welcome screen. After sign-up the guest's rows become the account's and the profile and consents go to Supabase; after sign-in the account's profile comes to the phone.
 * [ ] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped. *Started in 5.5: `App` picks the start screen from the profile, and `onboardingBackStack` resumes after the language step; each new step adds its line.*
 * [ ] **5.14.** Profile screen update and tests.
 

@@ -21,6 +21,7 @@ import com.madovygabor.maturimate.features.auth.data.AuthRepositoryImpl
 import com.madovygabor.maturimate.features.auth.data.SupabaseAccountRepository
 import com.madovygabor.maturimate.features.auth.domain.AccountRepository
 import com.madovygabor.maturimate.features.auth.presentation.AccountViewModel
+import com.madovygabor.maturimate.features.auth.presentation.SignInViewModel
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
@@ -91,6 +92,7 @@ val sharedModule = module {
     viewModelOf(::ReminderViewModel)
     viewModel { PlanViewModel(get()) }
     viewModelOf(::AccountViewModel)
+    viewModelOf(::SignInViewModel)
     viewModelOf(::ProfileViewModel)
 }
 

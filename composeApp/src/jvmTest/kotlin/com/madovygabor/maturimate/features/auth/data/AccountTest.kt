@@ -69,6 +69,8 @@ class AccountTest {
             }
             install(Postgrest)
         }
+        // the stored-session check must be over, or it could end after the import and drop it
+        client.auth.awaitInitialization()
         client.auth.importSession(
             UserSession(accessToken = "access", refreshToken = "refresh", expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = USER_ID))
         )

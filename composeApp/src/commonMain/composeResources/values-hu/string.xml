@@ -163,6 +163,17 @@
     <string name="error_too_many">Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.</string>
     <string name="error_unknown">Valami nem sikerült. Próbáld újra.</string>
 
+    <!-- Sign-in ("Már van fiókom") and forgotten password; the reset texts are new -->
+    <string name="signin_title">Belépés</string>
+    <string name="signin_why">Lépj be, és betöltjük a profilodat és a haladásodat.</string>
+    <string name="signin_button">Belépés</string>
+    <string name="signin_forgot">Elfelejtetted a jelszavad?</string>
+    <string name="reset_title">Új jelszó</string>
+    <string name="reset_why">Küldünk egy 6 jegyű kódot az e-mail címedre, azzal adhatsz meg új jelszót.</string>
+    <string name="reset_send">Kód küldése</string>
+    <string name="reset_new_password">Új jelszó</string>
+    <string name="reset_save">Jelszó mentése</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

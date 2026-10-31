@@ -290,6 +290,11 @@ New in step 5.12 (not in the prototype; please review):
 | `signin_button` | Belépés | Prihlásiť sa |
 | `signin_forgot` | Elfelejtetted a jelszavad? | Zabudnuté heslo? |
 | `error_signin` | Hibás e-mail cím vagy jelszó. | Nesprávny e-mail alebo heslo. |
+| `reset_title` (new) | Új jelszó | Nové heslo |
+| `reset_why` (new) | Küldünk egy 6 jegyű kódot az e-mail címedre, azzal adhatsz meg új jelszót. | Pošleme ti 6-miestny kód na e-mail, s ním si nastavíš nové heslo. |
+| `reset_send` (new) | Kód küldése | Poslať kód |
+| `reset_new_password` (new) | Új jelszó | Nové heslo |
+| `reset_save` (new) | Jelszó mentése | Uložiť heslo |
 
 ### Home, after the onboarding
 
