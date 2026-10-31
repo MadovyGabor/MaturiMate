@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation
 
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.onboarding_step_account
 import maturimate.composeapp.generated.resources.onboarding_step_date
@@ -24,10 +25,15 @@ enum class OnboardingStep(val label: StringResource) {
 }
 
 /**
- * The steps the user goes through. Until the role is chosen (step 5.6) this is the
- * student's path, the longest one, as in the prototype.
+ * The steps the user goes through (docs/onboarding/README.md, section 5): learners have no
+ * exam date, teachers neither an exam date nor a daily goal. Until the role is chosen this is
+ * the student's path, the longest one, as in the prototype.
  */
-fun onboardingSteps(): List<OnboardingStep> = OnboardingStep.entries
+fun onboardingSteps(role: UserRole? = null): List<OnboardingStep> = when (role) {
+    UserRole.STUDENT, null -> OnboardingStep.entries
+    UserRole.LEARNER -> OnboardingStep.entries - OnboardingStep.DATE
+    UserRole.TEACHER -> OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL
+}
 
 /** Where the user is in the onboarding, for the step header and the step list. */
 data class OnboardingProgress(

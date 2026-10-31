@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -20,7 +21,10 @@ fun onboardingBackStack(profile: UserProfile?): List<Route> = buildList {
     add(Route.AppOnboarding.Welcome)
     if (profile?.teachingLanguage == null) return@buildList
     add(Route.AppOnboarding.Language)
-    // the next questions replace the old setup screen step by step (roadmap 5.6 to 5.12)
+    add(Route.AppOnboarding.Role)
+    // learners and teachers finish after the role for now; their next questions come in 5.7 to 5.12
+    if (profile.role != UserRole.STUDENT) return@buildList
+    // the next questions replace the old setup screen step by step (roadmap 5.7 to 5.12)
     add(Route.AppOnboarding.ProfileSetup)
 }
 

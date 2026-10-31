@@ -18,6 +18,8 @@ interface UserProfileRepository {
 
     /** Also sets the language of the app. */
     suspend fun saveTeachingLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
+    /** Replaces the role chosen before. */
+    suspend fun saveRole(role: UserRole): OperationResult<Unit, DataError>
     suspend fun saveGraduationDate(date: LocalDate): OperationResult<Unit, DataError>
     suspend fun saveDailyGoal(minutes: Int): OperationResult<Unit, DataError>
     suspend fun completeOnboarding(at: Instant): OperationResult<Unit, DataError>

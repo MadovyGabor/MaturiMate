@@ -13,6 +13,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.ProfileSetupScreen
+import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.viewmodel.koinViewModel
@@ -39,6 +40,7 @@ fun AppOnboardingNavigation(
                 polymorphic(NavKey::class) {
                     subclass(Route.AppOnboarding.Welcome::class, Route.AppOnboarding.Welcome.serializer())
                     subclass(Route.AppOnboarding.Language::class, Route.AppOnboarding.Language.serializer())
+                    subclass(Route.AppOnboarding.Role::class, Route.AppOnboarding.Role.serializer())
                     subclass(Route.AppOnboarding.ProfileSetup::class, Route.AppOnboarding.ProfileSetup.serializer())
                 }
             }
@@ -71,12 +73,20 @@ fun AppOnboardingNavigation(
             entry<Route.AppOnboarding.Language> {
                 LanguageScreen(
                     onBack = { onboardingBackStack.removeLastOrNull() },
-                    // the old setup screen asks the rest until the new steps replace it
-                    onNext = { onboardingBackStack.add(Route.AppOnboarding.ProfileSetup) },
+                    onNext = { onboardingBackStack.add(Route.AppOnboarding.Role) },
                 )
             }
 
-            // 3. Profile Setup Screen (old; replaced step by step)
+            // 3. Role (step 2); learners and teachers finish here for now (RoleViewModel)
+            entry<Route.AppOnboarding.Role> {
+                RoleScreen(
+                    onBack = { onboardingBackStack.removeLastOrNull() },
+                    // the old setup screen asks the student's remaining questions until the new steps replace it
+                    onStudentNext = { onboardingBackStack.add(Route.AppOnboarding.ProfileSetup) },
+                )
+            }
+
+            // 4. Profile Setup Screen (old; replaced step by step)
             entry<Route.AppOnboarding.ProfileSetup> {
                 ProfileSetupScreen(
                     viewModel = onboardingViewModel,

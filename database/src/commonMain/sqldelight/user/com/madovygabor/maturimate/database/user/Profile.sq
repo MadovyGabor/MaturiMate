@@ -116,6 +116,10 @@ SELECT * FROM user_role WHERE user_id = :userId ORDER BY role_id;
 insertRole:
 INSERT OR IGNORE INTO user_role VALUES ?;
 
+-- the roles a user picks in the onboarding (student, learner, teacher); curator and admin stay
+deleteOnboardingRoles:
+DELETE FROM user_role WHERE user_id = :userId AND role_id IN (1, 2, 3);
+
 deleteRoles:
 DELETE FROM user_role WHERE user_id = :userId;
 

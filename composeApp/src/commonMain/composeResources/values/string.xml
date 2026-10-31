@@ -31,6 +31,16 @@
     <string name="language_sk">Slovenský</string>
     <string name="language_sk_desc">Škola s vyučovacím jazykom slovenským</string>
 
+    <!-- Onboarding: role -->
+    <string name="role_title">Na čo chceš aplikáciu používať?</string>
+    <string name="role_why">Podľa toho prispôsobíme ďalšie otázky.</string>
+    <string name="role_student">Pripravujem sa na maturitu</string>
+    <string name="role_student_desc">Odpočítavanie, denný cieľ a precvičovanie maturitných predmetov.</string>
+    <string name="role_learner">Chcem sa len učiť</string>
+    <string name="role_learner_desc">Lekcie a precvičovanie bez dátumu maturity.</string>
+    <string name="role_teacher">Som učiteľ/ka</string>
+    <string name="role_teacher_desc">Pozriem si a vyskúšam obsah.</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

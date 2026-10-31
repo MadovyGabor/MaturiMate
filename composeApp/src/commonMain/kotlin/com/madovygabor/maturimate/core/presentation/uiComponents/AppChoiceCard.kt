@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
@@ -29,11 +30,13 @@ import com.madovygabor.maturimate.core.presentation.theme.spacing
  * and a mark (docs/design-system/components/ChoiceCard.md). Used for the teaching language
  * and the role in the onboarding.
  *
- * @param badge Short text in the badge, for example "HU".
+ * @param badge Short text in the badge, for example "HU"; or give [badgeIcon] instead.
+ * @param badgeIcon An icon in the badge, for example the student's cap.
  */
 @Composable
 fun AppChoiceCard(
-    badge: String,
+    badge: String? = null,
+    badgeIcon: ImageVector? = null,
     title: String,
     description: String,
     selected: Boolean,
@@ -65,7 +68,11 @@ fun AppChoiceCard(
                 contentColor = if (selected) colors.onPrimary else colors.onSurfaceVariant,
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(badge, style = MaterialTheme.typography.titleSmall)
+                    if (badgeIcon != null) {
+                        Icon(badgeIcon, contentDescription = null, modifier = Modifier.size(layout.icon))
+                    } else if (badge != null) {
+                        Text(badge, style = MaterialTheme.typography.titleSmall)
+                    }
                 }
             }
             Column(

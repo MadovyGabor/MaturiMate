@@ -15,6 +15,7 @@ import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
+import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import maturimate.composeapp.generated.resources.Res
@@ -58,7 +59,7 @@ fun LanguageContent(
 ) {
     OnboardingScaffold(
         actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
-        progress = OnboardingProgress(current = OnboardingStep.LANGUAGE, onBack = onBack),
+        progress = OnboardingProgress(OnboardingStep.LANGUAGE, onboardingSteps(state.role), onBack),
     ) {
         Text(
             text = stringResource(Res.string.language_title),

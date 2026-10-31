@@ -5,9 +5,11 @@ import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.user.UserDatabase
+import com.madovygabor.maturimate.database.user.User_role
 import com.madovygabor.maturimate.features.userProfile.domain.DataError
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -30,7 +32,11 @@ class UserProfileRepositoryImplTest {
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
     )
     private val localUser = LocalUserProvider(database, newGuestId = { "guest-1" })
-    private val repository = UserProfileRepositoryImpl(database, localUser, Dispatchers.Unconfined, timeZone = { "Europe/Budapest" })
+    private val repository = UserProfileRepositoryImpl(
+        database, localUser, Dispatchers.Unconfined,
+        timeZone = { "Europe/Budapest" },
+        now = { Instant.fromEpochMilliseconds(7_000) },
+    )
 
     private fun OperationResult<Unit, DataError>.ok() {
         if (this is OperationResult.Error) fail("expected success, got $error")
@@ -109,5 +115,40 @@ class UserProfileRepositoryImplTest {
         // ck_user_settings_goal allows 1 to 240 minutes
         assertEquals(OperationResult.Error(DataError.IO_ERROR), repository.saveDailyGoal(0))
         assertNull(repository.profile.first())
+    }
+
+    @Test
+    fun roleIsSavedAndReplaced() = runBlocking {
+        repository.saveRole(UserRole.STUDENT).ok()
+        assertEquals(UserRole.STUDENT, current().role)
+
+        repository.saveRole(UserRole.TEACHER).ok()
+
+        assertEquals(UserRole.TEACHER, current().role)
+        val rows = database.profileQueries.selectRoles("guest-1").executeAsList()
+        assertEquals(listOf(3L), rows.map { it.role_id })
+        assertEquals(7_000L, rows.single().assigned_at)
+    }
+
+    @Test
+    fun savingTheRoleKeepsServerGivenRoles() = runBlocking {
+        repository.saveRole(UserRole.LEARNER).ok()
+        // curator (4) is given by the server, never by the onboarding
+        database.profileQueries.insertRole(User_role("guest-1", 4, 1_000))
+
+        repository.saveRole(UserRole.STUDENT).ok()
+
+        assertEquals(listOf(1L, 4L), database.profileQueries.selectRoles("guest-1").executeAsList().map { it.role_id })
+        assertEquals(UserRole.STUDENT, current().role)
+    }
+
+    @Test
+    fun profileFlowFollowsTheRole() = runBlocking {
+        repository.saveRole(UserRole.STUDENT).ok()
+        val changed = async { repository.profile.first { it?.role == UserRole.LEARNER } }
+
+        repository.saveRole(UserRole.LEARNER).ok()
+
+        assertEquals(UserRole.LEARNER, withTimeout(5_000) { changed.await() }?.role)
     }
 }

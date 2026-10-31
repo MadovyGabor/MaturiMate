@@ -29,6 +29,16 @@
     <string name="language_sk">Slovenský</string>
     <string name="language_sk_desc">Škola s vyučovacím jazykom slovenským</string>
 
+    <!-- Onboarding: role -->
+    <string name="role_title">Mire szeretnéd használni az appot?</string>
+    <string name="role_why">Ehhez igazítjuk a következő kérdéseket.</string>
+    <string name="role_student">Érettségire készülök</string>
+    <string name="role_student_desc">Visszaszámlálás, napi cél és gyakorlás az érettségi tantárgyaiból.</string>
+    <string name="role_learner">Csak tanulni szeretnék</string>
+    <string name="role_learner_desc">Leckék és gyakorlás, érettségi dátum nélkül.</string>
+    <string name="role_teacher">Tanár vagyok</string>
+    <string name="role_teacher_desc">Megnézem és kipróbálom a tartalmat.</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

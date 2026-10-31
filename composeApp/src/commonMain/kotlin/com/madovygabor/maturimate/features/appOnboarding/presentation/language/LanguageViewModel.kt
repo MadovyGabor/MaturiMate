@@ -7,6 +7,7 @@ import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarContr
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +17,8 @@ import kotlinx.coroutines.launch
 
 data class LanguageUiState(
     val selected: TeachingLanguage? = null,
+    /** The role saved before, if the user came back here; it sets the number of steps. */
+    val role: UserRole? = null,
     val saving: Boolean = false,
 ) {
     val canContinue: Boolean get() = selected != null && !saving
@@ -32,8 +35,8 @@ class LanguageViewModel(
 
     init {
         viewModelScope.launch {
-            val saved = runCatching { repository.profile.first()?.teachingLanguage }.getOrNull()
-            _state.update { if (it.selected == null) it.copy(selected = saved) else it }
+            val saved = runCatching { repository.profile.first() }.getOrNull()
+            _state.update { it.copy(selected = it.selected ?: saved?.teachingLanguage, role = saved?.role) }
         }
     }
 

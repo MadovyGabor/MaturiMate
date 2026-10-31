@@ -105,7 +105,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
 * [x] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom", with the shared onboarding frame (`OnboardingScaffold`) and `AppButton`. "Már van fiókom" stays hidden until the sign-in screen exists (5.12).
 * [x] **5.5.** Teaching language (HU/SK); also sets the app language. With `AppChoiceCard`, `AppProgressBar`, the step header and the step list.
-* [ ] **5.6.** Role: student, learner or teacher.
+* [x] **5.6.** Role: student, learner or teacher, saved in `user_role`; the number of steps follows the role (8, 7 or 6). *For now learners and teachers finish the onboarding after the role, and students go on to the old setup screen; steps 5.7 to 5.12 fill the gap.*
 * [ ] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`.
 * [ ] **5.8.** Graduation date (students only).
 * [ ] **5.9.** Daily goal (students and learners).

@@ -8,12 +8,32 @@ import kotlin.time.Instant
 enum class TeachingLanguage { HU, SK }
 
 /**
+ * What the user wants the app for; it decides which onboarding questions follow.
+ * [id] is the role's id in the role catalogue of supabase/migrations.
+ */
+enum class UserRole(val id: Long) {
+    /** Prepares for the maturita. */
+    STUDENT(1),
+
+    /** Learns or practises, without an exam date. */
+    LEARNER(2),
+
+    /** Looks at or tries the content. */
+    TEACHER(3);
+
+    companion object {
+        fun fromId(id: Long): UserRole? = entries.firstOrNull { it.id == id }
+    }
+}
+
+/**
  * Profile and settings of the local user. The onboarding fills the fields one by one,
  * so each may still be empty.
  */
 @OptIn(ExperimentalTime::class)
 data class UserProfile(
     val teachingLanguage: TeachingLanguage?,
+    val role: UserRole?,
     val graduationDate: LocalDate?,
     val uiLanguage: TeachingLanguage,
     val dailyGoalMinutes: Int?,

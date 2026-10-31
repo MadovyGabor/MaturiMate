@@ -17,6 +17,8 @@ sealed interface Route : NavKey {
         @Serializable
         data object Language : Route // Teaching language (step 1)
         @Serializable
+        data object Role : Route // Role: student, learner or teacher (step 2)
+        @Serializable
         data object ProfileSetup : Route // Profile setup during onboarding
     }
     @Serializable
