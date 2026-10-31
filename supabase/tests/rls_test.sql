@@ -21,6 +21,9 @@ INSERT INTO topic (subject_id, title, order_index, is_published)
 INSERT INTO task (topic_id, task_format_id, question_text)
     SELECT t.topic_id, f.task_format_id, 'Q?' FROM topic t, task_format f
     WHERE t.title = 'T' AND f.code = 'T_MC';
+-- users cannot read the subject table, so its id is kept here
+CREATE TEMP TABLE t_subject AS SELECT subject_id FROM subject WHERE code = 'T_SUBJ';
+GRANT SELECT ON t_subject TO authenticated;
 
 -- Switches to a signed-in user for the rest of the transaction
 CREATE FUNCTION pg_temp.become(u text) RETURNS void LANGUAGE plpgsql AS $$
@@ -52,6 +55,18 @@ DO $$ BEGIN
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 
+-- the onboarding columns: A sets their own English level and onboarding end
+INSERT INTO user_subject (user_id, subject_id, level)
+    SELECT '00000000-0000-0000-0000-00000000000a', subject_id, 'B2' FROM t_subject;
+UPDATE user_profile SET onboarding_completed_at = now()
+    WHERE user_id = '00000000-0000-0000-0000-00000000000a';
+DO $$ BEGIN
+    IF (SELECT level FROM user_subject) IS DISTINCT FROM 'B2'
+        OR (SELECT onboarding_completed_at FROM user_profile) IS NULL THEN
+        RAISE EXCEPTION 'FAIL: A could not save their level or onboarding end';
+    END IF;
+END $$;
+
 -- ---- B sees nothing of A ---------------------------------------------
 SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
 
@@ -59,11 +74,21 @@ DO $$ BEGIN
     IF (SELECT count(*) FROM user_profile) <> 0 THEN
         RAISE EXCEPTION 'FAIL: B sees A''s profile';
     END IF;
+    IF (SELECT count(*) FROM user_subject) <> 0 THEN
+        RAISE EXCEPTION 'FAIL: B sees A''s subjects';
+    END IF;
     UPDATE user_profile SET first_name = 'Hacked';
+    UPDATE user_subject SET level = 'B1';
 END $$;
 
 -- ---- Roles: student, learner, teacher only ---------------------------
 SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+
+DO $$ BEGIN
+    IF (SELECT level FROM user_subject) IS DISTINCT FROM 'B2' THEN
+        RAISE EXCEPTION 'FAIL: B changed A''s English level';
+    END IF;
+END $$;
 
 INSERT INTO user_role (user_id, role_id) VALUES ('00000000-0000-0000-0000-00000000000a', 1);
 DO $$ BEGIN

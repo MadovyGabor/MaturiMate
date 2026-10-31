@@ -48,7 +48,7 @@ Not everyone prepares for the exam, so the flow asks first what the app is for. 
 
 Teachers get the same app as everyone else. There is no teacher mode (classes, assigning tasks) in V1; see [DECISIONS](../DECISIONS.md).
 
-**Subjects.** The subject step is a multiple choice. The compulsory exam subjects are preselected by the teaching language and cannot be removed: Slovak language and literature, English, and for a Hungarian-language school also Hungarian language and literature. Mathematics and later subjects are optional. English always asks for the level: B1, B2 or "I don't know yet", which is saved as B1. Subjects without content yet are shown with a "Hamarosan" (coming soon) label. Stored in `user_subject` (`source` = `AUTO` for compulsory, `CHOSEN` for picked).
+**Subjects.** The subject step is a multiple choice. The compulsory exam subjects are preselected by the teaching language and cannot be removed: Slovak language and literature, English, and for a Hungarian-language school also Hungarian language and literature. Mathematics and later subjects are optional. English always asks for the level: B1, B2 or "I don't know yet", which is saved as B1. Subjects without content yet are shown with a "Hamarosan" (coming soon) label. Stored in `user_subject` (`source` = `AUTO` for compulsory, `CHOSEN` for picked; the English level in `level`).
 
 ## 4. User data
 
@@ -58,10 +58,11 @@ Ask only for what is used. Everything is stored per account; the account id come
 | :--- | :--- | :--- | :--- |
 | Teaching language (HU/SK) | subjects, app language | `user_profile.teaching_language`, `user_settings.ui_language` | everyone |
 | Role | which questions follow | `user_role` | everyone |
-| Subjects, English level | content, home screen | `user_subject` | everyone |
+| Subjects, English level | content, home screen | `user_subject`, the level in `user_subject.level` | everyone |
 | Exam date | countdown, plan | `user_profile.graduation_date` | students |
 | Daily goal | streak, plan | `user_settings.daily_goal_minutes` | students, learners |
 | Reminder and its time | notifications | `user_settings.reminder_*` | anyone who wants it |
+| End of the onboarding | start screen (onboarding or home), also on a new phone | `user_profile.onboarding_completed_at` (set by the app, not asked) | automatic |
 | Time zone | counting the daily streak | `user_settings.timezone` (from the phone, not asked) | automatic |
 | First name and last name | identifying the account holder, addressing the user | `user_profile.first_name`, `last_name` | account screen (prefilled from Google) |
 | E-mail | sign-in, password reset, messages about the account | Supabase Auth | account screen |

@@ -10,6 +10,8 @@ CREATE TABLE user_profile (
     school_type        TEXT,
     teaching_language  TEXT,
     graduation_date    TEXT,
+    -- epoch milliseconds; empty while the onboarding is not finished
+    onboarding_completed_at  INTEGER,
     CONSTRAINT pk_user_profile PRIMARY KEY (user_id),
     CONSTRAINT ck_user_profile_birth CHECK (date_of_birth >= '1900-01-01'),
     CONSTRAINT ck_user_profile_school_type
@@ -49,9 +51,12 @@ CREATE TABLE user_subject (
     target_score  REAL,
     source        TEXT    NOT NULL DEFAULT 'CHOSEN',
     added_at      INTEGER NOT NULL,
+    -- the level of a subject that has levels (English: B1 or B2); empty for the others
+    level         TEXT,
     CONSTRAINT pk_user_subject PRIMARY KEY (user_id, subject_id),
     CONSTRAINT ck_user_subject_score CHECK (target_score BETWEEN 0 AND 100),
-    CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN'))
+    CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN')),
+    CONSTRAINT ck_user_subject_level CHECK (level IN ('B1', 'B2'))
 );
 
 -- Phone only: whose rows the local tables hold. A guest gets a temporary id ("guest-" and a

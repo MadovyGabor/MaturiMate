@@ -144,7 +144,7 @@ Offline-first, with three databases:
 | User (SQLite, `maturimate_user.db`) | Phone | 9 user tables: profile, role, settings, subjects, attempts, unit and task progress, streak, daily activity; plus the phone-only `local_user` (whose rows these are) | The app |
 | Server (PostgreSQL) | Supabase; a local copy in Docker | The 27 tables of `../supabase/migrations`: synced progress, plus a copy of the content. Accounts are Supabase Auth users (`auth.users`) | The importer (content); the app through Supabase, protected by row level security (accounts, progress) |
 
-The PostgreSQL schema in `supabase/migrations` comes from the original 30-table design: the design's own sign-in tables (`app_user`, `user_session`, `password_reset_token`) are replaced by Supabase Auth, every `user_id` is a `uuid` referencing `auth.users`, `user_profile.date_of_birth` is optional, and `user_consent` also records the age confirmation (`AGE_16`). Schema changes are new migration files; an applied migration is never edited. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `auth.users`).
+The PostgreSQL schema in `supabase/migrations` comes from the original 30-table design: the design's own sign-in tables (`app_user`, `user_session`, `password_reset_token`) are replaced by Supabase Auth, every `user_id` is a `uuid` referencing `auth.users`, `user_profile.date_of_birth` is optional, and `user_consent` also records the age confirmation (`AGE_16`). Schema changes are new migration files; an applied migration is never edited. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `auth.users`). Two columns were added after the original design: `user_subject.level` (English level) and `user_profile.onboarding_completed_at` (see [DECISIONS](DECISIONS.md) 2026-10-31). A change to the user database also gets a SQLDelight migration (`database/src/commonMain/sqldelight/user/migrations/<version>.sqm`, the same change as the Supabase migration), so the database on an installed app is upgraded instead of rebuilt.
 
 ### 9.1 Content pipeline
 
@@ -178,7 +178,6 @@ Files (Git) ──┤
 
 * Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
 * Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md)).
-* Migrations of the user database: the schema may change until the first tester installs the app.
 
 ---
 
