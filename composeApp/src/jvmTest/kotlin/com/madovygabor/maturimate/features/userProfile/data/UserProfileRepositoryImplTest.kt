@@ -59,7 +59,8 @@ class UserProfileRepositoryImplTest {
         assertEquals(LocalDate(2027, 3, 15), profile.graduationDate)
         assertNull(profile.teachingLanguage)
         assertEquals("Europe/Budapest", profile.timezone)
-        assertEquals(10, profile.dailyGoalMinutes)
+        // the daily goal is not answered yet
+        assertNull(profile.dailyGoalMinutes)
         assertFalse(profile.isOnboardingCompleted)
     }
 

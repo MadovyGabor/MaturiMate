@@ -44,6 +44,7 @@ val OnboardingStep.route: Route?
         OnboardingStep.ROLE -> Route.AppOnboarding.Role
         OnboardingStep.SUBJECTS -> Route.AppOnboarding.Subjects
         OnboardingStep.DATE -> Route.AppOnboarding.Date
+        OnboardingStep.GOAL -> Route.AppOnboarding.Goal
         else -> null
     }
 

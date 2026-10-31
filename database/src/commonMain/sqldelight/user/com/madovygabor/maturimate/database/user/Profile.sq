@@ -92,8 +92,9 @@ WHERE p.user_id = :userId;
 ensureProfile:
 INSERT OR IGNORE INTO user_profile (user_id) VALUES (:userId);
 
+-- the daily goal stays empty until the user answers it, so the onboarding knows it was asked
 ensureSettings:
-INSERT OR IGNORE INTO user_settings (user_id, timezone) VALUES (:userId, :timezone);
+INSERT OR IGNORE INTO user_settings (user_id, timezone, daily_goal_minutes) VALUES (:userId, :timezone, NULL);
 
 updateTeachingLanguage:
 UPDATE user_profile SET teaching_language = :language WHERE user_id = :userId;

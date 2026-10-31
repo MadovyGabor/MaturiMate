@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -40,6 +41,12 @@ class OnboardingNavigationViewModel(private val repository: UserProfileRepositor
     val backStack: StateFlow<List<Route>?> = repository.profile
         .map(::onboardingBackStack)
         .catch { emit(listOf(Route.AppOnboarding.Welcome)) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** The saved role, for the steps after the role question. */
+    val role: StateFlow<UserRole?> = repository.profile
+        .map { it?.role }
+        .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Marks the onboarding as finished; the app then shows the home screen. */

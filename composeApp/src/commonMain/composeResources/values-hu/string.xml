@@ -89,6 +89,19 @@
         <item>december</item>
     </string-array>
 
+    <!-- Onboarding: daily goal -->
+    <string name="goal_title">Mennyi időt szánsz naponta a tanulásra?</string>
+    <string name="goal_why">Ehhez mérjük a napi sorozatodat.</string>
+    <plurals name="goal_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d) -->
+    <plurals name="goal_year_hint">
+        <item quantity="one">Napi %1$d perc egy év alatt körülbelül %2$d óra gyakorlás.</item>
+        <item quantity="other">Napi %1$d perc egy év alatt körülbelül %2$d óra gyakorlás.</item>
+    </plurals>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

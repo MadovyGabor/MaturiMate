@@ -93,6 +93,21 @@
         <item>decembra</item>
     </string-array>
 
+    <!-- Onboarding: daily goal -->
+    <string name="goal_title">Koľko času denne venuješ učeniu?</string>
+    <string name="goal_why">Podľa toho počítame tvoju dennú sériu.</string>
+    <plurals name="goal_minutes">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d); the goals are 5 to 20 minutes -->
+    <plurals name="goal_year_hint">
+        <item quantity="one">%1$d minút denne je za rok približne %2$d hodina precvičovania.</item>
+        <item quantity="few">%1$d minút denne je za rok približne %2$d hodiny precvičovania.</item>
+        <item quantity="other">%1$d minút denne je za rok približne %2$d hodín precvičovania.</item>
+    </plurals>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

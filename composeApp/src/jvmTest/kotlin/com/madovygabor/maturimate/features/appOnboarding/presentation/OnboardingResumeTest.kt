@@ -17,7 +17,7 @@ class OnboardingResumeTest {
         role = role,
         graduationDate = null,
         uiLanguage = language ?: TeachingLanguage.SK,
-        dailyGoalMinutes = 10,
+        dailyGoalMinutes = null,
         timezone = "Europe/Bratislava",
         onboardingCompletedAt = null,
     )
@@ -64,18 +64,18 @@ class OnboardingResumeTest {
     }
 
     @Test
-    fun learnerWithSubjectsStopsAtTheLastBuiltStep() {
+    fun learnerWithSubjectsContinuesWithTheGoal() {
         val learner = profile(TeachingLanguage.HU, UserRole.LEARNER).copy(subjects = listOf(UserSubject(4, compulsory = false)))
-        assertEquals(Route.AppOnboarding.Subjects, onboardingBackStack(learner).last())
+        assertEquals(Route.AppOnboarding.Goal, onboardingBackStack(learner).last())
     }
 
     @Test
     fun nextStepFollowsTheRole() {
         assertEquals(Route.AppOnboarding.Subjects, nextRoute(OnboardingStep.ROLE, UserRole.TEACHER))
         assertEquals(Route.AppOnboarding.Date, nextRoute(OnboardingStep.SUBJECTS, UserRole.STUDENT))
-        // learners and teachers have no exam date; the next step is not built yet, so the onboarding ends
-        assertEquals(null, nextRoute(OnboardingStep.SUBJECTS, UserRole.LEARNER))
-        assertEquals(null, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER))
+        // learners have no exam date, teachers neither a daily goal
+        assertEquals(Route.AppOnboarding.Goal, nextRoute(OnboardingStep.SUBJECTS, UserRole.LEARNER))
+        assertEquals(Route.AppOnboarding.Goal, nextRoute(OnboardingStep.DATE, UserRole.STUDENT))
     }
 
     @Test

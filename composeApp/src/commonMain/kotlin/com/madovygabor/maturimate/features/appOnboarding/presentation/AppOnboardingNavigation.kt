@@ -12,6 +12,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateScreen
+import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsScreen
@@ -45,6 +46,7 @@ fun AppOnboardingNavigation(
                     subclass(Route.AppOnboarding.Role::class, Route.AppOnboarding.Role.serializer())
                     subclass(Route.AppOnboarding.Subjects::class, Route.AppOnboarding.Subjects.serializer())
                     subclass(Route.AppOnboarding.Date::class, Route.AppOnboarding.Date.serializer())
+                    subclass(Route.AppOnboarding.Goal::class, Route.AppOnboarding.Goal.serializer())
                 }
             }
         },
@@ -68,6 +70,9 @@ fun AppOnboardingNavigation(
                     onHaveAccount = null,
                 )
             }
+
+            // the role saved on step 2, for the steps after it
+            val role = navigationViewModel.role.value
 
             // the onboarding steps; after the last one built so far the onboarding ends
             fun goNext(step: OnboardingStep, role: UserRole?) {
@@ -94,6 +99,11 @@ fun AppOnboardingNavigation(
             // 5. Exam date (step 4, students only)
             entry<Route.AppOnboarding.Date> {
                 DateScreen(onBack = back, onNext = { goNext(OnboardingStep.DATE, UserRole.STUDENT) })
+            }
+
+            // 6. Daily goal (students and learners)
+            entry<Route.AppOnboarding.Goal> {
+                GoalScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.GOAL, role) })
             }
         }
     )

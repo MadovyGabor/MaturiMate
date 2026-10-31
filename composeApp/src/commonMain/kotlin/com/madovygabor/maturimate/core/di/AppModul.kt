@@ -10,6 +10,7 @@ import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarContr
 import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingNavigationViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateViewModel
+import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsViewModel
@@ -76,6 +77,7 @@ val sharedModule = module {
     viewModelOf(::RoleViewModel)
     viewModelOf(::SubjectsViewModel)
     viewModel { DateViewModel(get(), get()) }
+    viewModelOf(::GoalViewModel)
     viewModelOf(::ProfileViewModel)
 }
 

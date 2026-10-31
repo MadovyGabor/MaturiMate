@@ -108,7 +108,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.6.** Role: student, learner or teacher, saved in `user_role`; the number of steps follows the role (8, 7 or 6). *For now learners and teachers finish the onboarding after the role, and students go on to the old setup screen; steps 5.7 to 5.12 fill the gap.*
 * [x] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`. With `AppChoiceChip`; the next step now follows the role (`nextRoute`), and the onboarding ends after the last step built so far.
 * [x] **5.8.** Graduation date (students only): the next two spring exams as cards and "Más dátum" with a calendar limited to the next three years (`AppDatePickerDialog`). The old setup screen and its `OnboardingViewModel` are removed.
-* [ ] **5.9.** Daily goal (students and learners).
+* [x] **5.9.** Daily goal (students and learners): 5, 10, 15 or 20 minutes as chips, 10 preselected, with the hours in a year. The goal stays empty in the database until it is answered.
 * [ ] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it.
 * [ ] **5.11.** "A te terved" summary.
 * [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen and shows the "Már van fiókom" button on the welcome screen (`onHaveAccount` in `AppOnboardingNavigation`).
