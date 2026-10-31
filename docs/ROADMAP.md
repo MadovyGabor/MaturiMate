@@ -149,6 +149,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 
 ## Milestone 9: UI polish and beta
 
+* [ ] **9.0. Toolchain to the newest versions, on its own branch:** AGP 9 with `composeApp` split into a shared Kotlin Multiplatform library and a thin Android app module, compileSdk 37, Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11 and the newest Gradle; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced. See [DECISIONS](DECISIONS.md) 2026-10-31.
 * [ ] **9.1.** Animations, reading view polish, accessibility checks.
 * [ ] **9.2.** Review of the user database tables before the first testers install the app.
 * [ ] **9.3.** Closed beta of the Hungarian subject on Android.

@@ -12,16 +12,17 @@ For the current status of each part, see the "Current status" section of the [RE
 
 | Component | Version (from `../gradle/libs.versions.toml`) | Notes |
 |---|---|---|
-| Kotlin Multiplatform | Kotlin 2.2.20 | Android target and desktop `jvm()` target |
-| Compose Multiplatform | 1.9.1 | Shared UI for Android and desktop |
-| Navigation3 for Compose Multiplatform | 1.0.0-alpha06 | Alpha dependency |
-| AndroidX Lifecycle (ViewModel) | 2.10.0-alpha07 | Alpha dependency |
-| Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
-| kotlinx.serialization | 1.9.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
-| kotlinx.datetime | 0.7.1 | Used for `LocalDate` and time zone handling |
-| kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
-| SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
-| PostgreSQL JDBC driver | 42.7.4 | `../tools/content-pipeline` only (server copy of the content) |
+| Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target |
+| Gradle, Android Gradle Plugin | 9.5.1, 8.13.2 | AGP 8 runs on Gradle up to 9.5; see [DECISIONS](DECISIONS.md) 2026-10-31 |
+| Compose Multiplatform | 1.11.1 | Shared UI for Android and desktop; 1.12 needs AGP 9 |
+| Navigation3 for Compose Multiplatform | 1.1.2 | |
+| AndroidX Lifecycle (ViewModel) | 2.10.0 | |
+| Koin | 4.2.2 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
+| kotlinx.serialization | 1.12.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
+| kotlinx.datetime | 0.8.0 | Used for `LocalDate` and time zone handling |
+| kotlinx.coroutines | 1.11.0 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
+| SQLDelight | 2.4.1 | Content and user databases (`:database` module) |
+| PostgreSQL JDBC driver | 42.7.14 | `../tools/content-pipeline` only (server copy of the content) |
 | PostgreSQL | 17 (Supabase), 16 (Docker) | Server database on Supabase; a local copy in Docker (`../dbServer/docker-compose.yml`) for development and the importer |
 | Supabase CLI | 2.122.0 | Schema migrations (`../supabase/migrations`) |
 
