@@ -87,8 +87,8 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 * [x] **4.1.** Check pricing and free-tier limits; the owner creates the project.
 * [ ] **4.2.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). A new `user_consent` table records which terms and privacy version was accepted and when, the age confirmation and the marketing consent. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [ ] **4.3.** Apply the schema to Supabase; keep the local Docker database in line.
-* [ ] **4.4.** Row level security policies on every user table, with tests.
-* [ ] **4.5.** Enable anonymous, e-mail and Google sign-in.
+* [ ] **4.4.** Row level security policies on every user table, with tests. Policies check the `is_anonymous` claim where anonymous users must be limited.
+* [ ] **4.5.** Enable anonymous, e-mail and Google sign-in, and manual identity linking (needed to turn an anonymous account into a permanent one).
 * [ ] **4.6.** Key handling: only the public key in the app, secrets outside the repository.
 
 ---
@@ -153,6 +153,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **10.1.** Sync of user data between the phone and Supabase.
 * [ ] **10.2.** The content update flow described under "Data architecture" (signed links from Supabase Storage).
 * [ ] **10.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
+* [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on anonymous sign-in and sign-up, a scheduled job that deletes anonymous accounts unused for 30 days, and a review of the auth rate limits.
 * [ ] **10.4.** Public release of the Hungarian subject.
 
 ---
