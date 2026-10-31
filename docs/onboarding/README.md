@@ -110,4 +110,159 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 ## 7. Texts (3.4)
 
-*To be added, in Hungarian and Slovak.*
+The keys become entries in `composeResources/values-hu/string.xml` and `values-sk/string.xml` in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are not here: they come from the content database (`name_hu`, `name_sk`).
+
+**Status:** the Hungarian text is final after the owner's review. **Every Slovak line needs a check by a native speaker** before the release. ⚠ marks a line that may be tight on a button, chip or the desktop step list.
+
+**Language of the first two screens.** The app language is chosen on the language screen, so the welcome and language screens use the phone's language: Hungarian if the phone is set to Hungarian, otherwise Slovak. The two language options are always written in their own language.
+
+**Slovak grammar notes.** Numbers need plural forms (`1 deň`, `2–4 dni`, `5+ dní`; `hodina`, `hodiny`, `hodín`), so these keys become `<plurals>` resources. Slovak text addresses the user informally (tykanie) and avoids gendered past forms where possible.
+
+### Common
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `common_next` | Tovább | Ďalej |
+| `common_back` | Vissza | Späť |
+| `common_cancel` | Mégse | Zrušiť |
+| `common_ok` | OK | OK |
+| `onboarding_step` | %1$d. lépés / %2$d | Krok %1$d z %2$d |
+| `onboarding_change_later` | Később a profilodban bármikor módosíthatod. | Neskôr to môžeš kedykoľvek zmeniť vo svojom profile. |
+
+### 1. Welcome
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `welcome_tagline` | Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul. | Krátke lekcie a precvičovanie až do maturity, po maďarsky aj po slovensky. |
+| `welcome_start` | Kezdjük | Začnime |
+| `welcome_have_account` | Már van fiókom | Už mám účet |
+
+### 2. Language
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `language_title` | Milyen tanítási nyelvű iskolába jársz? | Aký je vyučovací jazyk tvojej školy? |
+| `language_why` | Ebből tudjuk, milyen tantárgyakból érettségizel. Az appot is ezen a nyelven látod. | Podľa toho vieme, z ktorých predmetov maturuješ. Aplikáciu uvidíš v tomto jazyku. |
+| `language_hu` | Magyar | Magyar |
+| `language_hu_desc` | Magyar tanítási nyelvű iskola | Magyar tanítási nyelvű iskola |
+| `language_sk` | Slovenský | Slovenský |
+| `language_sk_desc` | Škola s vyučovacím jazykom slovenským | Škola s vyučovacím jazykom slovenským |
+
+### 3. Role
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `role_title` | Mire szeretnéd használni az appot? | Na čo chceš aplikáciu používať? |
+| `role_why` | Ehhez igazítjuk a következő kérdéseket. | Podľa toho prispôsobíme ďalšie otázky. |
+| `role_student` | Érettségire készülök | Pripravujem sa na maturitu |
+| `role_student_desc` | Visszaszámlálás, napi cél és gyakorlás az érettségi tantárgyaiból. | Odpočítavanie, denný cieľ a precvičovanie maturitných predmetov. |
+| `role_learner` | Csak tanulni szeretnék | Chcem sa len učiť |
+| `role_learner_desc` | Leckék és gyakorlás, érettségi dátum nélkül. | Lekcie a precvičovanie bez dátumu maturity. |
+| `role_teacher` | Tanár vagyok | Som učiteľ/ka |
+| `role_teacher_desc` | Megnézem és kipróbálom a tartalmat. | Pozriem si a vyskúšam obsah. |
+
+### 4. Subjects
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `subjects_title_student` | Miből érettségizel? | Z čoho maturuješ? |
+| `subjects_title_learner` | Mit szeretnél tanulni? | Čo sa chceš učiť? |
+| `subjects_title_teacher` | Mit tanítasz? | Čo učíš? |
+| `subjects_why_student` | A kötelező tantárgyakat már kijelöltük. Ha mást is választasz, jelöld be. | Povinné predmety sme už označili. Ak si vyberáš aj ďalšie, označ ich. |
+| `subjects_why_other` | Jelöld be, ami érdekel. Többet is választhatsz. | Označ, čo ťa zaujíma. Môžeš vybrať aj viac. |
+| `subjects_compulsory` | Kötelező | Povinný |
+| `subjects_coming_soon` | Hamarosan | Čoskoro |
+| `subjects_english_level` | Milyen szinten? | Na akej úrovni? |
+| `level_unknown` ⚠ | Még nem tudom | Ešte neviem |
+| `subjects_level_unknown_hint` | B1-gyel kezdünk, később átállíthatod. | Začneme úrovňou B1, neskôr ju môžeš zmeniť. |
+
+### 5. Exam date
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `date_title` | Mikor érettségizel? | Kedy maturuješ? |
+| `date_why` | Ebből számoljuk a visszaszámlálást és a tervedet. | Podľa toho vypočítame odpočítavanie a tvoj plán. |
+| `date_spring` | %1$d tavasza | Jar %1$d |
+| `date_written_days` (plural) | Írásbeli: %1$s · %2$d nap múlva | Písomná časť: %1$s · o %2$d dní |
+| `date_other` | Más dátum | Iný dátum |
+| `date_other_desc` | Válaszd ki a naptárból | Vyber v kalendári |
+| `date_picker_title` | Érettségi dátuma | Dátum maturity |
+| `date_error_past` | Ez a dátum már elmúlt. Válassz egy későbbi napot. | Tento dátum už uplynul. Vyber neskorší deň. |
+| `date_error_too_far` | Legfeljebb 3 évre előre választhatsz. | Môžeš vybrať najviac 3 roky dopredu. |
+
+### 6. Daily goal
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `goal_title` | Mennyi időt szánsz naponta a tanulásra? | Koľko času denne venuješ učeniu? |
+| `goal_why` | Ehhez mérjük a napi sorozatodat. | Podľa toho počítame tvoju dennú sériu. |
+| `goal_minutes` (plural) | %1$d perc | %1$d minút |
+| `goal_year_hint` (plural) | Napi %1$d perc egy év alatt körülbelül %2$d óra gyakorlás. | %1$d minút denne je za rok približne %2$d hodín precvičovania. |
+
+### 7. Reminder
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `reminder_title` | Emlékeztessünk naponta? | Máme ti každý deň pripomenúť učenie? |
+| `reminder_why` | Egy rövid értesítés a választott időben segít, hogy ne szakadjon meg a sorozatod. | Krátke upozornenie vo zvolenom čase ti pomôže udržať sériu. |
+| `reminder_time` | Melyik időpontban? | V akom čase? |
+| `reminder_permission_hint` | A következő lépésben a telefon engedélyt kér az értesítésekhez. | V ďalšom kroku ťa telefón požiada o povolenie upozornení. |
+| `reminder_turn_on` | Bekapcsolom | Zapnúť |
+| `reminder_not_now` | Most nem | Teraz nie |
+
+The system permission dialog itself is Android's and follows the phone's language.
+
+### 8. Your plan
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `plan_title` | A te terved | Tvoj plán |
+| `plan_until_exam` | Érettségiig | Do maturity |
+| `plan_days` (plural) | %1$d nap | %1$d dní |
+| `plan_student_total` (plural) | Napi %1$d perccel ez körülbelül %2$d óra gyakorlás. | Pri %1$d minútach denne je to približne %2$d hodín precvičovania. |
+| `plan_daily_goal` | Napi cél | Denný cieľ |
+| `plan_learner_year` (plural) | Egy év alatt körülbelül %1$d óra. | Za rok približne %1$d hodín. |
+| `plan_reminder` | Emlékeztető minden nap %1$s-kor | Pripomienka každý deň o %1$s |
+| `plan_change_later` | Mindent módosíthatsz később a profilodban. | Všetko môžeš neskôr zmeniť vo svojom profile. |
+
+### 9. Account
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `account_title` | Hozd létre a fiókodat | Vytvor si účet |
+| `account_why` | Így nem vész el a haladásod, és másik telefonon is folytathatod. | Tak o svoj pokrok neprídeš a môžeš pokračovať aj na inom telefóne. |
+| `account_google` | Folytatás Google-lel | Pokračovať cez Google |
+| `account_google_signed` | Google-fiókkal: %1$s | Účet Google: %1$s |
+| `account_or_email` | vagy e-maillel | alebo e-mailom |
+| `account_last_name` | Vezetéknév | Priezvisko |
+| `account_first_name` | Keresztnév | Meno |
+| `account_email` | E-mail cím | E-mailová adresa |
+| `account_password` | Jelszó (legalább 8 karakter) | Heslo (aspoň 8 znakov) |
+| `account_consent` | Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót. | Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov. |
+| `account_news` | Kérek híreket és újdonságokat e-mailben. | Chcem dostávať novinky e-mailom. |
+| `account_create` | Fiók létrehozása | Vytvoriť účet |
+| `account_browse` ⚠ | Körülnézek | Najprv sa poobzerám |
+| `error_last_name_empty` | Add meg a vezetékneved. | Zadaj priezvisko. |
+| `error_first_name_empty` | Add meg a keresztneved. | Zadaj meno. |
+| `error_email_invalid` | Ez nem tűnik e-mail címnek. Ellenőrizd. | Toto nevyzerá ako e-mailová adresa. Skontroluj ju. |
+| `error_password_short` | A jelszó legalább 8 karakter legyen. | Heslo musí mať aspoň 8 znakov. |
+| `error_email_taken` | Ezzel az e-mail címmel már van fiók. Lépj be helyette. | S týmto e-mailom už účet existuje. Prihlás sa. |
+| `error_network` | Nincs internetkapcsolat. Próbáld újra, ha újra van net. | Nie si pripojený na internet. Skús to znova, keď budeš online. |
+
+### Sign-in ("Már van fiókom")
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `signin_title` | Belépés | Prihlásenie |
+| `signin_why` | Lépj be, és betöltjük a profilodat és a haladásodat. | Prihlás sa a načítame tvoj profil aj pokrok. |
+| `signin_password` | Jelszó | Heslo |
+| `signin_button` | Belépés | Prihlásiť sa |
+| `signin_forgot` | Elfelejtetted a jelszavad? | Zabudnuté heslo? |
+| `error_signin` | Hibás e-mail cím vagy jelszó. | Nesprávny e-mail alebo heslo. |
+
+### Home, after the onboarding
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `home_anonymous_banner` | Fiók nélkül nézel körül. Az első lecke után létrehozzuk a fiókodat, hogy ne vesszen el a haladásod. | Prezeráš si aplikáciu bez účtu. Po prvej lekcii si vytvoríš účet, aby sa tvoj pokrok nestratil. |
+| `home_returning_banner` | Betöltöttük a profilodat és a haladásodat. | Načítali sme tvoj profil aj pokrok. |
