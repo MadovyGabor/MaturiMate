@@ -8,9 +8,11 @@ import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 
 /**
- * The app's Supabase client: Auth only for now (sign-up and sign-in).
+ * The app's Supabase client: Auth (sign-up and sign-in) and Postgrest (the account's profile,
+ * settings, subjects and consents on the server, protected by row level security).
  *
  * The session is kept by the library's default storage (SharedPreferences on Android,
  * Java Preferences on desktop), so a signed-in user stays signed in after a restart.
@@ -21,6 +23,7 @@ fun createAppSupabaseClient(): SupabaseClient =
             flowType = FlowType.PKCE
             platformAuthConfig()
         }
+        install(Postgrest)
         // native Google sign-in on Android; the button comes with the account screen (step 5.12)
         install(ComposeAuth) {
             googleNativeLogin(serverClientId = SupabaseConfig.GOOGLE_WEB_CLIENT_ID)

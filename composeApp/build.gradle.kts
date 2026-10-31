@@ -51,6 +51,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.supabase.bom))
             implementation(libs.supabase.auth)
             implementation(libs.supabase.compose.auth)
+            implementation(libs.supabase.postgrest)
 
             //For material icons and google fonts
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")

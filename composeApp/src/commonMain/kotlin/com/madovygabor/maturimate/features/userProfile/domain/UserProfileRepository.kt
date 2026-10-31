@@ -27,5 +27,7 @@ interface UserProfileRepository {
     /** Turns the daily reminder on at [time], or off. */
     suspend fun saveReminder(enabled: Boolean, time: LocalTime?): OperationResult<Unit, DataError>
     suspend fun saveDailyGoal(minutes: Int): OperationResult<Unit, DataError>
+    /** The account holder's name, saved at sign-up. */
+    suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, DataError>
     suspend fun completeOnboarding(at: Instant): OperationResult<Unit, DataError>
 }

@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.auth.data
 
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.features.auth.domain.AccountUser
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.AuthState
@@ -15,6 +16,8 @@ import io.github.jan.supabase.exceptions.HttpRequestException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 /** [AuthRepository] over the Auth plugin of the Supabase client. */
 class AuthRepositoryImpl(private val auth: Auth) : AuthRepository {
@@ -31,6 +34,18 @@ class AuthRepositoryImpl(private val auth: Auth) : AuthRepository {
                 ?: AuthState.SignedOut
             SessionStatus.Initializing -> AuthState.Loading
         }
+    }
+
+    override fun currentUser(): AccountUser? = auth.currentUserOrNull()?.let { user ->
+        fun meta(key: String) = (user.userMetadata?.get(key) as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+        // Google gives given_name and family_name; full_name is split as a fallback
+        val full = meta("full_name") ?: meta("name")
+        AccountUser(
+            id = user.id,
+            email = user.email,
+            firstName = meta("given_name") ?: full?.substringBefore(' '),
+            lastName = meta("family_name") ?: full?.substringAfter(' ', missingDelimiterValue = "")?.takeIf { it.isNotBlank() },
+        )
     }
 
     override suspend fun signUp(email: String, password: String) = call {

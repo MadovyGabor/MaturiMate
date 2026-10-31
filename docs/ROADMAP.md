@@ -127,7 +127,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **6.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
 * [ ] **6.3. Reading passage view:** a text shown together with its tasks.
 * [ ] **6.4.** Loading the first unit through the importer and the content database. The exporter builds two files: the starter pack bundled in the app (first lesson only) and the full content file.
-* [ ] **6.5. Required sign-in after the first lesson:** no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
+* [ ] **6.5. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
 
 ---
 

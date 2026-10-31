@@ -20,7 +20,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -49,8 +51,12 @@ class UserProfileRepositoryImpl(
 
     private val queries get() = database.profileQueries
 
-    override val profile: Flow<UserProfile?> = flow {
-        val userId = localUser.userId()
+    // follows the local user, so the profile moves along when a guest signs up or signs in
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val profile: Flow<UserProfile?> = localUser.userIdFlow(dispatcher).flatMapLatest { userId -> profileOf(userId) }
+        .flowOn(dispatcher)
+
+    private fun profileOf(userId: String): Flow<UserProfile?> = flow {
         val profileRow = queries.selectUserProfile(userId).asFlow().mapToOneOrNull(dispatcher)
         val roleRows = queries.selectRoles(userId).asFlow().mapToList(dispatcher)
         val subjectRows = queries.selectSubjects(userId).asFlow().mapToList(dispatcher)
@@ -60,7 +66,7 @@ class UserProfileRepositoryImpl(
                 subjects = subjects.map { it.toDomain() },
             )
         })
-    }.flowOn(dispatcher)
+    }
 
     override suspend fun saveTeachingLanguage(language: TeachingLanguage) = save { userId ->
         queries.updateTeachingLanguage(language.name, userId)
@@ -101,6 +107,10 @@ class UserProfileRepositoryImpl(
     override suspend fun saveReminder(enabled: Boolean, time: LocalTime?) = save { userId ->
         // hours and minutes only: "18:00"
         queries.updateReminder(enabled, time?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }, userId)
+    }
+
+    override suspend fun saveNames(firstName: String, lastName: String) = save { userId ->
+        queries.updateNames(firstName, lastName, userId)
     }
 
     override suspend fun completeOnboarding(at: Instant) = save { userId ->

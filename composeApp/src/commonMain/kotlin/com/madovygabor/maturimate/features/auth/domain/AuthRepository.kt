@@ -55,6 +55,9 @@ enum class AuthError : Error {
 interface AuthRepository {
     val state: Flow<AuthState>
 
+    /** The signed-in account, with the names Google gave when it was used; null when signed out. */
+    fun currentUser(): AccountUser?
+
     /** Creates the account and sends the sign-up code; the user is signed in by [confirmSignUp]. */
     suspend fun signUp(email: String, password: String): OperationResult<Unit, AuthError>
     suspend fun confirmSignUp(email: String, code: String): OperationResult<Unit, AuthError>

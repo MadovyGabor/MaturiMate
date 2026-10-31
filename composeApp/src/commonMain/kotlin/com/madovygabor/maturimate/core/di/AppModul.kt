@@ -16,7 +16,11 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.R
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsViewModel
+import com.madovygabor.maturimate.features.auth.data.AccountSetupImpl
 import com.madovygabor.maturimate.features.auth.data.AuthRepositoryImpl
+import com.madovygabor.maturimate.features.auth.data.SupabaseAccountRepository
+import com.madovygabor.maturimate.features.auth.domain.AccountRepository
+import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
@@ -27,6 +31,7 @@ import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositor
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
@@ -63,6 +68,8 @@ val sharedModule = module {
     // Supabase: accounts (sign-up, sign-in, password reset)
     single { createAppSupabaseClient() }
     single<AuthRepository> { AuthRepositoryImpl(get<SupabaseClient>().auth) }
+    single<AccountRepository> { SupabaseAccountRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
+    single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get()) }
 
     // Domain Logic / Validators
     singleOf(::MaturitaValidator)
