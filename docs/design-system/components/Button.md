@@ -8,5 +8,6 @@ Pill-shaped button in four variants. One `filled` main button per screen.
 - `outlined`: a third-level action. `outline` border, `primary` text.
 - `text`: a quiet action, for example "Körülnézek" on the sign-in screen. `primary` text.
 - Disabled: `surface-container-highest` fill, `on-surface-variant` text.
-- At least 48 dp tall, `radius-full` corners, `label-large` text.
-- Compose: `Button`, `FilledTonalButton`, `OutlinedButton`, `TextButton`.
+- `radius-full` corners, `label-large` text.
+- At least `touch-target` (48 dp) tall.
+- Compose: `AppButton` in `core/presentation/uiComponents/AppButton.kt`, with `AppButtonVariant.FILLED` (`Button`) and `AppButtonVariant.TEXT` (`TextButton`). `tonal` (`FilledTonalButton`) and `outlined` (`OutlinedButton`) are added when a screen needs them.

@@ -51,9 +51,11 @@ fun AppOnboardingNavigation(
             // 1. Welcome Screen
             entry<Route.AppOnboarding.Welcome> {
                 WelcomeScreen(
-                    onNavigateToProfileSetup = {
+                    onStart = {
                         onboardingBackStack.add(Route.AppOnboarding.ProfileSetup)
-                    }
+                    },
+                    // hidden until the sign-in screen exists (roadmap step 5.12)
+                    onHaveAccount = null,
                 )
             }
 

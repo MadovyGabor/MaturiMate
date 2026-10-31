@@ -1,5 +1,18 @@
 <resources>
     <string name="app_name">MaturiMate</string>
-    <string name="error_date_past">A vizsga nem lehet a múltban!</string>
-    <string name="error_date_null">Kérlek, válassz dátumot!</string>
+
+    <!-- Onboarding: welcome (docs/onboarding/README.md) -->
+    <string name="welcome_tagline">Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul.</string>
+    <string name="welcome_start">Kezdjük</string>
+    <string name="welcome_have_account">Már van fiókom</string>
+    <string name="onboarding_side_tagline">Rövid leckék és gyakorlás az érettségiig.</string>
+
+    <!-- Old setup and profile screens, replaced in Milestone 5 -->
+    <string name="error_date_past">A vizsga nem lehet a múltban.</string>
+    <string name="error_date_null">Kérlek, válassz dátumot.</string>
+    <string name="error_date_future">Ilyen későn nem lehet a vizsga.</string>
+    <string name="error_storage_full">Megtelt a tárhely.</string>
+    <string name="error_io">Nem sikerült menteni. Próbáld újra.</string>
+    <string name="maturitaLanguage_sk">Szlovák tagozat</string>
+    <string name="maturitaLanguage_hu">Magyar tagozat</string>
 </resources>

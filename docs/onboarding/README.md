@@ -111,11 +111,11 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 ## 7. Texts (3.4)
 
-The keys become entries in `composeResources/values-hu/string.xml` and `values-sk/string.xml` in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are not here: they come from the content database (`name_hu`, `name_sk`).
+The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are not here: they come from the content database (`name_hu`, `name_sk`).
 
 **Status:** the Hungarian text is final after the owner's review. **Every Slovak line needs a check by a native speaker** before the release. ⚠ marks a line that may be tight on a button, chip or the desktop step list.
 
-**Language of the first two screens.** The app language is chosen on the language screen, so the welcome and language screens use the phone's language: Hungarian if the phone is set to Hungarian, otherwise Slovak. The two language options are always written in their own language.
+**Language of the first two screens.** The app language is chosen on the language screen, so the welcome and language screens use the phone's language: Hungarian if the phone is set to Hungarian, otherwise Slovak. The resource folders give this by themselves: `values-hu` is Hungarian and the default `values` is Slovak. The two language options are always written in their own language.
 
 **Slovak grammar notes.** Numbers need plural forms (`1 deň`, `2–4 dni`, `5+ dní`; `hodina`, `hodiny`, `hodín`), so these keys become `<plurals>` resources. Slovak text addresses the user informally (tykanie) and avoids gendered past forms where possible.
 
@@ -137,6 +137,7 @@ The keys become entries in `composeResources/values-hu/string.xml` and `values-s
 | `welcome_tagline` | Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul. | Krátke lekcie a precvičovanie až do maturity, po maďarsky aj po slovensky. |
 | `welcome_start` | Kezdjük | Začnime |
 | `welcome_have_account` | Már van fiókom | Už mám účet |
+| `onboarding_side_tagline` | Rövid leckék és gyakorlás az érettségiig. | Krátke lekcie a precvičovanie až do maturity. |
 
 ### 2. Language
 

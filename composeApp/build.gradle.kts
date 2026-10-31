@@ -87,6 +87,7 @@ kotlin {
 
         jvmTest.dependencies {
             implementation(libs.ktor.client.mock)
+            implementation(libs.compose.ui.test)
         }
 
     }

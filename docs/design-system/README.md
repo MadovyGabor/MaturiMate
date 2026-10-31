@@ -46,7 +46,7 @@ A change starts in `tokens.json`. The Compose theme (`composeApp/.../core/presen
 ## Icons and logo
 
 - Material Symbols, **Rounded** style, 24 dp, in the color of the surrounding text.
-- Do not redraw or recolor the logo. On a cream background use `logo.png`, everywhere else `logoTransparent.png` (both in `composeApp/src/commonMain/composeResources/drawable/`).
+- Do not redraw or recolor the logo. Both files are in `composeApp/src/commonMain/composeResources/drawable/`: `logoTransparent.png` on the light cream background, and `logo.png` (the logo on its own cream square) as a rounded tile on dark surfaces. The `AppLogo` component chooses by the theme in effect.
 
 ## Accessibility
 
@@ -62,5 +62,6 @@ A change starts in `tokens.json`. The Compose theme (`composeApp/.../core/presen
 - Type styles are the `Typography` fields of the same name (`headline-medium` → `headlineMedium`). `reading` is an extension.
 - Radii are the `extraSmall`, `small`, `medium`, `large` and `extraLarge` fields of `Shapes` (`radius-xs` to `radius-xl`). `radius-full` (pill) is set by the components that use it.
 - Spacing steps are `MaterialTheme.spacing` (`space-4` → `spacing.space4`).
+- Layout values (window breakpoints, column and side panel widths, touch target, logo sizes) are `MaterialTheme.layout` (`breakpoint-medium` → `layout.breakpointMedium`).
 - `DesignTokensSyncTest` checks that the code matches `tokens.json`; it fails when a value is changed in only one place.
 - Screens use theme values only. No `Color(0xFF...)`, font size or corner radius is written directly in a screen.

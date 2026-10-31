@@ -1,14 +1,20 @@
 <resources>
-        <string name="app_name">MaturiMate</string>
-    <string name="error_date_past">A vizsga nem lehet a múltban!</string>
-    <string name="error_date_null">Kérlek, válassz dátumot!</string>
-    <string name="error_date_future">"Ilyen keson nem lehet a vizsga"</string>
-    <string name="error_storage_full">"Tele van a tarhelyed"</string>
-    <string name="error_io">"IO error"</string>
-    <string name="maturitaLanguage_sk">"Szlovák tagozat"</string>
-    <string name="maturitaLanguage_hu">"Magyar tagozat"</string>
+    <!-- Slovak: the default for every phone language except Hungarian (values-hu). -->
+    <!-- Every Slovak line needs a check by a native speaker before the release. -->
+    <string name="app_name">MaturiMate</string>
 
+    <!-- Onboarding: welcome (docs/onboarding/README.md) -->
+    <string name="welcome_tagline">Krátke lekcie a precvičovanie až do maturity, po maďarsky aj po slovensky.</string>
+    <string name="welcome_start">Začnime</string>
+    <string name="welcome_have_account">Už mám účet</string>
+    <string name="onboarding_side_tagline">Krátke lekcie a precvičovanie až do maturity.</string>
 
-    <!--This is a comment area, write your comment-->
-    <!-- <string name="">""</string> -->
+    <!-- Old setup and profile screens, replaced in Milestone 5 -->
+    <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
+    <string name="error_date_null">Vyber, prosím, dátum.</string>
+    <string name="error_date_future">Skúška nemôže byť tak neskoro.</string>
+    <string name="error_storage_full">Úložisko je plné.</string>
+    <string name="error_io">Uloženie sa nepodarilo. Skús to znova.</string>
+    <string name="maturitaLanguage_sk">Slovenský vyučovací jazyk</string>
+    <string name="maturitaLanguage_hu">Maďarský vyučovací jazyk</string>
 </resources>

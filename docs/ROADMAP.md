@@ -103,7 +103,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.0.** Schema: `user_subject.level` (English level) and `user_profile.onboarding_completed_at`, in a new Supabase migration and in the local user database.
 * [x] **5.1–5.2.** Profile and settings move to the user database; DataStore is removed, and with it the VPUS/SNI toggle and its stored value. *Merged into one step on 2026-10-31: the old onboarding is rebuilt anyway, so the toggle is not removed from it separately.*
 * [x] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
-* [ ] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom".
+* [x] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom", with the shared onboarding frame (`OnboardingScaffold`) and `AppButton`. "Már van fiókom" stays hidden until the sign-in screen exists (5.12).
 * [ ] **5.5.** Teaching language (HU/SK); also sets the app language.
 * [ ] **5.6.** Role: student, learner or teacher.
 * [ ] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`.
@@ -111,7 +111,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [ ] **5.9.** Daily goal (students and learners).
 * [ ] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it.
 * [ ] **5.11.** "A te terved" summary.
-* [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest.
+* [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen and shows the "Már van fiókom" button on the welcome screen (`onHaveAccount` in `AppOnboardingNavigation`).
 * [ ] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped.
 * [ ] **5.14.** Profile screen update and tests.
 

@@ -20,7 +20,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 - **Small steps.** One roadmap step per change. Update the roadmap checkbox when a step is done.
 - **Record decisions.** When the owner decides something lasting, add a short entry to `docs/DECISIONS.md` (what and why). Mark replaced entries instead of deleting them.
 - **Branches:** never commit to `main`. Use `feat/…`, `fix/…`, `docs/…`, `chore/…`. Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`).
-- Documentation, code and comments are in **English**. App text is Hungarian and Slovak, in `composeResources/values-hu` and `values-sk`.
+- Documentation, code and comments are in **English**. App text is Hungarian and Slovak: Slovak in `composeResources/values` (the default for every phone language except Hungarian), Hungarian in `values-hu`. Every key exists in both.
 
 ## Commands
 

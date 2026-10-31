@@ -190,7 +190,7 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 45 | Content provider with the bundled file (skipped without it); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:composeApp` (`jvmTest`, `commonTest`) | 51 | Content provider with the bundled file (skipped without it); design tokens against the code; the welcome screen (Compose UI test, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
 
