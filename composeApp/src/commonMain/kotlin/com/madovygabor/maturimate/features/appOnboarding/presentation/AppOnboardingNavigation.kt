@@ -11,8 +11,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
-import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.ProfileSetupScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsScreen
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
@@ -24,11 +24,11 @@ import org.koin.compose.viewmodel.koinViewModel
  * Navigation graph for the App Onboarding flow.
  * Manages the transitions between the onboarding screens.
  *
- * @param onAppOnboardingComplete Callback triggered when the entire onboarding is finished.
+ * The onboarding ends by saving its end (`OnboardingNavigationViewModel.finish`); the app then
+ * shows the home screen by itself.
  */
 @Composable
 fun AppOnboardingNavigation(
-    onAppOnboardingComplete: () -> Unit,
     navigationViewModel: OnboardingNavigationViewModel = koinViewModel(),
 ) {
     // The first back stack comes from the saved answers, so the onboarding continues where it stopped
@@ -44,7 +44,7 @@ fun AppOnboardingNavigation(
                     subclass(Route.AppOnboarding.Language::class, Route.AppOnboarding.Language.serializer())
                     subclass(Route.AppOnboarding.Role::class, Route.AppOnboarding.Role.serializer())
                     subclass(Route.AppOnboarding.Subjects::class, Route.AppOnboarding.Subjects.serializer())
-                    subclass(Route.AppOnboarding.ProfileSetup::class, Route.AppOnboarding.ProfileSetup.serializer())
+                    subclass(Route.AppOnboarding.Date::class, Route.AppOnboarding.Date.serializer())
                 }
             }
         },
@@ -91,15 +91,9 @@ fun AppOnboardingNavigation(
                 SubjectsScreen(onBack = back, onNext = { role -> goNext(OnboardingStep.SUBJECTS, role) })
             }
 
-            // 5. Profile Setup Screen (old): the exam date, until the date step replaces it
-            entry<Route.AppOnboarding.ProfileSetup> {
-                ProfileSetupScreen(
-                    // created with this screen, so it starts from the answers saved on the steps before
-                    viewModel = koinViewModel<OnboardingViewModel>(),
-                    onProfileSetupComplete = {
-                        onAppOnboardingComplete()
-                    }
-                )
+            // 5. Exam date (step 4, students only)
+            entry<Route.AppOnboarding.Date> {
+                DateScreen(onBack = back, onNext = { goNext(OnboardingStep.DATE, UserRole.STUDENT) })
             }
         }
     )

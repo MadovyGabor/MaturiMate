@@ -57,6 +57,42 @@
     <string name="subject_anj">Anglický jazyk</string>
     <string name="subject_mat">Matematika</string>
 
+    <!-- Onboarding: exam date -->
+    <string name="common_cancel">Zrušiť</string>
+    <string name="common_ok">OK</string>
+    <string name="date_title">Kedy maturuješ?</string>
+    <string name="date_why">Podľa toho vypočítame odpočítavanie a tvoj plán.</string>
+    <string name="date_spring">Jar %1$d</string>
+    <plurals name="date_written_days">
+        <item quantity="one">Písomná časť: %1$s · o %2$d deň</item>
+        <item quantity="few">Písomná časť: %1$s · o %2$d dni</item>
+        <item quantity="other">Písomná časť: %1$s · o %2$d dní</item>
+    </plurals>
+    <plurals name="date_days_left">
+        <item quantity="one">%1$s · o %2$d deň</item>
+        <item quantity="few">%1$s · o %2$d dni</item>
+        <item quantity="other">%1$s · o %2$d dní</item>
+    </plurals>
+    <string name="date_other">Iný dátum</string>
+    <string name="date_other_desc">Vyber v kalendári</string>
+    <string name="date_picker_title">Dátum maturity</string>
+    <!-- %1$d year, %2$s month name (genitive), %3$d day -->
+    <string name="date_long">%3$d. %2$s %1$d</string>
+    <string-array name="months">
+        <item>januára</item>
+        <item>februára</item>
+        <item>marca</item>
+        <item>apríla</item>
+        <item>mája</item>
+        <item>júna</item>
+        <item>júla</item>
+        <item>augusta</item>
+        <item>septembra</item>
+        <item>októbra</item>
+        <item>novembra</item>
+        <item>decembra</item>
+    </string-array>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

@@ -57,7 +57,7 @@ class OnboardingResumeTest {
                 Route.AppOnboarding.Language,
                 Route.AppOnboarding.Role,
                 Route.AppOnboarding.Subjects,
-                Route.AppOnboarding.ProfileSetup,
+                Route.AppOnboarding.Date,
             ),
             onboardingBackStack(student),
         )
@@ -72,7 +72,7 @@ class OnboardingResumeTest {
     @Test
     fun nextStepFollowsTheRole() {
         assertEquals(Route.AppOnboarding.Subjects, nextRoute(OnboardingStep.ROLE, UserRole.TEACHER))
-        assertEquals(Route.AppOnboarding.ProfileSetup, nextRoute(OnboardingStep.SUBJECTS, UserRole.STUDENT))
+        assertEquals(Route.AppOnboarding.Date, nextRoute(OnboardingStep.SUBJECTS, UserRole.STUDENT))
         // learners and teachers have no exam date; the next step is not built yet, so the onboarding ends
         assertEquals(null, nextRoute(OnboardingStep.SUBJECTS, UserRole.LEARNER))
         assertEquals(null, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER))

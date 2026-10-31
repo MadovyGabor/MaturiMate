@@ -43,8 +43,7 @@ val OnboardingStep.route: Route?
         OnboardingStep.LANGUAGE -> Route.AppOnboarding.Language
         OnboardingStep.ROLE -> Route.AppOnboarding.Role
         OnboardingStep.SUBJECTS -> Route.AppOnboarding.Subjects
-        // the old setup screen asks the exam date until the date step replaces it
-        OnboardingStep.DATE -> Route.AppOnboarding.ProfileSetup
+        OnboardingStep.DATE -> Route.AppOnboarding.Date
         else -> null
     }
 

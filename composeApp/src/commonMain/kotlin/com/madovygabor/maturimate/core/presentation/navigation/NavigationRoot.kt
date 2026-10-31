@@ -52,13 +52,8 @@ fun NavigationRoute(
 
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
-                AppOnboardingNavigation(
-                    onAppOnboardingComplete = {
-                        // After onboarding is complete, navigate to the main app
-                        rootBackStack.add(Route.Main)
-                        rootBackStack.remove(Route.AppOnboarding)
-                    }
-                )
+                // finishing it saves the onboarding end; App then starts on Main
+                AppOnboardingNavigation()
             }
             //Fullscreen exam writing screen
             entry<Route.ExamWrite> {

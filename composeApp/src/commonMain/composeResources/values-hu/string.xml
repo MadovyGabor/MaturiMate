@@ -55,6 +55,40 @@
     <string name="subject_anj">Angol nyelv</string>
     <string name="subject_mat">Matematika</string>
 
+    <!-- Onboarding: exam date -->
+    <string name="common_cancel">Mégse</string>
+    <string name="common_ok">OK</string>
+    <string name="date_title">Mikor érettségizel?</string>
+    <string name="date_why">Ebből számoljuk a visszaszámlálást és a tervedet.</string>
+    <string name="date_spring">%1$d tavasza</string>
+    <plurals name="date_written_days">
+        <item quantity="one">Írásbeli: %1$s · %2$d nap múlva</item>
+        <item quantity="other">Írásbeli: %1$s · %2$d nap múlva</item>
+    </plurals>
+    <plurals name="date_days_left">
+        <item quantity="one">%1$s · %2$d nap múlva</item>
+        <item quantity="other">%1$s · %2$d nap múlva</item>
+    </plurals>
+    <string name="date_other">Más dátum</string>
+    <string name="date_other_desc">Válaszd ki a naptárból</string>
+    <string name="date_picker_title">Érettségi dátuma</string>
+    <!-- %1$d year, %2$s month name, %3$d day -->
+    <string name="date_long">%1$d. %2$s %3$d.</string>
+    <string-array name="months">
+        <item>január</item>
+        <item>február</item>
+        <item>március</item>
+        <item>április</item>
+        <item>május</item>
+        <item>június</item>
+        <item>július</item>
+        <item>augusztus</item>
+        <item>szeptember</item>
+        <item>október</item>
+        <item>november</item>
+        <item>december</item>
+    </string-array>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

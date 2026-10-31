@@ -9,7 +9,7 @@ import com.madovygabor.maturimate.core.presentation.AppViewModel
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingNavigationViewModel
-import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
+import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsViewModel
@@ -26,6 +26,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -74,7 +75,7 @@ val sharedModule = module {
     viewModelOf(::LanguageViewModel)
     viewModelOf(::RoleViewModel)
     viewModelOf(::SubjectsViewModel)
-    viewModelOf(::OnboardingViewModel)
+    viewModel { DateViewModel(get(), get()) }
     viewModelOf(::ProfileViewModel)
 }
 

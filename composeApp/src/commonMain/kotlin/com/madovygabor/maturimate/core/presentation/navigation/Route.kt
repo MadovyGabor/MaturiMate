@@ -21,7 +21,7 @@ sealed interface Route : NavKey {
         @Serializable
         data object Subjects : Route // Subjects and the English level (step 3)
         @Serializable
-        data object ProfileSetup : Route // Profile setup during onboarding
+        data object Date : Route // Exam date, students only (step 4)
     }
     @Serializable
     data class ExamWrite(val examId: String) : Route // Fullscreen exam writing screen
