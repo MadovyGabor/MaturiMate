@@ -145,6 +145,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 
 * [ ] **9.1.** Animations, reading view polish, accessibility checks.
 * [ ] **9.2.** Review of the user database tables before the first testers install the app.
+* [ ] **9.2a.** Own e-mail sending (SMTP) for Supabase Auth, with an own domain: the built-in sender only reaches the project team and a few e-mails an hour.
 * [ ] **9.3.** Closed beta of the Hungarian subject on Android.
 * [ ] **9.4.** Localization of the UI strings (Slovak and Hungarian).
 
