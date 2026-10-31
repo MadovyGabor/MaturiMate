@@ -14,7 +14,7 @@ How the Supabase project is configured, so it can be checked or rebuilt. No secr
 
 ## Keys in the app
 
-`composeApp/.../core/config/SupabaseConfig.kt` holds the only Supabase values the app needs: the API URL, the publishable key (`sb_publishable_...`) and the Google web client id. They are public by design; row level security protects the data. Never put the secret key (`sb_secret_...` / service_role), the database password, the Resend API key or the Google client secret into the app or the repository: the importer and other server tools read secrets from `.env` files, which are gitignored.
+`composeApp/.../core/config/SupabaseConfig.kt` holds the only Supabase values the app needs: the API URL, the publishable key (`sb_publishable_...`) and the Google web client id. They are public by design; row level security protects the data. The Supabase client is built in `core/network/SupabaseClientFactory.kt`. A manual check against the real project: `AuthRepositoryLiveTest` signs in with an existing test account given in `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD`. Never put the secret key (`sb_secret_...` / service_role), the database password, the Resend API key or the Google client secret into the app or the repository: the importer and other server tools read secrets from `.env` files, which are gitignored.
 
 ## Authentication
 
@@ -39,6 +39,12 @@ How the Supabase project is configured, so it can be checked or rebuilt. No secr
 | :--- | :--- | :--- |
 | Web (used by Supabase) | `147440499003-cmepur0p2c4441ghta6bqtl91hm7uimd.apps.googleusercontent.com` | redirect URI `https://usqefjhcnehwgszvecym.supabase.co/auth/v1/callback`; its secret is stored in Supabase only |
 | Android (debug) | `147440499003-uij7tm2s30u694ke3mtmfqf6qe9hahgq.apps.googleusercontent.com` | package `com.madovygabor.maturimate`, SHA-1 of the local debug key `02:E4:66:92:0C:93:F4:F5:A7:FE:2A:C3:5C:46:60:E3:D6:21:B4:D7` |
+
+**URL Configuration**
+
+| Setting | Value | Why |
+| :--- | :--- | :--- |
+| Redirect URLs | `http://localhost:47613/**` | the desktop app receives the browser's redirect after a Google sign-in on this local port (`DESKTOP_AUTH_CALLBACK_PORT` in `SupabaseClientFactory.jvm.kt`) |
 
 Supabase's Google provider lists both client ids (web first). A release build needs one more Android client with the release key's SHA-1. Publishing the Google app (leaving testing mode) needs a homepage, a privacy notice and a verified domain: `maturimate.madovygabor.com` is planned for these.
 

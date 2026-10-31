@@ -102,7 +102,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 
 * [x] **5.0.** Schema: `user_subject.level` (English level) and `user_profile.onboarding_completed_at`, in a new Supabase migration and in the local user database.
 * [x] **5.1–5.2.** Profile and settings move to the user database; DataStore is removed, and with it the VPUS/SNI toggle and its stored value. *Merged into one step on 2026-10-31: the old onboarding is rebuilt anyway, so the toggle is not removed from it separately.*
-* [ ] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
+* [x] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
 * [ ] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom".
 * [ ] **5.5.** Teaching language (HU/SK); also sets the app language.
 * [ ] **5.6.** Role: student, learner or teacher.

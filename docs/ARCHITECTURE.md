@@ -24,9 +24,10 @@ For the current status of each part, see the "Current status" section of the [RE
 | SQLDelight | 2.4.1 | Content and user databases (`:database` module) |
 | PostgreSQL JDBC driver | 42.7.14 | `../tools/content-pipeline` only (server copy of the content) |
 | PostgreSQL | 17 (Supabase), 16 (Docker) | Server database on Supabase; a local copy in Docker (`../dbServer/docker-compose.yml`) for development and the importer |
+| supabase-kt (Auth, ComposeAuth) | 3.8.0 | Sign-up, sign-in and password reset; Ktor 3.5.1 with the OkHttp engine on Android and desktop |
 | Supabase CLI | 2.122.0 | Schema migrations (`../supabase/migrations`) |
 
-Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
+Android targets use `minSdk` 26 (needed by supabase-kt), `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
 ---
 
@@ -75,7 +76,7 @@ jvmTest/kotlin/...          # Content provider and repository tests
 * `features/subjects` contains only `presentation/`.
 * `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
-`userProfile` holds the profile and settings of the local user: the domain has `UserProfile`, `TeachingLanguage`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database. `appOnboarding` has `MaturitaValidator` in its domain and the onboarding ViewModel and screens in its presentation layer.
+`userProfile` holds the profile and settings of the local user: the domain has `UserProfile`, `TeachingLanguage`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database. `appOnboarding` has `MaturitaValidator` in its domain and the onboarding ViewModel and screens in its presentation layer. `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client. Supabase classes stay in the data layer and in `core/network/`.
 
 The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
 
@@ -118,7 +119,9 @@ Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(
 
 ## 7. Dependency Injection and Platform Code
 
-Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:25`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`. The platform modules provide `DatabaseDriverFactory` (from `:database`); the shared module provides the user database, `ContentDatabaseProvider` (bound as `ContentDatabaseSource`), `ContentRepository` and `ProgressRepository`.
+Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:25`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`. The platform modules provide `DatabaseDriverFactory` (from `:database`); the shared module provides the user database, `ContentDatabaseProvider` (bound as `ContentDatabaseSource`), `ContentRepository`, `ProgressRepository`, `UserProfileRepository`, the Supabase client and `AuthRepository`.
+
+The Supabase client is built in `core/network/SupabaseClientFactory.kt` from `SupabaseConfig`, with the Auth plugin (PKCE flow) and ComposeAuth (native Google sign-in on Android). `platformAuthConfig()` is an `expect`: on desktop the browser returns from an OAuth sign-in to a local server on port 47613 (`DESKTOP_AUTH_CALLBACK_PORT`); Android needs nothing yet. The session is kept by the library's default storage: SharedPreferences on Android, Java Preferences on desktop.
 
 `Modifier.systemPadding` is declared as an `expect` in `core/presentation/androidSystemPadding.kt:5`, with actuals in the Android and JVM source sets (`androidSystemPadding.android.kt:6`, `androidSystemPadding.jvm.kt:5`).
 
@@ -177,7 +180,7 @@ Files (Git) ──┤
 ## 10. Not built yet
 
 * Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
-* Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md)).
+* Content updates by download and sync (see the [ROADMAP](ROADMAP.md)). Accounts exist in the data layer (`AuthRepository`); their screens come with the onboarding (steps 5.4 and 5.12).
 
 ---
 
@@ -187,7 +190,7 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 18 | Content provider with the bundled file (skipped without it); repositories; placeholder test |
+| `:composeApp` (`jvmTest`, `commonTest`) | 45 | Content provider with the bundled file (skipped without it); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
 
