@@ -5,9 +5,12 @@ import com.madovygabor.maturimate.core.database.ContentDatabaseSource
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.createUserDatabase
 import com.madovygabor.maturimate.core.network.createAppSupabaseClient
+import com.madovygabor.maturimate.core.presentation.AppViewModel
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
+import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingNavigationViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
+import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.auth.data.AuthRepositoryImpl
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
@@ -64,6 +67,9 @@ val sharedModule = module {
     singleOf(::SnackbarController)
 
     // ViewModels
+    viewModelOf(::AppViewModel)
+    viewModelOf(::OnboardingNavigationViewModel)
+    viewModelOf(::LanguageViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::ProfileViewModel)
 }

@@ -9,6 +9,28 @@
     <string name="welcome_have_account">Už mám účet</string>
     <string name="onboarding_side_tagline">Krátke lekcie a precvičovanie až do maturity.</string>
 
+    <!-- Onboarding: common -->
+    <string name="common_next">Ďalej</string>
+    <string name="common_back">Späť</string>
+    <string name="onboarding_step">Krok %1$d z %2$d</string>
+    <string name="onboarding_change_later">Neskôr to môžeš kedykoľvek zmeniť vo svojom profile.</string>
+    <string name="onboarding_step_language">Jazyk</string>
+    <string name="onboarding_step_role">Rola</string>
+    <string name="onboarding_step_subjects">Predmety</string>
+    <string name="onboarding_step_date">Dátum maturity</string>
+    <string name="onboarding_step_goal">Denný cieľ</string>
+    <string name="onboarding_step_reminder">Pripomienka</string>
+    <string name="onboarding_step_plan">Tvoj plán</string>
+    <string name="onboarding_step_account">Účet</string>
+
+    <!-- Onboarding: teaching language. The two options are always in their own language. -->
+    <string name="language_title">Aký je vyučovací jazyk tvojej školy?</string>
+    <string name="language_why">Podľa toho vieme, z ktorých predmetov maturuješ. Aplikáciu uvidíš v tomto jazyku.</string>
+    <string name="language_hu">Magyar</string>
+    <string name="language_hu_desc">Magyar tanítási nyelvű iskola</string>
+    <string name="language_sk">Slovenský</string>
+    <string name="language_sk_desc">Škola s vyučovacím jazykom slovenským</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

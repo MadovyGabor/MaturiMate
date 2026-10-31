@@ -3,15 +3,10 @@ package com.madovygabor.maturimate
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.madovygabor.maturimate.core.di.initKoin
-import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import org.koin.compose.koinInject
 
 /**
  * Entry point for the Desktop (JVM) application.
- * Handles Dependency Injection initialization and initial routing logic.
+ * Initializes dependency injection and opens the window.
  */
 fun main() {
 
@@ -19,31 +14,14 @@ fun main() {
     initKoin()
 
     application {
-        // Inject the repository using the Compose-friendly Koin delegate
-        val repository: UserProfileRepository = koinInject()
-
-        /**
-         * Determine the start route synchronously before opening the window.
-         * On Desktop, this acts as the "Splash" phase to ensure a flicker-free launch.
-         */
-        val startRoute = runBlocking {
-            try {
-                val profile = repository.profile.first()
-                if (profile?.isOnboardingCompleted == true) Route.Main else Route.AppOnboarding
-            } catch (e: Exception) {
-                // Fallback to onboarding if the profile cannot be read
-                Route.AppOnboarding
-            }
-        }
-
-        // 2. Launch the main application window
+        // 2. Launch the main application window; App reads the profile and picks the start screen
         Window(
             onCloseRequest = ::exitApplication,
             title = "MaturiMate",
             // You could add icon = painterResource(...) here later
         ) {
             // Call the common App entry point
-            App(startRoute = startRoute)
+            App()
         }
     }
 }

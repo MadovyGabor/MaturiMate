@@ -7,6 +7,28 @@
     <string name="welcome_have_account">Már van fiókom</string>
     <string name="onboarding_side_tagline">Rövid leckék és gyakorlás az érettségiig.</string>
 
+    <!-- Onboarding: common -->
+    <string name="common_next">Tovább</string>
+    <string name="common_back">Vissza</string>
+    <string name="onboarding_step">%1$d. lépés / %2$d</string>
+    <string name="onboarding_change_later">Később a profilodban bármikor módosíthatod.</string>
+    <string name="onboarding_step_language">Nyelv</string>
+    <string name="onboarding_step_role">Szerepkör</string>
+    <string name="onboarding_step_subjects">Tantárgyak</string>
+    <string name="onboarding_step_date">Érettségi dátuma</string>
+    <string name="onboarding_step_goal">Napi cél</string>
+    <string name="onboarding_step_reminder">Emlékeztető</string>
+    <string name="onboarding_step_plan">A te terved</string>
+    <string name="onboarding_step_account">Fiók</string>
+
+    <!-- Onboarding: teaching language. The two options are always in their own language. -->
+    <string name="language_title">Milyen tanítási nyelvű iskolába jársz?</string>
+    <string name="language_why">Ebből tudjuk, milyen tantárgyakból érettségizel. Az appot is ezen a nyelven látod.</string>
+    <string name="language_hu">Magyar</string>
+    <string name="language_hu_desc">Magyar tanítási nyelvű iskola</string>
+    <string name="language_sk">Slovenský</string>
+    <string name="language_sk_desc">Škola s vyučovacím jazykom slovenským</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

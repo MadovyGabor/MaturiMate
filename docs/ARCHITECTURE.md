@@ -103,6 +103,10 @@ Profile statistics are mock data. `ProfileViewModel.kt:47` calls `loadMockSubjec
 
 Navigation uses JetBrains Navigation3 with `@Serializable` routes. `Route` is a `sealed interface Route : NavKey` (`core/presentation/navigation/Route.kt:8`). Routes include `Route.ExamWrite(val examId: String)` (`Route.kt:21`). The back stack is held with `rememberNavBackStack`.
 
+**App language and start screen.** `App()` reads `AppViewModel`, which follows the saved profile: the app language (the teaching language; the phone's language until one is picked) and whether the onboarding is finished. The language is applied with `LocalAppLocale` (an `expect` in `core/presentation/locale/`: `Locale.setDefault` on desktop, the overridden `LocalConfiguration` on Android), and `key(language, onboardingCompleted)` builds the screens again when either changes. The root route is `Main` once `user_profile.onboarding_completed_at` is set, otherwise `AppOnboarding`. Android keeps its splash screen until the profile has been read once.
+
+**Onboarding resume.** `onboardingBackStack(profile)` (`features/appOnboarding/presentation/OnboardingResume.kt`) turns the saved answers into the onboarding back stack: the welcome screen, then every answered step, then the first unanswered one. So the onboarding continues where it stopped after a restart or a language change, and Back still walks through the earlier answers. Each new question screen adds its line there.
+
 `NavigationRoot.kt` registers the polymorphic subclasses for `Main`, `AppOnboarding`, and `ExamWrite` (lines 28-32). `ExamWrite` renders `ExamWriteScreen()` (lines 64-66). `ExamWriteScreen` currently displays the text "Exam Write Screen" (`features/examTaking/ExamWriteScreen.kt:25`). The `History` tab shows a placeholder text (`core/presentation/navigation/MainFrame/MainFrameNavigation.kt:61`).
 
 Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(it)` to the back stack (lines 33-34). `ExamSelectionScreen.kt` reads the subject from the static `SubjectStaticData` (line 44) and has a `// TODO: Use Koin to inject the ViewModel` comment (line 39). The exam list is not connected to a data source, and tapping an exam does not open `ExamWriteScreen` with an exam ID.
@@ -190,7 +194,7 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 51 | Content provider with the bundled file (skipped without it); design tokens against the code; the welcome screen (Compose UI test, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:composeApp` (`jvmTest`, `commonTest`) | 59 | Content provider with the bundled file (skipped without it); design tokens against the code; the onboarding resume; the welcome and language screens (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
 

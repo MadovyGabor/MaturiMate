@@ -12,9 +12,9 @@ import androidx.compose.ui.text.style.TextAlign
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
-import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppLogo
+import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.app_name
@@ -37,22 +37,13 @@ fun WelcomeScreen(
     onStart: () -> Unit,
     onHaveAccount: (() -> Unit)?,
 ) {
+    val start = OnboardingAction(stringResource(Res.string.welcome_start), onStart)
+    val haveAccount = onHaveAccount?.let {
+        OnboardingAction(stringResource(Res.string.welcome_have_account), it, AppButtonVariant.TEXT)
+    }
     OnboardingScaffold(
-        actions = {
-            AppButton(
-                text = stringResource(Res.string.welcome_start),
-                onClick = onStart,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (onHaveAccount != null) {
-                AppButton(
-                    text = stringResource(Res.string.welcome_have_account),
-                    onClick = onHaveAccount,
-                    modifier = Modifier.fillMaxWidth(),
-                    variant = AppButtonVariant.TEXT,
-                )
-            }
-        },
+        actions = listOfNotNull(start, haveAccount),
+        stackedActions = true,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

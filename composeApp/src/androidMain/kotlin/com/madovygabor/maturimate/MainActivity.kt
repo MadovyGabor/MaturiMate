@@ -4,16 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.lifecycleScope
-import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import org.koin.android.ext.android.inject
+import com.madovygabor.maturimate.core.presentation.AppViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
  * The main entry point for the Android application.
@@ -21,14 +14,12 @@ import org.koin.android.ext.android.inject
  */
 class MainActivity : ComponentActivity() {
 
-
+    // Passed to App(), so the splash screen and the UI wait for the same first profile read
+    private val appViewModel: AppViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-
-        // Inject the repository to check onboarding status before UI launch
-        val repository: UserProfileRepository by inject()
 
         // Initialize the Android SplashScreen API
         val splashScreen = installSplashScreen()
@@ -36,32 +27,11 @@ class MainActivity : ComponentActivity() {
         // Enable immersive edge-to-edge display
         enableEdgeToEdge()
 
-        // State variables to control splash screen visibility and initial routing
-        var isLoading by mutableStateOf(true)
-        var startRoute by mutableStateOf<Route?>(null)
-
-        // Keep the splash screen visible until the start route is determined
-        splashScreen.setKeepOnScreenCondition { isLoading }
-
-        // Determine the entry point: home once the onboarding is finished
-        lifecycleScope.launch {
-            try {
-                val profile = repository.profile.first()
-                startRoute = if (profile?.isOnboardingCompleted == true) Route.Main else Route.AppOnboarding
-            } catch (e: Exception) {
-                // Fallback to Onboarding in case of unexpected errors
-                startRoute = Route.AppOnboarding
-            } finally {
-                // Stop loading once the destination is set
-                isLoading = false
-            }
-        }
+        // Keep the splash screen until the profile has been read: App picks the start screen from it
+        splashScreen.setKeepOnScreenCondition { appViewModel.state.value == null }
 
         setContent {
-            // Only start the App composable once we know where to go
-            startRoute?.let { route ->
-                App(startRoute = route)
-            }
+            App(appViewModel)
         }
     }
 }

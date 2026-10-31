@@ -130,6 +130,19 @@ The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) a
 | `onboarding_step` | %1$d. lépés / %2$d | Krok %1$d z %2$d |
 | `onboarding_change_later` | Később a profilodban bármikor módosíthatod. | Neskôr to môžeš kedykoľvek zmeniť vo svojom profile. |
 
+Step names in the step list of the two-pane layout:
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `onboarding_step_language` | Nyelv | Jazyk |
+| `onboarding_step_role` | Szerepkör | Rola |
+| `onboarding_step_subjects` | Tantárgyak | Predmety |
+| `onboarding_step_date` | Érettségi dátuma | Dátum maturity |
+| `onboarding_step_goal` | Napi cél | Denný cieľ |
+| `onboarding_step_reminder` | Emlékeztető | Pripomienka |
+| `onboarding_step_plan` | A te terved | Tvoj plán |
+| `onboarding_step_account` | Fiók | Účet |
+
 ### 1. Welcome
 
 | Key | Hungarian | Slovak |

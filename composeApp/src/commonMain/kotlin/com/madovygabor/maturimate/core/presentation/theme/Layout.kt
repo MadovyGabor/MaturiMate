@@ -22,6 +22,24 @@ data class Layout(
     val sidePanelWidth: Dp = 360.dp,
     /** Smallest height of anything tappable. */
     val touchTarget: Dp = 48.dp,
+    /** Icons (Material Symbols Rounded). */
+    val icon: Dp = 24.dp,
+    /** Small icons, for example the check mark inside a choice. */
+    val iconSmall: Dp = 20.dp,
+    /** Square badge at the start of a choice card. */
+    val badge: Dp = 44.dp,
+    /** Smallest height of a choice card. */
+    val choiceCardMinHeight: Dp = 64.dp,
+    /** Smallest width of a button that does not fill the row. */
+    val buttonMinWidth: Dp = 160.dp,
+    /** Height of a progress bar. */
+    val progressBarHeight: Dp = 8.dp,
+    /** Numbered dot of a step in the onboarding step list. */
+    val stepDot: Dp = 26.dp,
+    /** Border of an unselected card or field. */
+    val borderThin: Dp = 1.dp,
+    /** Border of a selected card or option. */
+    val borderThick: Dp = 2.dp,
     /** Logo on the welcome screen. */
     val logoLarge: Dp = 168.dp,
     /** Logo in the side panel. */

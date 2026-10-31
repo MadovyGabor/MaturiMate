@@ -15,6 +15,8 @@ sealed interface Route : NavKey {
         @Serializable
         data object Welcome : Route // Welcome screen for onboarding
         @Serializable
+        data object Language : Route // Teaching language (step 1)
+        @Serializable
         data object ProfileSetup : Route // Profile setup during onboarding
     }
     @Serializable

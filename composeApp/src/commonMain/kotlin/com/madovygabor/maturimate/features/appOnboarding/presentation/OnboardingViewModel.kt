@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -34,6 +35,19 @@ class OnboardingViewModel(
     // Internal UI state management
     private val _profileSetupUiState = MutableStateFlow(ProfileSetupUiState())
     val profileSetupUiState = _profileSetupUiState.asStateFlow()
+
+    init {
+        // start from the answers saved on the new screens (the teaching language from step 1)
+        viewModelScope.launch {
+            val saved = runCatching { repository.profile.first() }.getOrNull() ?: return@launch
+            _profileSetupUiState.update { state ->
+                state.copy(
+                    selectedLanguage = saved.teachingLanguage ?: state.selectedLanguage,
+                    examDate = state.examDate ?: saved.graduationDate,
+                )
+            }
+        }
+    }
 
     /**
      * Updates the selected language in the UI state.
