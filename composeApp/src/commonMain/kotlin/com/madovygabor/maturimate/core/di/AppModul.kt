@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.core.di
 
 import com.madovygabor.maturimate.core.database.ContentDatabaseProvider
 import com.madovygabor.maturimate.core.database.ContentDatabaseSource
+import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.createUserDatabase
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
@@ -38,7 +39,9 @@ val sharedModule = module {
     singleOf(::ContentDatabaseProvider) { bind<ContentDatabaseSource>() }
 
     single<ContentRepository> { ContentRepositoryImpl(get()) }
-    single<ProgressRepository> { ProgressRepositoryImpl(get()) }
+    // Whose rows the user database holds: a guest id until sign-up
+    single { LocalUserProvider(get()) }
+    single<ProgressRepository> { ProgressRepositoryImpl(get(), get()) }
 
     // Binds the implementation to the interface for clean architecture
     singleOf(::UserPreferencesRepositoryImpl) { bind<UserPreferencesRepository>() }

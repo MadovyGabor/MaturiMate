@@ -1,11 +1,12 @@
--- Profile, settings and subjects of the user. Same tables as in dbServer/postgres/01_ddl.sql,
--- without the foreign keys to app_user and subject (server-only and content-database tables).
+-- Profile, role, settings and subjects of the user. Same tables as in supabase/migrations,
+-- without the foreign keys to auth.users, role and subject (server-only and content-database tables).
+-- Phone only: first_name and last_name may be empty, because a guest has no name until sign-up.
 CREATE TABLE user_profile (
-    user_id            INTEGER NOT NULL,
-    first_name         TEXT    NOT NULL,
-    last_name          TEXT    NOT NULL,
+    user_id            TEXT    NOT NULL,
+    first_name         TEXT,
+    last_name          TEXT,
     display_name       TEXT,
-    date_of_birth      TEXT    NOT NULL,
+    date_of_birth      TEXT,
     school_type        TEXT,
     teaching_language  TEXT,
     graduation_date    TEXT,
@@ -16,8 +17,17 @@ CREATE TABLE user_profile (
     CONSTRAINT ck_user_profile_language CHECK (teaching_language IN ('SK', 'HU'))
 );
 
+-- role_id follows the role catalogue seeded in supabase/migrations (1 STUDENT, 2 LEARNER, 3 TEACHER, 4 CURATOR, 5 ADMIN)
+CREATE TABLE user_role (
+    user_id      TEXT    NOT NULL,
+    role_id      INTEGER NOT NULL,
+    assigned_at  INTEGER NOT NULL,
+    CONSTRAINT pk_user_role PRIMARY KEY (user_id, role_id),
+    CONSTRAINT ck_user_role_role CHECK (role_id BETWEEN 1 AND 5)
+);
+
 CREATE TABLE user_settings (
-    user_id             INTEGER NOT NULL,
+    user_id             TEXT    NOT NULL,
     ui_language         TEXT    NOT NULL DEFAULT 'SK',
     timezone            TEXT    NOT NULL DEFAULT 'Europe/Bratislava',
     theme               TEXT    NOT NULL DEFAULT 'SYSTEM',
@@ -34,7 +44,7 @@ CREATE TABLE user_settings (
 );
 
 CREATE TABLE user_subject (
-    user_id       INTEGER NOT NULL,
+    user_id       TEXT    NOT NULL,
     subject_id    INTEGER NOT NULL,
     target_score  REAL,
     source        TEXT    NOT NULL DEFAULT 'CHOSEN',
@@ -44,11 +54,36 @@ CREATE TABLE user_subject (
     CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN'))
 );
 
+-- Phone only: whose rows the local tables hold. A guest gets a temporary id ("guest-" and a
+-- random UUID); sign-up replaces it with the account's id (roadmap step 6.5). One row at most.
+CREATE TABLE local_user (
+    slot      INTEGER NOT NULL CONSTRAINT pk_local_user PRIMARY KEY,
+    user_id   TEXT    NOT NULL,
+    is_guest  INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (is_guest IN (0, 1)),
+    CONSTRAINT ck_local_user_slot CHECK (slot = 1)
+);
+
+selectLocalUser:
+SELECT * FROM local_user WHERE slot = 1;
+
+-- keeps the existing row, so two first calls agree on one id
+insertLocalUser:
+INSERT OR IGNORE INTO local_user (slot, user_id, is_guest) VALUES (1, :userId, :isGuest);
+
 selectProfile:
 SELECT * FROM user_profile WHERE user_id = :userId;
 
 upsertProfile:
 INSERT OR REPLACE INTO user_profile VALUES ?;
+
+selectRoles:
+SELECT * FROM user_role WHERE user_id = :userId ORDER BY role_id;
+
+insertRole:
+INSERT OR IGNORE INTO user_role VALUES ?;
+
+deleteRoles:
+DELETE FROM user_role WHERE user_id = :userId;
 
 selectSettings:
 SELECT * FROM user_settings WHERE user_id = :userId;

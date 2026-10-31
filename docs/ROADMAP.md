@@ -86,7 +86,7 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 
 * [x] **4.1.** Check pricing and free-tier limits; the owner creates the project.
 * [x] **4.2a.** Server schema as a Supabase migration (`supabase/migrations`), replacing `dbServer/postgres/01_ddl.sql`: the changes below, row level security enabled on every table (no policies yet), the role catalogue seeded.
-* [ ] **4.2b.** The same changes in the phone databases (SQLDelight): `user_id` as text, the guest's temporary local id, the user role.
+* [x] **4.2b.** The same changes in the phone databases (SQLDelight): `user_id` as text, `user_role`, optional birth date, names optional on the phone for guests, and the phone-only `local_user` with the guest id (`LocalUserProvider`). Roles have fixed ids (1 STUDENT … 5 ADMIN) on both sides.
 * **4.2 in short.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). `user_consent` (already in the design) records which terms and privacy version was accepted and when, and the marketing consent; it gets an `AGE_16` type for the age confirmation. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [ ] **4.3.** Apply the schema to Supabase; keep the local Docker database in line.
 * [ ] **4.4.** Row level security policies on every user table, with tests. Only signed-in users can read or write, and only their own rows.

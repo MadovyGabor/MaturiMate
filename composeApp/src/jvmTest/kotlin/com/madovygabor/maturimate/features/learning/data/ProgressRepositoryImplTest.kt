@@ -3,6 +3,7 @@ package com.madovygabor.maturimate.features.learning.data
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
@@ -30,7 +31,7 @@ class ProgressRepositoryImplTest {
     private val database = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
     )
-    private val repository = ProgressRepositoryImpl(database, Dispatchers.Unconfined)
+    private val repository = ProgressRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)
 

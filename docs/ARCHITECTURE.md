@@ -141,7 +141,7 @@ Offline-first, with three databases:
 | Database | Where | Contents | Written by |
 |---|---|---|---|
 | Content (SQLite, `content.db`) | Phone, read-only | 13 content tables: subjects, topic tree, learning units, tasks with options, keys and accepted answers, tags | The exporter; installed as a whole file |
-| User (SQLite, `maturimate_user.db`) | Phone | 8 user tables: profile, settings, subjects, attempts, unit and task progress, streak, daily activity | The app |
+| User (SQLite, `maturimate_user.db`) | Phone | 9 user tables: profile, role, settings, subjects, attempts, unit and task progress, streak, daily activity; plus the phone-only `local_user` (whose rows these are) | The app |
 | Server (PostgreSQL) | Supabase; a local copy in Docker | The 27 tables of `../supabase/migrations`: synced progress, plus a copy of the content. Accounts are Supabase Auth users (`auth.users`) | The importer (content); the app through Supabase, protected by row level security (accounts, progress) |
 
 The PostgreSQL schema in `supabase/migrations` comes from the original 30-table design: the design's own sign-in tables (`app_user`, `user_session`, `password_reset_token`) are replaced by Supabase Auth, every `user_id` is a `uuid` referencing `auth.users`, `user_profile.date_of_birth` is optional, and `user_consent` also records the age confirmation (`AGE_16`). Schema changes are new migration files; an applied migration is never edited. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `auth.users`).
@@ -170,7 +170,7 @@ Files (Git) ──┤
 
 `features/learning/domain` holds the domain models (`Subject`, `Topic`, `LearningUnit`, `Task`, `Attempt`, `UnitProgress`, `TaskProgress`, `Streak`, `DailyActivity`), the `ContentRepository` and `ProgressRepository` interfaces, and `LearningError` (`NO_CONTENT`, `NOT_FOUND`, `DATABASE_ERROR`). Results use `OperationResult`.
 
-`features/learning/data` holds `ContentRepositoryImpl` (reads through `ContentDatabaseSource`), `ProgressRepositoryImpl` and the mappers. The generated SQLDelight classes do not leave the data layer. In the domain, task keys reference options by label. The phone has one local user; its rows use `LOCAL_USER_ID = 1` until accounts exist. The repositories hold no rules: grading, unlocking and repetition come as use cases with the screens.
+`features/learning/data` holds `ContentRepositoryImpl` (reads through `ContentDatabaseSource`), `ProgressRepositoryImpl` and the mappers. The generated SQLDelight classes do not leave the data layer. In the domain, task keys reference options by label. The phone has one local user: `LocalUserProvider` (`core/database`) stores a guest id (`guest-` and a random UUID) on the first start, and sign-up replaces it with the Supabase account id (step 6.5). `user_id` is text on the phone. On the phone `first_name` and `last_name` may be empty, because a guest has no name yet. The repositories hold no rules: grading, unlocking and repetition come as use cases with the screens.
 
 ---
 

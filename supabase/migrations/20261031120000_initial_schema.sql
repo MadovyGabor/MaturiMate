@@ -780,9 +780,11 @@ ALTER TABLE season_score ENABLE ROW LEVEL SECURITY;
 -- 6. SEED DATA
 -- =====================================================================
 
-INSERT INTO role (code, name, description) VALUES
-    ('STUDENT', 'Student', 'Prepares for the maturita.'),
-    ('LEARNER', 'Learner', 'Learns or practises without an exam date.'),
-    ('TEACHER', 'Teacher', 'Looks at or tries the content.'),
-    ('CURATOR', 'Curator', 'Reviews content reports.'),
-    ('ADMIN', 'Administrator', 'Manages the service.');
+-- Fixed ids: the phone database stores role_id without the catalogue.
+INSERT INTO role (role_id, code, name, description) VALUES
+    (1, 'STUDENT', 'Student', 'Prepares for the maturita.'),
+    (2, 'LEARNER', 'Learner', 'Learns or practises without an exam date.'),
+    (3, 'TEACHER', 'Teacher', 'Looks at or tries the content.'),
+    (4, 'CURATOR', 'Curator', 'Reviews content reports.'),
+    (5, 'ADMIN', 'Administrator', 'Manages the service.');
+SELECT setval(pg_get_serial_sequence('role', 'role_id'), 5);

@@ -11,6 +11,8 @@ import com.madovygabor.maturimate.database.content.Task_option
 import com.madovygabor.maturimate.database.content.Topic
 import com.madovygabor.maturimate.database.content.Unit_task
 import com.madovygabor.maturimate.database.user.UserDatabase
+import com.madovygabor.maturimate.database.user.User_profile
+import com.madovygabor.maturimate.database.user.User_role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -75,12 +77,12 @@ class DatabaseSchemaTest {
     fun attemptIdIsAssignedBySqlite() {
         val db = userDatabase()
         val id = db.transactionWithResult {
-            db.progressQueries.insertAttempt(1, "UNIT_ROUND", null, 50, 1_000)
+            db.progressQueries.insertAttempt("user-1", "UNIT_ROUND", null, 50, 1_000)
             db.progressQueries.lastInsertedId().executeAsOne()
         }
         db.progressQueries.finishAttempt("FINISHED", 2_000, 4, 5, id)
 
-        val attempt = db.progressQueries.selectAttempts(1).executeAsOne()
+        val attempt = db.progressQueries.selectAttempts("user-1").executeAsOne()
         assertEquals(id, attempt.attempt_id)
         assertEquals(4L, attempt.earned_points)
     }
@@ -88,20 +90,46 @@ class DatabaseSchemaTest {
     @Test
     fun activityOfTheSameDayIsAddedUp() {
         val db = userDatabase()
-        db.activityQueries.addActivity(1, "2026-10-28", 10, 3, 5)
-        db.activityQueries.addActivity(1, "2026-10-28", 10, 2, 5)
+        db.activityQueries.addActivity("user-1", "2026-10-28", 10, 3, 5)
+        db.activityQueries.addActivity("user-1", "2026-10-28", 10, 2, 5)
 
-        val day = db.activityQueries.selectActivity(1, "2026-10-28", "2026-10-28").executeAsOne()
+        val day = db.activityQueries.selectActivity("user-1", "2026-10-28", "2026-10-28").executeAsOne()
         assertEquals(5L, day.minutes_studied)
-        assertEquals(20L, db.activityQueries.selectTotalXp(1).executeAsOne())
+        assertEquals(20L, db.activityQueries.selectTotalXp("user-1").executeAsOne())
     }
 
     @Test
     fun attemptScopeCheckRejectsUnitAndTopicTogether() {
         val db = userDatabase()
         val failure = assertFailsWith<Exception> {
-            db.progressQueries.insertAttempt(1, "UNIT_ROUND", 11, 50, 1_000)
+            db.progressQueries.insertAttempt("user-1", "UNIT_ROUND", 11, 50, 1_000)
         }
         assertTrue(failure.message.orEmpty().contains("CHECK"))
+    }
+    @Test
+    fun guestProfileNeedsNoName() {
+        val db = userDatabase()
+        db.profileQueries.upsertProfile(User_profile("guest-1", null, null, null, null, null, "HU", "2027-03-15"))
+
+        assertEquals("HU", db.profileQueries.selectProfile("guest-1").executeAsOne().teaching_language)
+    }
+
+    @Test
+    fun localUserKeepsTheFirstId() {
+        val db = userDatabase()
+        db.profileQueries.insertLocalUser("guest-1", true)
+        db.profileQueries.insertLocalUser("guest-2", true)
+
+        assertEquals("guest-1", db.profileQueries.selectLocalUser().executeAsOne().user_id)
+    }
+
+    @Test
+    fun roleCheckSkipsUnknownRoles() {
+        val db = userDatabase()
+        db.profileQueries.insertRole(User_role("user-1", 1, 1_000))
+        // INSERT OR IGNORE also skips rows that fail a CHECK
+        db.profileQueries.insertRole(User_role("user-1", 9, 1_000))
+
+        assertEquals(listOf(1L), db.profileQueries.selectRoles("user-1").executeAsList().map { it.role_id })
     }
 }

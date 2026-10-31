@@ -47,7 +47,7 @@ fun User_unit_progress.toDomain() = UnitProgress(
 )
 
 @OptIn(ExperimentalTime::class)
-fun UnitProgress.toRow(userId: Long) = User_unit_progress(
+fun UnitProgress.toRow(userId: String) = User_unit_progress(
     user_id = userId,
     learning_unit_id = learningUnitId,
     status = status.name,
@@ -79,7 +79,7 @@ fun SelectDueTasks.toDomain() = TaskProgress(
 )
 
 @OptIn(ExperimentalTime::class)
-fun TaskProgress.toRow(userId: Long) = User_task_progress(
+fun TaskProgress.toRow(userId: String) = User_task_progress(
     user_id = userId,
     task_id = taskId,
     times_correct = timesCorrect.toLong(),
@@ -96,7 +96,7 @@ fun User_streak.toDomain() = Streak(
     lastActivityDate = last_activity_date?.let(LocalDate::parse),
 )
 
-fun Streak.toRow(userId: Long) = User_streak(
+fun Streak.toRow(userId: String) = User_streak(
     user_id = userId,
     current_streak = currentStreak.toLong(),
     longest_streak = longestStreak.toLong(),
