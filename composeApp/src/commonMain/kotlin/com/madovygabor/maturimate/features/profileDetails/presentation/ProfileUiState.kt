@@ -1,8 +1,7 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
 import com.madovygabor.maturimate.core.presentation.utils.Subject
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import kotlinx.datetime.LocalDate
 
 /**
@@ -16,16 +15,13 @@ data class ProfileUiState(
 
     // --- Persisted (Real) Data ---
     val maturitaDate: LocalDate? = null,
-    val maturitaLevel: MaturitaLevel = MaturitaLevel.B1,
-    val maturitaLanguage: MaturitaLanguage = MaturitaLanguage.HU,
-    val isVpuEnabled: Boolean = false,
+    val maturitaLanguage: TeachingLanguage = TeachingLanguage.HU,
     val daysLeft: Int = 0,
 
     // --- Temporary (Draft) Data ---
     // These hold the values while the user is interacting with a dialog.
     val draftMaturitaDate: LocalDate? = null,
-    val draftMaturitaLevel: MaturitaLevel = MaturitaLevel.B1,
-    val draftMaturitaLanguage: MaturitaLanguage = MaturitaLanguage.HU,
+    val draftMaturitaLanguage: TeachingLanguage = TeachingLanguage.HU,
 
     /** List of subject-specific statistics to display in the progress section. */
     val subjectStats: List<SubjectStat> = emptyList()
@@ -52,7 +48,5 @@ enum class EditType {
     /** Editing the graduation exam date. */
     DATE,
     /** Editing the chosen maturita language/tagozat. */
-    LANGUAGE,
-    /** Editing the English level (B1/B2). */
-    LEVEL
+    LANGUAGE
 }

@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Inject the repository to check onboarding status before UI launch
-        val repository: UserPreferencesRepository by inject()
+        val repository: UserProfileRepository by inject()
 
         // Initialize the Android SplashScreen API
         val splashScreen = installSplashScreen()
@@ -43,12 +43,11 @@ class MainActivity : ComponentActivity() {
         // Keep the splash screen visible until the start route is determined
         splashScreen.setKeepOnScreenCondition { isLoading }
 
-        // Determine the entry point based on user preferences
+        // Determine the entry point: home once the onboarding is finished
         lifecycleScope.launch {
             try {
-                // Fetch the first emission of preferences to decide the route
-                val prefs = repository.preferences.first()
-                startRoute = if (prefs.isSetupCompleted) Route.Main else Route.AppOnboarding
+                val profile = repository.profile.first()
+                startRoute = if (profile?.isOnboardingCompleted == true) Route.Main else Route.AppOnboarding
             } catch (e: Exception) {
                 // Fallback to Onboarding in case of unexpected errors
                 startRoute = Route.AppOnboarding

@@ -17,7 +17,7 @@ The order below is the working order: core first, then the design system, then o
 * [x] **User onboarding:** welcome screen, language selector (HU/SK), English level selector (B1/B2), date picker, and a VPUS/SNI toggle.
 * [x] **Profile screen:** graduation countdown, settings saved in DataStore. The subject statistics on this screen are mock data.
 * [x] **Initial shells:** subject tab list and multi-stack back stack navigation (static data).
-* [ ] **Decision:** the VPUS/SNI time extension is dropped. The toggle and its stored value are removed during the onboarding rework (Milestone 5, step 5.1–5.2).
+* [x] **Decision:** the VPUS/SNI time extension is dropped. The toggle and its stored value are removed during the onboarding rework (Milestone 5, step 5.1–5.2).
 
 ---
 
@@ -101,16 +101,21 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 Each screen step also builds the components it needs (buttons, chips, progress bar, text field), as described under Milestone 2.
 
 * [x] **5.0.** Schema: `user_subject.level` (English level) and `user_profile.onboarding_completed_at`, in a new Supabase migration and in the local user database.
-* [ ] **5.1–5.2.** Profile and settings move to the user database; DataStore is removed, and with it the VPUS/SNI toggle and its stored value. *Merged into one step on 2026-10-31: the old onboarding is rebuilt anyway, so the toggle is not removed from it separately.*
+* [x] **5.1–5.2.** Profile and settings move to the user database; DataStore is removed, and with it the VPUS/SNI toggle and its stored value. *Merged into one step on 2026-10-31: the old onboarding is rebuilt anyway, so the toggle is not removed from it separately.*
 * [ ] **5.3.** `supabase-kt` in the app for sign-up and sign-in; a local guest profile with a temporary local id until the user signs up.
-* [ ] **5.4.** Welcome screen.
-* [ ] **5.5.** Teaching language (HU/SK).
-* [ ] **5.6.** Graduation date.
-* [ ] **5.7.** English level (B1/B2).
-* [ ] **5.8.** Daily goal.
-* [ ] **5.9.** Sign-in screen: Google and e-mail, plus a small "Körülnézek" button that continues as a local guest.
-* [ ] **5.10.** The start screen is chosen from the user database (onboarding or home).
-* [ ] **5.11.** Profile screen update and tests.
+* [ ] **5.4.** Welcome screen: "Kezdjük" and "Már van fiókom".
+* [ ] **5.5.** Teaching language (HU/SK); also sets the app language.
+* [ ] **5.6.** Role: student, learner or teacher.
+* [ ] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`.
+* [ ] **5.8.** Graduation date (students only).
+* [ ] **5.9.** Daily goal (students and learners).
+* [ ] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it.
+* [ ] **5.11.** "A te terved" summary.
+* [ ] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest.
+* [ ] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped.
+* [ ] **5.14.** Profile screen update and tests.
+
+*Steps 5.4 to 5.14 renumbered on 2026-10-31 to follow the nine screens of [the onboarding flow](onboarding/README.md#5-flow-32); role, subjects, reminder and plan were missing.*
 
 ---
 

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,10 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,8 +30,7 @@ import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.uiComponents.DatePickerField
 import com.madovygabor.maturimate.core.presentation.uiComponents.SurfaceContainer
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.components.LanguageSelector
 import kotlinx.datetime.LocalDate
@@ -55,8 +49,6 @@ fun ProfileSetupScreen(
     ProfileSetupContent(
         uiState = uiState,
         onLanguageSelected = { viewModel.onLanguageSelected(it) },
-        onVpuToggled = { viewModel.onVpuToggled(it) },
-        onLevelSelected = { viewModel.onLevelSelected(it) },
         onDateSelected = { viewModel.onDateSelected(it) },
         onProfileSetupComplete = {
             viewModel.completeOnboarding(
@@ -71,10 +63,8 @@ fun ProfileSetupScreen(
 @Composable
 fun ProfileSetupContent(
     uiState: ProfileSetupUiState,
-    onLanguageSelected: (MaturitaLanguage) -> Unit,
-    onLevelSelected: (MaturitaLevel) -> Unit,
+    onLanguageSelected: (TeachingLanguage) -> Unit,
     onDateSelected: (LocalDate?) -> Unit,
-    onVpuToggled: (Boolean) -> Unit,
     onProfileSetupComplete: () -> Unit,
 ){
     BoxWithConstraints(
@@ -93,7 +83,6 @@ fun ProfileSetupContent(
 
         // Surface text sizes
         val surfaceTitleFontSize = if (isDesktop) 20.sp else 16.sp
-        val surfaceSubtitleFontSize = if (isDesktop) 16.sp else 14.sp
 
 
         // Main Content
@@ -145,50 +134,6 @@ fun ProfileSetupContent(
                 }
             )
 
-            //English Exam Level Selection section
-            SurfaceContainer(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                content = {
-                    Text(
-                        text = "Milyen szintű angol vizsgára készülsz?",
-                        style = TextStyle(
-                            fontStyle = MaterialTheme.typography.titleMedium.fontStyle,
-                            textAlign = TextAlign.Start,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = Bold,
-                        ),
-                        fontSize = surfaceTitleFontSize,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
-
-
-                    val options = MaturitaLevel.entries
-
-                    SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        options.forEachIndexed { index, label ->
-                            SegmentedButton(
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = options.size
-                                ),
-                                selected = uiState.examLevel == label,
-                                onClick = {
-                                    onLevelSelected(label)
-                                },
-                                label = {
-                                    Text(label.toUiText().asString())
-                                }
-                            )
-                        }
-                    }
-                }
-            )
-
             // Exam Date Selection section
             SurfaceContainer(
                 modifier = Modifier
@@ -213,49 +158,6 @@ fun ProfileSetupContent(
                         selectedDate = uiState.examDate,
                         onDateSelected = { onDateSelected(it) }
                     )
-                }
-            )
-
-            // VPUS Support Section
-            SurfaceContainer(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                content = {
-                    Text(
-                        text = "Igényelsz VPUS támogatást?",
-                        style = TextStyle(
-                            fontStyle = MaterialTheme.typography.titleMedium.fontStyle,
-                            textAlign = TextAlign.Start,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = Bold,
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        fontSize = surfaceTitleFontSize,
-                    )
-
-                    Row{
-                        Text(
-                            text = "Kapcsold be a személyre szabott módszertant és a több időt. Ideális segítség az SNI/VPUS diákok számára.",
-                            style = TextStyle(
-                                fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
-                                textAlign = TextAlign.Start,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(0.8f),
-                            fontSize = surfaceSubtitleFontSize,
-                        )
-
-                        Switch(
-                            modifier = Modifier.weight(0.2f).padding(start = 8.dp),
-                            checked = uiState.isVpuEnabled,
-                            onCheckedChange = { onVpuToggled(it) }
-                        )
-
-                    }
-
                 }
             )
 
@@ -287,9 +189,7 @@ private fun OnboardingScreenPreview() {
     AppTheme(darkTheme = true) {
         ProfileSetupContent(
             uiState = ProfileSetupUiState(),
-            onLevelSelected = {},
             onLanguageSelected = {},
-            onVpuToggled = {},
             onDateSelected = {},
             onProfileSetupComplete = {}
 

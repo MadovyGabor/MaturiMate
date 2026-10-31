@@ -47,10 +47,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(projects.database)
 
-            //DataStore
-            api(libs.datastore)
-            api(libs.datastore.preferences)
-
             //For material icons and google fonts
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
 

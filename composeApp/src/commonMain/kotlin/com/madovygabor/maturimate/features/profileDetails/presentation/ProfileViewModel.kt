@@ -6,13 +6,13 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.SubjectStaticData
 import com.madovygabor.maturimate.core.presentation.utils.UiText
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
-import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -24,15 +24,15 @@ import kotlin.time.ExperimentalTime
 
 /**
  * ViewModel responsible for managing the user's profile details and statistics.
- * It coordinates data flow between the [UserPreferencesRepository] and the UI,
+ * It coordinates data flow between the [UserProfileRepository] and the UI,
  * implementing a draft-state pattern for safe data editing.
  *
- * @property repository The repository for persisting and retrieving user preferences.
+ * @property repository The repository of the user's profile and settings.
  * @property validator Validator for domain-specific business rules (e.g., exam dates).
  * @property snackbarController Controller for displaying asynchronous UI notifications.
  */
 class ProfileViewModel(
-    private val repository: UserPreferencesRepository,
+    private val repository: UserProfileRepository,
     private val validator: MaturitaValidator,
     private val snackbarController: SnackbarController,
 ) : ViewModel() {
@@ -48,21 +48,19 @@ class ProfileViewModel(
     }
 
     /**
-     * Collects user preferences from the repository and synchronizes both
+     * Collects the user's profile from the repository and synchronizes both
      * real and draft values in the UI state.
      */
     private fun observeProfileData() {
         viewModelScope.launch {
-            repository.preferences.collect { prefs ->
+            repository.profile.filterNotNull().collect { profile ->
+                val language = profile.teachingLanguage ?: TeachingLanguage.HU
                 _profileUiState.update { it.copy(
-                    maturitaDate = prefs.maturitaDate,
-                    draftMaturitaDate = prefs.maturitaDate,
-                    maturitaLanguage = prefs.maturitaLanguage,
-                    draftMaturitaLanguage = prefs.maturitaLanguage,
-                    maturitaLevel = prefs.maturitaLevel,
-                    draftMaturitaLevel = prefs.maturitaLevel,
-                    isVpuEnabled = prefs.isVpuEnabled,
-                    daysLeft = calculateDaysLeft(prefs.maturitaDate)
+                    maturitaDate = profile.graduationDate,
+                    draftMaturitaDate = profile.graduationDate,
+                    maturitaLanguage = language,
+                    draftMaturitaLanguage = language,
+                    daysLeft = calculateDaysLeft(profile.graduationDate)
                 ) }
             }
         }
@@ -87,17 +85,12 @@ class ProfileViewModel(
     }
 
     /** Updates the temporary draft language/tagozat. */
-    fun onDraftLanguageChanged(lang: MaturitaLanguage) {
+    fun onDraftLanguageChanged(lang: TeachingLanguage) {
         _profileUiState.update { it.copy(draftMaturitaLanguage = lang) }
     }
 
-    /** Updates the temporary draft English level. */
-    fun onDraftLevelChanged(level: MaturitaLevel) {
-        _profileUiState.update { it.copy(draftMaturitaLevel = level) }
-    }
-
     /**
-     * Performs business logic validation and persists changes to local storage.
+     * Performs business logic validation and saves the change to the user database.
      * Uses selective saving logic to only update the data relevant to the current [EditType].
      */
     fun saveChanges() {
@@ -113,31 +106,22 @@ class ProfileViewModel(
             }
         }
 
-        // 2. Prepare final data set (Selective saving logic)
-        val finalDate = if (editType == EditType.DATE) currentState.draftMaturitaDate else currentState.maturitaDate
-        val finalLanguage = if (editType == EditType.LANGUAGE) currentState.draftMaturitaLanguage else currentState.maturitaLanguage
-        val finalLevel = if (editType == EditType.LEVEL) currentState.draftMaturitaLevel else currentState.maturitaLevel
-
+        // 2. Save only the field of the open dialog
         viewModelScope.launch {
-            try {
-                val saveResult = repository.saveUserPreferences(
-                    maturitaLanguage = finalLanguage,
-                    maturitaLevel = finalLevel,
-                    maturitaDate = finalDate ?: currentState.maturitaDate!!,
-                    isVpuEnabled = currentState.isVpuEnabled
-                )
+            val saveResult = when (editType) {
+                EditType.DATE -> repository.saveGraduationDate(currentState.draftMaturitaDate!!)
+                EditType.LANGUAGE -> repository.saveTeachingLanguage(currentState.draftMaturitaLanguage)
+                EditType.NONE -> return@launch
+            }
 
-                when (saveResult) {
-                    is OperationResult.Success -> {
-                        // Reset edit type to close dialog on success
-                        _profileUiState.update { it.copy(editType = EditType.NONE) }
-                    }
-                    is OperationResult.Error -> {
-                        showError(saveResult.error.toUiText())
-                    }
+            when (saveResult) {
+                is OperationResult.Success -> {
+                    // Reset edit type to close dialog on success
+                    _profileUiState.update { it.copy(editType = EditType.NONE) }
                 }
-            } catch (e: Exception) {
-                showError(UiText.DynamicString("Unexpected error during save operation."))
+                is OperationResult.Error -> {
+                    showError(saveResult.error.toUiText())
+                }
             }
         }
     }

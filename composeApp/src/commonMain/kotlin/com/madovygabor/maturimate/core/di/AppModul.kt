@@ -5,8 +5,6 @@ import com.madovygabor.maturimate.core.database.ContentDatabaseSource
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.createUserDatabase
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
-import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
-import com.madovygabor.maturimate.features.appOnboarding.data.UserPreferencesRepositoryImpl
 import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
@@ -14,6 +12,8 @@ import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
+import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -32,7 +32,7 @@ val sharedModule = module {
 
     // Data Sources & Repositories
 
-    // Local user database (progress, settings); opened on first use
+    // Local user database (profile, settings, progress); opened on first use
     single { createUserDatabase(get()) }
 
     // Read-only content database; installs the bundled content file on first use
@@ -43,8 +43,8 @@ val sharedModule = module {
     single { LocalUserProvider(get()) }
     single<ProgressRepository> { ProgressRepositoryImpl(get(), get()) }
 
-    // Binds the implementation to the interface for clean architecture
-    singleOf(::UserPreferencesRepositoryImpl) { bind<UserPreferencesRepository>() }
+    // Profile and settings of the local user
+    single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get()) }
 
     // Domain Logic / Validators
     singleOf(::MaturitaValidator)

@@ -4,7 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.madovygabor.maturimate.core.di.initKoin
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.appOnboarding.domain.UserPreferencesRepository
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -20,7 +20,7 @@ fun main() {
 
     application {
         // Inject the repository using the Compose-friendly Koin delegate
-        val repository: UserPreferencesRepository = koinInject()
+        val repository: UserProfileRepository = koinInject()
 
         /**
          * Determine the start route synchronously before opening the window.
@@ -28,10 +28,10 @@ fun main() {
          */
         val startRoute = runBlocking {
             try {
-                val prefs = repository.preferences.first()
-                if (prefs.isSetupCompleted) Route.Main else Route.AppOnboarding
+                val profile = repository.profile.first()
+                if (profile?.isOnboardingCompleted == true) Route.Main else Route.AppOnboarding
             } catch (e: Exception) {
-                // Fallback to onboarding if preferences cannot be read
+                // Fallback to onboarding if the profile cannot be read
                 Route.AppOnboarding
             }
         }

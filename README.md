@@ -64,8 +64,8 @@ This section describes the code on `main`, after Milestone 1 (core and database)
 ### Built
 
 - One Kotlin Multiplatform project with an Android target and a desktop (JVM) target. About 95% of production Kotlin lines of the app and the `:database` module (4479 of 4718 non-blank lines) are in `commonMain`.
-- Onboarding: welcome screen, language choice (HU or SK), English level (B1 or B2), graduation date picker with validation, and a VPUS/SNI toggle. The toggle value is stored, but no exam timer exists yet, so it does not change any time limit. The VPUS/SNI time extension is dropped from the plan, so the toggle will be removed during the onboarding rework.
-- User settings are persisted with Jetpack DataStore.
+- Onboarding (old screens, rebuilt in Milestone 5): welcome screen, language choice (HU or SK) and graduation date picker with validation.
+- The profile and settings are stored in the local user database (`user_profile`, `user_settings`), under a guest id until sign-up.
 - Profile screen: days left until the graduation date, and edit dialogs for the date, language and level.
 - Adaptive navigation: a bottom `NavigationBar` below 600 dp and a `NavigationRail` at 600 dp and above.
 - Navigation3 (alpha) root with serializable route keys, top-level tabs and per-tab back stacks.
@@ -96,7 +96,7 @@ Under the new plan (see the update above):
 
 Postponed to V2, only with permission from the exam authority: official exam papers and the exam-specific subject content (`SK_SJL`, English B1/B2, Mathematics).
 
-Open question: the English level (B1/B2) setting from onboarding was built for the exam plan. Whether it stays in V1 is not decided yet. The VPUS/SNI toggle is removed (see the ROADMAP).
+The English level (B1/B2) is stored per subject in `user_subject.level`; it returns with the subjects step of the new onboarding. The VPUS/SNI toggle is removed (see the ROADMAP).
 
 ## Technology
 
@@ -109,7 +109,6 @@ Versions are taken from `gradle/libs.versions.toml` on `main`.
 | Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`; Android and Compose extras |
 | Navigation3 (`navigation3-ui`) | 1.0.0-alpha06 | **Alpha** |
 | AndroidX lifecycle (`viewmodel-compose`) | 2.10.0-alpha07 | **Alpha** |
-| DataStore Preferences | 1.2.0 | User settings |
 | kotlinx.serialization (JSON) | 1.9.0 | Navigation key polymorphism; content manifest and content files |
 | kotlinx.datetime | 0.7.1 | Date handling |
 | kotlinx.coroutines | 1.10.2 | `StateFlow`, `SharedFlow`, `viewModelScope` |
@@ -131,9 +130,9 @@ Layering is not uniform:
 - `features/profileDetails`, `features/subjects` and `features/examTaking` have only `presentation` code.
 - `core/domain` contains the shared `OperationResult` and `Error` types.
 
-Onboarding domain: `UserPreferences`, `UserPreferencesRepository` (interface), `MaturitaValidator`, and the `MaturitaLanguage` and `MaturitaLevel` enums. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
+User profile domain: `UserProfile`, `UserProfileRepository` (interface), `TeachingLanguage` and `DataError`; the onboarding domain keeps `MaturitaValidator`. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
 
-Onboarding data: `UserPreferencesRepositoryImpl` writes the DataStore keys `language`, `eng_level`, `is_vpu_enabled`, `exam_date` and `setup_completed` in one `edit` transaction.
+Profile data: `UserProfileRepositoryImpl` writes one field per save to `user_profile` and `user_settings`; the first save creates both rows. The app starts on the home screen once `user_profile.onboarding_completed_at` is set.
 
 Platform code (`expect`/`actual`): the platform Koin module (`platformModule`), `DatabaseDriverFactory` (in `:database`), and `Modifier.systemPadding()`.
 
@@ -151,7 +150,7 @@ MaturiMate/
 ├── composeApp/              the app (Android and desktop)
 │   └── src/
 │       ├── commonMain/      App.kt, core/ (database, di, domain, presentation), features/
-│       ├── androidMain/     MainActivity, Koin platform module, DataStore
+│       ├── androidMain/     MainActivity, Koin platform module
 │       ├── jvmMain/         main.kt, Koin platform module
 │       ├── commonTest/      placeholder test
 │       └── jvmTest/         content provider and repository tests

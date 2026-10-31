@@ -15,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -34,10 +33,8 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.uiComponents.DatePickerField
 import com.madovygabor.maturimate.core.presentation.uiComponents.EditDialog
 import com.madovygabor.maturimate.core.presentation.utils.SubjectStaticData
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLevel
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.components.LanguageSelector
-import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.components.MaturitaLevelSelector
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.toUiText
 import com.madovygabor.maturimate.features.profileDetails.presentation.components.ProfileDetailItem
 import com.madovygabor.maturimate.features.profileDetails.presentation.components.ProfileIcon
@@ -62,8 +59,7 @@ fun ProfileScreen(
     ProfileScreenContent(
         uiState = uiState,
         onMauritaDateChangeRequested = { viewModel.onEditing(EditType.DATE) },
-        onMaturitaLanguageChangeRequested = { viewModel.onEditing(EditType.LANGUAGE) },
-        onMaturitaLevelChangeRequested = { viewModel.onEditing(EditType.LEVEL) }
+        onMaturitaLanguageChangeRequested = { viewModel.onEditing(EditType.LANGUAGE) }
     )
 
     // Dialog management based on EditType state
@@ -96,19 +92,6 @@ fun ProfileScreen(
             }
         }
 
-        EditType.LEVEL -> {
-            EditDialog(
-                title = "Angol szint módosítása",
-                onDismiss = { viewModel.dismissDialog() },
-                onConfirm = { viewModel.saveChanges() }
-            ) {
-                MaturitaLevelSelector(
-                    selectedLevel = uiState.draftMaturitaLevel,
-                    onLevelSelected = { viewModel.onDraftLevelChanged(it) }
-                )
-            }
-        }
-
         EditType.NONE -> { /* No dialog to show*/ }
     }
 
@@ -122,8 +105,7 @@ fun ProfileScreen(
 fun ProfileScreenContent(
     uiState: ProfileUiState,
     onMauritaDateChangeRequested: () -> Unit = {},
-    onMaturitaLanguageChangeRequested: () -> Unit = {},
-    onMaturitaLevelChangeRequested: () -> Unit = {}
+    onMaturitaLanguageChangeRequested: () -> Unit = {}
 ){
     BoxWithConstraints(
         modifier = Modifier
@@ -196,14 +178,6 @@ fun ProfileScreenContent(
                 onClick = { onMaturitaLanguageChangeRequested() }
             )
 
-
-            ProfileDetailItem(
-                label = "Választott angol szint",
-                value = uiState.maturitaLevel.toUiText().asString(),
-                icon = Icons.Default.School,
-                onClick = { onMaturitaLevelChangeRequested() }
-            )
-
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
                 thickness = 1.dp,
@@ -264,8 +238,7 @@ private fun ProfileScreenPreview() {
                     maturitaDate = LocalDate(2024, 6, 15),
                     daysLeft = 120,
                     editType = EditType.DATE,
-                    maturitaLevel = MaturitaLevel.B2,
-                    maturitaLanguage = MaturitaLanguage.HU,
+                    maturitaLanguage = TeachingLanguage.HU,
                     subjectStats = listOf(
                         SubjectStat(
                             subject = SubjectStaticData.getById("ENGLISH"),

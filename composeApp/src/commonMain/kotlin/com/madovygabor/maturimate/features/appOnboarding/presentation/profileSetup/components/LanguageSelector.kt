@@ -7,12 +7,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 
 @Composable
 fun LanguageSelector(
-    selectedLanguage: MaturitaLanguage,
-    onLanguageSelected: (MaturitaLanguage) -> Unit
+    selectedLanguage: TeachingLanguage,
+    onLanguageSelected: (TeachingLanguage) -> Unit
 ) {
 
     Row(
@@ -24,9 +24,9 @@ fun LanguageSelector(
         LanguageCard(
             name = "Magyar",
             flag = "🇭🇺", //TODO: Use image not emoji
-            isSelected = selectedLanguage == MaturitaLanguage.HU,
+            isSelected = selectedLanguage == TeachingLanguage.HU,
             onClick = {
-                onLanguageSelected(MaturitaLanguage.HU)
+                onLanguageSelected(TeachingLanguage.HU)
             },
             modifier = Modifier
                 .weight(1f)
@@ -36,8 +36,8 @@ fun LanguageSelector(
         LanguageCard(
             name = "Szlovák",
             flag = "🇸🇰", //TODO: Use image not emoji
-            isSelected = selectedLanguage == MaturitaLanguage.SK,
-            onClick = { onLanguageSelected(MaturitaLanguage.SK) },
+            isSelected = selectedLanguage == TeachingLanguage.SK,
+            onClick = { onLanguageSelected(TeachingLanguage.SK) },
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 8.dp)

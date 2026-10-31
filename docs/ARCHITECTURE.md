@@ -17,7 +17,6 @@ For the current status of each part, see the "Current status" section of the [RE
 | Navigation3 for Compose Multiplatform | 1.0.0-alpha06 | Alpha dependency |
 | AndroidX Lifecycle (ViewModel) | 2.10.0-alpha07 | Alpha dependency |
 | Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
-| DataStore Preferences | 1.2.0 | Stores user preferences on all targets |
 | kotlinx.serialization | 1.9.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
 | kotlinx.datetime | 0.7.1 | Used for `LocalDate` and time zone handling |
 | kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
@@ -75,7 +74,7 @@ jvmTest/kotlin/...          # Content provider and repository tests
 * `features/subjects` contains only `presentation/`.
 * `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
-`appOnboarding` domain contains `UserPreferences`, `UserPreferencesRepository`, `MaturitaValidator`, and `DataError`. The data layer contains `UserPreferencesRepositoryImpl`, which uses DataStore. The presentation layer contains the onboarding ViewModel and screens.
+`userProfile` holds the profile and settings of the local user: the domain has `UserProfile`, `TeachingLanguage`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database. `appOnboarding` has `MaturitaValidator` in its domain and the onboarding ViewModel and screens in its presentation layer.
 
 The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
 
@@ -122,15 +121,15 @@ Koin modules are in `core/di/`. The platform module is declared as an `expect` i
 
 `Modifier.systemPadding` is declared as an `expect` in `core/presentation/androidSystemPadding.kt:5`, with actuals in the Android and JVM source sets (`androidSystemPadding.android.kt:6`, `androidSystemPadding.jvm.kt:5`).
 
-On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`AppModul.jvm.kt:14` and `:18`); the databases and the DataStore file are stored there. On Android, the databases are in the app's `databases/` folder.
+On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`AppModul.jvm.kt`); the databases are stored there. On Android, the databases are in the app's `databases/` folder.
 
 ---
 
-## 8. Preferences Storage
+## 8. Profile and Settings Storage
 
-`UserPreferencesRepositoryImpl.kt` stores preferences in DataStore. The keys are defined in a private `Keys` object (line 35): `language`, `eng_level`, `is_vpu_enabled`, `exam_date` (stored as epoch days in a `long`), and `setup_completed`. `saveUserPreferences` writes all values in a single `dataStore.edit` transaction (lines 73-80).
+The profile and settings live in the local user database, in the `user_profile` and `user_settings` rows of the local user (a guest id from `LocalUserProvider` until sign-up). `UserProfileRepositoryImpl` saves one field at a time, so the onboarding can save after every screen; the first save creates both rows and takes the time zone from the phone. Saving the teaching language also sets `ui_language`. `profile` is a flow over the joined rows (`selectUserProfile` in `Profile.sq`) and emits again after every change.
 
-The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. On `main`, the toggle has no effect on any timer, because no exam timer exists. Under the current plan the VPUS/SNI time extension is dropped, so the toggle and its stored value (`is_vpu_enabled`) will be removed during the onboarding rework (see the [ROADMAP](ROADMAP.md)).
+The start screen is chosen in `MainActivity` and the desktop `main.kt`: home when `onboarding_completed_at` is set, otherwise the onboarding. DataStore and the VPUS/SNI toggle were removed in step 5.1–5.2.
 
 ---
 
