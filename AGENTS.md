@@ -11,7 +11,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 | touch modules, layers, navigation or data | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | build or change UI | [docs/design-system/README.md](docs/design-system/README.md) and [tokens.json](docs/design-system/tokens.json) |
 | touch content, the validator, exporter or importer | [tools/content-pipeline/README.md](tools/content-pipeline/README.md) |
-| touch the server database | [dbServer/README.md](dbServer/README.md); the schema is in `supabase/migrations` (add a new migration, never edit an applied one) |
+| touch the server database | [dbServer/README.md](dbServer/README.md); the schema is in `supabase/migrations` (add a new migration, never edit an applied one); row level security is tested in `supabase/tests/rls_test.sql` |
 
 ## How we work
 

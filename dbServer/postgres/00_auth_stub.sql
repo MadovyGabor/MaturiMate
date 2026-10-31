@@ -1,4 +1,32 @@
--- Local stand-in for Supabase Auth on a plain PostgreSQL: only what the schema
--- references. Supabase itself provides the real auth.users table.
+-- Local stand-in for Supabase on a plain PostgreSQL: only what the schema and
+-- its row level security use. Supabase itself provides the real versions.
+
+-- auth.users: the accounts
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY);
+
+-- auth.uid(): the signed-in user, read from the JWT claims of the request
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
+LANGUAGE sql STABLE AS $$
+    SELECT nullif(
+        coalesce(
+            current_setting('request.jwt.claim.sub', true),
+            nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'),
+        '')::uuid
+$$;
+
+-- The API roles, with the table privileges Supabase grants by default
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+        CREATE ROLE anon NOLOGIN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+        CREATE ROLE authenticated NOLOGIN;
+    END IF;
+END;
+$$;
+GRANT USAGE ON SCHEMA public, auth TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;

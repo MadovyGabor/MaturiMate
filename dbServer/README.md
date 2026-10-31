@@ -9,7 +9,7 @@ dbServer/
 ├── docker-compose.yml        PostgreSQL 16 in Docker
 ├── .env.example              settings; copy to .env (gitignored)
 └── postgres/
-    ├── 00_auth_stub.sql      a stand-in for Supabase Auth (auth.users)
+    ├── 00_auth_stub.sql      a stand-in for Supabase: auth.users, auth.uid(), the anon and authenticated roles
     └── 10_migrations.sh      applies supabase/migrations in name order
 ```
 
@@ -35,3 +35,4 @@ A database created before the Supabase migration (with the old `01_ddl.sql`) sti
 
 - The importer reads `DATABASE_URL` from the environment or from `dbServer/.env`.
 - `PostgresWriterTest` creates a throwaway database with the auth stand-in and the migrations; it is skipped when PostgreSQL is not running.
+- `supabase/tests/rls_test.sql` checks the row level security policies (CI runs it after the migrations).

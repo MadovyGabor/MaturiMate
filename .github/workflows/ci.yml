@@ -73,6 +73,15 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Schema migrations and row level security tests
+        env:
+          PGPASSWORD: ci-only
+        run: |
+          createdb -h localhost -U maturimate rls_test
+          for f in dbServer/postgres/00_auth_stub.sql supabase/migrations/*.sql supabase/tests/rls_test.sql; do
+            psql -h localhost -U maturimate -d rls_test -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
       - name: Tests
         run: ./gradlew :tools:content-pipeline:test
 
