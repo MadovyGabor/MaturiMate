@@ -40,14 +40,11 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * Step 2 of the onboarding: what the app is for. The answer decides which questions follow;
- * a student goes on with [onStudentNext], learners and teachers finish here for now.
- */
+/** Step 2 of the onboarding: what the app is for. The answer decides which questions follow. */
 @Composable
 fun RoleScreen(
     onBack: () -> Unit,
-    onStudentNext: () -> Unit,
+    onNext: (UserRole) -> Unit,
     viewModel: RoleViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -55,7 +52,7 @@ fun RoleScreen(
         state = state,
         onSelected = viewModel::onSelected,
         onBack = onBack,
-        onNext = { viewModel.onNext { role -> if (role == UserRole.STUDENT) onStudentNext() } },
+        onNext = { viewModel.onNext(onNext) },
     )
 }
 

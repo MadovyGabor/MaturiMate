@@ -40,7 +40,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun LanguageScreen(
     onBack: () -> Unit,
-    onNext: () -> Unit,
+    /** Called with the role saved before, if any: it decides the next step. */
+    onNext: (UserRole?) -> Unit,
     viewModel: LanguageViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -50,7 +51,7 @@ fun LanguageScreen(
         role = role,
         onSelected = viewModel::onSelected,
         onBack = onBack,
-        onNext = { viewModel.onNext { onNext() } },
+        onNext = { viewModel.onNext { onNext(role) } },
     )
 }
 

@@ -14,6 +14,8 @@ import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.ProfileSetupScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
+import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsScreen
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.viewmodel.koinViewModel
@@ -41,6 +43,7 @@ fun AppOnboardingNavigation(
                     subclass(Route.AppOnboarding.Welcome::class, Route.AppOnboarding.Welcome.serializer())
                     subclass(Route.AppOnboarding.Language::class, Route.AppOnboarding.Language.serializer())
                     subclass(Route.AppOnboarding.Role::class, Route.AppOnboarding.Role.serializer())
+                    subclass(Route.AppOnboarding.Subjects::class, Route.AppOnboarding.Subjects.serializer())
                     subclass(Route.AppOnboarding.ProfileSetup::class, Route.AppOnboarding.ProfileSetup.serializer())
                 }
             }
@@ -66,24 +69,29 @@ fun AppOnboardingNavigation(
                 )
             }
 
+            // the onboarding steps; after the last one built so far the onboarding ends
+            fun goNext(step: OnboardingStep, role: UserRole?) {
+                val next = nextRoute(step, role)
+                if (next == null) navigationViewModel.finish() else onboardingBackStack.add(next)
+            }
+            val back: () -> Unit = { onboardingBackStack.removeLastOrNull() }
+
             // 2. Teaching language (step 1)
             entry<Route.AppOnboarding.Language> {
-                LanguageScreen(
-                    onBack = { onboardingBackStack.removeLastOrNull() },
-                    onNext = { onboardingBackStack.add(Route.AppOnboarding.Role) },
-                )
+                LanguageScreen(onBack = back, onNext = { role -> goNext(OnboardingStep.LANGUAGE, role) })
             }
 
-            // 3. Role (step 2); learners and teachers finish here for now (RoleViewModel)
+            // 3. Role (step 2)
             entry<Route.AppOnboarding.Role> {
-                RoleScreen(
-                    onBack = { onboardingBackStack.removeLastOrNull() },
-                    // the old setup screen asks the student's remaining questions until the new steps replace it
-                    onStudentNext = { onboardingBackStack.add(Route.AppOnboarding.ProfileSetup) },
-                )
+                RoleScreen(onBack = back, onNext = { role -> goNext(OnboardingStep.ROLE, role) })
             }
 
-            // 4. Profile Setup Screen (old; replaced step by step)
+            // 4. Subjects and the English level (step 3)
+            entry<Route.AppOnboarding.Subjects> {
+                SubjectsScreen(onBack = back, onNext = { role -> goNext(OnboardingStep.SUBJECTS, role) })
+            }
+
+            // 5. Profile Setup Screen (old): the exam date, until the date step replaces it
             entry<Route.AppOnboarding.ProfileSetup> {
                 ProfileSetupScreen(
                     // created with this screen, so it starts from the answers saved on the steps before

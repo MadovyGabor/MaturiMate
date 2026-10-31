@@ -9,7 +9,9 @@ import com.madovygabor.maturimate.database.user.User_role
 import com.madovygabor.maturimate.features.userProfile.domain.DataError
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
+import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
+import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -150,5 +152,23 @@ class UserProfileRepositoryImplTest {
         repository.saveRole(UserRole.LEARNER).ok()
 
         assertEquals(UserRole.LEARNER, withTimeout(5_000) { changed.await() }?.role)
+    }
+
+    @Test
+    fun subjectsAreSavedInOrderAndReplaced() = runBlocking {
+        repository.saveSubjects(
+            listOf(
+                UserSubject(1, compulsory = true),
+                UserSubject(3, compulsory = true, level = SubjectLevel.B2),
+                UserSubject(4, compulsory = false),
+            )
+        ).ok()
+        assertEquals(listOf(1L, 3L, 4L), current().subjects.map { it.subjectId })
+        assertEquals(SubjectLevel.B2, current().subjects[1].level)
+        assertEquals(listOf("AUTO", "AUTO", "CHOSEN"), database.profileQueries.selectSubjects("guest-1").executeAsList().map { it.source })
+
+        repository.saveSubjects(listOf(UserSubject(4, compulsory = false))).ok()
+
+        assertEquals(listOf(UserSubject(4, compulsory = false)), current().subjects)
     }
 }

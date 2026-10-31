@@ -8,11 +8,14 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.user.SelectUserProfile
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.database.user.User_role
+import com.madovygabor.maturimate.database.user.User_subject
 import com.madovygabor.maturimate.features.userProfile.domain.DataError
+import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
+import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -30,7 +33,7 @@ import kotlin.time.Instant
 
 /**
  * SQLDelight implementation of [UserProfileRepository] over the `user_profile`,
- * `user_settings` and `user_role` rows of the local user.
+ * `user_settings`, `user_role` and `user_subject` rows of the local user.
  *
  * The first save creates both rows; the time zone comes from the phone.
  */
@@ -49,8 +52,12 @@ class UserProfileRepositoryImpl(
         val userId = localUser.userId()
         val profileRow = queries.selectUserProfile(userId).asFlow().mapToOneOrNull(dispatcher)
         val roleRows = queries.selectRoles(userId).asFlow().mapToList(dispatcher)
-        emitAll(combine(profileRow, roleRows) { row, roles ->
-            row?.toDomain(role = roles.firstNotNullOfOrNull { UserRole.fromId(it.role_id) })
+        val subjectRows = queries.selectSubjects(userId).asFlow().mapToList(dispatcher)
+        emitAll(combine(profileRow, roleRows, subjectRows) { row, roles, subjects ->
+            row?.toDomain(
+                role = roles.firstNotNullOfOrNull { UserRole.fromId(it.role_id) },
+                subjects = subjects.map { it.toDomain() },
+            )
         })
     }.flowOn(dispatcher)
 
@@ -62,6 +69,24 @@ class UserProfileRepositoryImpl(
     override suspend fun saveRole(role: UserRole) = save { userId ->
         queries.deleteOnboardingRoles(userId)
         queries.insertRole(User_role(userId, role.id, now().toEpochMilliseconds()))
+    }
+
+    override suspend fun saveSubjects(subjects: List<UserSubject>) = save { userId ->
+        queries.deleteSubjects(userId)
+        val addedAt = now().toEpochMilliseconds()
+        // added_at keeps the order of the list
+        subjects.forEachIndexed { index, subject ->
+            queries.insertSubject(
+                User_subject(
+                    user_id = userId,
+                    subject_id = subject.subjectId,
+                    target_score = null,
+                    source = if (subject.compulsory) "AUTO" else "CHOSEN",
+                    added_at = addedAt + index,
+                    level = subject.level?.name,
+                )
+            )
+        }
     }
 
     override suspend fun saveGraduationDate(date: LocalDate) = save { userId ->
@@ -97,7 +122,13 @@ class UserProfileRepositoryImpl(
         return if ("SQLITE_FULL" in text || "disk is full" in text) DataError.STORAGE_FULL else DataError.IO_ERROR
     }
 
-    private fun SelectUserProfile.toDomain(role: UserRole?) = UserProfile(
+    private fun User_subject.toDomain() = UserSubject(
+        subjectId = subject_id,
+        compulsory = source == "AUTO",
+        level = level?.let { SubjectLevel.valueOf(it) },
+    )
+
+    private fun SelectUserProfile.toDomain(role: UserRole?, subjects: List<UserSubject>) = UserProfile(
         teachingLanguage = teaching_language?.let { TeachingLanguage.valueOf(it) },
         role = role,
         graduationDate = graduation_date?.let { LocalDate.parse(it) },
@@ -105,5 +136,6 @@ class UserProfileRepositoryImpl(
         dailyGoalMinutes = daily_goal_minutes?.toInt(),
         timezone = timezone,
         onboardingCompletedAt = onboarding_completed_at?.let { Instant.fromEpochMilliseconds(it) },
+        subjects = subjects,
     )
 }

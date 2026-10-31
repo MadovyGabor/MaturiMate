@@ -39,6 +39,22 @@
     <string name="role_teacher">Tanár vagyok</string>
     <string name="role_teacher_desc">Megnézem és kipróbálom a tartalmat.</string>
 
+    <!-- Onboarding: subjects. Subject names until the content has them all. -->
+    <string name="subjects_title_student">Miből érettségizel?</string>
+    <string name="subjects_title_learner">Mit szeretnél tanulni?</string>
+    <string name="subjects_title_teacher">Mit tanítasz?</string>
+    <string name="subjects_why_student">A kötelező tantárgyakat már kijelöltük. Ha mást is választasz, jelöld be.</string>
+    <string name="subjects_why_other">Jelöld be, ami érdekel. Többet is választhatsz.</string>
+    <string name="subjects_compulsory">Kötelező</string>
+    <string name="subjects_coming_soon">Hamarosan</string>
+    <string name="subjects_english_level">Milyen szinten?</string>
+    <string name="level_unknown">Még nem tudom</string>
+    <string name="subjects_level_unknown_hint">B1-gyel kezdünk, később átállíthatod.</string>
+    <string name="subject_hu_mjl">Magyar nyelv és irodalom</string>
+    <string name="subject_sk_sjl">Szlovák nyelv és irodalom</string>
+    <string name="subject_anj">Angol nyelv</string>
+    <string name="subject_mat">Matematika</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

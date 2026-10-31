@@ -20,6 +20,8 @@ interface UserProfileRepository {
     suspend fun saveTeachingLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
     /** Replaces the role chosen before. */
     suspend fun saveRole(role: UserRole): OperationResult<Unit, DataError>
+    /** Replaces the subjects chosen before. */
+    suspend fun saveSubjects(subjects: List<UserSubject>): OperationResult<Unit, DataError>
     suspend fun saveGraduationDate(date: LocalDate): OperationResult<Unit, DataError>
     suspend fun saveDailyGoal(minutes: Int): OperationResult<Unit, DataError>
     suspend fun completeOnboarding(at: Instant): OperationResult<Unit, DataError>

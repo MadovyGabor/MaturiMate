@@ -4,6 +4,7 @@ import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
+import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.ExperimentalTime
@@ -40,23 +41,41 @@ class OnboardingResumeTest {
     }
 
     @Test
-    fun studentContinuesAfterTheRoleWithBackThroughTheEarlierSteps() {
+    fun savedRoleContinuesWithTheSubjects() {
+        assertEquals(
+            listOf(Route.AppOnboarding.Welcome, Route.AppOnboarding.Language, Route.AppOnboarding.Role, Route.AppOnboarding.Subjects),
+            onboardingBackStack(profile(TeachingLanguage.HU, UserRole.LEARNER)),
+        )
+    }
+
+    @Test
+    fun studentWithSubjectsContinuesWithTheExamDate() {
+        val student = profile(TeachingLanguage.HU, UserRole.STUDENT).copy(subjects = listOf(UserSubject(1, compulsory = true)))
         assertEquals(
             listOf(
                 Route.AppOnboarding.Welcome,
                 Route.AppOnboarding.Language,
                 Route.AppOnboarding.Role,
+                Route.AppOnboarding.Subjects,
                 Route.AppOnboarding.ProfileSetup,
             ),
-            onboardingBackStack(profile(TeachingLanguage.HU, UserRole.STUDENT)),
+            onboardingBackStack(student),
         )
     }
 
     @Test
-    fun learnerAndTeacherStopAtTheRoleForNow() {
-        for (role in listOf(UserRole.LEARNER, UserRole.TEACHER)) {
-            assertEquals(Route.AppOnboarding.Role, onboardingBackStack(profile(TeachingLanguage.HU, role)).last(), role.name)
-        }
+    fun learnerWithSubjectsStopsAtTheLastBuiltStep() {
+        val learner = profile(TeachingLanguage.HU, UserRole.LEARNER).copy(subjects = listOf(UserSubject(4, compulsory = false)))
+        assertEquals(Route.AppOnboarding.Subjects, onboardingBackStack(learner).last())
+    }
+
+    @Test
+    fun nextStepFollowsTheRole() {
+        assertEquals(Route.AppOnboarding.Subjects, nextRoute(OnboardingStep.ROLE, UserRole.TEACHER))
+        assertEquals(Route.AppOnboarding.ProfileSetup, nextRoute(OnboardingStep.SUBJECTS, UserRole.STUDENT))
+        // learners and teachers have no exam date; the next step is not built yet, so the onboarding ends
+        assertEquals(null, nextRoute(OnboardingStep.SUBJECTS, UserRole.LEARNER))
+        assertEquals(null, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER))
     }
 
     @Test

@@ -111,7 +111,7 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 ## 7. Texts (3.4)
 
-The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are not here: they come from the content database (`name_hu`, `name_sk`).
+The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are app strings for now (`subject_hu_mjl`, `subject_sk_sjl`, `subject_anj`, `subject_mat`), because the onboarding offers subjects whose content is not installed yet; see [DECISIONS](../DECISIONS.md).
 
 **Status:** the Hungarian text is final after the owner's review. **Every Slovak line needs a check by a native speaker** before the release. ⚠ marks a line that may be tight on a button, chip or the desktop step list.
 

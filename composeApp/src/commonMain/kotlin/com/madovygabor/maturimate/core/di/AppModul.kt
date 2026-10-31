@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.Onboarding
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
+import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsViewModel
 import com.madovygabor.maturimate.features.auth.data.AuthRepositoryImpl
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
@@ -72,6 +73,7 @@ val sharedModule = module {
     viewModelOf(::OnboardingNavigationViewModel)
     viewModelOf(::LanguageViewModel)
     viewModelOf(::RoleViewModel)
+    viewModelOf(::SubjectsViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::ProfileViewModel)
 }

@@ -40,6 +40,7 @@ data class UserProfile(
     val timezone: String,
     /** When the onboarding was finished; empty while it is not. */
     val onboardingCompletedAt: Instant?,
+    val subjects: List<UserSubject> = emptyList(),
 ) {
     val isOnboardingCompleted: Boolean get() = onboardingCompletedAt != null
 }

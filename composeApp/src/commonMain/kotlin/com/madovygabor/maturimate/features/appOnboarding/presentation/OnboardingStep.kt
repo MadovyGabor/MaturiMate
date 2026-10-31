@@ -1,5 +1,7 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation
 
+import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.onboarding_step_account
@@ -33,6 +35,36 @@ fun onboardingSteps(role: UserRole? = null): List<OnboardingStep> = when (role) 
     UserRole.STUDENT, null -> OnboardingStep.entries
     UserRole.LEARNER -> OnboardingStep.entries - OnboardingStep.DATE
     UserRole.TEACHER -> OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL
+}
+
+/** The screen of a step; null while the step is not built yet (the onboarding ends before it). */
+val OnboardingStep.route: Route?
+    get() = when (this) {
+        OnboardingStep.LANGUAGE -> Route.AppOnboarding.Language
+        OnboardingStep.ROLE -> Route.AppOnboarding.Role
+        OnboardingStep.SUBJECTS -> Route.AppOnboarding.Subjects
+        // the old setup screen asks the exam date until the date step replaces it
+        OnboardingStep.DATE -> Route.AppOnboarding.ProfileSetup
+        else -> null
+    }
+
+/** The screen after [step] for this role; null when the onboarding ends there. */
+fun nextRoute(step: OnboardingStep, role: UserRole?): Route? {
+    val steps = onboardingSteps(role)
+    return steps.getOrNull(steps.indexOf(step) + 1)?.route
+}
+
+/**
+ * Whether the saved profile already answers the step. Steps without a stored answer
+ * (reminder, plan, account) count as unanswered, so a resumed onboarding shows them again.
+ */
+fun OnboardingStep.isAnswered(profile: UserProfile): Boolean = when (this) {
+    OnboardingStep.LANGUAGE -> profile.teachingLanguage != null
+    OnboardingStep.ROLE -> profile.role != null
+    OnboardingStep.SUBJECTS -> profile.subjects.isNotEmpty()
+    OnboardingStep.DATE -> profile.graduationDate != null
+    OnboardingStep.GOAL -> profile.dailyGoalMinutes != null
+    OnboardingStep.REMINDER, OnboardingStep.PLAN, OnboardingStep.ACCOUNT -> false
 }
 
 /** Where the user is in the onboarding, for the step header and the step list. */

@@ -41,6 +41,22 @@
     <string name="role_teacher">Som učiteľ/ka</string>
     <string name="role_teacher_desc">Pozriem si a vyskúšam obsah.</string>
 
+    <!-- Onboarding: subjects. Subject names until the content has them all. -->
+    <string name="subjects_title_student">Z čoho maturuješ?</string>
+    <string name="subjects_title_learner">Čo sa chceš učiť?</string>
+    <string name="subjects_title_teacher">Čo učíš?</string>
+    <string name="subjects_why_student">Povinné predmety sme už označili. Ak si vyberáš aj ďalšie, označ ich.</string>
+    <string name="subjects_why_other">Označ, čo ťa zaujíma. Môžeš vybrať aj viac.</string>
+    <string name="subjects_compulsory">Povinný</string>
+    <string name="subjects_coming_soon">Čoskoro</string>
+    <string name="subjects_english_level">Na akej úrovni?</string>
+    <string name="level_unknown">Ešte neviem</string>
+    <string name="subjects_level_unknown_hint">Začneme úrovňou B1, neskôr ju môžeš zmeniť.</string>
+    <string name="subject_hu_mjl">Maďarský jazyk a literatúra</string>
+    <string name="subject_sk_sjl">Slovenský jazyk a literatúra</string>
+    <string name="subject_anj">Anglický jazyk</string>
+    <string name="subject_mat">Matematika</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

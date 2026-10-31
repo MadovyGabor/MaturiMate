@@ -135,5 +135,8 @@ SELECT * FROM user_subject WHERE user_id = :userId ORDER BY added_at;
 insertSubject:
 INSERT OR IGNORE INTO user_subject VALUES ?;
 
+deleteSubjects:
+DELETE FROM user_subject WHERE user_id = :userId;
+
 deleteSubject:
 DELETE FROM user_subject WHERE user_id = :userId AND subject_id = :subjectId;

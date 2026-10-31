@@ -105,26 +105,21 @@ class OnboardingQuestionViewModelTest {
     }
 
     @Test
-    fun teacherFinishesTheOnboardingAndStudentGoesOn() = runBlocking {
+    fun roleViewModelSavesTheRole() = runBlocking {
         val database = UserDatabase(
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
         )
         val repository = UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
+        val role = RoleViewModel(repository, snackbar)
+        role.onSelected(UserRole.TEACHER)
+        val done = CompletableDeferred<UserRole>()
 
-        val student = RoleViewModel(repository, snackbar)
-        student.onSelected(UserRole.STUDENT)
-        val studentDone = CompletableDeferred<UserRole>()
-        student.onNext { studentDone.complete(it) }
-        assertEquals(UserRole.STUDENT, withTimeout(5_000) { studentDone.await() })
-        assertFalse(repository.profile.first()!!.isOnboardingCompleted)
+        role.onNext { done.complete(it) }
 
-        val teacher = RoleViewModel(repository, snackbar)
-        teacher.onSelected(UserRole.TEACHER)
-        val teacherDone = CompletableDeferred<UserRole>()
-        teacher.onNext { teacherDone.complete(it) }
-        assertEquals(UserRole.TEACHER, withTimeout(5_000) { teacherDone.await() })
+        assertEquals(UserRole.TEACHER, withTimeout(5_000) { done.await() })
         val profile = repository.profile.first()!!
         assertEquals(UserRole.TEACHER, profile.role)
-        assertTrue(profile.isOnboardingCompleted)
+        // the navigation decides when the onboarding ends, not the role
+        assertFalse(profile.isOnboardingCompleted)
     }
 }
