@@ -188,12 +188,7 @@
     <string name="app_load_error_text">Próbáld újra. Ha nem segít, zárd be az alkalmazást, és nyisd meg újra.</string>
     <string name="retry">Újrapróbálom</string>
 
-    <!-- Old setup and profile screens, replaced in Milestone 5 -->
-    <string name="error_date_past">A vizsga nem lehet a múltban.</string>
-    <string name="error_date_null">Kérlek, válassz dátumot.</string>
-    <string name="error_date_future">Ilyen későn nem lehet a vizsga.</string>
+    <!-- Errors of saving an answer -->
     <string name="error_storage_full">Megtelt a tárhely.</string>
     <string name="error_io">Nem sikerült menteni. Próbáld újra.</string>
-    <string name="maturitaLanguage_sk">Szlovák tagozat</string>
-    <string name="maturitaLanguage_hu">Magyar tagozat</string>
 </resources>

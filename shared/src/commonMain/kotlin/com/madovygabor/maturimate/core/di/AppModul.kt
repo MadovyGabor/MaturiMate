@@ -7,7 +7,6 @@ import com.madovygabor.maturimate.core.database.createUserDatabase
 import com.madovygabor.maturimate.core.network.createAppSupabaseClient
 import com.madovygabor.maturimate.core.presentation.AppViewModel
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaValidator
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingNavigationViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalViewModel
@@ -81,9 +80,6 @@ val sharedModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get<SupabaseClient>().auth) }
     single<AccountRepository> { SupabaseAccountRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
     single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE)) }
-
-    // Domain Logic / Validators
-    singleOf(::MaturitaValidator)
 
     // UI Controllers
 

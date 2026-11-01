@@ -197,12 +197,7 @@
     <string name="app_load_error_text">Skús to znova. Ak to nepomôže, zatvor aplikáciu a otvor ju znova.</string>
     <string name="retry">Skúsiť znova</string>
 
-    <!-- Old setup and profile screens, replaced in Milestone 5 -->
-    <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
-    <string name="error_date_null">Vyber, prosím, dátum.</string>
-    <string name="error_date_future">Skúška nemôže byť tak neskoro.</string>
+    <!-- Errors of saving an answer -->
     <string name="error_storage_full">Úložisko je plné.</string>
     <string name="error_io">Uloženie sa nepodarilo. Skús to znova.</string>
-    <string name="maturitaLanguage_sk">Slovenský vyučovací jazyk</string>
-    <string name="maturitaLanguage_hu">Maďarský vyučovací jazyk</string>
 </resources>

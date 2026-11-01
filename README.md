@@ -131,7 +131,7 @@ Layering is not uniform:
 - `features/profileDetails`, `features/subjects` and `features/examTaking` have only `presentation` code.
 - `core/domain` contains the shared `OperationResult` and `Error` types.
 
-User profile domain: `UserProfile`, `UserProfileRepository` (interface), `TeachingLanguage` and `DataError`; the onboarding domain keeps `MaturitaValidator`. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
+User profile domain: `UserProfile`, `UserProfileRepository` (interface), `TeachingLanguage` and `DataError`. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
 
 Profile data: `UserProfileRepositoryImpl` writes one field per save to `user_profile` and `user_settings`; the first save creates both rows. The app starts on the home screen once `user_profile.onboarding_completed_at` is set.
 
