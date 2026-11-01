@@ -58,10 +58,21 @@ class DateTest {
     }
 
     @Test
+    fun writtenExamsStartOnTheSecondMondayOfMarch() {
+        // 1 March 2027 is a Monday, so the second Monday is the 8th
+        assertEquals(LocalDate(2027, 3, 8), ExamDates.secondWeekWeekday(2027))
+        // 1 March 2026 is a Sunday: Mondays on the 2nd and the 9th
+        assertEquals(LocalDate(2026, 3, 9), ExamDates.secondWeekWeekday(2026))
+        assertEquals(LocalDate(2028, 3, 13), ExamDates.secondWeekWeekday(2028))
+        assertEquals(LocalDate(2029, 3, 12), ExamDates.secondWeekWeekday(2029))
+    }
+
+    @Test
     fun nextTwoSpringExamsFollowTheDate() {
-        assertEquals(listOf(LocalDate(2027, 3, 15), LocalDate(2028, 3, 15)), ExamDates.nextSpringExams(today))
-        assertEquals(listOf(LocalDate(2027, 3, 15), LocalDate(2028, 3, 15)), ExamDates.nextSpringExams(LocalDate(2027, 3, 14)))
-        assertEquals(LocalDate(2028, 3, 15), ExamDates.nextSpringExams(LocalDate(2027, 3, 15)).first())
+        assertEquals(listOf(LocalDate(2027, 3, 8), LocalDate(2028, 3, 13)), ExamDates.nextSpringExams(today))
+        assertEquals(listOf(LocalDate(2027, 3, 8), LocalDate(2028, 3, 13)), ExamDates.nextSpringExams(LocalDate(2027, 3, 7)))
+        // on the exam day the next spring is offered
+        assertEquals(LocalDate(2028, 3, 13), ExamDates.nextSpringExams(LocalDate(2027, 3, 8)).first())
         assertTrue(ExamDates.isValid(LocalDate(2029, 10, 31), today))
         assertFalse(ExamDates.isValid(LocalDate(2029, 11, 1), today))
         assertFalse(ExamDates.isValid(LocalDate(2026, 10, 30), today))
@@ -73,7 +84,7 @@ class DateTest {
 
         val state = withTimeout(5_000) { viewModel.state.first { it.selected != null } }
 
-        assertEquals(LocalDate(2027, 3, 15), state.selected)
+        assertEquals(LocalDate(2027, 3, 8), state.selected)
     }
 
     @Test
@@ -85,7 +96,7 @@ class DateTest {
 
         repository.saveGraduationDate(LocalDate(2026, 3, 15))
         val replaced = DateViewModel(repository, SnackbarController(), today)
-        assertEquals(LocalDate(2027, 3, 15), withTimeout(5_000) { replaced.state.first { it.selected != null } }.selected)
+        assertEquals(LocalDate(2027, 3, 8), withTimeout(5_000) { replaced.state.first { it.selected != null } }.selected)
     }
 
     @Test
