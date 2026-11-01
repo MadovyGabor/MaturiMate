@@ -139,14 +139,14 @@ Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-
 
 ## Milestone 6a: Code review fixes
 
-Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](../llm/review-2026-11-01.md). *Added on 2026-11-01; waiting for the owner's approval.*
+Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](../llm/review-2026-11-01.md). *Added and done on 2026-11-01; open: the phone test of the backup.*
 
 * [x] **6a.1.** Error handling: crash on unexpected server data, the profile read error that ends in the onboarding (and the flaky `AppViewModelTest`), the onboarding that went back to the welcome screen after the language, dropped errors and cancellations, one user database call at a time.
-* [ ] **6a.2.** Account flow: password reset after a refused password, resuming the onboarding after sign-in, two accounts on one phone, the snackbar that blocks buttons.
-* [ ] **6a.3.** Server consistency: the onboarding answers in one transaction, consents once.
-* [ ] **6a.4.** Android release: backup without the session, R8 shrinking (28.5 MB APK today).
-* [ ] **6a.5.** Tests and coverage: Kover, the missing tests, the shared profile flow.
-* [ ] **6a.6.** Cleanup of dead code.
+* [x] **6a.2.** Account flow: password reset after a refused password, resuming the onboarding after sign-in, two accounts on one phone, the snackbar that blocks buttons.
+* [x] **6a.3.** Server consistency: the end of a sign-up in one transaction (`save_sign_up`), consents once. *Applied to the live project on 2026-11-01 (version 20261101214731).*
+* [/] **6a.4.** Android release: backup without the session, R8 shrinking (APK from 28.5 MB to 4.9 MB). *Builds; the release build is not tried on a phone yet (testing goes on with debug builds).*
+* [x] **6a.5.** Tests and coverage: Kover with an 80 % minimum in CI (`shared` 89.8 %, `database` 86.4 %), the missing tests. *The shared profile flow is left out (see the review notes, 5.2); Android device tests wait for an emulator in CI.*
+* [x] **6a.6.** Cleanup of dead code.
 * [/] **6a.7.** Faster CI: one run per commit (no separate `pull_request` run), no run for documentation-only changes, the Android build as its own job beside the tests, parallel Gradle builds and parallel test JVMs. *Added on 2026-11-01; checked locally, the first CI run comes with the next push.*
 
 ---

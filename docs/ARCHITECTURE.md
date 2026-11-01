@@ -60,7 +60,7 @@ commonMain/kotlin/com/madovygabor/maturimate/
 │   ├── network/            # Supabase client factory
 │   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/, locale/
 └── features/
-    ├── appOnboarding/      # domain/, presentation/ (one folder per question screen)
+    ├── appOnboarding/      # presentation/ (one folder per question screen)
     ├── auth/               # data/, domain/, presentation/ (account and sign-in screens)
     ├── examTaking/         # ExamWriteScreen.kt (placeholder)
     ├── learning/           # data/, domain/ (no presentation yet)
@@ -70,7 +70,6 @@ commonMain/kotlin/com/madovygabor/maturimate/
 commonMain/composeResources/files/   # bundled content.db + content-manifest.json (generated, gitignored)
 androidMain/kotlin/...      # Android actuals (AppModul.android.kt, ...)
 jvmMain/kotlin/...          # Desktop actuals (AppModul.jvm.kt, ...)
-commonTest/kotlin/...       # One placeholder test (ComposeAppCommonTest.kt)
 jvmTest/kotlin/...          # Repository, ViewModel and screen tests, and the whole onboarding flow
 ```
 
@@ -86,7 +85,7 @@ The app modules hold only the entry points: `../androidApp/src/main` (`MainActiv
 * `features/subjects` contains only `presentation/`.
 * `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
-`userProfile` holds the profile, settings and role of the local user: the domain has `UserProfile`, `TeachingLanguage`, `UserRole`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database (`user_profile`, `user_settings`, `user_role`; saving a role replaces the student, learner or teacher role and keeps roles the server gives). `appOnboarding` has `MaturitaValidator` in its domain and the onboarding screens in its presentation layer. Each question screen has its own small ViewModel; the one-answer questions (language, role, and the next simple ones) extend `OnboardingQuestionViewModel<T>`, which loads the saved answer, keeps the selection, saves on Next and shows a snackbar when saving fails, so a screen's ViewModel only says how its answer is read and saved.  `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client, `SupabaseAccountRepository` over Postgrest (the account's profile, settings, role, subjects and consents on the server) and `AccountSetupImpl`, which runs after a sign-up or a sign-in: it moves the guest's rows to the account (`LocalUserProvider.adoptAccount`), then uploads the profile and consents, or downloads the account's profile. Supabase classes stay in the data layer and in `core/network/`.
+`userProfile` holds the profile, settings and role of the local user: the domain has `UserProfile`, `TeachingLanguage`, `UserRole`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database (`user_profile`, `user_settings`, `user_role`; saving a role replaces the student, learner or teacher role and keeps roles the server gives). `appOnboarding` has the onboarding screens in its presentation layer. Each question screen has its own small ViewModel; the one-answer questions (language, role, and the next simple ones) extend `OnboardingQuestionViewModel<T>`, which loads the saved answer, keeps the selection, saves on Next and shows a snackbar when saving fails, so a screen's ViewModel only says how its answer is read and saved.  `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset in two steps: the code, then the new password), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client, `SupabaseAccountRepository` over Postgrest (the account's profile, settings, role, subjects and consents on the server) and `AccountSetupImpl`, which runs after a sign-up or a sign-in: it moves the guest's rows to the account (`LocalUserProvider.adoptAccount`), then saves the profile, answers and consents in one server call (`save_sign_up`, one transaction), or downloads the account's profile. Supabase classes stay in the data layer and in `core/network/`.
 
 The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
 
@@ -202,18 +201,19 @@ Files (Git) ──┤
 
 | Module | Tests | What they cover |
 |---|---|---|
-| `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
+| `:database` (`jvmTest`) | 19 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:shared` (`jvmTest`, `commonTest`) | 132 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:shared` (`jvmTest`) | 167 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest`.
 
-CI (`.github/workflows/ci.yml`) runs on every push and pull request, with one job per module so a failure points at the part that broke:
+CI (`.github/workflows/ci.yml`) runs on every push that changes more than documentation (a pull request shows its branch's run), with parallel jobs so a failure points at the part that broke:
 
 | Job | Runs | Notes |
 |---|---|---|
-| Database (SQLDelight) | `:database:jvmTest` | |
-| Content pipeline | `:tools:content-pipeline:test` | PostgreSQL 16 service; `REQUIRE_POSTGRES=true`, so the importer tests fail instead of being skipped |
-| App | `:shared:jvmTest`, then the Android APK (`:androidApp`) and the desktop jar (`:desktopApp`) | Bundles the test fixture as content, so the content provider test runs too |
+| Database (SQLDelight) | `:database:jvmTest`, coverage | Kover line coverage in the summary; fails under 80 % |
+| Content pipeline | migrations and row level security tests, `:tools:content-pipeline:test` | PostgreSQL 16 service; `REQUIRE_POSTGRES=true`, so the importer tests fail instead of being skipped |
+| App | `:shared:jvmTest`, coverage, the desktop jar (`:desktopApp`) | Bundles the test fixture as content, so the content provider test runs too; coverage as for the database |
+| Android build | `:androidApp:assembleDebug` | Beside the tests, because it is the slowest part |
 
 Each job publishes its JUnit results as its own check and as a table (every test, passed or failed) in the run summary.
