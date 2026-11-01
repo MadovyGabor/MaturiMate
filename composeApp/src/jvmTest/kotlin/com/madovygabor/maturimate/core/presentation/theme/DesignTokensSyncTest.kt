@@ -18,7 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Checks that the theme colors, type styles, radii and spacing steps match docs/design-system/tokens.json, the source of the
+ * Checks that the theme colors, type styles, radii, spacing steps and layout values match docs/design-system/tokens.json, the source of the
  * design system. When this fails, a value was changed in only one of the two places.
  */
 class DesignTokensSyncTest {
@@ -156,6 +156,33 @@ class DesignTokensSyncTest {
         val steps = tokenList("spacing")
         assertEquals(steps.keys, codeSpacing.keys, "Spacing names in tokens.json and in the code differ")
         steps.forEach { (name, token) -> assertEquals(token.px("value"), codeSpacing.getValue(name), name) }
+    }
+
+    @Test
+    fun everyLayoutValueMatchesTheCode() {
+        val layout = Layout()
+        val codeLayout = mapOf(
+            "breakpoint-medium" to layout.breakpointMedium.value,
+            "breakpoint-expanded" to layout.breakpointExpanded.value,
+            "content-max-width" to layout.contentMaxWidth.value,
+            "side-panel-width" to layout.sidePanelWidth.value,
+            "touch-target" to layout.touchTarget.value,
+            "icon" to layout.icon.value,
+            "icon-small" to layout.iconSmall.value,
+            "badge" to layout.badge.value,
+            "choice-card-min-height" to layout.choiceCardMinHeight.value,
+            "button-min-width" to layout.buttonMinWidth.value,
+            "progress-bar-height" to layout.progressBarHeight.value,
+            "step-dot" to layout.stepDot.value,
+            "border-thin" to layout.borderThin.value,
+            "border-thick" to layout.borderThick.value,
+            "logo-large" to layout.logoLarge.value,
+            "logo-small" to layout.logoSmall.value,
+        )
+
+        val values = tokenList("layout")
+        assertEquals(values.keys, codeLayout.keys, "Layout names in tokens.json and in the code differ")
+        values.forEach { (name, token) -> assertEquals(token.px("value"), codeLayout.getValue(name), name) }
     }
 
     private fun tokenList(family: String): Map<String, JsonObject> =

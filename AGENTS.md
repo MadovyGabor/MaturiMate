@@ -11,7 +11,8 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 | touch modules, layers, navigation or data | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | build or change UI | [docs/design-system/README.md](docs/design-system/README.md) and [tokens.json](docs/design-system/tokens.json) |
 | touch content, the validator, exporter or importer | [tools/content-pipeline/README.md](tools/content-pipeline/README.md) |
-| touch the server database | [dbServer/README.md](dbServer/README.md) |
+| touch Supabase settings (auth, providers, e-mail) | [docs/supabase-setup.md](docs/supabase-setup.md) |
+| touch the server database | [dbServer/README.md](dbServer/README.md); the schema is in `supabase/migrations` (add a new migration, never edit an applied one); row level security is tested in `supabase/tests/rls_test.sql` |
 
 ## How we work
 
@@ -19,7 +20,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 - **Small steps.** One roadmap step per change. Update the roadmap checkbox when a step is done.
 - **Record decisions.** When the owner decides something lasting, add a short entry to `docs/DECISIONS.md` (what and why). Mark replaced entries instead of deleting them.
 - **Branches:** never commit to `main`. Use `feat/…`, `fix/…`, `docs/…`, `chore/…`. Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`).
-- Documentation, code and comments are in **English**. App text is Hungarian and Slovak, in `composeResources/values-hu` and `values-sk`.
+- Documentation, code and comments are in **English**. App text is Hungarian and Slovak: Slovak in `composeResources/values` (the default for every phone language except Hungarian), Hungarian in `values-hu`. Every key exists in both.
 
 ## Commands
 
@@ -40,7 +41,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 - **Content ids never change and content rows are never deleted**, only switched off.
 - **No official exam content** (NIVAM papers, answer keys, audio) in this repository or in the app. V1 uses only content written for this project.
 - **Lessons and tasks live in a separate private repository**, cloned into `content/` (gitignored). Tests use the fixtures under `tools/content-pipeline/src/test/resources/`.
-- **Secrets** (connection strings, keys) stay in `.env` or `local.properties`, never in the repository.
+- **Secrets** (connection strings, secret keys) stay in `.env` or `local.properties`, never in the repository. The app holds only public values (`core/config/SupabaseConfig.kt`); everything else is protected by row level security.
 
 ## Local, uncommitted folders
 

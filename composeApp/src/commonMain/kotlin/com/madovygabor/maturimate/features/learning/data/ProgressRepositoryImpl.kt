@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.learning.data
 
+import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.learning.data.mapper.toDomain
@@ -24,17 +25,19 @@ import kotlin.time.Instant
 /**
  * SQLDelight implementation of [ProgressRepository] over the user database.
  *
- * The phone has one local user. Its rows use [LOCAL_USER_ID] until accounts exist;
- * the backend assigns the real `app_user.user_id` at the first sync (Milestone 7).
+ * The phone has one local user, given by [LocalUserProvider]: a guest id until sign-up,
+ * then the Supabase account id.
  */
 @OptIn(ExperimentalTime::class)
 class ProgressRepositoryImpl(
     private val database: UserDatabase,
+    private val localUser: LocalUserProvider,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ProgressRepository {
 
     private val progress get() = database.progressQueries
     private val activity get() = database.activityQueries
+    private fun userId() = localUser.userId()
 
     override suspend fun startAttempt(
         type: AttemptType,
@@ -43,7 +46,7 @@ class ProgressRepositoryImpl(
         startedAt: Instant,
     ): OperationResult<Long, LearningError> = run {
         database.transactionWithResult {
-            progress.insertAttempt(LOCAL_USER_ID, type.name, topicId, learningUnitId, startedAt.toEpochMilliseconds())
+            progress.insertAttempt(userId(), type.name, topicId, learningUnitId, startedAt.toEpochMilliseconds())
             progress.lastInsertedId().executeAsOne()
         }
     }
@@ -59,44 +62,44 @@ class ProgressRepositoryImpl(
     }
 
     override suspend fun attempts(): OperationResult<List<Attempt>, LearningError> = run {
-        progress.selectAttempts(LOCAL_USER_ID).executeAsList().map { it.toDomain() }
+        progress.selectAttempts(userId()).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun attemptsOfUnit(learningUnitId: Long): OperationResult<List<Attempt>, LearningError> = run {
-        progress.selectAttemptsByUnit(LOCAL_USER_ID, learningUnitId).executeAsList().map { it.toDomain() }
+        progress.selectAttemptsByUnit(userId(), learningUnitId).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun unitProgress(): OperationResult<List<UnitProgress>, LearningError> = run {
-        progress.selectUnitProgress(LOCAL_USER_ID).executeAsList().map { it.toDomain() }
+        progress.selectUnitProgress(userId()).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun saveUnitProgress(progress: UnitProgress): OperationResult<Unit, LearningError> = run {
-        this.progress.upsertUnitProgress(progress.toRow(LOCAL_USER_ID))
+        this.progress.upsertUnitProgress(progress.toRow(userId()))
     }
 
     override suspend fun taskProgress(taskId: Long): OperationResult<TaskProgress?, LearningError> = run {
-        progress.selectTaskProgress(LOCAL_USER_ID, taskId).executeAsOneOrNull()?.toDomain()
+        progress.selectTaskProgress(userId(), taskId).executeAsOneOrNull()?.toDomain()
     }
 
     override suspend fun dueTasks(now: Instant): OperationResult<List<TaskProgress>, LearningError> = run {
-        progress.selectDueTasks(LOCAL_USER_ID, now.toEpochMilliseconds()).executeAsList().map { it.toDomain() }
+        progress.selectDueTasks(userId(), now.toEpochMilliseconds()).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun saveTaskProgress(progress: TaskProgress): OperationResult<Unit, LearningError> = run {
-        this.progress.upsertTaskProgress(progress.toRow(LOCAL_USER_ID))
+        this.progress.upsertTaskProgress(progress.toRow(userId()))
     }
 
     override suspend fun streak(): OperationResult<Streak?, LearningError> = run {
-        activity.selectStreak(LOCAL_USER_ID).executeAsOneOrNull()?.toDomain()
+        activity.selectStreak(userId()).executeAsOneOrNull()?.toDomain()
     }
 
     override suspend fun saveStreak(streak: Streak): OperationResult<Unit, LearningError> = run {
-        activity.upsertStreak(streak.toRow(LOCAL_USER_ID))
+        activity.upsertStreak(streak.toRow(userId()))
     }
 
     override suspend fun addActivity(activity: DailyActivity): OperationResult<Unit, LearningError> = run {
         this.activity.addActivity(
-            LOCAL_USER_ID,
+            userId(),
             activity.date.toString(),
             activity.xpEarned.toLong(),
             activity.minutesStudied.toLong(),
@@ -105,11 +108,11 @@ class ProgressRepositoryImpl(
     }
 
     override suspend fun activity(from: LocalDate, to: LocalDate): OperationResult<List<DailyActivity>, LearningError> = run {
-        activity.selectActivity(LOCAL_USER_ID, from.toString(), to.toString()).executeAsList().map { it.toDomain() }
+        activity.selectActivity(userId(), from.toString(), to.toString()).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun totalXp(): OperationResult<Long, LearningError> = run {
-        activity.selectTotalXp(LOCAL_USER_ID).executeAsOne()
+        activity.selectTotalXp(userId()).executeAsOne()
     }
 
     /** Runs a database call on the IO dispatcher and maps failures to [LearningError.DATABASE_ERROR]. */
@@ -121,8 +124,4 @@ class ProgressRepositoryImpl(
                 OperationResult.Error(LearningError.DATABASE_ERROR)
             }
         }
-
-    companion object {
-        const val LOCAL_USER_ID = 1L
-    }
 }

@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  */
 fun childId(taskId: Long, index: Int): Long = taskId * 100 + index + 1
 
-// Shapes of the content source files. Field names follow the columns of dbServer/postgres/01_ddl.sql.
+// Shapes of the content source files. Field names follow the columns of the schema in supabase/migrations.
 
 /** `task_formats.json` at the content root. */
 @Serializable

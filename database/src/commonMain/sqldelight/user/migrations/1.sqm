@@ -1,0 +1,7 @@
+-- Version 1 to 2: English level and the end of the onboarding
+-- (supabase/migrations/20261031144500_onboarding_columns.sql).
+
+ALTER TABLE user_subject ADD COLUMN level TEXT
+    CONSTRAINT ck_user_subject_level CHECK (level IN ('B1', 'B2'));
+
+ALTER TABLE user_profile ADD COLUMN onboarding_completed_at INTEGER;

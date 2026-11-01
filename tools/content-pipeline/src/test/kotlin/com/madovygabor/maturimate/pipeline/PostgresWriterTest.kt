@@ -36,7 +36,10 @@ class PostgresWriterTest {
             assumeNoException("local PostgreSQL is not available", e)
         }
         connection = openDatabase(adminUrl.replaceDatabase(testDatabase))
-        connection.createStatement().use { it.execute(File(repoRoot, "dbServer/postgres/01_ddl.sql").readText()) }
+        // A stand-in for Supabase Auth, then the schema migrations in name order
+        val schema = listOf(File(repoRoot, "dbServer/postgres/00_auth_stub.sql")) +
+            File(repoRoot, "supabase/migrations").listFiles { f -> f.extension == "sql" }!!.sortedBy { it.name }
+        connection.createStatement().use { s -> schema.forEach { s.execute(it.readText()) } }
     }
 
     @After

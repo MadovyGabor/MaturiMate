@@ -15,7 +15,23 @@ sealed interface Route : NavKey {
         @Serializable
         data object Welcome : Route // Welcome screen for onboarding
         @Serializable
-        data object ProfileSetup : Route // Profile setup during onboarding
+        data object Language : Route // Teaching language (step 1)
+        @Serializable
+        data object Role : Route // Role: student, learner or teacher (step 2)
+        @Serializable
+        data object Subjects : Route // Subjects and the English level (step 3)
+        @Serializable
+        data object Date : Route // Exam date, students only (step 4)
+        @Serializable
+        data object Goal : Route // Daily goal, students and learners
+        @Serializable
+        data object Reminder : Route // Daily reminder
+        @Serializable
+        data object Plan : Route // "A te terved" summary
+        @Serializable
+        data object Account : Route // Account, or "Körülnézek" (last step)
+        @Serializable
+        data object SignIn : Route // "Már van fiókom"
     }
     @Serializable
     data class ExamWrite(val examId: String) : Route // Fullscreen exam writing screen

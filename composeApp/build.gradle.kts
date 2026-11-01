@@ -47,9 +47,11 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(projects.database)
 
-            //DataStore
-            api(libs.datastore)
-            api(libs.datastore.preferences)
+            // Supabase: sign-up and sign-in
+            implementation(project.dependencies.platform(libs.supabase.bom))
+            implementation(libs.supabase.auth)
+            implementation(libs.supabase.compose.auth)
+            implementation(libs.supabase.postgrest)
 
             //For material icons and google fonts
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
@@ -67,15 +69,26 @@ kotlin {
             //Android Splash Screen API
             implementation(libs.core.splashscreen)
 
+            // HTTP engine of the Supabase client
+            implementation(libs.ktor.client.okhttp)
+
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+
+            // HTTP engine of the Supabase client
+            implementation(libs.ktor.client.okhttp)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+
+        jvmTest.dependencies {
+            implementation(libs.ktor.client.mock)
+            implementation(libs.compose.ui.test)
         }
 
     }

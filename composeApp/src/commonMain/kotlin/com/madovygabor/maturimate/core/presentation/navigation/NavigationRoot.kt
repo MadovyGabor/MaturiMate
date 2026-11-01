@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.core.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.MutableState
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -20,6 +21,8 @@ import kotlinx.serialization.modules.polymorphic
 fun NavigationRoute(
     modifier: Modifier,
     startRoute: Route,
+    /** The tab the main screen opens on; it follows the user's choice. */
+    mainTab: MutableState<NavKey>,
 ){
 
     val rootBackStack = rememberNavBackStack(
@@ -47,18 +50,13 @@ fun NavigationRoute(
         entryProvider = entryProvider {
             //The main application content with bottom navigation
             entry<Route.Main> {
-                MainFrameNavigation()
+                MainFrameNavigation(mainTab = mainTab)
             }
 
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
-                AppOnboardingNavigation(
-                    onAppOnboardingComplete = {
-                        // After onboarding is complete, navigate to the main app
-                        rootBackStack.add(Route.Main)
-                        rootBackStack.remove(Route.AppOnboarding)
-                    }
-                )
+                // finishing it saves the onboarding end; App then starts on Main
+                AppOnboardingNavigation()
             }
             //Fullscreen exam writing screen
             entry<Route.ExamWrite> {

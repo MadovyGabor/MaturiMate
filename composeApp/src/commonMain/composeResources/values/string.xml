@@ -1,17 +1,203 @@
 <resources>
-        <string name="app_name">MaturiMate</string>
-    <string name="error_date_past">A vizsga nem lehet a múltban!</string>
-    <string name="error_date_null">Kérlek, válassz dátumot!</string>
-    <string name="error_date_future">"Ilyen keson nem lehet a vizsga"</string>
-    <string name="error_storage_full">"Tele van a tarhelyed"</string>
-    <string name="error_io">"IO error"</string>
-    <string name="error_unexpected_save">"Unexpected Error saving the preferences"</string>
-    <string name="maturitaLanguage_sk">"Szlovák tagozat"</string>
-    <string name="maturitaLanguage_hu">"Magyar tagozat"</string>
-    <string name="maturitaLevel_b1">"B1"</string>
-    <string name="maturitaLevel_b2">"B2"</string>
+    <!-- Slovak: the default for every phone language except Hungarian (values-hu). -->
+    <!-- Every Slovak line needs a check by a native speaker before the release. -->
+    <string name="app_name">MaturiMate</string>
 
+    <!-- Onboarding: welcome (docs/onboarding/README.md) -->
+    <string name="welcome_tagline">Krátke lekcie a precvičovanie až do maturity, po maďarsky aj po slovensky.</string>
+    <string name="welcome_start">Začnime</string>
+    <string name="welcome_have_account">Už mám účet</string>
+    <string name="onboarding_side_tagline">Krátke lekcie a precvičovanie až do maturity.</string>
 
-    <!--This is a comment area, write your comment-->
-    <!-- <string name="">""</string> -->
+    <!-- Onboarding: common -->
+    <string name="common_next">Ďalej</string>
+    <string name="common_back">Späť</string>
+    <string name="onboarding_step">Krok %1$d z %2$d</string>
+    <string name="onboarding_change_later">Neskôr to môžeš kedykoľvek zmeniť vo svojom profile.</string>
+    <string name="onboarding_step_language">Jazyk</string>
+    <string name="onboarding_step_role">Rola</string>
+    <string name="onboarding_step_subjects">Predmety</string>
+    <string name="onboarding_step_date">Dátum maturity</string>
+    <string name="onboarding_step_goal">Denný cieľ</string>
+    <string name="onboarding_step_reminder">Pripomienka</string>
+    <string name="onboarding_step_plan">Tvoj plán</string>
+    <string name="onboarding_step_account">Účet</string>
+
+    <!-- Onboarding: teaching language. The two options are always in their own language. -->
+    <string name="language_title">Aký je vyučovací jazyk tvojej školy?</string>
+    <string name="language_why">Podľa toho vieme, z ktorých predmetov maturuješ. Aplikáciu uvidíš v tomto jazyku.</string>
+    <string name="language_hu">Magyar</string>
+    <string name="language_hu_desc">Magyar tanítási nyelvű iskola</string>
+    <string name="language_sk">Slovenský</string>
+    <string name="language_sk_desc">Škola s vyučovacím jazykom slovenským</string>
+
+    <!-- Onboarding: role -->
+    <string name="role_title">Na čo chceš aplikáciu používať?</string>
+    <string name="role_why">Podľa toho prispôsobíme ďalšie otázky.</string>
+    <string name="role_student">Pripravujem sa na maturitu</string>
+    <string name="role_student_desc">Odpočítavanie, denný cieľ a precvičovanie maturitných predmetov.</string>
+    <string name="role_learner">Chcem sa len učiť</string>
+    <string name="role_learner_desc">Lekcie a precvičovanie bez dátumu maturity.</string>
+    <string name="role_teacher">Som učiteľ/ka</string>
+    <string name="role_teacher_desc">Pozriem si a vyskúšam obsah.</string>
+
+    <!-- Onboarding: subjects. Subject names until the content has them all. -->
+    <string name="subjects_title_student">Z čoho maturuješ?</string>
+    <string name="subjects_title_learner">Čo sa chceš učiť?</string>
+    <string name="subjects_title_teacher">Čo učíš?</string>
+    <string name="subjects_why_student">Povinné predmety sme už označili. Ak si vyberáš aj ďalšie, označ ich.</string>
+    <string name="subjects_why_other">Označ, čo ťa zaujíma. Môžeš vybrať aj viac.</string>
+    <string name="subjects_compulsory">Povinný</string>
+    <string name="subjects_coming_soon">Čoskoro</string>
+    <string name="subjects_english_level">Na akej úrovni?</string>
+    <string name="level_unknown">Ešte neviem</string>
+    <string name="subjects_level_unknown_hint">Začneme úrovňou B1, neskôr ju môžeš zmeniť.</string>
+    <string name="subject_hu_mjl">Maďarský jazyk a literatúra</string>
+    <string name="subject_hu_sjsl">Slovenský jazyk a slovenská literatúra</string>
+    <string name="subject_sk_sjl">Slovenský jazyk a literatúra</string>
+    <string name="subject_anj">Anglický jazyk</string>
+    <string name="subject_anj_b1">Anglický jazyk (B1)</string>
+    <string name="subject_anj_b2">Anglický jazyk (B2)</string>
+    <string name="subject_mat">Matematika</string>
+
+    <!-- Onboarding: exam date -->
+    <string name="common_save">Uložiť</string>
+    <string name="profile_title">Môj profil</string>
+    <string name="profile_why">Ťukni na odpoveď, ktorú chceš zmeniť.</string>
+    <string name="profile_reminder_off">Vypnutá</string>
+    <string name="profile_not_set">Nenastavené</string>
+    <string name="common_cancel">Zrušiť</string>
+    <string name="common_ok">OK</string>
+    <string name="date_title">Kedy maturuješ?</string>
+    <string name="date_why">Podľa toho vypočítame odpočítavanie a tvoj plán.</string>
+    <string name="date_spring">Jar %1$d</string>
+    <plurals name="date_written_days">
+        <item quantity="one">Písomná časť: %1$s · o %2$d deň</item>
+        <item quantity="few">Písomná časť: %1$s · o %2$d dni</item>
+        <item quantity="other">Písomná časť: %1$s · o %2$d dní</item>
+    </plurals>
+    <plurals name="date_days_left">
+        <item quantity="one">%1$s · o %2$d deň</item>
+        <item quantity="few">%1$s · o %2$d dni</item>
+        <item quantity="other">%1$s · o %2$d dní</item>
+    </plurals>
+    <string name="date_other">Iný dátum</string>
+    <string name="date_other_desc">Vyber v kalendári</string>
+    <string name="date_picker_title">Dátum maturity</string>
+    <!-- %1$d year, %2$s month name (genitive), %3$d day -->
+    <string name="date_long">%3$d. %2$s %1$d</string>
+    <string-array name="months">
+        <item>januára</item>
+        <item>februára</item>
+        <item>marca</item>
+        <item>apríla</item>
+        <item>mája</item>
+        <item>júna</item>
+        <item>júla</item>
+        <item>augusta</item>
+        <item>septembra</item>
+        <item>októbra</item>
+        <item>novembra</item>
+        <item>decembra</item>
+    </string-array>
+
+    <!-- Onboarding: daily goal -->
+    <string name="goal_title">Koľko času denne venuješ učeniu?</string>
+    <string name="goal_why">Podľa toho počítame tvoju dennú sériu.</string>
+    <plurals name="goal_minutes">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d); the goals are 5 to 20 minutes -->
+    <plurals name="goal_year_hint">
+        <item quantity="one">%1$d minút denne je za rok približne %2$d hodina precvičovania.</item>
+        <item quantity="few">%1$d minút denne je za rok približne %2$d hodiny precvičovania.</item>
+        <item quantity="other">%1$d minút denne je za rok približne %2$d hodín precvičovania.</item>
+    </plurals>
+
+    <!-- Onboarding: reminder -->
+    <string name="reminder_title">Máme ti každý deň pripomenúť učenie?</string>
+    <string name="reminder_why">Krátke upozornenie vo zvolenom čase ti pomôže udržať sériu.</string>
+    <string name="reminder_time">V akom čase?</string>
+    <string name="reminder_permission_hint">V ďalšom kroku ťa telefón požiada o povolenie upozornení.</string>
+    <string name="reminder_turn_on">Zapnúť</string>
+    <string name="reminder_not_now">Teraz nie</string>
+
+    <!-- Onboarding: your plan -->
+    <string name="plan_title">Tvoj plán</string>
+    <string name="plan_until_exam">Do maturity</string>
+    <plurals name="plan_days">
+        <item quantity="one">%1$d deň</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d); the goals are 5 to 20 minutes -->
+    <plurals name="plan_student_total">
+        <item quantity="one">Pri %1$d minútach denne je to približne %2$d hodina precvičovania.</item>
+        <item quantity="few">Pri %1$d minútach denne je to približne %2$d hodiny precvičovania.</item>
+        <item quantity="other">Pri %1$d minútach denne je to približne %2$d hodín precvičovania.</item>
+    </plurals>
+    <string name="plan_daily_goal">Denný cieľ</string>
+    <plurals name="plan_learner_year">
+        <item quantity="one">Za rok približne %1$d hodina.</item>
+        <item quantity="few">Za rok približne %1$d hodiny.</item>
+        <item quantity="other">Za rok približne %1$d hodín.</item>
+    </plurals>
+    <string name="plan_reminder">Pripomienka každý deň o %1$s</string>
+    <string name="plan_change_later">Všetko môžeš neskôr zmeniť vo svojom profile.</string>
+
+    <!-- Onboarding: account. The code step and some errors are new; see docs/onboarding/README.md. -->
+    <string name="account_title">Vytvor si účet</string>
+    <string name="account_why">Tak o svoj pokrok neprídeš a môžeš pokračovať aj na inom telefóne.</string>
+    <string name="account_google">Pokračovať cez Google</string>
+    <string name="account_google_signed">Účet Google: %1$s</string>
+    <string name="account_or_email">alebo e-mailom</string>
+    <string name="account_last_name">Priezvisko</string>
+    <string name="account_first_name">Meno</string>
+    <string name="account_email">E-mailová adresa</string>
+    <string name="signin_password">Heslo</string>
+    <string name="account_password_hint">Aspoň 8 znakov, s malým a veľkým písmenom a číslicou.</string>
+    <string name="account_consent">Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov.</string>
+    <string name="account_consent_required">Ak chceš pokračovať, prijmi podmienky a zásady ochrany súkromia.</string>
+    <string name="account_news">Chcem dostávať novinky e-mailom.</string>
+    <string name="account_create">Vytvoriť účet</string>
+    <string name="account_browse">Najprv sa poobzerám</string>
+    <string name="code_title">Zadaj kód</string>
+    <string name="code_sent">Poslali sme 6-miestny kód na adresu %1$s. Pozri aj priečinok so spamom.</string>
+    <string name="code_label">6-miestny kód</string>
+    <string name="code_confirm">Potvrdiť</string>
+    <string name="code_resend">Poslať nový kód</string>
+    <string name="error_last_name_empty">Zadaj priezvisko.</string>
+    <string name="error_first_name_empty">Zadaj meno.</string>
+    <string name="error_email_invalid">Toto nevyzerá ako e-mailová adresa. Skontroluj ju.</string>
+    <string name="error_password_weak">Heslo musí mať aspoň 8 znakov a obsahovať malé a veľké písmeno a číslicu.</string>
+    <string name="error_email_taken">S týmto e-mailom už účet existuje. Prihlás sa.</string>
+    <string name="error_network">Nie si pripojený na internet. Skús to znova, keď budeš online.</string>
+    <string name="error_signin">Nesprávny e-mail alebo heslo.</string>
+    <string name="error_email_not_confirmed">Tento účet ešte nie je potvrdený. Zadaj kód z e-mailu.</string>
+    <string name="error_code_invalid">Kód je nesprávny alebo vypršal. Skontroluj ho alebo si vyžiadaj nový.</string>
+    <string name="error_same_password">Nové heslo nemôže byť rovnaké ako staré.</string>
+    <string name="error_too_many">Príliš veľa pokusov. Chvíľu počkaj a skús to znova.</string>
+    <string name="error_unknown">Niečo sa nepodarilo. Skús to znova.</string>
+
+    <!-- Sign-in ("Už mám účet") and forgotten password; the reset texts are new -->
+    <string name="signin_title">Prihlásenie</string>
+    <string name="signin_why">Prihlás sa a načítame tvoj profil aj pokrok.</string>
+    <string name="signin_button">Prihlásiť sa</string>
+    <string name="signin_forgot">Zabudnuté heslo?</string>
+    <string name="reset_title">Nové heslo</string>
+    <string name="reset_why">Pošleme ti 6-miestny kód na e-mail, s ním si nastavíš nové heslo.</string>
+    <string name="reset_send">Poslať kód</string>
+    <string name="reset_new_password">Nové heslo</string>
+    <string name="reset_save">Uložiť heslo</string>
+
+    <!-- Old setup and profile screens, replaced in Milestone 5 -->
+    <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
+    <string name="error_date_null">Vyber, prosím, dátum.</string>
+    <string name="error_date_future">Skúška nemôže byť tak neskoro.</string>
+    <string name="error_storage_full">Úložisko je plné.</string>
+    <string name="error_io">Uloženie sa nepodarilo. Skús to znova.</string>
+    <string name="maturitaLanguage_sk">Slovenský vyučovací jazyk</string>
+    <string name="maturitaLanguage_hu">Maďarský vyučovací jazyk</string>
 </resources>

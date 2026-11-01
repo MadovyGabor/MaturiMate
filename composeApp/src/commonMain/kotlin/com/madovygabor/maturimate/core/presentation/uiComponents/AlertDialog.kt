@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import com.madovygabor.maturimate.features.appOnboarding.domain.MaturitaLanguage
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.components.LanguageSelector
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -59,7 +59,7 @@ private fun EditDialogPreview() {
         onConfirm = {}
     ) {
         LanguageSelector(
-            selectedLanguage = MaturitaLanguage.HU,
+            selectedLanguage = TeachingLanguage.HU,
             onLanguageSelected = {}
         )
     }

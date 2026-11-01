@@ -57,6 +57,7 @@ content/
 A complete example is the test fixture `src/test/resources/content-valid/`.
 
 * All ids (`subject_id`, `topic_id`, `learning_unit_id`, `task_id`, …) are written in the files and never change, because the app's user database refers to them.
+* The exam subjects have fixed ids and codes, because the app's onboarding offers them before any content is installed (`CatalogSubject`): 1 `HU_MJL` (Hungarian, Hungarian schools), 2 `SK_SJL` (Slovak, Slovak schools), 3 `ANJ_B1` (English B1), 4 `MAT` (Mathematics), 5 `HU_SJSL` (Slovak language and Slovak literature, Hungarian schools), 6 `ANJ_B2` (English B2). One subject is one exam. A subject's folder uses these.
 * In `tasks.json`, options are referenced by their label (`"key": [{"option": "B"}]`); matching keys also name the prompt label. Ids of options, accepted answers and attachments are derived as `task_id * 100 + position`, so a task has at most 99 of each.
 * Every task and unit has `source_type` (`OWN`, `TEACHER`, `AI_REVIEWED`, `PUBLIC_DOMAIN`). `AI_REVIEWED` needs `reviewed_at`; `TEACHER` and `PUBLIC_DOMAIN` need `source_note`. Provenance is checked, not imported.
 * Texts use only `**bold**`, `*italic*` and `[[n]]` gap markers.

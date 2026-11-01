@@ -1,7 +1,7 @@
--- Study streak and daily activity of the user. Same tables as in dbServer/postgres/01_ddl.sql,
--- without the foreign keys to app_user.
+-- Study streak and daily activity of the user. Same tables as in supabase/migrations,
+-- without the foreign keys to auth.users.
 CREATE TABLE user_streak (
-    user_id             INTEGER NOT NULL,
+    user_id             TEXT    NOT NULL,
     current_streak      INTEGER NOT NULL DEFAULT 0,
     longest_streak      INTEGER NOT NULL DEFAULT 0,
     last_activity_date  TEXT,
@@ -12,7 +12,7 @@ CREATE TABLE user_streak (
 
 CREATE TABLE activity_log (
     activity_id      INTEGER CONSTRAINT pk_activity_log PRIMARY KEY,
-    user_id          INTEGER NOT NULL,
+    user_id          TEXT    NOT NULL,
     activity_date    TEXT    NOT NULL,
     xp_earned        INTEGER NOT NULL DEFAULT 0,
     minutes_studied  INTEGER NOT NULL DEFAULT 0,

@@ -1,0 +1,635 @@
+<title>MaturiMate onboarding</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Manrope:wght@400;600;700&display=swap">
+<style>
+/* Layout: page chrome (toolbar, notes) around one scaled device frame; inside the frame the app layout follows its own width with container queries (phone, tablet, desktop). */
+:root {
+  --page-bg: #efe8dc; --page-fg: #211b13; --page-muted: #5a4f40; --page-line: #d3c4ad; --page-card: #fcf8f1; --page-accent: #7b5800; --page-on-accent: #ffffff;
+  --serif: "Literata", Georgia, "Times New Roman", serif;
+  --sans: "Manrope", system-ui, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page-bg: #0d0a07; --page-fg: #ece1d4; --page-muted: #c2b49e; --page-line: #4f4537; --page-card: #1f1a14; --page-accent: #f4c04e; --page-on-accent: #402d00; color-scheme: dark } }
+:root[data-theme="dark"] { --page-bg: #0d0a07; --page-fg: #ece1d4; --page-muted: #c2b49e; --page-line: #4f4537; --page-card: #1f1a14; --page-accent: #f4c04e; --page-on-accent: #402d00; color-scheme: dark }
+
+/* App themes: the design system tokens (docs/design-system/tokens.json). */
+.t-light {
+  --primary: #7b5800; --on-primary: #ffffff; --primary-container: #ffde9c; --on-primary-container: #261a00;
+  --brand-gold: #f2b630; --on-brand-gold: #2b1f00;
+  --secondary-container: #f6dcc8; --on-secondary-container: #2a1709;
+  --tertiary: #55504a; --tertiary-container: #e9e2d8; --on-tertiary-container: #1e1b17;
+  --error: #b3261e; --background: #fcf8f1; --on-background: #211b13; --on-surface-variant: #4f4537;
+  --sc-lowest: #ffffff; --sc-low: #f7f1e7; --sc: #f2ebdf; --sc-high: #ece4d7; --sc-highest: #e6ddcf;
+  --outline: #807463; --outline-variant: #d3c4ad; --inverse-surface: #362f26; --inverse-on-surface: #f9efe2; --focus: #7b5800;
+  --scrim: rgba(0,0,0,0.38);
+}
+.t-dark {
+  --primary: #f4c04e; --on-primary: #402d00; --primary-container: #5c4300; --on-primary-container: #ffde9c;
+  --brand-gold: #f2b630; --on-brand-gold: #2b1f00;
+  --secondary-container: #59402c; --on-secondary-container: #f6dcc8;
+  --tertiary: #cfc6bb; --tertiary-container: #4b463f; --on-tertiary-container: #e9e2d8;
+  --error: #f2b8b5; --background: #17130e; --on-background: #ece1d4; --on-surface-variant: #d3c4ad;
+  --sc-lowest: #110e0a; --sc-low: #1f1a14; --sc: #241e17; --sc-high: #2e2820; --sc-highest: #39322a;
+  --outline: #9c8f7c; --outline-variant: #4f4537; --inverse-surface: #ece1d4; --inverse-on-surface: #362f26; --focus: #f4c04e;
+  --scrim: rgba(0,0,0,0.6);
+}
+
+html, body { height: 100%; }
+body { background: var(--page-bg); color: var(--page-fg); font-family: var(--sans); }
+.page { display: flex; flex-direction: column; gap: 16px; max-width: 1400px; margin: 0 auto; padding-block: 16px 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.bar h1 { margin: 0; font: 600 22px/28px var(--serif); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg { display: inline-flex; border: 1px solid var(--page-line); border-radius: 999px; overflow: hidden; background: var(--page-card); }
+.seg button { font: 600 13px/18px var(--sans); color: var(--page-fg); background: transparent; border: 0; padding: 8px 14px; cursor: pointer; min-height: 36px; }
+.seg button[aria-pressed="true"] { background: var(--page-accent); color: var(--page-on-accent); }
+.seg button:focus-visible, .restart:focus-visible { outline: 2px solid var(--page-accent); outline-offset: 2px; }
+.restart { font: 600 13px/18px var(--sans); color: var(--page-fg); background: var(--page-card); border: 1px solid var(--page-line); border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 36px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.stage { min-width: 0; display: flex; justify-content: center; }
+.device { position: relative; }
+.device-frame { position: absolute; top: 0; left: 0; transform-origin: 0 0; border-radius: 28px; padding: 8px; background: #2b251d; box-shadow: 0 8px 30px rgba(0,0,0,0.18); }
+.device-frame.pc { border-radius: 12px; padding: 6px; }
+.notes { background: var(--page-card); border: 1px solid var(--page-line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 19px; }
+.notes h2 { margin: 0; font: 700 15px/20px var(--sans); }
+.notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--page-muted); }
+.notes .state { font-family: ui-monospace, Consolas, monospace; font-size: 12px; line-height: 17px; color: var(--page-muted); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--page-bg); border-radius: 8px; padding: 8px; margin: 0; }
+
+/* ---------- The app ---------- */
+.app { container-type: inline-size; container-name: app; overflow: hidden; border-radius: 20px; background: var(--background); color: var(--on-background); font-family: var(--sans); position: relative; }
+.pc .app { border-radius: 6px; }
+.shell { display: grid; grid-template-columns: 1fr; height: 100%; }
+.side { display: none; }
+.main { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.top { display: flex; align-items: center; gap: 12px; padding: 12px 16px 4px; min-height: 48px; }
+.top[hidden] { display: none !important; }
+.iconbtn { width: 44px; height: 44px; border-radius: 999px; border: 0; background: transparent; color: var(--on-surface-variant); display: grid; place-items: center; cursor: pointer; flex: none; }
+.iconbtn:hover { background: var(--sc-high); }
+.ico { width: 24px; height: 24px; fill: currentColor; flex: none; }
+.ico-sm { width: 20px; height: 20px; fill: currentColor; flex: none; }
+.progress { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.pbar { height: 8px; border-radius: 999px; background: var(--sc-highest); overflow: hidden; }
+.pbar > i { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .25s ease; }
+.pbar.gold > i { background: var(--brand-gold); }
+.lbl { font: 600 12px/16px var(--sans); letter-spacing: .4px; text-transform: uppercase; color: var(--on-surface-variant); }
+.scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.content { display: flex; flex-direction: column; gap: 16px; padding: 16px; max-width: 560px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.q { font: 600 28px/36px var(--serif); margin: 8px 0 0; text-wrap: balance; }
+.why { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); margin: -6px 0 0; }
+.later { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); margin: 0; }
+.actions { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 8px; max-width: 560px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.btn { font: 600 14px/20px var(--sans); min-height: 48px; padding: 0 24px; border-radius: 999px; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.btn:focus-visible, .iconbtn:focus-visible, .opt:focus-visible, .chip:focus-visible, .field input:focus-visible, .check input:focus-visible + .box { outline: 2px solid var(--focus); outline-offset: 2px; }
+.btn-filled { background: var(--primary); color: var(--on-primary); }
+.btn-tonal { background: var(--secondary-container); color: var(--on-secondary-container); }
+.btn-outlined { background: transparent; color: var(--primary); border: 1px solid var(--outline); }
+.btn-text { background: transparent; color: var(--primary); }
+.btn:disabled { background: var(--sc-highest); color: var(--on-surface-variant); border-color: transparent; cursor: default; opacity: .9; }
+
+/* option cards */
+.opts { display: grid; gap: 12px; }
+.opt { display: flex; align-items: center; gap: 14px; padding: 14px 16px; min-height: 64px; border-radius: 16px; border: 1px solid var(--outline); background: var(--sc-lowest); color: var(--on-background); cursor: pointer; text-align: left; font: inherit; width: 100%; box-sizing: border-box; }
+.opt .t { font: 700 16px/22px var(--sans); }
+.opt .d { font-size: 13px; line-height: 18px; color: var(--on-surface-variant); }
+.opt .txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.opt .badge { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--sc-high); color: var(--on-surface-variant); flex: none; font: 700 15px/1 var(--sans); }
+.opt .mark { width: 24px; height: 24px; border-radius: 999px; border: 2px solid var(--outline); flex: none; display: grid; place-items: center; }
+.opt[aria-pressed="true"] { border: 2px solid var(--primary); background: var(--primary-container); color: var(--on-primary-container); padding: 13px 15px; }
+.opt[aria-pressed="true"] .d { color: var(--on-primary-container); }
+.opt[aria-pressed="true"] .badge { background: var(--primary); color: var(--on-primary); }
+.opt[aria-pressed="true"] .mark { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+/* subjects */
+.subj { border-radius: 16px; border: 1px solid var(--outline-variant); background: var(--sc-low); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.subj.on { border-color: var(--primary); background: var(--sc-lowest); }
+.subj-row { display: flex; align-items: center; gap: 12px; }
+.subj-row .name { flex: 1; font: 600 15px/21px var(--sans); }
+.cb { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--outline); display: grid; place-items: center; flex: none; background: transparent; color: var(--on-primary); cursor: pointer; padding: 0; }
+.cb.on { background: var(--primary); border-color: var(--primary); }
+.cb.locked { cursor: default; }
+.tag { font: 600 11px/16px var(--sans); padding: 3px 8px; border-radius: 8px; background: var(--tertiary-container); color: var(--on-tertiary-container); white-space: nowrap; }
+.tag.soon { background: var(--secondary-container); color: var(--on-secondary-container); }
+.tag.lock { display: inline-flex; align-items: center; gap: 4px; }
+.levels { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 36px; }
+.sub-lbl { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); padding-left: 36px; margin-bottom: -4px; }
+
+/* chips */
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.chip { min-height: 48px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--outline); background: transparent; color: var(--on-background); font: 600 14px/20px var(--sans); display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+.levels .chip { min-height: 40px; }
+.chip[aria-pressed="true"] { background: var(--primary-container); color: var(--on-primary-container); border-color: var(--primary-container); }
+.hint { background: var(--tertiary-container); color: var(--on-tertiary-container); border-radius: 12px; padding: 12px; font-size: 13px; line-height: 19px; display: flex; gap: 10px; }
+
+/* fields */
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field span { font: 600 12px/16px var(--sans); color: var(--on-surface-variant); }
+.field input { min-height: 52px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--outline); background: var(--sc-lowest); color: var(--on-background); font: 400 16px/24px var(--sans); box-sizing: border-box; width: 100%; color-scheme: inherit; }
+.t-dark .field input { color-scheme: dark; }
+.t-light .field input { color-scheme: light; }
+.field input:focus { outline: none; border: 2px solid var(--primary); padding: 0 13px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.divider { display: flex; align-items: center; gap: 12px; color: var(--on-surface-variant); font-size: 13px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--outline-variant); }
+.check { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 20px; cursor: pointer; }
+.check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.check .box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--outline); display: grid; place-items: center; flex: none; margin-top: 1px; color: var(--on-primary); }
+.check input:checked + .box { background: var(--primary); border-color: var(--primary); }
+.check input:not(:checked) + .box svg { visibility: hidden; }
+.check a { color: var(--primary); }
+.gbtn { background: var(--sc-lowest); color: var(--on-background); border: 1px solid var(--outline); }
+.gmark { width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; font: 700 13px/1 var(--sans); background: var(--sc-high); color: var(--on-background); }
+.signed { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--sc-high); font-size: 14px; }
+
+/* welcome, plan, home */
+.welcome { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding-top: 24px; }
+.welcome img { width: 168px; height: auto; }
+/* The logo is graphite and gold on paper: on a dark surface it sits on a cream tile, like logo.png. */
+.t-dark .welcome img { background: #fcf8f1; border-radius: 28px; padding: 14px; box-sizing: content-box; width: 140px; }
+.t-dark .side .brand img { background: #fcf8f1; border-radius: 12px; padding: 4px; box-sizing: content-box; }
+
+/* calendar dialog (mock of the Material 3 date picker) */
+.cal { max-width: 340px; gap: 12px; padding: 20px 16px 12px; }
+.cal .head { padding: 0 8px; display: flex; flex-direction: column; gap: 4px; }
+.cal .head .big { font: 600 28px/36px var(--serif); }
+.cal .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 8px; border-top: 1px solid var(--outline-variant); padding-top: 8px; }
+.cal .nav b { font: 600 14px/20px var(--sans); }
+.cal .nav .iconbtn { width: 40px; height: 40px; }
+.cal .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.cal .wd { font: 600 12px/32px var(--sans); color: var(--on-surface-variant); }
+.cal .day { width: 40px; height: 40px; margin: 0 auto; border-radius: 999px; border: 0; background: transparent; color: var(--on-background); font: 400 14px/1 var(--sans); cursor: pointer; font-variant-numeric: tabular-nums; }
+.cal .day:hover { background: var(--sc-highest); }
+.cal .day.today { border: 1px solid var(--primary); color: var(--primary); }
+.cal .day.sel { background: var(--primary); color: var(--on-primary); border: 0; }
+.cal .day:disabled { color: var(--outline); cursor: default; background: transparent; opacity: .5; }
+.dlg.cal .dbtns { flex-direction: row; justify-content: flex-end; }
+.cal .arrows { display: flex; }
+.dlg.cal .dbtns .btn { width: auto; }
+.welcome h2 { font: 600 36px/44px var(--serif); margin: 0; }
+.welcome p { margin: 0; font-size: 16px; line-height: 24px; color: var(--on-surface-variant); max-width: 30ch; }
+.plan { background: var(--sc-high); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.plan .num { font: 600 40px/46px var(--serif); font-variant-numeric: tabular-nums; }
+.plan .sub { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.facts { display: grid; gap: 10px; }
+.fact { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--sc-low); font-size: 14px; line-height: 20px; }
+.fact b { font-weight: 700; }
+.home-hello { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.home-hello h2 { margin: 0; font: 600 24px/32px var(--serif); }
+.streak { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: var(--brand-gold); color: var(--on-brand-gold); font: 700 13px/18px var(--sans); }
+.card { background: var(--sc-low); border: 1px solid var(--outline-variant); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.card h3 { margin: 0; font: 600 20px/26px var(--serif); }
+.banner { background: var(--inverse-surface); color: var(--inverse-on-surface); border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 19px; }
+.goalrow { display: flex; justify-content: space-between; }
+
+/* permission dialog (mock of the Android prompt) */
+.dlg-scrim { position: absolute; inset: 0; background: var(--scrim); display: grid; place-items: center; padding: 24px; z-index: 5; }
+.dlg { background: var(--sc-high); color: var(--on-background); border-radius: 28px; padding: 24px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box; }
+.dlg h3 { margin: 0; font: 400 20px/28px var(--sans); text-align: center; }
+.dlg .dbtns { display: flex; flex-direction: column; gap: 4px; }
+.dlg .tagline { font-size: 11px; line-height: 16px; color: var(--on-surface-variant); text-align: center; margin: -8px 0 0; }
+
+/* side panel: tablet landscape and desktop */
+.stepper { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.stepper li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; font: 600 14px/20px var(--sans); color: var(--on-surface-variant); }
+.stepper li .dot { width: 26px; height: 26px; border-radius: 999px; border: 2px solid var(--outline); display: grid; place-items: center; font: 700 12px/1 var(--sans); flex: none; box-sizing: border-box; }
+.stepper li.done .dot { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.stepper li.cur { background: var(--primary-container); color: var(--on-primary-container); }
+.stepper li.cur .dot { border-color: var(--on-primary-container); }
+
+@container app (min-width: 600px) {
+  .content { padding: 32px 24px 16px; gap: 20px; }
+  .actions { padding: 12px 24px 32px; flex-direction: row-reverse; justify-content: flex-start; }
+  .actions .btn { width: auto; min-width: 160px; }
+  .actions.stack { flex-direction: column; align-items: stretch; }
+  .actions.stack .btn { width: 100%; }
+  .chips { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .top { padding: 20px 24px 4px; max-width: 608px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .q { font-size: 32px; line-height: 40px; }
+}
+@container app (min-width: 1000px) {
+  .shell { grid-template-columns: minmax(300px, 38%) 1fr; }
+  .side { display: flex; flex-direction: column; gap: 28px; padding: 40px 32px; background: var(--sc); border-right: 1px solid var(--outline-variant); }
+  .side .brand { display: flex; align-items: center; gap: 12px; }
+  .side .brand img { width: 52px; height: auto; }
+  .side .brand b { font: 600 24px/30px var(--serif); }
+  .side p { margin: 0; color: var(--on-surface-variant); font-size: 14px; line-height: 20px; }
+  .top .pmobile { display: none; }
+  .content { padding-top: 56px; }
+  .welcome img { width: 200px; }
+}
+</style>
+
+<div class="page">
+  <div class="bar">
+    <h1>Onboarding prototípus</h1>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Eszköz">
+        <button type="button" data-device="phone" aria-pressed="true">Telefon</button>
+        <button type="button" data-device="tablet" aria-pressed="false">Tablet</button>
+        <button type="button" data-device="pc" aria-pressed="false">PC</button>
+      </div>
+      <div class="seg" role="group" aria-label="Téma">
+        <button type="button" data-apptheme="light" aria-pressed="true">Világos</button>
+        <button type="button" data-apptheme="dark" aria-pressed="false">Sötét</button>
+      </div>
+      <button type="button" class="restart" id="restart">Újrakezdés</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="stage" id="stage">
+      <div class="device" id="device">
+        <div class="device-frame" id="frame">
+          <div class="app t-light" id="app">
+            <div class="shell">
+              <aside class="side" id="side"></aside>
+              <div class="main">
+                <header class="top" id="top">
+                  <button type="button" class="iconbtn" data-action="back" aria-label="Vissza"><svg class="ico"><use href="#i-back"/></svg></button>
+                  <div class="progress"><span class="lbl" id="steplbl"></span><div class="pbar"><i id="pfill"></i></div></div>
+                </header>
+                <div class="scroll"><div class="content" id="content"></div></div>
+                <div class="actions" id="actions"></div>
+              </div>
+            </div>
+            <div id="dialog"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="notes">
+      <h2>Mi működik a prototípusban</h2>
+      <ul>
+        <li>A teljes flow, a szerepkör szerint: tanár nem kap dátumot és napi célt, a tanuló nem kap dátumot.</li>
+        <li>A kötelező tantárgyak csak érettségizőnél vannak lezárva.</li>
+        <li>A „Tovább” addig tiltott, amíg nincs válasz.</li>
+        <li>A Telefon / Tablet / PC gombbal ugyanaz a képernyő három elrendezésben látszik.</li>
+      </ul>
+      <h2>Ami csak látszat</h2>
+      <ul>
+        <li>A Google- és e-mailes belépés, az értesítési engedély és a mentés.</li>
+        <li>A szöveg végig magyar; a szlovák változat a 3.4-es lépés.</li>
+        <li>A 2027-es és 2028-as érettségi dátum példa (március 15.), a hivatalos dátumot még ellenőrizzük.</li>
+        <li>A PC és a Tablet nézet kicsinyítve fér el a képernyődön, ezért itt a betűk kisebbnek látszanak. Az appban ugyanakkorák lesznek, mint telefonon.</li>
+      </ul>
+      <h2>A választások</h2>
+      <pre class="state" id="state"></pre>
+    </aside>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9zm3 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></symbol>
+  <symbol id="i-school" viewBox="0 0 24 24"><path d="M5 13.2v4L12 21l7-3.8v-4L12 17zM12 3 1 9l11 6 9-4.9V17h2V9z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M21 5c-1.1-.3-2.3-.5-3.5-.5-2 0-4.1.4-5.5 1.5C10.6 4.9 8.5 4.5 6.5 4.5S2.4 4.9 1 6v14.7c1.4-1.1 3.5-1.5 5.5-1.5s4.1.4 5.5 1.5c1.4-1.1 3.5-1.5 5.5-1.5 1.2 0 2.4.1 3.5.5.8.2 2 .6 2 .6V6c-.6-.4-1.3-.8-2-1zm0 13.5c-1.1-.3-2.3-.5-3.5-.5-1.7 0-4.1.6-5.5 1.5V8c1.4-.9 3.8-1.5 5.5-1.5 1.2 0 2.4.2 3.5.5z"/></symbol>
+  <symbol id="i-teacher" viewBox="0 0 24 24"><path d="M20 2H8a2 2 0 0 0-2 2v2.1A4 4 0 0 1 9 9.6V4h11v11h-9v2h9a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-.4 2C6 13 1 14.3 1 17v3h12v-3c0-1.7-2-2.9-4.4-4z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.1-1.6-5.6-4.5-6.3V4a1.5 1.5 0 0 0-3 0v.7C7.6 5.4 6 7.9 6 11v5l-2 2v1h16v-1z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M13.5 1.7s.7 2.7.7 4.9c0 2.1-1.4 3.8-3.5 3.8S7 8.7 7 6.6l.1-.4C5 8.7 3.8 11.8 3.8 15.2A8.2 8.2 0 0 0 12 23.4a8.2 8.2 0 0 0 8.2-8.2c0-5.5-2.7-10.5-6.7-13.5zM11.7 20.4c-1.8 0-3.3-1.4-3.3-3.2 0-1.7 1.1-2.9 2.9-3.3 1.9-.4 3.8-1.3 4.9-2.7.4 1.4.7 2.8.7 4.3 0 2.7-2.3 4.9-5.2 4.9z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zm0-12H5V6h14z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7z"/></symbol>
+</svg>
+
+<script>
+(function () {
+  var LOGO = "../../composeApp/src/commonMain/composeResources/drawable/logoTransparent.png";
+  var DEVICES = { phone: { w: 390, h: 820 }, tablet: { w: 820, h: 1080 }, pc: { w: 1280, h: 800 } };
+  var EXAM = { 2027: "2027-03-15", 2028: "2028-03-15" };
+  var SUBJECTS = [
+    { id: "MJL", name: "Magyar nyelv és irodalom", track: "HU", compulsory: true, ready: true },
+    { id: "SJL", name: "Szlovák nyelv és irodalom", track: "BOTH", compulsory: true, ready: false },
+    { id: "ANG", name: "Angol nyelv", track: "BOTH", compulsory: true, ready: false, level: true },
+    { id: "MAT", name: "Matematika", track: "BOTH", compulsory: false, ready: false }
+  ];
+  var STEP_NAMES = { language: "Nyelv", role: "Szerepkör", subjects: "Tantárgyak", date: "Érettségi dátuma", goal: "Napi cél", reminder: "Emlékeztető", plan: "A te terved", account: "Fiók" };
+
+  var s, device = "phone";
+  function fresh() {
+    return { screen: "welcome", lang: null, role: null, subjects: [], level: null, examChoice: "2027", examDate: EXAM[2027], goal: 10,
+      reminder: null, time: "18:00", first: "", last: "", email: "", pw: "", google: false, consent: false, news: false, account: null, dialog: false, cal: null };
+  }
+  s = fresh();
+
+  var app = document.getElementById("app");
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function flow() {
+    var f = ["language", "role", "subjects"];
+    if (s.role === "student" || s.role === null) f.push("date");
+    if (s.role !== "teacher") f.push("goal");
+    return f.concat(["reminder", "plan", "account"]);
+  }
+  function trackSubjects() { return SUBJECTS.filter(function (x) { return x.track === "BOTH" || x.track === s.lang; }); }
+  function isLocked(sub) { return s.role === "student" && sub.compulsory; }
+  function presetSubjects() {
+    s.subjects = trackSubjects().filter(function (x) { return x.compulsory; }).map(function (x) { return x.id; });
+    if (s.level === null) s.level = "unknown";
+  }
+  function daysUntil(iso) {
+    var d = new Date(iso + "T00:00:00"), t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.round((d - t) / 86400000));
+  }
+  function fmtDate(iso) {
+    var m = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
+    var d = new Date(iso + "T00:00:00");
+    return d.getFullYear() + ". " + m[d.getMonth()] + " " + d.getDate() + ".";
+  }
+  function ico(id, cls) { return '<svg class="' + (cls || "ico") + '" aria-hidden="true"><use href="#i-' + id + '"/></svg>'; }
+
+  function canNext() {
+    switch (s.screen) {
+      case "language": return !!s.lang;
+      case "role": return !!s.role;
+      case "subjects": return s.subjects.length > 0 && (s.subjects.indexOf("ANG") < 0 || !!s.level);
+      case "date": return !!s.examDate;
+      case "goal": return !!s.goal;
+      case "account": return s.consent && (s.google || (s.first.trim() && s.last.trim() && /.+@.+\..+/.test(s.email) && s.pw.length >= 8));
+      default: return true;
+    }
+  }
+
+  function go(screen) { s.screen = screen; s.dialog = false; render(); var sc = app.querySelector(".scroll"); if (sc) sc.scrollTop = 0; }
+  function next() {
+    var f = flow(), i = f.indexOf(s.screen);
+    if (s.screen === "welcome") return go("language");
+    if (i >= 0 && i < f.length - 1) return go(f[i + 1]);
+    if (s.screen === "account") { s.account = s.google ? "google" : "email"; return go("home"); }
+  }
+  function back() {
+    var f = flow(), i = f.indexOf(s.screen);
+    if (s.screen === "signin") return go("welcome");
+    if (i === 0) return go("welcome");
+    if (i > 0) return go(f[i - 1]);
+  }
+
+  function screenHtml() {
+    switch (s.screen) {
+      case "welcome":
+        return '<div class="welcome"><img src="' + LOGO + '" alt="MaturiMate logó"><h2>MaturiMate</h2>' +
+          '<p>Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul.</p></div>';
+      case "language":
+        return '<h2 class="q">Melyik tagozatra jársz?</h2><p class="why">Ebből tudjuk, milyen tantárgyakból érettségizel. Az appot is ezen a nyelven látod.</p>' +
+          '<div class="opts two">' +
+          opt("lang", "HU", '<span class="badge">HU</span>', "Magyar tagozat", "Magyar nyelvű iskola", s.lang === "HU") +
+          opt("lang", "SK", '<span class="badge">SK</span>', "Szlovák tagozat", "Slovenská škola", s.lang === "SK") +
+          '</div><p class="later">Később a profilodban bármikor módosíthatod.</p>';
+      case "role":
+        return '<h2 class="q">Mire szeretnéd használni az appot?</h2><p class="why">Ehhez igazítjuk a következő kérdéseket.</p><div class="opts">' +
+          opt("role", "student", '<span class="badge">' + ico("school") + '</span>', "Érettségire készülök", "Visszaszámlálás, napi cél, gyakorlás az érettségi tantárgyaiból", s.role === "student") +
+          opt("role", "learner", '<span class="badge">' + ico("book") + '</span>', "Csak tanulni szeretnék", "Leckék és gyakorlás, érettségi dátum nélkül", s.role === "learner") +
+          opt("role", "teacher", '<span class="badge">' + ico("teacher") + '</span>', "Tanár vagyok", "Megnézem és kipróbálom a tartalmat", s.role === "teacher") +
+          '</div><p class="later">Később a profilodban bármikor módosíthatod.</p>';
+      case "subjects":
+        var title = s.role === "teacher" ? "Mit tanítasz?" : s.role === "learner" ? "Mit szeretnél tanulni?" : "Miből érettségizel?";
+        var why = s.role === "student" ? "A kötelező tantárgyakat már kijelöltük. Ha mást is választasz, jelöld be." : "Jelöld be, amelyik érdekel. Többet is választhatsz.";
+        var html = '<h2 class="q">' + title + '</h2><p class="why">' + why + '</p><div class="opts">';
+        trackSubjects().forEach(function (sub) {
+          var on = s.subjects.indexOf(sub.id) >= 0, locked = isLocked(sub);
+          html += '<div class="subj' + (on ? " on" : "") + '"><div class="subj-row">' +
+            '<button type="button" class="cb' + (on ? " on" : "") + (locked ? " locked" : "") + '" data-action="subj" data-id="' + sub.id + '"' + (locked ? ' aria-disabled="true"' : "") + ' aria-pressed="' + on + '" aria-label="' + esc(sub.name) + '">' + (on ? ico("check", "ico-sm") : "") + '</button>' +
+            '<span class="name">' + esc(sub.name) + '</span>' +
+            (locked ? '<span class="tag lock">' + ico("lock", "ico-sm") + 'Kötelező</span>' : "") +
+            (!sub.ready ? '<span class="tag soon">Hamarosan</span>' : "") + '</div>';
+          if (sub.level && on) {
+            html += '<span class="sub-lbl">Milyen szinten?</span><div class="levels">' +
+              chip("level", "B1", "B1", s.level === "B1") + chip("level", "B2", "B2", s.level === "B2") + chip("level", "unknown", "Még nem tudom", s.level === "unknown") +
+              '</div>';
+            if (s.level === "unknown") html += '<span class="sub-lbl">B1-gyel kezdünk, később átállíthatod.</span>';
+          }
+          html += '</div>';
+        });
+        return html + '</div><p class="later">Később a profilodban bármikor módosíthatod.</p>';
+      case "date":
+        var yearOpt = function (y) {
+          return opt("exam", String(y), '<span class="badge">' + String(y).slice(2) + '</span>', y + " tavasza",
+            "Írásbeli: " + fmtDate(EXAM[y]) + " · " + daysUntil(EXAM[y]) + " nap múlva", s.examChoice === String(y));
+        };
+        var custom = s.examChoice === "other" && s.examDate;
+        return '<h2 class="q">Mikor érettségizel?</h2><p class="why">Ebből számoljuk a visszaszámlálást és a tervedet.</p><div class="opts">' +
+          yearOpt(2027) + yearOpt(2028) +
+          opt("exam", "other", '<span class="badge">' + ico("cal") + '</span>', "Más dátum",
+            custom ? fmtDate(s.examDate) + " · " + daysUntil(s.examDate) + " nap múlva" : "Válaszd ki a naptárból", s.examChoice === "other") +
+          '</div><p class="later">A tavaszi dátumok példák, a hivatalos időpontot még ellenőrizzük. Később a profilodban bármikor módosíthatod.</p>';
+      case "goal":
+        var hours = Math.round(365 * s.goal / 60);
+        return '<h2 class="q">Mennyi időt szánsz naponta a tanulásra?</h2><p class="why">Ehhez mérjük a napi sorozatodat.</p>' +
+          '<div class="chips">' + [5, 10, 15, 20].map(function (m) { return chip("goal", m, (s.goal === m ? ico("check", "ico-sm") : "") + m + " perc", s.goal === m); }).join("") + '</div>' +
+          '<div class="hint">' + ico("info", "ico-sm") + '<span>Napi ' + s.goal + ' perc egy év alatt körülbelül ' + hours + ' óra gyakorlás.</span></div>' +
+          '<p class="later">Később a profilodban bármikor módosíthatod.</p>';
+      case "reminder":
+        return '<h2 class="q">Emlékeztessünk naponta?</h2><p class="why">Egy rövid értesítés a választott időben segít, hogy ne szakadjon meg a sorozatod.</p>' +
+          '<label class="field"><span>Melyik időpontban?</span><input type="time" id="remtime" value="' + esc(s.time) + '"></label>' +
+          '<div class="hint">' + ico("bell", "ico-sm") + '<span>A következő lépésben a telefon engedélyt kér az értesítésekhez.</span></div>';
+      case "plan":
+        var subs = trackSubjects().filter(function (x) { return s.subjects.indexOf(x.id) >= 0; }).map(function (x) { return x.name + (x.id === "ANG" ? " (" + (s.level === "B2" ? "B2" : "B1") + ")" : ""); });
+        var h = '<h2 class="q">A te terved</h2>';
+        if (s.role === "student") {
+          var d = daysUntil(s.examDate), total = Math.round(d * s.goal / 60);
+          h += '<div class="plan"><span class="lbl">Érettségiig</span><span class="num">' + d + ' nap</span><span class="sub">Napi ' + s.goal + ' perccel ez körülbelül ' + total + ' óra gyakorlás.</span></div>';
+        } else if (s.role === "learner") {
+          h += '<div class="plan"><span class="lbl">Napi cél</span><span class="num">' + s.goal + ' perc</span><span class="sub">Egy év alatt körülbelül ' + Math.round(365 * s.goal / 60) + ' óra.</span></div>';
+        }
+        h += '<div class="facts">' + subs.map(function (n) { return '<div class="fact">' + ico("book", "ico-sm") + '<span>' + esc(n) + '</span></div>'; }).join("");
+        if (s.reminder === "on") h += '<div class="fact">' + ico("bell", "ico-sm") + '<span>Emlékeztető minden nap <b>' + esc(s.time) + '</b>-kor</span></div>';
+        return h + '</div><p class="later">Mindent módosíthatsz később a profilodban.</p>';
+      case "account":
+      case "signin":
+        var signin = s.screen === "signin";
+        var a = '<h2 class="q">' + (signin ? "Belépés" : "Hozd létre a fiókodat") + '</h2><p class="why">' +
+          (signin ? "Lépj be, és betöltjük a profilodat és a haladásodat." : "Így nem vész el a haladásod, és másik telefonon is folytathatod.") + '</p>';
+        if (s.google) {
+          a += '<div class="signed"><span class="gmark">G</span><span>' + (signin ? "Google-fiók: " : "Google-fiókkal: ") + '<b>anna.kovacs@example.com</b></span></div>';
+          if (!signin) a += '<div class="row2"><label class="field"><span>Vezetéknév</span><input id="f-last" value="' + esc(s.last) + '" autocomplete="family-name"></label>' +
+            '<label class="field"><span>Keresztnév</span><input id="f-first" value="' + esc(s.first) + '" autocomplete="given-name"></label></div>';
+        } else {
+          a += '<button type="button" class="btn gbtn" data-action="google"><span class="gmark">G</span>Folytatás Google-lel</button><div class="divider">vagy e-maillel</div>';
+          if (!signin) a += '<div class="row2"><label class="field"><span>Vezetéknév</span><input id="f-last" value="' + esc(s.last) + '" autocomplete="family-name"></label>' +
+            '<label class="field"><span>Keresztnév</span><input id="f-first" value="' + esc(s.first) + '" autocomplete="given-name"></label></div>';
+          a += '<label class="field"><span>E-mail cím</span><input id="f-email" type="email" value="' + esc(s.email) + '" autocomplete="email"></label>' +
+            '<label class="field"><span>Jelszó' + (signin ? "" : " (legalább 8 karakter)") + '</span><input id="f-pw" type="password" value="' + esc(s.pw) + '"></label>';
+        }
+        if (!signin) {
+          a += '<label class="check"><input type="checkbox" id="f-consent"' + (s.consent ? " checked" : "") + '><span class="box">' + ico("check", "ico-sm") + '</span>' +
+            '<span>Elmúltam 16 éves, és elfogadom a <a href="#" data-action="nolink">felhasználási feltételeket</a> és az <a href="#" data-action="nolink">adatvédelmi tájékoztatót</a>.</span></label>' +
+            '<label class="check"><input type="checkbox" id="f-news"' + (s.news ? " checked" : "") + '><span class="box">' + ico("check", "ico-sm") + '</span><span>Kérek híreket és újdonságokat e-mailben. (nem kötelező)</span></label>';
+        }
+        return a;
+      case "home":
+        var name = s.account ? (s.first || "Anna") : null;
+        var hh = '<div class="home-hello"><h2>' + (name ? "Szia, " + esc(name) + "!" : "Szia!") + '</h2><span class="streak">' + ico("flame", "ico-sm") + '0</span></div>';
+        if (!s.account) hh += '<div class="banner">Fiók nélkül nézel körül. Az első lecke után létrehozzuk a fiókodat, hogy ne vesszen el a haladásod.</div>';
+        if (s.account === "returning") hh += '<div class="banner">Betöltöttük a profilodat és a haladásodat.</div>';
+        if (s.role === "student" || s.account === "returning") hh += '<div class="plan"><span class="lbl">Érettségiig</span><span class="num">' + daysUntil(s.examDate) + ' nap</span><span class="sub">Írásbeli: ' + fmtDate(s.examDate) + '</span></div>';
+        if (s.role !== "teacher") hh += '<div style="display:flex;flex-direction:column;gap:8px"><div class="goalrow"><span class="lbl">Mai cél</span><span class="lbl">0 / ' + s.goal + ' perc</span></div><div class="pbar gold"><i style="width:3%"></i></div></div>';
+        hh += '<div class="card"><span class="lbl">Első lecke · 4 perc olvasás</span><h3>A romantika stílusjegyei</h3><span class="why" style="margin:0">Magyar nyelv és irodalom</span></div>';
+        return hh;
+    }
+    return "";
+  }
+  function opt(kind, val, badge, t, d, on) {
+    return '<button type="button" class="opt" data-action="' + kind + '" data-val="' + val + '" aria-pressed="' + on + '">' + badge +
+      '<span class="txt"><span class="t">' + t + '</span><span class="d">' + d + '</span></span><span class="mark">' + (on ? ico("check", "ico-sm") : "") + '</span></button>';
+  }
+  function chip(kind, val, label, on) { return '<button type="button" class="chip" data-action="' + kind + '" data-val="' + val + '" aria-pressed="' + on + '">' + label + '</button>'; }
+
+  function iso(y, m, d) { return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"); }
+  function calendarHtml() {
+    var c = s.cal, months = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
+    var first = new Date(c.y, c.m, 1), offset = (first.getDay() + 6) % 7, days = new Date(c.y, c.m + 1, 0).getDate();
+    var t = new Date(), todayIso = iso(t.getFullYear(), t.getMonth(), t.getDate());
+    var h = '<div class="dlg-scrim"><div class="dlg cal" role="dialog" aria-label="Válassz dátumot">' +
+      '<div class="head"><span class="lbl">Érettségi dátuma</span><span class="big">' + (c.sel ? fmtDate(c.sel) : "Nincs kiválasztva") + '</span></div>' +
+      '<div class="nav"><b>' + c.y + '. ' + months[c.m] + '</b><span class="arrows"><button type="button" class="iconbtn" data-action="cal-prev" aria-label="Előző hónap">' + ico("back") + '</button>' +
+      '<button type="button" class="iconbtn" data-action="cal-next" aria-label="Következő hónap" style="transform:scaleX(-1)">' + ico("back") + '</button></span></div>' +
+      '<div class="grid">' + ["H", "K", "Sze", "Cs", "P", "Szo", "V"].map(function (w) { return '<span class="wd">' + w + '</span>'; }).join("");
+    for (var i = 0; i < offset; i++) h += '<span></span>';
+    for (var d = 1; d <= days; d++) {
+      var v = iso(c.y, c.m, d), past = v < todayIso;
+      h += '<button type="button" class="day' + (v === c.sel ? " sel" : "") + (v === todayIso ? " today" : "") + '" data-action="cal-day" data-val="' + v + '"' + (past ? " disabled" : "") + '>' + d + '</button>';
+    }
+    return h + '</div><div class="dbtns"><button type="button" class="btn btn-text" data-action="cal-cancel">Mégse</button>' +
+      '<button type="button" class="btn btn-text" data-action="cal-ok"' + (c.sel ? "" : " disabled") + '>OK</button></div></div></div>';
+  }
+
+  function actionsHtml() {
+    switch (s.screen) {
+      case "welcome":
+        return '<button type="button" class="btn btn-filled" data-action="next">Kezdjük</button><button type="button" class="btn btn-text" data-action="signin">Már van fiókom</button>';
+      case "reminder":
+        return '<button type="button" class="btn btn-filled" data-action="remind-on">Bekapcsolom</button><button type="button" class="btn btn-text" data-action="remind-off">Most nem</button>';
+      case "account":
+        return '<button type="button" class="btn btn-filled" data-action="next"' + (canNext() ? "" : " disabled") + '>Fiók létrehozása</button><button type="button" class="btn btn-text" data-action="browse">Körülnézek</button>';
+      case "signin":
+        return '<button type="button" class="btn btn-filled" data-action="signin-done"' + (s.google || (/.+@.+\..+/.test(s.email) && s.pw.length > 0) ? "" : " disabled") + '>Belépés</button>';
+      case "plan":
+        return '<button type="button" class="btn btn-filled" data-action="next">Tovább</button>';
+      case "home":
+        return '<button type="button" class="btn btn-filled" data-action="noop">Első lecke kezdése</button>';
+      default:
+        return '<button type="button" class="btn btn-filled" data-action="next"' + (canNext() ? "" : " disabled") + '>Tovább</button>';
+    }
+  }
+
+  function render() {
+    var f = flow(), i = f.indexOf(s.screen), inFlow = i >= 0;
+    $("top").hidden = !(inFlow || s.screen === "signin");
+    $("steplbl").textContent = inFlow ? (i + 1) + ". lépés / " + f.length : "";
+    $("pfill").style.width = inFlow ? ((i + 1) / f.length * 100) + "%" : "0%";
+    $("pfill").parentElement.style.visibility = inFlow ? "visible" : "hidden";
+    $("content").innerHTML = screenHtml();
+    var act = $("actions");
+    act.innerHTML = actionsHtml();
+    act.className = "actions" + (["welcome", "account", "signin", "reminder"].indexOf(s.screen) >= 0 ? " stack" : "");
+    $("side").innerHTML = '<div class="brand"><img src="' + LOGO + '" alt=""><b>MaturiMate</b></div><p>Rövid leckék és gyakorlás az érettségiig.</p>' +
+      (inFlow ? '<ol class="stepper">' + f.map(function (k, n) {
+        var st = n < i ? "done" : n === i ? "cur" : "";
+        return '<li class="' + st + '"><span class="dot">' + (n < i ? ico("check", "ico-sm") : n + 1) + '</span>' + STEP_NAMES[k] + '</li>';
+      }).join("") + '</ol>' : "");
+    $("dialog").innerHTML = s.cal ? calendarHtml() : s.dialog ?'<div class="dlg-scrim"><div class="dlg" role="dialog" aria-label="Értesítési engedély">' + ico("bell") +
+      '<h3>Engedélyezed, hogy a MaturiMate értesítéseket küldjön?</h3><p class="tagline">Ez az Android saját ablaka, itt csak utánozzuk.</p>' +
+      '<div class="dbtns"><button type="button" class="btn btn-text" data-action="perm-yes">Engedélyezés</button><button type="button" class="btn btn-text" data-action="perm-no">Nem engedélyezem</button></div></div></div>' : "";
+    $("state").textContent = JSON.stringify({
+      képernyő: s.screen, tagozat: s.lang, szerepkör: s.role, tantárgyak: s.subjects,
+      angol_szint: s.subjects.indexOf("ANG") >= 0 ? (s.level === "B2" ? "B2" : "B1") : null,
+      érettségi: s.role === "student" ? s.examDate : null, napi_cél: s.role !== "teacher" ? s.goal : null,
+      emlékeztető: s.reminder === "on" ? s.time : s.reminder === "off" ? "nem" : null,
+      fiók: s.account || "anonim", név: (s.last + " " + s.first).trim() || null, hírlevél: s.news
+    }, null, 2);
+  }
+
+  app.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-action]"); if (!b || b.disabled) return;
+    var a = b.getAttribute("data-action"), v = b.getAttribute("data-val");
+    if (a === "nolink") { e.preventDefault(); return; }
+    if (a === "next") return next();
+    if (a === "back") return back();
+    if (a === "signin") { s.google = false; s.email = ""; s.pw = ""; return go("signin"); }
+    if (a === "signin-done") { s.account = "returning"; s.role = s.role || "student"; s.lang = s.lang || "HU"; s.first = s.first || "Anna"; return go("home"); }
+    if (a === "browse") { s.account = null; return go("home"); }
+    if (a === "lang") { if (s.lang !== v) { s.lang = v; s.subjects = []; } }
+    if (a === "role") { s.role = v; s.subjects = []; }
+    if (a === "subj") {
+      var sub = SUBJECTS.filter(function (x) { return x.id === b.getAttribute("data-id"); })[0];
+      if (isLocked(sub)) return;
+      var k = s.subjects.indexOf(sub.id);
+      if (k >= 0) s.subjects.splice(k, 1); else s.subjects.push(sub.id);
+    }
+    if (a === "level") s.level = v;
+    if (a === "exam") {
+      if (v === "other") {
+        var base = s.examChoice === "other" && s.examDate ? s.examDate : EXAM[2027], bd = new Date(base + "T00:00:00");
+        s.cal = { y: bd.getFullYear(), m: bd.getMonth(), sel: s.examChoice === "other" ? s.examDate : null };
+      } else { s.examChoice = v; s.examDate = EXAM[v]; }
+    }
+    if (a === "cal-prev" || a === "cal-next") {
+      s.cal.m += a === "cal-next" ? 1 : -1;
+      if (s.cal.m < 0) { s.cal.m = 11; s.cal.y--; } if (s.cal.m > 11) { s.cal.m = 0; s.cal.y++; }
+    }
+    if (a === "cal-day") s.cal.sel = v;
+    if (a === "cal-cancel") s.cal = null;
+    if (a === "cal-ok") { s.examChoice = "other"; s.examDate = s.cal.sel; s.cal = null; }
+    if (a === "goal") s.goal = Number(v);
+    if (a === "remind-on") { s.dialog = true; }
+    if (a === "remind-off") { s.reminder = "off"; return next(); }
+    if (a === "perm-yes" || a === "perm-no") { s.reminder = a === "perm-yes" ? "on" : "off"; s.dialog = false; return next(); }
+    if (a === "google") { s.google = true; s.first = s.first || "Anna"; s.last = s.last || "Kovács"; }
+    render();
+  });
+  app.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.id === "f-first") s.first = t.value;
+    if (t.id === "f-last") s.last = t.value;
+    if (t.id === "f-email") s.email = t.value;
+    if (t.id === "f-pw") s.pw = t.value;
+    if (t.id === "remtime") s.time = t.value || "18:00";
+    if (t.id === "examdate") s.examDate = t.value;
+    var act = $("actions"); act.innerHTML = actionsHtml();
+  });
+  app.addEventListener("change", function (e) {
+    if (e.target.id === "f-consent") s.consent = e.target.checked;
+    if (e.target.id === "f-news") s.news = e.target.checked;
+    $("actions").innerHTML = actionsHtml(); $("state").textContent; render();
+  });
+
+  // Entering the subject step fills the compulsory subjects once.
+  var _go = go;
+  go = function (screen) { if (screen === "subjects" && s.subjects.length === 0) presetSubjects(); _go(screen); };
+
+  // Device and theme controls
+  function fit() {
+    var d = DEVICES[device], frame = $("frame"), pad = device === "pc" ? 12 : 16;
+    var stage = $("stage"), avail = stage.clientWidth;
+    var maxH = Math.max(480, window.innerHeight - 120);
+    var scale = Math.min(1, avail / (d.w + pad), maxH / (d.h + pad));
+    app.style.width = d.w + "px"; app.style.height = d.h + "px";
+    frame.className = "device-frame" + (device === "pc" ? " pc" : "");
+    frame.style.transform = "scale(" + scale + ")";
+    $("device").style.width = Math.floor((d.w + pad) * scale) + "px";
+    $("device").style.height = Math.floor((d.h + pad) * scale) + "px";
+  }
+  document.querySelectorAll("[data-device]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      device = b.getAttribute("data-device");
+      document.querySelectorAll("[data-device]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      fit();
+    });
+  });
+  function setTheme(t) {
+    app.classList.toggle("t-dark", t === "dark"); app.classList.toggle("t-light", t !== "dark");
+    document.querySelectorAll("[data-apptheme]").forEach(function (x) { x.setAttribute("aria-pressed", String(x.getAttribute("data-apptheme") === t)); });
+  }
+  document.querySelectorAll("[data-apptheme]").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-apptheme")); }); });
+  try { if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) setTheme("dark"); } catch (e) {}
+  $("restart").addEventListener("click", function () { s = fresh(); go("welcome"); });
+  window.addEventListener("resize", fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe($("stage"));
+
+  fit();
+  render();
+})();
+</script>

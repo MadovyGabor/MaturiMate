@@ -12,20 +12,22 @@ For the current status of each part, see the "Current status" section of the [RE
 
 | Component | Version (from `../gradle/libs.versions.toml`) | Notes |
 |---|---|---|
-| Kotlin Multiplatform | Kotlin 2.2.20 | Android target and desktop `jvm()` target |
-| Compose Multiplatform | 1.9.1 | Shared UI for Android and desktop |
-| Navigation3 for Compose Multiplatform | 1.0.0-alpha06 | Alpha dependency |
-| AndroidX Lifecycle (ViewModel) | 2.10.0-alpha07 | Alpha dependency |
-| Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
-| DataStore Preferences | 1.2.0 | Stores user preferences on all targets |
-| kotlinx.serialization | 1.9.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
-| kotlinx.datetime | 0.7.1 | Used for `LocalDate` and time zone handling |
-| kotlinx.coroutines | 1.10.2 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
-| SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
-| PostgreSQL JDBC driver | 42.7.4 | `../tools/content-pipeline` only (server copy of the content) |
-| PostgreSQL | 16 (Docker) | Local development database (`../dbServer/docker-compose.yml`); not used by the app |
+| Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target |
+| Gradle, Android Gradle Plugin | 9.5.1, 8.13.2 | AGP 8 runs on Gradle up to 9.5; see [DECISIONS](DECISIONS.md) 2026-10-31 |
+| Compose Multiplatform | 1.11.1 | Shared UI for Android and desktop; 1.12 needs AGP 9 |
+| Navigation3 for Compose Multiplatform | 1.1.2 | |
+| AndroidX Lifecycle (ViewModel) | 2.10.0 | |
+| Koin | 4.2.2 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
+| kotlinx.serialization | 1.12.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
+| kotlinx.datetime | 0.8.0 | Used for `LocalDate` and time zone handling |
+| kotlinx.coroutines | 1.11.0 | `StateFlow`, `MutableSharedFlow`, and the Swing dispatcher on desktop |
+| SQLDelight | 2.4.1 | Content and user databases (`:database` module) |
+| PostgreSQL JDBC driver | 42.7.14 | `../tools/content-pipeline` only (server copy of the content) |
+| PostgreSQL | 17 (Supabase), 16 (Docker) | Server database on Supabase; a local copy in Docker (`../dbServer/docker-compose.yml`) for development and the importer |
+| supabase-kt (Auth, ComposeAuth) | 3.8.0 | Sign-up, sign-in and password reset; Ktor 3.5.1 with the OkHttp engine on Android and desktop |
+| Supabase CLI | 2.122.0 | Schema migrations (`../supabase/migrations`) |
 
-Android targets use `minSdk` 24, `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
+Android targets use `minSdk` 26 (needed by supabase-kt), `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
 ---
 
@@ -39,7 +41,7 @@ Gradle modules:
 | `:database` | Kotlin Multiplatform library (Android, desktop) | SQLDelight schemas of the content and user databases, platform drivers, content installer |
 | `:tools:content-pipeline` | Kotlin/JVM command-line tool | Validates the content files; exports `content.db`; imports the server copy into PostgreSQL |
 
-Other folders: `dbServer/` (local PostgreSQL: `docker-compose.yml`, `.env.example`, and the schema `postgres/01_ddl.sql` with 30 tables; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
+Other folders: `supabase/` (Supabase project settings `config.toml` and the schema in `migrations/`, 27 tables), `dbServer/` (local PostgreSQL in Docker with the same schema and a stand-in for Supabase Auth; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
 
 The app source tree, relative to `../composeApp/src`:
 
@@ -74,7 +76,7 @@ jvmTest/kotlin/...          # Content provider and repository tests
 * `features/subjects` contains only `presentation/`.
 * `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
-`appOnboarding` domain contains `UserPreferences`, `UserPreferencesRepository`, `MaturitaValidator`, and `DataError`. The data layer contains `UserPreferencesRepositoryImpl`, which uses DataStore. The presentation layer contains the onboarding ViewModel and screens.
+`userProfile` holds the profile, settings and role of the local user: the domain has `UserProfile`, `TeachingLanguage`, `UserRole`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database (`user_profile`, `user_settings`, `user_role`; saving a role replaces the student, learner or teacher role and keeps roles the server gives). `appOnboarding` has `MaturitaValidator` in its domain and the onboarding screens in its presentation layer. Each question screen has its own small ViewModel; the one-answer questions (language, role, and the next simple ones) extend `OnboardingQuestionViewModel<T>`, which loads the saved answer, keeps the selection, saves on Next and shows a snackbar when saving fails, so a screen's ViewModel only says how its answer is read and saved.  `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client, `SupabaseAccountRepository` over Postgrest (the account's profile, settings, role, subjects and consents on the server) and `AccountSetupImpl`, which runs after a sign-up or a sign-in: it moves the guest's rows to the account (`LocalUserProvider.adoptAccount`), then uploads the profile and consents, or downloads the account's profile. Supabase classes stay in the data layer and in `core/network/`.
 
 The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
 
@@ -87,19 +89,23 @@ The subject list in `SubjectListTabScreen.kt` is a static `listOf(...)` (line 40
 
 ## 4. Presentation Pattern
 
-Presentation follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `ProfileViewModel.kt:40` declares `private val _profileUiState = MutableStateFlow(ProfileUiState())` and `ProfileViewModel.kt:43` exposes `val profileUiState = _profileUiState.asStateFlow()`.
+Presentation follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `SignInViewModel` declares `private val _state = MutableStateFlow(SignInUiState())` and exposes `val state = _state.asStateFlow()`. A ViewModel that only shows saved data maps the repository's flow with `stateIn` (`PlanViewModel`, `ProfileViewModel`).
 
 The app does not use intents, a reducer, or a single-state MVI loop. Screens call ViewModel methods directly.
 
 One-shot messages (for example, snackbars) go through a singleton `SnackbarController` (`core/presentation/utils/snackbar/SnackbarController.kt:11`), which uses a `MutableSharedFlow` (line 14).
 
-Profile statistics are mock data. `ProfileViewModel.kt:47` calls `loadMockSubjectStats()`, and the values are hard-coded in lines 164-171.
+**Profile.** `ProfileScreen` keeps a small back stack of its own: the answers, or one onboarding question opened to change its answer. Inside it `LocalEditingAnswer` is true, so `OnboardingScaffold` shows a plain back button and no step list, and the main button says "Mentés". The open main tab is held in `App`, outside the `key(...)` rebuild, so a language changed in the profile keeps the profile open.
 
 ---
 
 ## 5. Navigation
 
 Navigation uses JetBrains Navigation3 with `@Serializable` routes. `Route` is a `sealed interface Route : NavKey` (`core/presentation/navigation/Route.kt:8`). Routes include `Route.ExamWrite(val examId: String)` (`Route.kt:21`). The back stack is held with `rememberNavBackStack`.
+
+**App language and start screen.** `App()` reads `AppViewModel`, which follows the saved profile: the app language (the teaching language; the phone's language until one is picked) and whether the onboarding is finished. The language is applied with `LocalAppLocale` (an `expect` in `core/presentation/locale/`: `Locale.setDefault` on desktop, the overridden `LocalConfiguration` on Android), and `key(language, onboardingCompleted)` builds the screens again when either changes. The root route is `Main` once `user_profile.onboarding_completed_at` is set, otherwise `AppOnboarding`. Android keeps its splash screen until the profile has been read once.
+
+**Onboarding resume.** `onboardingBackStack(profile)` (`features/appOnboarding/presentation/OnboardingResume.kt`) turns the saved answers into the onboarding back stack: the welcome screen, then every answered step, then the first unanswered one. So the onboarding continues where it stopped after a restart or a language change, and Back still walks through the earlier answers. Each step says how its route looks and when it is answered (`OnboardingStep.route`, `isAnswered`); `nextRoute(step, role)` gives the screen after a step for the role, and the onboarding ends after the last step that has a screen.
 
 `NavigationRoot.kt` registers the polymorphic subclasses for `Main`, `AppOnboarding`, and `ExamWrite` (lines 28-32). `ExamWrite` renders `ExamWriteScreen()` (lines 64-66). `ExamWriteScreen` currently displays the text "Exam Write Screen" (`features/examTaking/ExamWriteScreen.kt:25`). The `History` tab shows a placeholder text (`core/presentation/navigation/MainFrame/MainFrameNavigation.kt:61`).
 
@@ -111,25 +117,27 @@ Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(
 
 `MainFrame.kt` wraps its content in `BoxWithConstraints` (line 38) and sets `isDesktop = maxWidth > LayoutConstants.DesktopThreshold` (line 40). `LayoutConstants.DesktopThreshold` is `600.dp` (`StatickUiSettings.kt:33`). Below the threshold, the frame uses a `NavigationBar` (line 84). At or above the threshold, it uses a `NavigationRail` (line 46).
 
-`ProfileScreen.kt:136` contains its own check, `val isDesktop = 600.dp < this.maxWidth`, which duplicates the threshold instead of using the constant.
-
 ---
 
 ## 7. Dependency Injection and Platform Code
 
-Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:25`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`. The platform modules provide `DatabaseDriverFactory` (from `:database`); the shared module provides the user database, `ContentDatabaseProvider` (bound as `ContentDatabaseSource`), `ContentRepository` and `ProgressRepository`.
+Koin modules are in `core/di/`. The platform module is declared as an `expect` in `AppModul.kt:25`, with actuals in `AppModul.android.kt:11` and `AppModul.jvm.kt:12`. The platform modules provide `DatabaseDriverFactory` (from `:database`); the shared module provides the user database, `ContentDatabaseProvider` (bound as `ContentDatabaseSource`), `ContentRepository`, `ProgressRepository`, `UserProfileRepository`, the Supabase client and `AuthRepository`.
+
+The Supabase client is built in `core/network/SupabaseClientFactory.kt` from `SupabaseConfig`, with the Auth plugin (PKCE flow) and ComposeAuth (native Google sign-in on Android). `platformAuthConfig()` is an `expect`: on desktop the browser returns from an OAuth sign-in to a local server on port 47613 (`DESKTOP_AUTH_CALLBACK_PORT`); Android needs nothing yet. The session is kept by the library's default storage: SharedPreferences on Android, Java Preferences on desktop.
+
+`rememberNotificationPermissionRequest` (`core/presentation/NotificationPermission.kt`) is an `expect`: Android asks for `POST_NOTIFICATIONS` from Android 13; desktop needs no permission.
 
 `Modifier.systemPadding` is declared as an `expect` in `core/presentation/androidSystemPadding.kt:5`, with actuals in the Android and JVM source sets (`androidSystemPadding.android.kt:6`, `androidSystemPadding.jvm.kt:5`).
 
-On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`AppModul.jvm.kt:14` and `:18`); the databases and the DataStore file are stored there. On Android, the databases are in the app's `databases/` folder.
+On desktop, the app data directory is `System.getProperty("user.home")` plus `.maturimate` (`AppModul.jvm.kt`); the databases are stored there. On Android, the databases are in the app's `databases/` folder.
 
 ---
 
-## 8. Preferences Storage
+## 8. Profile and Settings Storage
 
-`UserPreferencesRepositoryImpl.kt` stores preferences in DataStore. The keys are defined in a private `Keys` object (line 35): `language`, `eng_level`, `is_vpu_enabled`, `exam_date` (stored as epoch days in a `long`), and `setup_completed`. `saveUserPreferences` writes all values in a single `dataStore.edit` transaction (lines 73-80).
+The profile and settings live in the local user database, in the `user_profile` and `user_settings` rows of the local user (a guest id from `LocalUserProvider` until sign-up). `UserProfileRepositoryImpl` saves one field at a time, so the onboarding can save after every screen; the first save creates both rows and takes the time zone from the phone. Saving the teaching language also sets `ui_language`. `profile` is a flow over the joined rows (`selectUserProfile` in `Profile.sq`) and emits again after every change.
 
-The VPUS/SNI toggle is stored and shown in the onboarding and profile screens. On `main`, the toggle has no effect on any timer, because no exam timer exists. Under the current plan the VPUS/SNI time extension is dropped, so the toggle and its stored value (`is_vpu_enabled`) will be removed during the onboarding rework (see the [ROADMAP](ROADMAP.md)).
+The start screen is chosen in `MainActivity` and the desktop `main.kt`: home when `onboarding_completed_at` is set, otherwise the onboarding. DataStore and the VPUS/SNI toggle were removed in step 5.1–5.2.
 
 ---
 
@@ -140,10 +148,10 @@ Offline-first, with three databases:
 | Database | Where | Contents | Written by |
 |---|---|---|---|
 | Content (SQLite, `content.db`) | Phone, read-only | 13 content tables: subjects, topic tree, learning units, tasks with options, keys and accepted answers, tags | The exporter; installed as a whole file |
-| User (SQLite, `maturimate_user.db`) | Phone | 8 user tables: profile, settings, subjects, attempts, unit and task progress, streak, daily activity | The app |
-| Server (PostgreSQL) | Local Docker now; a hosted server later | All 30 tables of `../dbServer/postgres/01_ddl.sql`: accounts and synced progress, plus a copy of the content | The importer (content); a backend later (accounts, progress) |
+| User (SQLite, `maturimate_user.db`) | Phone | 9 user tables: profile, role, settings, subjects, attempts, unit and task progress, streak, daily activity; plus the phone-only `local_user` (whose rows these are) | The app |
+| Server (PostgreSQL) | Supabase; a local copy in Docker | The 27 tables of `../supabase/migrations`: synced progress, plus a copy of the content. Accounts are Supabase Auth users (`auth.users`) | The importer (content); the app through Supabase, protected by row level security (accounts, progress) |
 
-The PostgreSQL schema in `dbServer/postgres/01_ddl.sql` is the design and is not changed. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `app_user`).
+The PostgreSQL schema in `supabase/migrations` comes from the original 30-table design: the design's own sign-in tables (`app_user`, `user_session`, `password_reset_token`) are replaced by Supabase Auth, every `user_id` is a `uuid` referencing `auth.users`, `user_profile.date_of_birth` is optional, and `user_consent` also records the age confirmation (`AGE_16`). Schema changes are new migration files; an applied migration is never edited. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `auth.users`). Two columns were added after the original design: `user_subject.level` (English level) and `user_profile.onboarding_completed_at` (see [DECISIONS](DECISIONS.md) 2026-10-31). A change to the user database also gets a SQLDelight migration (`database/src/commonMain/sqldelight/user/migrations/<version>.sqm`, the same change as the Supabase migration), so the database on an installed app is upgraded instead of rebuilt.
 
 ### 9.1 Content pipeline
 
@@ -169,15 +177,14 @@ Files (Git) ──┤
 
 `features/learning/domain` holds the domain models (`Subject`, `Topic`, `LearningUnit`, `Task`, `Attempt`, `UnitProgress`, `TaskProgress`, `Streak`, `DailyActivity`), the `ContentRepository` and `ProgressRepository` interfaces, and `LearningError` (`NO_CONTENT`, `NOT_FOUND`, `DATABASE_ERROR`). Results use `OperationResult`.
 
-`features/learning/data` holds `ContentRepositoryImpl` (reads through `ContentDatabaseSource`), `ProgressRepositoryImpl` and the mappers. The generated SQLDelight classes do not leave the data layer. In the domain, task keys reference options by label. The phone has one local user; its rows use `LOCAL_USER_ID = 1` until accounts exist. The repositories hold no rules: grading, unlocking and repetition come as use cases with the screens.
+`features/learning/data` holds `ContentRepositoryImpl` (reads through `ContentDatabaseSource`), `ProgressRepositoryImpl` and the mappers. The generated SQLDelight classes do not leave the data layer. In the domain, task keys reference options by label. The phone has one local user: `LocalUserProvider` (`core/database`) stores a guest id (`guest-` and a random UUID) on the first start, and sign-up replaces it with the Supabase account id (step 6.5). `user_id` is text on the phone. On the phone `first_name` and `last_name` may be empty, because a guest has no name yet. The repositories hold no rules: grading, unlocking and repetition come as use cases with the screens.
 
 ---
 
 ## 10. Not built yet
 
 * Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
-* Content updates by download, accounts, a backend and sync (see the [ROADMAP](ROADMAP.md)).
-* Migrations of the user database: the schema may change until the first tester installs the app.
+* Content updates by download and sync of progress (see the [ROADMAP](ROADMAP.md)). Accounts exist: sign-up, sign-in and the profile on the server (step 5.12).
 
 ---
 
@@ -187,7 +194,7 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 18 | Content provider with the bundled file (skipped without it); repositories; placeholder test |
+| `:composeApp` (`jvmTest`, `commonTest`) | 132 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
 Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
 
