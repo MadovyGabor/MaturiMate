@@ -29,6 +29,8 @@ data class SubjectItem(
     val locked: Boolean,
     /** The installed content has this subject; "Hamarosan" otherwise. */
     val ready: Boolean,
+    /** English shown once, with the level question; the level decides which English subject is saved. */
+    val asksLevel: Boolean = false,
 )
 
 data class SubjectsUiState(
@@ -38,14 +40,15 @@ data class SubjectsUiState(
     val saving: Boolean = false,
 ) {
     private val selectedSubjects get() = items.filter { it.selected }
-    val needsLevel: Boolean get() = selectedSubjects.any { it.subject.hasLevels }
+    val needsLevel: Boolean get() = selectedSubjects.any { it.asksLevel }
     val canContinue: Boolean
         get() = items.isNotEmpty() && selectedSubjects.isNotEmpty() && (!needsLevel || level != null) && !saving
 }
 
 /**
  * The subjects question: compulsory subjects come from the teaching language and are locked for
- * students; English also asks for its level (docs/onboarding/README.md, section 3).
+ * students; English also asks for its level (docs/onboarding/README.md, section 3). A teacher
+ * gets the subjects of both school languages and picks English B1 and B2 as two subjects.
  */
 class SubjectsViewModel(
     private val repository: UserProfileRepository,
@@ -64,18 +67,24 @@ class SubjectsViewModel(
                 is OperationResult.Error -> emptySet()
             }
             val role = profile?.role
-            val saved = profile?.subjects.orEmpty().associateBy { it.subjectId }
-            val items = CatalogSubject.forLanguage(profile?.teachingLanguage).map { subject ->
+            val saved = profile?.subjects.orEmpty().mapNotNull { CatalogSubject.byId(it.subjectId) }
+            val offered = CatalogSubject.offeredTo(role, profile?.teachingLanguage)
+            // everyone but a teacher sees one English card, with the level question
+            val shown = if (role == UserRole.TEACHER) offered else offered - CatalogSubject.ENGLISH_B2
+            val items = shown.map { subject ->
                 val locked = role == UserRole.STUDENT && subject.compulsory
+                val asksLevel = role != UserRole.TEACHER && subject.level != null
+                val isSaved = if (asksLevel) saved.any { it.level != null } else subject in saved
                 SubjectItem(
                     subject = subject,
                     // nothing saved yet: a student starts with the compulsory subjects
-                    selected = locked || if (saved.isEmpty()) false else subject.id in saved,
+                    selected = locked || isSaved,
                     locked = locked,
                     ready = subject.code in readyCodes,
+                    asksLevel = asksLevel,
                 )
             }
-            val savedLevel = saved.values.firstNotNullOfOrNull { it.level }
+            val savedLevel = if (role == UserRole.TEACHER) null else saved.firstNotNullOfOrNull { it.level }
             _state.update {
                 it.copy(
                     role = role,
@@ -105,11 +114,8 @@ class SubjectsViewModel(
         _state.update { it.copy(saving = true) }
         val level = if (current.level == LevelChoice.B2) SubjectLevel.B2 else SubjectLevel.B1
         val subjects = current.items.filter { it.selected }.map { item ->
-            UserSubject(
-                subjectId = item.subject.id,
-                compulsory = item.locked,
-                level = if (item.subject.hasLevels) level else null,
-            )
+            val subject = if (item.asksLevel) CatalogSubject.english(level) else item.subject
+            UserSubject(subjectId = subject.id, compulsory = item.locked)
         }
         viewModelScope.launch {
             when (val result = repository.saveSubjects(subjects)) {

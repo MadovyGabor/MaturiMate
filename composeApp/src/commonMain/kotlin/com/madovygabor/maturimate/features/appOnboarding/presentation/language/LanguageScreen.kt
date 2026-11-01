@@ -76,7 +76,7 @@ fun LanguageContent(
         )
         Text(
             text = stringResource(Res.string.language_why),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Column(
@@ -101,7 +101,7 @@ fun LanguageContent(
         }
         if (!LocalEditingAnswer.current) Text(
             text = stringResource(Res.string.onboarding_change_later),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

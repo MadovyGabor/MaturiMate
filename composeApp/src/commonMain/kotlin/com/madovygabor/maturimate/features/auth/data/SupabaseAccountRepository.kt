@@ -43,7 +43,7 @@ class SupabaseAccountRepository(
                 lastName = lastName,
                 teachingLanguage = profile.teachingLanguage?.name,
                 graduationDate = profile.graduationDate?.toString(),
-                onboardingCompletedAt = profile.onboardingCompletedAt?.toString(),
+                onboardingCompletedAt = null,
             )
         )
         postgrest.from("user_settings").upsert(
@@ -67,6 +67,14 @@ class SupabaseAccountRepository(
         postgrest.from("user_subject").delete { filter { eq("user_id", userId) } }
         if (profile.subjects.isNotEmpty()) {
             postgrest.from("user_subject").insert(profile.subjects.map { it.toRow(userId) })
+        }
+        Unit
+    }
+
+    override suspend fun completeOnboarding(finishedAt: Instant) = call {
+        val userId = userId()
+        postgrest.from("user_profile").update(mapOf("onboarding_completed_at" to finishedAt.toString())) {
+            filter { eq("user_id", userId) }
         }
         Unit
     }

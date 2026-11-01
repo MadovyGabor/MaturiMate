@@ -149,11 +149,11 @@ fun ReminderContent(
         progress = OnboardingProgress(OnboardingStep.REMINDER, onboardingSteps(role), onBack),
     ) {
         Text(stringResource(Res.string.reminder_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.reminder_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.reminder_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(stringResource(Res.string.reminder_time), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
         TimeField(state.time.hoursAndMinutes(), onClick = { picking = true })
         if (showPermissionHint) {
-            Text(stringResource(Res.string.reminder_permission_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(Res.string.reminder_permission_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     if (picking) {

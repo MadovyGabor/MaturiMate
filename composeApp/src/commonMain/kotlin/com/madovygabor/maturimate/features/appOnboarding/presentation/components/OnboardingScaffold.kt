@@ -217,7 +217,7 @@ private fun SidePanel(progress: OnboardingProgress?, modifier: Modifier) {
         }
         Text(
             text = stringResource(Res.string.onboarding_side_tagline),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (progress != null) StepList(progress)

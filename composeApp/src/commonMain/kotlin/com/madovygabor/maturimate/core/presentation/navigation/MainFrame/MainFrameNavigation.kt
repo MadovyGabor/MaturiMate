@@ -27,9 +27,12 @@ fun MainFrameNavigation(
 
     // Remember the navigation state with the starting route and top-level routes
     val navigationState = rememberNavigationState(
-        startRoute = mainTab.value,
+        startRoute = Route.Main.Subject,
         topLevelRoutes = TOP_LEVEL_NAVBAR_DESTINATIONS.keys
     )
+    // reopen the tab that was open before a rebuild (a language change in the profile); read once,
+    // so the state and the navigator below stay the same objects
+    remember(navigationState) { navigationState.topLevelRoute = mainTab.value }
     LaunchedEffect(navigationState.topLevelRoute) { mainTab.value = navigationState.topLevelRoute }
 
     // Create a navigator to handle navigation actions

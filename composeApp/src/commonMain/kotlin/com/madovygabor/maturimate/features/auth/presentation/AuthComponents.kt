@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.auth.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -28,7 +29,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /** A check box with its text; the whole row toggles it. */
 @Composable
-fun CheckRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun CheckRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, error: String? = null) {
+    Column {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -42,7 +44,9 @@ fun CheckRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit)
             onCheckedChange = null,
             colors = CheckboxDefaults.colors(uncheckedColor = MaterialTheme.colorScheme.outline),
         )
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+    }
+    if (error != null) Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
     }
 }
 

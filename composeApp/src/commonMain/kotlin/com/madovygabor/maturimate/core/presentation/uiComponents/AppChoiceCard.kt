@@ -82,7 +82,7 @@ fun AppChoiceCard(
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(
                     description,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
                 )
             }

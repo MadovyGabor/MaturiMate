@@ -9,6 +9,9 @@ import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import com.madovygabor.maturimate.core.presentation.utils.UiText
+import maturimate.composeapp.generated.resources.Res
+import maturimate.composeapp.generated.resources.account_consent_required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +32,8 @@ data class AccountUiState(
     val email: String = "",
     val password: String = "",
     val consent: Boolean = false,
+    /** Shown after a try to go on without the required consent. */
+    val consentMissing: Boolean = false,
     val news: Boolean = false,
     /** Shown after the first try to create the account. */
     val errors: Map<AccountField, FieldError> = emptyMap(),
@@ -77,7 +82,21 @@ class AccountViewModel(
         }
     }
 
-    fun onConsentChanged(value: Boolean) = _state.update { it.copy(consent = value) }
+    fun onConsentChanged(value: Boolean) = _state.update { it.copy(consent = value, consentMissing = false) }
+
+    /**
+     * "Folytatás Google-lel": [start] opens Google right away. The consent is asked after it,
+     * together with the name, and nothing is written to the server before both are given.
+     */
+    fun onGoogle(start: () -> Unit) {
+        if (_state.value.busy) return
+        start()
+    }
+
+    private fun askForConsent() {
+        _state.update { it.copy(consentMissing = true) }
+        viewModelScope.launch { snackbarController.showSnackbar(message = UiText.StringRes(Res.string.account_consent_required)) }
+    }
 
     fun onNewsChanged(value: Boolean) = _state.update { it.copy(news = value) }
 
@@ -97,7 +116,9 @@ class AccountViewModel(
             }
         }
         _state.update { it.copy(errors = errors) }
-        if (errors.isNotEmpty() || !current.consent || current.busy) return
+        if (current.busy) return
+        if (!current.consent) return askForConsent()
+        if (errors.isNotEmpty()) return
         if (current.googleEmail != null) return finishSignUp()
         busy {
             when (val result = auth.signUp(current.email.trim(), current.password)) {

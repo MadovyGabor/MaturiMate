@@ -53,8 +53,11 @@
     <string name="level_unknown">Ešte neviem</string>
     <string name="subjects_level_unknown_hint">Začneme úrovňou B1, neskôr ju môžeš zmeniť.</string>
     <string name="subject_hu_mjl">Maďarský jazyk a literatúra</string>
+    <string name="subject_hu_sjsl">Slovenský jazyk a slovenská literatúra</string>
     <string name="subject_sk_sjl">Slovenský jazyk a literatúra</string>
     <string name="subject_anj">Anglický jazyk</string>
+    <string name="subject_anj_b1">Anglický jazyk (B1)</string>
+    <string name="subject_anj_b2">Anglický jazyk (B2)</string>
     <string name="subject_mat">Matematika</string>
 
     <!-- Onboarding: exam date -->
@@ -156,6 +159,7 @@
     <string name="signin_password">Heslo</string>
     <string name="account_password_hint">Aspoň 8 znakov, s malým a veľkým písmenom a číslicou.</string>
     <string name="account_consent">Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov.</string>
+    <string name="account_consent_required">Ak chceš pokračovať, prijmi podmienky a zásady ochrany súkromia.</string>
     <string name="account_news">Chcem dostávať novinky e-mailom.</string>
     <string name="account_create">Vytvoriť účet</string>
     <string name="account_browse">Najprv sa poobzerám</string>

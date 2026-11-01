@@ -82,7 +82,7 @@ fun GoalContent(
         progress = OnboardingProgress(OnboardingStep.GOAL, onboardingSteps(role), onBack),
     ) {
         Text(stringResource(Res.string.goal_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.goal_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.goal_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         // two chips a row on a phone, all four from the medium width, as in the prototype
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val perRow = if (maxWidth >= MaterialTheme.layout.breakpointMedium) GOAL_OPTIONS.size else 2
@@ -108,11 +108,11 @@ fun GoalContent(
             val hours = hoursPerYear(minutes)
             Text(
                 pluralStringResource(Res.plurals.goal_year_hint, hours, minutes, hours),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (!LocalEditingAnswer.current) Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!LocalEditingAnswer.current) Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

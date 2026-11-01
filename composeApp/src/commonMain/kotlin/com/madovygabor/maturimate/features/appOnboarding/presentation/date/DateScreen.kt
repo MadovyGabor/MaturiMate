@@ -83,7 +83,7 @@ fun DateContent(
         progress = OnboardingProgress(OnboardingStep.DATE, onboardingSteps(UserRole.STUDENT), onBack),
     ) {
         Text(stringResource(Res.string.date_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.date_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.date_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(
             modifier = Modifier.selectableGroup(),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space3),
@@ -110,7 +110,7 @@ fun DateContent(
                 onClick = { picking = true },
             )
         }
-        if (!LocalEditingAnswer.current) Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!LocalEditingAnswer.current) Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 
     if (picking) {

@@ -103,7 +103,7 @@ fun SignInContent(state: SignInUiState, actions: SignInActions) {
         Text(stringResource(title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
         when (state.phase) {
             SignInPhase.FORM -> {
-                Text(stringResource(Res.string.signin_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(Res.string.signin_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 AppButton(
                     text = stringResource(Res.string.account_google),
                     onClick = actions.onGoogle,
@@ -121,15 +121,15 @@ fun SignInContent(state: SignInUiState, actions: SignInActions) {
                 )
             }
             SignInPhase.CONFIRM -> {
-                Text(stringResource(Res.string.code_sent, state.email.trim()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(Res.string.code_sent, state.email.trim()), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 CodeField(state, actions)
             }
             SignInPhase.RESET_REQUEST -> {
-                Text(stringResource(Res.string.reset_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(Res.string.reset_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 EmailField(state, actions)
             }
             SignInPhase.RESET_CODE -> {
-                Text(stringResource(Res.string.code_sent, state.email.trim()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(Res.string.code_sent, state.email.trim()), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 CodeField(state, actions)
                 AppTextField(
                     value = state.newPassword,

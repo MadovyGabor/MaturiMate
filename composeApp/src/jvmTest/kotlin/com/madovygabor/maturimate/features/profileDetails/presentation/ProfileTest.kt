@@ -13,7 +13,6 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
-import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
@@ -52,7 +51,7 @@ class ProfileTest {
     private suspend fun student(repository: UserProfileRepositoryImpl) = repository.apply {
         saveTeachingLanguage(TeachingLanguage.HU)
         saveRole(UserRole.STUDENT)
-        saveSubjects(listOf(UserSubject(1, true), UserSubject(2, true), UserSubject(3, true, SubjectLevel.B2)))
+        saveSubjects(listOf(UserSubject(1, true), UserSubject(5, true), UserSubject(6, true)))
         saveGraduationDate(LocalDate(2027, 3, 15))
         saveDailyGoal(10)
     }

@@ -51,8 +51,11 @@
     <string name="level_unknown">Még nem tudom</string>
     <string name="subjects_level_unknown_hint">B1-gyel kezdünk, később átállíthatod.</string>
     <string name="subject_hu_mjl">Magyar nyelv és irodalom</string>
+    <string name="subject_hu_sjsl">Szlovák nyelv és szlovák irodalom</string>
     <string name="subject_sk_sjl">Szlovák nyelv és irodalom</string>
     <string name="subject_anj">Angol nyelv</string>
+    <string name="subject_anj_b1">Angol nyelv (B1)</string>
+    <string name="subject_anj_b2">Angol nyelv (B2)</string>
     <string name="subject_mat">Matematika</string>
 
     <!-- Onboarding: exam date -->
@@ -147,6 +150,7 @@
     <string name="signin_password">Jelszó</string>
     <string name="account_password_hint">Legalább 8 karakter, kis- és nagybetűvel és számmal.</string>
     <string name="account_consent">Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót.</string>
+    <string name="account_consent_required">A folytatáshoz fogadd el a feltételeket és az adatvédelmi tájékoztatót.</string>
     <string name="account_news">Kérek híreket és újdonságokat e-mailben.</string>
     <string name="account_create">Fiók létrehozása</string>
     <string name="account_browse">Körülnézek</string>

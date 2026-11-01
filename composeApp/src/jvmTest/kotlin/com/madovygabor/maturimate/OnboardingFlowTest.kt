@@ -198,7 +198,7 @@ class OnboardingFlowTest {
 
         val profile = profile()
         assertEquals(UserRole.STUDENT, profile.role)
-        assertEquals(listOf(1L, 2L, 3L), profile.subjects.map { it.subjectId })
+        assertEquals(listOf(1L, 5L, 3L), profile.subjects.map { it.subjectId })
         assertEquals(10, profile.dailyGoalMinutes)
         assertTrue(profile.graduationDate != null && profile.isOnboardingCompleted)
         assertTrue(!profile.reminderEnabled)
@@ -208,6 +208,9 @@ class OnboardingFlowTest {
     fun everyAnswerCanBeChangedInTheProfile() = runDesktopComposeUiTest(412, 915) {
         setContent { App() }
         goThroughAsStudent()
+        // the tabs keep working after the first switch
+        onAllNodes(androidx.compose.ui.test.hasText("Előzmények")).onFirst().performClick()
+        waitUntil(timeoutMillis = 5_000) { onAllNodes(androidx.compose.ui.test.hasText("History Screen")).fetchSemanticsNodes().isNotEmpty() }
         onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
         waitFor(Res.string.profile_title)
 

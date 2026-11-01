@@ -107,6 +107,20 @@ class AccountTest {
     }
 
     @Test
+    fun uploadLeavesTheFinishToTheLastStep() = runBlocking {
+        val repository = remote()
+        repository.uploadProfile(student.copy(onboardingCompletedAt = Instant.fromEpochMilliseconds(9_000)), "Anna", "Kovács")
+        assertTrue("onboarding_completed_at" !in requests[0].second, requests[0].second)
+
+        requests.clear()
+        repository.completeOnboarding(Instant.parse("2026-11-01T10:00:00Z"))
+
+        val (call, body) = requests.single()
+        assertEquals("PATCH user_profile", call)
+        assertTrue("\"onboarding_completed_at\":\"2026-11-01T10:00:00Z\"" in body, body)
+    }
+
+    @Test
     fun consentsAreRecordedWithTheDocumentVersion() = runBlocking {
         remote().recordConsents(setOf(ConsentType.TERMS, ConsentType.AGE_16))
 
@@ -161,12 +175,21 @@ class AccountTest {
     private class FakeAccount(val remote: RemoteProfile? = null) : AccountRepository {
         var uploaded: Triple<UserProfile, String, String>? = null
         var consents: Set<ConsentType> = emptySet()
+        var completedAt: Instant? = null
+        val steps = mutableListOf<String>()
         override suspend fun uploadProfile(profile: UserProfile, firstName: String, lastName: String): OperationResult<Unit, AuthError> {
             uploaded = Triple(profile, firstName, lastName)
+            steps += "upload"
             return OperationResult.Success(Unit)
         }
         override suspend fun recordConsents(consents: Set<ConsentType>): OperationResult<Unit, AuthError> {
             this.consents = consents
+            steps += "consents"
+            return OperationResult.Success(Unit)
+        }
+        override suspend fun completeOnboarding(finishedAt: Instant): OperationResult<Unit, AuthError> {
+            completedAt = finishedAt
+            steps += "complete"
             return OperationResult.Success(Unit)
         }
         override suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError> = OperationResult.Success(remote)
@@ -191,7 +214,9 @@ class AccountTest {
             .completeSignUp("Anna", "Kovács", marketing = true, finishedAt = Instant.fromEpochMilliseconds(9_000))
 
         assertEquals(OperationResult.Success(Unit), result)
-        assertEquals(Instant.fromEpochMilliseconds(9_000), account.uploaded?.first?.onboardingCompletedAt)
+        // the server sees the onboarding finished only after everything else is written
+        assertEquals(listOf("upload", "consents", "complete"), account.steps)
+        assertEquals(Instant.fromEpochMilliseconds(9_000), account.completedAt)
         assertTrue(profiles.profile.first()!!.isOnboardingCompleted)
         assertEquals(USER_ID, provider.userId())
         assertEquals(UserRole.LEARNER, account.uploaded?.first?.role)

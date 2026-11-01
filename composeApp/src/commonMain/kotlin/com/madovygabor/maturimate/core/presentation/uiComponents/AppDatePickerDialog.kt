@@ -1,5 +1,10 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import com.madovygabor.maturimate.core.presentation.theme.spacing
+import com.madovygabor.maturimate.core.presentation.utils.longDate
+
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,7 +67,21 @@ fun AppDatePickerDialog(
     ) {
         DatePicker(
             state = state,
-            title = { Text(title, style = MaterialTheme.typography.labelLarge) },
+            // the default title is not padded, and the default headline is written in English
+            title = {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.space6, end = MaterialTheme.spacing.space3, top = MaterialTheme.spacing.space4),
+                )
+            },
+            headline = {
+                Text(
+                    state.selectedDateMillis?.let { longDate(it.date()) } ?: title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.space6, end = MaterialTheme.spacing.space3, bottom = MaterialTheme.spacing.space3),
+                )
+            },
             showModeToggle = false,
         )
     }
