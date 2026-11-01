@@ -131,9 +131,9 @@ Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-
 * [x] **6.3.** `composeApp` is renamed to `shared` (paths, Compose resources imports, CI, docs); nothing else changes.
 * [x] **6.4.** New `:androidApp` module (activity, application class, manifest, launcher icons, splash); `:shared` becomes a Kotlin Multiplatform library with the Android-KMP library plugin. The application id stays `com.madovygabor.maturimate`.
 * [x] **6.5.** New `:desktopApp` module (`main.kt`, window, desktop packaging, hot reload).
-* [ ] **6.6.** AGP 9.5 and Gradle 9.8, compileSdk and targetSdk 37, built-in Kotlin; obsolete Gradle properties removed.
-* [ ] **6.7.** Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11, Ktor 3.6; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced; unused catalog entries removed.
-* [ ] **6.8.** CI (new action versions, JDK 21), run commands and documentation follow the new layout; test on a phone (update over the installed app, Google sign-in, content, reminder) and on desktop.
+* [x] **6.6.** AGP 9.5 and Gradle 9.8, compileSdk and targetSdk 37, built-in Kotlin; obsolete Gradle properties removed.
+* [x] **6.7.** Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11, Ktor 3.6; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced; unused catalog entries removed.
+* [x] **6.8.** CI (new action versions, JDK 21), run commands and documentation follow the new layout; test on a phone (update over the installed app, Google sign-in, content, reminder) and on desktop. *Tested by the owner on 2026-11-01 (Android with Google sign-in, desktop with hot reload, Android Studio). The first CI run on the new setup comes with the next push.*
 
 ---
 

@@ -59,7 +59,7 @@ import maturimate.shared.generated.resources.subjects_why_other
 import maturimate.shared.generated.resources.subjects_why_student
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Step 3 of the onboarding: the subjects, and the English level when English is chosen. */

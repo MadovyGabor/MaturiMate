@@ -1,6 +1,6 @@
 # MaturiMate Architecture
 
-This document describes the architecture of the code in this repository. It was last checked against the code on 2026-10-28, after Milestone 1 (core and database), which is merged into `main`.
+This document describes the architecture of the code in this repository. Its stack and module layout were last checked on 2026-11-01, after the toolchain update (Milestone 6); the other sections were last checked on 2026-10-28, after Milestone 1 (core and database).
 
 For the current status of each part, see the "Current status" section of the [README](../README.md).
 
@@ -12,11 +12,13 @@ For the current status of each part, see the "Current status" section of the [RE
 
 | Component | Version (from `../gradle/libs.versions.toml`) | Notes |
 |---|---|---|
-| Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target |
-| Gradle, Android Gradle Plugin | 9.5.1, 8.13.2 | AGP 8 runs on Gradle up to 9.5; see [DECISIONS](DECISIONS.md) 2026-10-31 |
-| Compose Multiplatform | 1.11.1 | Shared UI for Android and desktop; 1.12 needs AGP 9 |
-| Navigation3 for Compose Multiplatform | 1.1.2 | |
-| AndroidX Lifecycle (ViewModel) | 2.10.0 | |
+| Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target in `:shared` and `:database` |
+| Gradle, Android Gradle Plugin | 9.8.2, 9.5.0 | Built-in Kotlin; shared modules use the Android-KMP library plugin (`com.android.kotlin.multiplatform.library`); see [toolchain-agp9.md](toolchain-agp9.md) |
+| Compose Multiplatform | 1.12.2 | Shared UI for Android and desktop (Jetpack Compose 1.12.1 on Android) |
+| Material 3 (Compose Multiplatform) | 1.9.0 | Own version line; the newest stable |
+| Navigation3 for Compose Multiplatform | 1.2.0 | |
+| AndroidX Lifecycle (ViewModel) | 2.11.0 | |
+| Compose Hot Reload | 1.2.0 | `:desktopApp` (`./gradlew :desktopApp:hotRun`) |
 | Koin | 4.2.2 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
 | kotlinx.serialization | 1.12.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
 | kotlinx.datetime | 0.8.0 | Used for `LocalDate` and time zone handling |
@@ -24,10 +26,10 @@ For the current status of each part, see the "Current status" section of the [RE
 | SQLDelight | 2.4.1 | Content and user databases (`:database` module) |
 | PostgreSQL JDBC driver | 42.7.14 | `../tools/content-pipeline` only (server copy of the content) |
 | PostgreSQL | 17 (Supabase), 16 (Docker) | Server database on Supabase; a local copy in Docker (`../dbServer/docker-compose.yml`) for development and the importer |
-| supabase-kt (Auth, ComposeAuth) | 3.8.0 | Sign-up, sign-in and password reset; Ktor 3.5.1 with the OkHttp engine on Android and desktop |
+| supabase-kt (Auth, ComposeAuth) | 3.8.0 | Sign-up, sign-in and password reset; Ktor 3.6.1 with the OkHttp engine on Android and desktop |
 | Supabase CLI | 2.122.0 | Schema migrations (`../supabase/migrations`) |
 
-Android targets use `minSdk` 26 (needed by supabase-kt), `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
+Android uses `minSdk` 26 (needed by supabase-kt), `compileSdk` 37, and `targetSdk` 37, with `jvmTarget` `JVM_11`. The build runs on JDK 17 or newer (CI uses 21). Desktop packaging (`:desktopApp`) is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
 ---
 
@@ -51,22 +53,28 @@ The app source tree, relative to `../shared/src`:
 commonMain/kotlin/com/madovygabor/maturimate/
 ├── App.kt
 ├── core/
-│   ├── database/           # ContentDatabaseProvider (installs and opens the content database)
+│   ├── config/             # SupabaseConfig.kt (public values only)
+│   ├── database/           # ContentDatabaseProvider, LocalUserProvider
 │   ├── di/                 # Koin modules (AppModul.kt, initKoin.kt)
 │   ├── domain/error/       # Error.kt, OperationResult.kt
-│   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/
+│   ├── network/            # Supabase client factory
+│   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/, locale/
 └── features/
-    ├── appOnboarding/      # data/, domain/, presentation/
+    ├── appOnboarding/      # domain/, presentation/ (one folder per question screen)
+    ├── auth/               # data/, domain/, presentation/ (account and sign-in screens)
     ├── examTaking/         # ExamWriteScreen.kt (placeholder)
     ├── learning/           # data/, domain/ (no presentation yet)
     ├── profileDetails/     # presentation/ only
-    └── subjects/           # presentation/ only
+    ├── subjects/           # presentation/ only
+    └── userProfile/        # data/, domain/ (profile, subjects, exam dates)
 commonMain/composeResources/files/   # bundled content.db + content-manifest.json (generated, gitignored)
 androidMain/kotlin/...      # Android actuals (AppModul.android.kt, ...)
 jvmMain/kotlin/...          # Desktop actuals (AppModul.jvm.kt, ...)
 commonTest/kotlin/...       # One placeholder test (ComposeAppCommonTest.kt)
-jvmTest/kotlin/...          # Content provider and repository tests
+jvmTest/kotlin/...          # Repository, ViewModel and screen tests, and the whole onboarding flow
 ```
+
+The app modules hold only the entry points: `../androidApp/src/main` (`MainActivity.kt`, `core/di/MyApplication.kt`, `AndroidManifest.xml`, `res/`) and `../desktopApp/src/main` (`main.kt`).
 
 ---
 

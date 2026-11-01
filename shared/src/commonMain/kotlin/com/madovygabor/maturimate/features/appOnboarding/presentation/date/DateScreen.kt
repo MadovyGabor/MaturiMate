@@ -45,7 +45,7 @@ import maturimate.shared.generated.resources.date_written_days
 import maturimate.shared.generated.resources.onboarding_change_later
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Step 4 for students: the exam date, from two spring exams or the calendar. */

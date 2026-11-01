@@ -37,7 +37,7 @@ import maturimate.shared.generated.resources.goal_year_hint
 import maturimate.shared.generated.resources.onboarding_change_later
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
 /** The daily goals offered, in minutes; [DEFAULT_GOAL] is preselected. */

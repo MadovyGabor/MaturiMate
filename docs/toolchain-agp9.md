@@ -1,6 +1,6 @@
 # Toolchain update: AGP 9 (Milestone 6)
 
-Plan for [Milestone 6](ROADMAP.md#milestone-6-toolchain-update-agp-9). Status: **approved in principle on 2026-11-01; waiting for the go to start 6.2**. Versions were checked on 2026-11-01 against Maven Central, Google Maven, the Gradle release list and GitHub releases.
+Plan for [Milestone 6](ROADMAP.md#milestone-6-toolchain-update-agp-9). Status: **done on 2026-11-01** and tested by the owner on a phone, on desktop and in Android Studio; the first CI run on the new setup comes with the next push. Versions were checked on 2026-11-01 against Maven Central, Google Maven, the Gradle release list and GitHub releases.
 
 The goal: the build moves to Android Gradle Plugin 9 and the newest **stable** version of every tool and library, and the project gets the module layout JetBrains recommends: one `shared` module and one small entry module per app. The app looks and behaves the same; only the build changes.
 
@@ -239,6 +239,8 @@ Only a rename, no build logic changes, so the diff is easy to review.
 * **6.3:** the generated resources class moved to `maturimate.shared.generated.resources`; the APK carries the resources under `assets/composeResources/maturimate.shared.generated.resources/` (strings, fonts, drawables, `content.db`).
 * **6.4:** `shared` keeps Koin Android and the OkHttp engine for its Android actuals; `androidApp` gets `activity-compose`, Koin Android and AndroidX Compose, the splash screen and, for debug builds, the UI tooling. The merged manifest keeps the package name, the permissions and the application and activity classes.
 * **6.5:** the desktop test classpath (`shared` `jvmTest`) gets `compose.desktop.currentOs` and `kotlinx-coroutines-swing`, which the desktop app used to bring; the app itself gets them in `desktopApp`.
+* **6.6:** no opt-out flag was needed. Warnings that remain come from plugins, not from our build scripts: SQLDelight calls the deprecated `Configuration.setVisible`, and Compose Hot Reload uses an attribute type that Gradle 10 will refuse; both are for their next releases. AGP also warns that `shared/src/commonTest` exists while Android host tests are off; that is intended, the tests run on the desktop target. None of the Android 17 (API 37) behaviour changes touches the app: certificate transparency and Encrypted Client Hello affect only how TLS is checked, and the app has no orientation lock that large screens would ignore.
+* **6.7:** the new versions did not deprecate anything that our code uses, apart from the old `@Preview` import (15 files). Resolved versions checked with `:shared:dependencies`: Navigation3 1.2.0, Lifecycle 2.11.0, Material 3 1.9.0, Ktor 3.6.1 (supabase-kt asks for 3.5.1 and gets 3.6.1).
 
 ---
 

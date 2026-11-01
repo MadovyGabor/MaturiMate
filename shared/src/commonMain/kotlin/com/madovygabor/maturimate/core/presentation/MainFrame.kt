@@ -23,7 +23,7 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.TOP_LEVEL_NAVBAR_DESTINATIONS
 import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 
 // MainFrame composable that provides responsive bottom or side navigation based on screen size.

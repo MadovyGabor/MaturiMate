@@ -22,7 +22,7 @@ import maturimate.shared.generated.resources.welcome_have_account
 import maturimate.shared.generated.resources.welcome_start
 import maturimate.shared.generated.resources.welcome_tagline
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * First screen of the onboarding: the logo, one sentence on what the app gives,

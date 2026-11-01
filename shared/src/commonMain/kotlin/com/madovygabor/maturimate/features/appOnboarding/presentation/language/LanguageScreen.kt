@@ -31,7 +31,7 @@ import maturimate.shared.generated.resources.language_title
 import maturimate.shared.generated.resources.language_why
 import maturimate.shared.generated.resources.onboarding_change_later
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
 /**

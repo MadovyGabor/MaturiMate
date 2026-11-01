@@ -30,12 +30,12 @@ kotlin {
 
 
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.datetime)
@@ -60,8 +60,8 @@ kotlin {
             implementation(libs.supabase.compose.auth)
             implementation(libs.supabase.postgrest)
 
-            //For material icons and google fonts
-            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            // Material icons
+            implementation(libs.compose.material.icons.extended)
 
         }
 
@@ -91,4 +91,9 @@ kotlin {
         }
 
     }
+}
+
+dependencies {
+    // Compose previews in Android Studio; the Android-KMP library has no debug variant
+    "androidRuntimeClasspath"(libs.compose.ui.tooling)
 }
