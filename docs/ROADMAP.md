@@ -150,15 +150,22 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 
 ## Milestone 9: UI polish and beta
 
-*Android is the target platform; desktop is for development. Small bugs, polish, animations and platform tuning are collected and done here, after the main subjects work, not between the earlier milestones (owner's choice, 2026-11-01).*
+*Android is the target platform; desktop is for development. Small bugs, polish, animations and platform tuning are collected during the earlier milestones and done here, once the Hungarian subject is ready and before the release (owner's choice, 2026-11-01).*
 
 * [ ] **9.0. Toolchain to the newest versions, on its own branch:** AGP 9 with `composeApp` split into a shared Kotlin Multiplatform library and a thin Android app module, compileSdk 37, Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11 and the newest Gradle; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced. See [DECISIONS](DECISIONS.md) 2026-10-31.
+* [ ] **9.0a. Bug fixes:** the bugs found while testing on a phone since the onboarding (5.15), collected here as they are found:
+  * The labels of the bottom navigation bar are Hungarian in both languages.
+  * After a change of the teaching language the subjects are not asked again (a Hungarian school's subjects stay when switching to Slovak).
+  * The "Tantárgyak" tab still shows the old hard-coded list, not the user's subjects (rebuilt with the units, Milestone 6).
+  * `AppViewModelTest.teachingLanguageSetsTheAppLanguageAndTheEndGoesHome` times out now and then without a code change (seen on 2026-11-01; passes on a rerun).
+  * Google sign-in on desktop is not tried yet (it works on Android).
+  * Unconfirmed e-mail sign-ups stay in Supabase Auth; a cleanup belongs to 10.3a.
 * [ ] **9.1.** Animations, reading view polish, accessibility checks.
 * [ ] **9.2.** Review of the user database tables before the first testers install the app.
 * [ ] **9.3.** Closed beta of the Hungarian subject on Android.
 * [ ] **9.4.** Localization of the UI strings (Slovak and Hungarian).
 * [ ] **9.5. Profile settings:** the name and the account in the profile, "Fiók létrehozása" for guests, and a reset that starts over. *Added on 2026-11-01; not part of the onboarding.*
-* [ ] **9.6. Exam dates:** the written exams start on the Monday of the second week of March; the app computes the date from this rule and takes the official date when it is published. *Added on 2026-11-01; how the official date reaches the app is open.*
+* [/] **9.6. Exam dates:** the written exams start on the Monday of the second week of March; the app computes the date from this rule (done on 2026-11-01, `ExamDates.secondWeekWeekday`) and takes the official date when it is published. *How the official date reaches the app is open.*
 
 ---
 

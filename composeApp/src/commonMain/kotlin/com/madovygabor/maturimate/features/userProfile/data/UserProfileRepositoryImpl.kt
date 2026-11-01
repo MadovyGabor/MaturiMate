@@ -18,7 +18,6 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
