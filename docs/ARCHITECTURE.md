@@ -37,13 +37,15 @@ Gradle modules:
 
 | Module | Kind | Contents |
 |---|---|---|
-| `:composeApp` | Kotlin Multiplatform app (Android, desktop) | UI, features, Koin wiring |
+| `:shared` | Kotlin Multiplatform library (Android, desktop) | UI, features, Koin wiring, platform (expect/actual) code, Compose resources |
+| `:androidApp` | Android app | `MainActivity`, `MyApplication`, manifest, launcher icons, splash theme |
+| `:desktopApp` | Kotlin/JVM desktop app | `main()`, the window, desktop packaging, Compose Hot Reload |
 | `:database` | Kotlin Multiplatform library (Android, desktop) | SQLDelight schemas of the content and user databases, platform drivers, content installer |
 | `:tools:content-pipeline` | Kotlin/JVM command-line tool | Validates the content files; exports `content.db`; imports the server copy into PostgreSQL |
 
 Other folders: `supabase/` (Supabase project settings `config.toml` and the schema in `migrations/`, 27 tables), `dbServer/` (local PostgreSQL in Docker with the same schema and a stand-in for Supabase Auth; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
 
-The app source tree, relative to `../composeApp/src`:
+The app source tree, relative to `../shared/src`:
 
 ```
 commonMain/kotlin/com/madovygabor/maturimate/
@@ -70,7 +72,7 @@ jvmTest/kotlin/...          # Content provider and repository tests
 
 ## 3. Layering
 
-`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 6. The other features contain only presentation code:
+`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 7. The other features contain only presentation code:
 
 * `features/profileDetails` contains only `presentation/`.
 * `features/subjects` contains only `presentation/`.
@@ -168,7 +170,7 @@ Files (Git) ──┤
 
 ### 9.2 Content in the app
 
-* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `../composeApp/src/commonMain/composeResources/files`. These files are gitignored; a build without them runs, but has no content.
+* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `../shared/src/commonMain/composeResources/files`. These files are gitignored; a build without them runs, but has no content.
 * `ContentInstaller` (`:database`) installs a content file only if its schema version equals the app's, its size and SHA-256 match the manifest, and its `content_version` is higher than the installed one. It writes a temporary file and renames it over the old one, manifest last. The user database is never touched.
 * `ContentDatabaseProvider` (`core/database`) installs the bundled file on first use and opens the installed one; it returns null when there is no content. Checked on the Android emulator (API 37): installed on first start, "up to date" after a restart.
 * Not built yet: downloading newer content files. They will go through the same installer; the open content driver must be closed before a swap.
@@ -183,7 +185,7 @@ Files (Git) ──┤
 
 ## 10. Not built yet
 
-* Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
+* Screens that use the content and progress (Milestone 7). The current subject and exam screens still show static data (sections 3 and 5).
 * Content updates by download and sync of progress (see the [ROADMAP](ROADMAP.md)). Accounts exist: sign-up, sign-in and the profile on the server (step 5.12).
 
 ---
@@ -194,9 +196,9 @@ Files (Git) ──┤
 |---|---|---|
 | `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 132 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:shared` (`jvmTest`, `commonTest`) | 132 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
-Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
+Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest`.
 
 CI (`.github/workflows/ci.yml`) runs on every push and pull request, with one job per module so a failure points at the part that broke:
 
@@ -204,6 +206,6 @@ CI (`.github/workflows/ci.yml`) runs on every push and pull request, with one jo
 |---|---|---|
 | Database (SQLDelight) | `:database:jvmTest` | |
 | Content pipeline | `:tools:content-pipeline:test` | PostgreSQL 16 service; `REQUIRE_POSTGRES=true`, so the importer tests fail instead of being skipped |
-| App | `:composeApp:jvmTest`, then the Android APK and the desktop jar | Bundles the test fixture as content, so the content provider test runs too |
+| App | `:shared:jvmTest`, then the Android APK (`:androidApp`) and the desktop jar (`:desktopApp`) | Bundles the test fixture as content, so the content provider test runs too |
 
 Each job publishes its JUnit results as its own check and as a table (every test, passed or failed) in the run summary.

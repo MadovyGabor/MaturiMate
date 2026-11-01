@@ -112,17 +112,17 @@ jobs:
         run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101
 
       - name: Tests
-        run: ./gradlew :composeApp:jvmTest
+        run: ./gradlew :shared:jvmTest
 
       - name: Test report
         if: always()
         uses: mikepenz/action-junit-report@v5
         with:
           check_name: App tests
-          report_paths: composeApp/build/test-results/jvmTest/*.xml
+          report_paths: shared/build/test-results/jvmTest/*.xml
           detailed_summary: true
           include_passed: true
           require_tests: true
 
       - name: Build Android and desktop
-        run: ./gradlew :composeApp:assembleDebug :composeApp:jvmJar
+        run: ./gradlew :androidApp:assembleDebug :desktopApp:jar

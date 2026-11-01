@@ -25,13 +25,14 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 ## Commands
 
 ```bash
-./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest   # all tests
-./gradlew :composeApp:assembleDebug                                            # Android debug APK
-./gradlew :composeApp:run                                                      # desktop app
-./gradlew :composeApp:compileKotlinJvm                                         # quick compile check
+./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest   # all tests
+./gradlew :androidApp:assembleDebug                                        # Android debug APK
+./gradlew :desktopApp:run                                                  # desktop app
+./gradlew :desktopApp:hotRun                                               # desktop app with hot reload
+./gradlew :shared:compileKotlinJvm                                         # quick compile check
 ```
 
-`:composeApp:jvmTest` needs bundled content; CI creates it with `./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101`.
+`:shared:jvmTest` needs bundled content; CI creates it with `./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101`.
 
 ## Rules
 

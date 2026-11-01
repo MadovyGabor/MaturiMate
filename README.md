@@ -80,7 +80,7 @@ This section describes the code on `main`, after Milestone 1 (core and database)
 
 ### In progress
 
-- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 6.
+- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 7.
 - Next: the design system in the code (Milestone 2), then the onboarding rework with Supabase accounts (Milestones 3 to 5). See [ROADMAP.md](docs/ROADMAP.md).
 - The real lessons and tasks are written in a separate private repository, cloned into `content/` (gitignored).
 
@@ -147,7 +147,9 @@ MaturiMate/
 ├── supabase/                Supabase settings and the schema migrations (27 tables)
 ├── dbServer/                local PostgreSQL in Docker with the same schema
 ├── content/                 lesson and task files (private repository, gitignored)
-├── composeApp/              the app (Android and desktop)
+├── shared/                  shared UI, features and platform code (Android and desktop)
+├── androidApp/              the Android app (entry point, manifest, icons)
+├── desktopApp/              the desktop app (entry point, packaging)
 │   └── src/
 │       ├── commonMain/      App.kt, core/ (database, di, domain, presentation), features/
 │       ├── androidMain/     MainActivity, Koin platform module
@@ -172,16 +174,16 @@ Commands:
 
 ```bash
 # Android debug APK
-./gradlew :composeApp:assembleDebug
+./gradlew :androidApp:assembleDebug
 
 # Desktop application
-./gradlew :composeApp:run
+./gradlew :desktopApp:run
 
 # Compile the desktop (JVM) target
-./gradlew :composeApp:compileKotlinJvm
+./gradlew :shared:compileKotlinJvm
 
 # Tests (database, content pipeline, app)
-./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest
+./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest
 
 # Bundle the content files into the app (needs the content/ folder)
 ./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801
@@ -192,7 +194,7 @@ docker compose -f dbServer/docker-compose.yml up -d
 
 On Windows PowerShell, replace `./gradlew` with `.\gradlew.bat`.
 
-Desktop packaging is configured for Dmg, Msi and Deb (`composeApp/build.gradle.kts`). Packaging has not been run.
+Desktop packaging is configured for Dmg, Msi and Deb (`desktopApp/build.gradle.kts`). Packaging has not been run.
 
 ## Known limitations
 

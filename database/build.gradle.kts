@@ -1,16 +1,20 @@
 // Shared database code: SQLDelight schemas of the content and user databases and the platform drivers.
-// Used by the app (composeApp) and by the content exporter (tools/content-pipeline).
+// Used by the app (shared) and by the content exporter (tools/content-pipeline).
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "com.madovygabor.maturimate.database"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
@@ -18,11 +22,12 @@ kotlin {
 
     jvm()
 
-    // Android and desktop share the java.io file code of the content installer
+    // Android and desktop share the java.io file code of the content installer.
+    // withAndroidTarget() does not match the Android-KMP library target, so it is picked by its type.
     applyDefaultHierarchyTemplate {
         common {
             group("jvmShared") {
-                withAndroidTarget()
+                withCompilations { it.target is KotlinMultiplatformAndroidLibraryTarget }
                 withJvm()
             }
         }
@@ -46,18 +51,6 @@ kotlin {
     }
 }
 
-android {
-    namespace = "com.madovygabor.maturimate.database"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-}
-
 sqldelight {
     databases {
         // Read-only content database, shipped as a prebuilt file
@@ -72,3 +65,4 @@ sqldelight {
         }
     }
 }
+

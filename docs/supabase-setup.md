@@ -14,7 +14,7 @@ How the Supabase project is configured, so it can be checked or rebuilt. No secr
 
 ## Keys in the app
 
-`composeApp/.../core/config/SupabaseConfig.kt` holds the only Supabase values the app needs: the API URL, the publishable key (`sb_publishable_...`) and the Google web client id. They are public by design; row level security protects the data. The Supabase client is built in `core/network/SupabaseClientFactory.kt`. A manual check against the real project: `AuthRepositoryLiveTest` signs in with an existing test account given in `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD`. Never put the secret key (`sb_secret_...` / service_role), the database password, the Resend API key or the Google client secret into the app or the repository: the importer and other server tools read secrets from `.env` files, which are gitignored.
+`shared/.../core/config/SupabaseConfig.kt` holds the only Supabase values the app needs: the API URL, the publishable key (`sb_publishable_...`) and the Google web client id. They are public by design; row level security protects the data. The Supabase client is built in `core/network/SupabaseClientFactory.kt`. A manual check against the real project: `AuthRepositoryLiveTest` signs in with an existing test account given in `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD`. Never put the secret key (`sb_secret_...` / service_role), the database password, the Resend API key or the Google client secret into the app or the repository: the importer and other server tools read secrets from `.env` files, which are gitignored.
 
 ## Authentication
 
