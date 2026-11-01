@@ -296,6 +296,16 @@ New in step 5.12 (not in the prototype; please review):
 | `reset_new_password` (new) | Új jelszó | Nové heslo |
 | `reset_save` (new) | Jelszó mentése | Uložiť heslo |
 
+### Profile
+
+| Key | Hungarian | Slovak |
+| :--- | :--- | :--- |
+| `profile_title` (new) | Profilom | Môj profil |
+| `profile_why` (new) | Koppints arra a válaszra, amit módosítanál. | Ťukni na odpoveď, ktorú chceš zmeniť. |
+| `profile_reminder_off` (new) | Kikapcsolva | Vypnutá |
+| `profile_not_set` (new) | Nincs beállítva | Nenastavené |
+| `common_save` (new) | Mentés | Uložiť |
+
 ### Home, after the onboarding
 
 | Key | Hungarian | Slovak |

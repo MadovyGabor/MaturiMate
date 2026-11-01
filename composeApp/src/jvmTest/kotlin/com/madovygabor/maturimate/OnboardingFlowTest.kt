@@ -2,6 +2,7 @@ package com.madovygabor.maturimate
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -20,6 +21,7 @@ import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.Subject
 import com.madovygabor.maturimate.features.learning.domain.model.Track
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -58,6 +60,13 @@ import maturimate.composeapp.generated.resources.subject_mat
 import maturimate.composeapp.generated.resources.subjects_title_learner
 import maturimate.composeapp.generated.resources.subjects_title_student
 import maturimate.composeapp.generated.resources.account_title
+import maturimate.composeapp.generated.resources.common_save
+import maturimate.composeapp.generated.resources.profile_title
+import maturimate.composeapp.generated.resources.onboarding_step_goal
+import maturimate.composeapp.generated.resources.onboarding_step_language
+import maturimate.composeapp.generated.resources.onboarding_step_role
+import maturimate.composeapp.generated.resources.onboarding_step_date
+import maturimate.composeapp.generated.resources.language_sk_desc
 import maturimate.composeapp.generated.resources.welcome_start
 import java.util.Locale
 import kotlin.test.AfterTest
@@ -146,10 +155,8 @@ class OnboardingFlowTest {
         onAllNodes(androidx.compose.ui.test.hasText(text(key))).fetchSemanticsNodes().isNotEmpty()
     }
 
-    @Test
-    fun studentGoesThroughEveryStepAndLooksAroundAsAGuest() = runDesktopComposeUiTest(412, 915) {
-        setContent { App() }
-
+    /** From the welcome screen to the home screen as a Hungarian student who looks around as a guest. */
+    private fun ComposeUiTest.goThroughAsStudent() {
         waitFor(Res.string.welcome_start)
         click(Res.string.welcome_start)
         waitFor(Res.string.language_title)
@@ -180,13 +187,69 @@ class OnboardingFlowTest {
 
         // the home screen
         waitUntil(timeoutMillis = 5_000) { onAllNodes(androidx.compose.ui.test.hasText("Tantárgyak")).fetchSemanticsNodes().isNotEmpty() }
+    }
 
-        val profile = runBlocking { KoinPlatform.getKoin().get<UserProfileRepository>().profile.first() }!!
+    private fun profile() = runBlocking { KoinPlatform.getKoin().get<UserProfileRepository>().profile.first() }!!
+
+    @Test
+    fun studentGoesThroughEveryStepAndLooksAroundAsAGuest() = runDesktopComposeUiTest(412, 915) {
+        setContent { App() }
+        goThroughAsStudent()
+
+        val profile = profile()
         assertEquals(UserRole.STUDENT, profile.role)
         assertEquals(listOf(1L, 2L, 3L), profile.subjects.map { it.subjectId })
         assertEquals(10, profile.dailyGoalMinutes)
         assertTrue(profile.graduationDate != null && profile.isOnboardingCompleted)
         assertTrue(!profile.reminderEnabled)
+    }
+
+    @Test
+    fun everyAnswerCanBeChangedInTheProfile() = runDesktopComposeUiTest(412, 915) {
+        setContent { App() }
+        goThroughAsStudent()
+        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
+        waitFor(Res.string.profile_title)
+
+        // the goal opens its onboarding question, saved with "Mentés"
+        click(Res.string.onboarding_step_goal)
+        waitFor(Res.string.goal_title)
+        onNodeWithText("20 perc").performClick()
+        click(Res.string.common_save)
+        waitFor(Res.string.profile_title)
+        assertEquals(20, profile().dailyGoalMinutes)
+        onNodeWithText("20 perc").assertExists()
+
+        // a new language rebuilds the app in it, still on the profile
+        click(Res.string.onboarding_step_language)
+        waitFor(Res.string.language_title)
+        click(Res.string.language_sk_desc)
+        click(Res.string.common_save)
+        Locale.setDefault(Locale.forLanguageTag("sk"))
+        waitFor(Res.string.profile_title)
+        assertEquals(TeachingLanguage.SK, profile().teachingLanguage)
+    }
+
+    @Test
+    fun aNewRoleAsksForTheSubjectsAndWhatTheRoleStillNeeds() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { App() }
+        goThroughAsStudent()
+        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
+        waitFor(Res.string.profile_title)
+
+        click(Res.string.onboarding_step_role)
+        waitFor(Res.string.role_title)
+        click(Res.string.role_learner)
+        click(Res.string.common_save)
+        waitFor(Res.string.subjects_title_learner)
+        click(Res.string.subject_mat)
+        click(Res.string.common_save)
+
+        // a learner has everything else already: back to the answers, without an exam date
+        waitFor(Res.string.profile_title)
+        assertEquals(UserRole.LEARNER, profile().role)
+        assertEquals(0, onAllNodes(androidx.compose.ui.test.hasText(text(Res.string.onboarding_step_date))).fetchSemanticsNodes().size)
     }
 
     @Test

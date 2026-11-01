@@ -4,29 +4,34 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.madovygabor.maturimate.core.presentation.MainFrame
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileScreen
-import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
 import com.madovygabor.maturimate.features.subjects.presentation.SubjectNavigation
 import org.koin.compose.viewmodel.koinViewModel
 
 // MainFrameNavigation composable that sets up the main navigation structure of the app.
 @Composable
 fun MainFrameNavigation(
+    mainTab: MutableState<NavKey>,
     modifier: Modifier = Modifier
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
     val navigationState = rememberNavigationState(
-        startRoute = Route.Main.Subject,
+        startRoute = mainTab.value,
         topLevelRoutes = TOP_LEVEL_NAVBAR_DESTINATIONS.keys
     )
+    LaunchedEffect(navigationState.topLevelRoute) { mainTab.value = navigationState.topLevelRoute }
+
     // Create a navigator to handle navigation actions
     val navigator = remember {
         MainFrameNavigator(navigationState)
@@ -63,13 +68,7 @@ fun MainFrameNavigation(
                         }
                         // Profile feature navigation
                         entry<Route.Main.Profile> {
-
-                            // Get the ProfileViewModel instance using Koin
-                            val profileViewModel = koinViewModel<ProfileViewModel>()
-
-                            ProfileScreen(
-                                profileViewModel
-                            )
+                            ProfileScreen()
                         }
                     }
                 )

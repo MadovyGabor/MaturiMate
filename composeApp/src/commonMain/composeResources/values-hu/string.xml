@@ -56,6 +56,11 @@
     <string name="subject_mat">Matematika</string>
 
     <!-- Onboarding: exam date -->
+    <string name="common_save">Mentés</string>
+    <string name="profile_title">Profilom</string>
+    <string name="profile_why">Koppints arra a válaszra, amit módosítanál.</string>
+    <string name="profile_reminder_off">Kikapcsolva</string>
+    <string name="profile_not_set">Nincs beállítva</string>
     <string name="common_cancel">Mégse</string>
     <string name="common_ok">OK</string>
     <string name="date_title">Mikor érettségizel?</string>

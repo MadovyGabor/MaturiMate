@@ -89,13 +89,13 @@ The subject list in `SubjectListTabScreen.kt` is a static `listOf(...)` (line 40
 
 ## 4. Presentation Pattern
 
-Presentation follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `ProfileViewModel.kt:40` declares `private val _profileUiState = MutableStateFlow(ProfileUiState())` and `ProfileViewModel.kt:43` exposes `val profileUiState = _profileUiState.asStateFlow()`.
+Presentation follows MVVM with `StateFlow`. A ViewModel holds a private `MutableStateFlow` and exposes it as a read-only `StateFlow` through `asStateFlow()`. The state is an immutable `data class` that is updated with `copy()`. Example: `SignInViewModel` declares `private val _state = MutableStateFlow(SignInUiState())` and exposes `val state = _state.asStateFlow()`. A ViewModel that only shows saved data maps the repository's flow with `stateIn` (`PlanViewModel`, `ProfileViewModel`).
 
 The app does not use intents, a reducer, or a single-state MVI loop. Screens call ViewModel methods directly.
 
 One-shot messages (for example, snackbars) go through a singleton `SnackbarController` (`core/presentation/utils/snackbar/SnackbarController.kt:11`), which uses a `MutableSharedFlow` (line 14).
 
-Profile statistics are mock data. `ProfileViewModel.kt:47` calls `loadMockSubjectStats()`, and the values are hard-coded in lines 164-171.
+**Profile.** `ProfileScreen` keeps a small back stack of its own: the answers, or one onboarding question opened to change its answer. Inside it `LocalEditingAnswer` is true, so `OnboardingScaffold` shows a plain back button and no step list, and the main button says "Mentés". The open main tab is held in `App`, outside the `key(...)` rebuild, so a language changed in the profile keeps the profile open.
 
 ---
 
@@ -116,8 +116,6 @@ Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(
 ## 6. Responsive Layout
 
 `MainFrame.kt` wraps its content in `BoxWithConstraints` (line 38) and sets `isDesktop = maxWidth > LayoutConstants.DesktopThreshold` (line 40). `LayoutConstants.DesktopThreshold` is `600.dp` (`StatickUiSettings.kt:33`). Below the threshold, the frame uses a `NavigationBar` (line 84). At or above the threshold, it uses a `NavigationRail` (line 46).
-
-`ProfileScreen.kt:136` contains its own check, `val isDesktop = 600.dp < this.maxWidth`, which duplicates the threshold instead of using the constant.
 
 ---
 

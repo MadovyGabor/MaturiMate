@@ -29,7 +29,9 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceChip
+import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
+import com.madovygabor.maturimate.features.appOnboarding.presentation.nextLabel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
@@ -37,7 +39,6 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.onboarding
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
-import maturimate.composeapp.generated.resources.common_next
 import maturimate.composeapp.generated.resources.level_unknown
 import maturimate.composeapp.generated.resources.onboarding_change_later
 import maturimate.composeapp.generated.resources.subject_anj
@@ -99,7 +100,7 @@ fun SubjectsContent(
     }
     val why = if (state.role == UserRole.STUDENT) Res.string.subjects_why_student else Res.string.subjects_why_other
     OnboardingScaffold(
-        actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
+        actions = listOf(OnboardingAction(stringResource(nextLabel(LocalEditingAnswer.current)), onNext, enabled = state.canContinue)),
         progress = OnboardingProgress(OnboardingStep.SUBJECTS, onboardingSteps(state.role), onBack),
     ) {
         Text(stringResource(title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
@@ -114,7 +115,7 @@ fun SubjectsContent(
                 )
             }
         }
-        Text(
+        if (!LocalEditingAnswer.current) Text(
             stringResource(Res.string.onboarding_change_later),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -38,6 +38,7 @@ import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppLogo
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppProgressBar
+import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.app_name
@@ -75,6 +76,10 @@ fun OnboardingScaffold(
     onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // opened from the profile: no steps, a plain back button, and no side panel next to the app's own navigation
+    val editing = LocalEditingAnswer.current
+    @Suppress("NAME_SHADOWING") val onBack = if (editing) onBack ?: progress?.onBack else onBack
+    @Suppress("NAME_SHADOWING") val progress = progress.takeUnless { editing }
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -83,7 +88,7 @@ fun OnboardingScaffold(
     ) {
         val layout = MaterialTheme.layout
         val wide = maxWidth >= layout.breakpointMedium
-        if (maxWidth >= layout.breakpointExpanded) {
+        if (maxWidth >= layout.breakpointExpanded && !editing) {
             Row(Modifier.fillMaxSize()) {
                 SidePanel(progress, Modifier.width(layout.sidePanelWidth).fillMaxHeight())
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)

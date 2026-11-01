@@ -2,6 +2,10 @@
 
 What was decided and why. Newest first. A decision that changes is not deleted: it is marked *Replaced by* with the date of the newer entry.
 
+## 2026-11-01
+
+* **The profile changes an answer with the onboarding's own question screen.** The profile tab lists every answer of the user's role (language, role, subjects with the English level, exam date, daily goal, reminder) and the days until the exam; tapping one opens its onboarding question with a plain back button and "Mentés" instead of the step header and "Tovább" (`LocalEditingAnswer`). Reason: one screen and one ViewModel per question, so the onboarding and the profile cannot drift apart. A new role asks for the subjects again, then for an exam date or a daily goal when the new role needs one that is missing. The open main tab survives the rebuild after a language change, so the user stays on the profile. The old profile's subject statistics (mock data) are removed; real statistics come with progress.
+
 ## 2026-10-31
 
 * **The account step: consent first, then e-mail or Google.** The required consent unlocks both "Fiók létrehozása" and "Folytatás Google-lel". An e-mail sign-up is confirmed with the 6-digit code on the same screen. A Google account that already has a profile on the server is treated as a sign-in. Creating the account and "Körülnézek" both finish the onboarding. The Google button is the one place where a screen uses the Supabase client directly (`rememberGoogleSignIn`), because compose-auth's Google flow is a Composable. The consent sentence names the terms and the privacy notice, which do not exist yet, so it has no links for now.
