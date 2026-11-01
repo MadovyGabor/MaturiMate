@@ -21,6 +21,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.language.L
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsScreen
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -42,7 +43,11 @@ fun AppOnboardingNavigation(
     // The first back stack comes from the saved answers, so the onboarding continues where it
     // stopped; after a new language it waits for the stack of that profile, not the one before
     val resume by navigationViewModel.resume.collectAsState()
+    val role by navigationViewModel.role.collectAsState()
     val initialStack = resume?.takeIf { it.matches(appLanguage) }?.backStack ?: return
+
+    // the stack of saved answers; the name below is taken by the navigation's own back stack
+    val stackOfAnswers: (UserProfile?) -> List<Route> = ::onboardingBackStack
 
     // Initialize the backstack with serialization support for Type-Safe routing
     val onboardingBackStack = rememberNavBackStack(
@@ -83,7 +88,6 @@ fun AppOnboardingNavigation(
             }
 
             // the role saved on step 2, for the steps after it
-            val role = navigationViewModel.role.value
 
             // the onboarding steps; the account step finishes the onboarding itself
             fun goNext(step: OnboardingStep, role: UserRole?) {
@@ -132,9 +136,10 @@ fun AppOnboardingNavigation(
             entry<Route.AppOnboarding.SignIn> {
                 SignInScreen(
                     onBack = back,
-                    onSignedIn = { finished ->
-                        if (!finished) {
-                            val resumed = navigationViewModel.resume.value?.backStack ?: listOf(Route.AppOnboarding.Welcome)
+                    onSignedIn = { account ->
+                        if (!account.onboardingFinished) {
+                            // from the answers the sign-in just wrote, not from the stack read before it
+                            val resumed = stackOfAnswers(account.profile)
                             onboardingBackStack.clear()
                             onboardingBackStack.addAll(resumed)
                         }

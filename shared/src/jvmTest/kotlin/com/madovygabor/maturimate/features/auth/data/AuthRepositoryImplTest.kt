@@ -174,7 +174,8 @@ class AuthRepositoryImplTest {
         }
 
         assertTrue(repository.sendPasswordResetCode(EMAIL).isSuccess())
-        assertTrue(repository.resetPassword(EMAIL, "123456", "NewPassw0rd").isSuccess())
+        assertTrue(repository.verifyResetCode(EMAIL, "123456").isSuccess())
+        assertTrue(repository.setNewPassword("NewPassw0rd").isSuccess())
 
         assertEquals(
             listOf("POST /auth/v1/recover", "POST /auth/v1/verify", "PUT /auth/v1/user"),
@@ -190,9 +191,10 @@ class AuthRepositoryImplTest {
             if (request.method == HttpMethod.Put) authError("same_password", HttpStatusCode.UnprocessableEntity) else json(session())
         }
 
+        repository.verifyResetCode(EMAIL, "123456")
         assertEquals(
             OperationResult.Error(AuthError.SAME_PASSWORD),
-            repository.resetPassword(EMAIL, "123456", PASSWORD),
+            repository.setNewPassword(PASSWORD),
         )
     }
 

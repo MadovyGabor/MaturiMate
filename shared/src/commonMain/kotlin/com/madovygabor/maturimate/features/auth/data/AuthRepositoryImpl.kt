@@ -81,8 +81,11 @@ class AuthRepositoryImpl(private val auth: Auth) : AuthRepository {
         auth.resetPasswordForEmail(email)
     }
 
-    override suspend fun resetPassword(email: String, code: String, newPassword: String) = call {
+    override suspend fun verifyResetCode(email: String, code: String) = call {
         auth.verifyEmailOtp(type = OtpType.Email.RECOVERY, email = email, token = code)
+    }
+
+    override suspend fun setNewPassword(newPassword: String) = call {
         auth.updateUser { password = newPassword }
     }
 

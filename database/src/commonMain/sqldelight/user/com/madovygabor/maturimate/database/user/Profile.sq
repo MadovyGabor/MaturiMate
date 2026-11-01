@@ -90,6 +90,21 @@ UPDATE OR REPLACE activity_log SET user_id = :accountId WHERE user_id = :guestId
 INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
 }
 
+-- Signing in to another account on this phone: the previous account's rows are removed (they
+-- are on the server after its sign-up) instead of being given to the new account.
+switchAccount {
+DELETE FROM user_profile WHERE user_id = :previousId;
+DELETE FROM user_settings WHERE user_id = :previousId;
+DELETE FROM user_role WHERE user_id = :previousId;
+DELETE FROM user_subject WHERE user_id = :previousId;
+DELETE FROM attempt WHERE user_id = :previousId;
+DELETE FROM user_unit_progress WHERE user_id = :previousId;
+DELETE FROM user_task_progress WHERE user_id = :previousId;
+DELETE FROM user_streak WHERE user_id = :previousId;
+DELETE FROM activity_log WHERE user_id = :previousId;
+INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
+}
+
 updateNames:
 UPDATE user_profile SET first_name = :firstName, last_name = :lastName WHERE user_id = :userId;
 

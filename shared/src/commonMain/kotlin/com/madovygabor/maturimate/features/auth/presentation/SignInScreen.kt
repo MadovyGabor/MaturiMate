@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.auth.presentation
 
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,7 +45,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SignInScreen(
     onBack: () -> Unit,
-    onSignedIn: (Boolean) -> Unit,
+    onSignedIn: (SignedInAccount) -> Unit,
     viewModel: SignInViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()

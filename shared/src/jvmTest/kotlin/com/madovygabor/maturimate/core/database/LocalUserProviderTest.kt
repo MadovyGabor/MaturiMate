@@ -64,6 +64,25 @@ class LocalUserProviderTest {
         assertEquals(UserRole.STUDENT, withTimeout(5_000) { profiles.profile.first { it?.role != null } }?.role)
     }
 
+    // Signing in with a second account on the account step used to hand it the first account's rows.
+    @Test
+    fun anotherAccountDoesNotGetThePreviousAccountsRows() = runBlocking {
+        val provider = LocalUserProvider(database) { "guest-1" }
+        val profiles = UserProfileRepositoryImpl(database, provider, Dispatchers.Unconfined)
+        profiles.saveTeachingLanguage(TeachingLanguage.HU)
+        provider.adoptAccount("account-a")
+        database.activityQueries.addActivity("account-a", "2026-10-31", 10, 5, 3)
+
+        provider.adoptAccount("account-b")
+
+        assertEquals("account-b", provider.userId())
+        assertFalse(provider.isGuest())
+        assertNull(database.profileQueries.selectProfile("account-b").executeAsOneOrNull())
+        assertNull(database.profileQueries.selectProfile("account-a").executeAsOneOrNull())
+        assertEquals(0L, database.activityQueries.selectTotalXp("account-b").executeAsOne())
+        assertEquals(0L, database.activityQueries.selectTotalXp("account-a").executeAsOne())
+    }
+
     // A save used to read the id before its transaction, so a sign-up moving the rows in between
     // made it write to the old guest id, where the answer was lost.
     @Test

@@ -1,8 +1,9 @@
 package com.madovygabor.maturimate.core.presentation.utils.snackbar
 
 import com.madovygabor.maturimate.core.presentation.utils.UiText
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
  * A central controller to trigger Snackbar events from anywhere in the app,
@@ -10,9 +11,10 @@ import kotlinx.coroutines.flow.asSharedFlow
  */
 class SnackbarController {
 
-    // Using SharedFlow instead of StateFlow because snackbars are "one-time events"
-    private val _events = MutableSharedFlow<SnackbarEvent>()
-    val events = _events.asSharedFlow()
+    // A buffered channel: each event is shown once, and sending never waits for the snackbar on
+    // screen to go away (a SharedFlow without a buffer kept the caller's button busy meanwhile)
+    private val _events = Channel<SnackbarEvent>(Channel.BUFFERED)
+    val events: Flow<SnackbarEvent> = _events.receiveAsFlow()
 
     /**
      * Emits a new snackbar event.
@@ -23,6 +25,6 @@ class SnackbarController {
         message: UiText,
         action: SnackbarAction? = null
     ) {
-        _events.emit(SnackbarEvent(message, action))
+        _events.send(SnackbarEvent(message, action))
     }
 }

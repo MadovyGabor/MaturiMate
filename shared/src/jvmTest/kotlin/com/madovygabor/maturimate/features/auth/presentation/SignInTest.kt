@@ -1,5 +1,9 @@
 package com.madovygabor.maturimate.features.auth.presentation
 
+import com.madovygabor.maturimate.features.userProfile.domain.UserRole
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
@@ -46,9 +50,15 @@ class SignInTest {
 
     private fun text(key: StringResource) = runBlocking { getString(key) }
 
-    private class FakeAuth(val signInResult: OperationResult<Unit, AuthError> = OperationResult.Success(Unit)) : AuthRepository {
+    private class FakeAuth(
+        val signInResult: OperationResult<Unit, AuthError> = OperationResult.Success(Unit),
+        /** The answers to the new password, one per try; success once they are used up. */
+        val passwordResults: MutableList<OperationResult<Unit, AuthError>> = mutableListOf(),
+    ) : AuthRepository {
         var resent = false
-        var reset: Triple<String, String, String>? = null
+        var signedOut = false
+        val verifiedCodes = mutableListOf<Pair<String, String>>()
+        val newPasswords = mutableListOf<String>()
         private val ok: OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override val state: Flow<AuthState> = emptyFlow()
         override fun currentUser(): AccountUser? = null
@@ -56,15 +66,19 @@ class SignInTest {
         override suspend fun confirmSignUp(email: String, code: String) = ok
         override suspend fun resendSignUpCode(email: String) = ok.also { resent = true }
         override suspend fun signIn(email: String, password: String) = signInResult
-        override suspend fun signOut() = ok
+        override suspend fun signOut() = ok.also { signedOut = true }
         override suspend fun sendPasswordResetCode(email: String) = ok
-        override suspend fun resetPassword(email: String, code: String, newPassword: String) = ok.also { reset = Triple(email, code, newPassword) }
+        override suspend fun verifyResetCode(email: String, code: String) = ok.also { verifiedCodes += email to code }
+        override suspend fun setNewPassword(newPassword: String): OperationResult<Unit, AuthError> {
+            newPasswords += newPassword
+            return passwordResults.removeFirstOrNull() ?: ok
+        }
     }
 
-    private class FakeSetup(val finished: Boolean) : AccountSetup {
+    private class FakeSetup(val finished: Boolean, val profile: UserProfile? = null) : AccountSetup {
         override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> =
             OperationResult.Success(Unit)
-        override suspend fun completeSignIn(): OperationResult<Boolean, AuthError> = OperationResult.Success(finished)
+        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(finished, profile))
     }
 
     private suspend fun SignInViewModel.idle() = withTimeout(5_000) { state.first { !it.busy } }
@@ -76,7 +90,7 @@ class SignInTest {
         viewModel.onPasswordChanged("Passw0rdA")
         val done = CompletableDeferred<Boolean>()
 
-        viewModel.onSignIn { done.complete(it) }
+        viewModel.onSignIn { done.complete(it.onboardingFinished) }
 
         assertTrue(withTimeout(5_000) { done.await() })
     }
@@ -94,7 +108,7 @@ class SignInTest {
         assertTrue(auth.resent)
         val done = CompletableDeferred<Boolean>()
         viewModel.onCodeChanged("123456")
-        viewModel.onConfirm { done.complete(it) }
+        viewModel.onConfirm { done.complete(it.onboardingFinished) }
         assertFalse(withTimeout(5_000) { done.await() })
     }
 
@@ -114,9 +128,75 @@ class SignInTest {
 
         viewModel.onNewPasswordChanged("NewPassw0rd")
         val done = CompletableDeferred<Boolean>()
-        viewModel.onResetPassword { done.complete(it) }
+        viewModel.onResetPassword { done.complete(it.onboardingFinished) }
         assertTrue(withTimeout(5_000) { done.await() })
-        assertEquals(Triple("anna@example.com", "123456", "NewPassw0rd"), auth.reset)
+        assertEquals(listOf("anna@example.com" to "123456"), auth.verifiedCodes)
+        assertEquals(listOf("NewPassw0rd"), auth.newPasswords)
+    }
+
+    // The code and the new password used to go in one call: when the server refused the password,
+    // the retry checked the code again, which was used up by then, and only a new code helped.
+    @Test
+    fun aRefusedNewPasswordCanBeRetriedWithoutANewCode() = runBlocking {
+        val auth = FakeAuth(passwordResults = mutableListOf(OperationResult.Error(AuthError.SAME_PASSWORD)))
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController())
+        viewModel.onForgotPassword()
+        viewModel.onEmailChanged("anna@example.com")
+        viewModel.onSendResetCode()
+        viewModel.idle()
+        viewModel.onCodeChanged("123456")
+        viewModel.onNewPasswordChanged("OldPassw0rd")
+
+        viewModel.onResetPassword { error("the server refused the password") }
+        assertTrue(viewModel.idle().resetCodeVerified)
+
+        viewModel.onNewPasswordChanged("NewPassw0rd")
+        val done = CompletableDeferred<Boolean>()
+        viewModel.onResetPassword { done.complete(it.onboardingFinished) }
+
+        assertTrue(withTimeout(5_000) { done.await() })
+        assertEquals(1, auth.verifiedCodes.size)
+        assertEquals(listOf("OldPassw0rd", "NewPassw0rd"), auth.newPasswords)
+    }
+
+    @Test
+    fun leavingAfterAnAcceptedCodeSignsOutAgain() = runBlocking {
+        val auth = FakeAuth(passwordResults = mutableListOf(OperationResult.Error(AuthError.NETWORK)))
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController())
+        viewModel.onForgotPassword()
+        viewModel.onEmailChanged("anna@example.com")
+        viewModel.onSendResetCode()
+        viewModel.idle()
+        viewModel.onCodeChanged("123456")
+        viewModel.onNewPasswordChanged("NewPassw0rd")
+        viewModel.onResetPassword { error("no connection") }
+        assertTrue(viewModel.idle().resetCodeVerified)
+
+        viewModel.onBack()
+
+        withTimeout(5_000) { while (!auth.signedOut) kotlinx.coroutines.delay(10) }
+        assertFalse(viewModel.state.value.resetCodeVerified)
+    }
+
+    @Test
+    fun signInGivesTheAnswersToContinueFrom() = runBlocking {
+        val answers = UserProfile(
+            teachingLanguage = TeachingLanguage.SK,
+            role = UserRole.LEARNER,
+            graduationDate = null,
+            uiLanguage = TeachingLanguage.SK,
+            dailyGoalMinutes = null,
+            timezone = "Europe/Bratislava",
+            onboardingCompletedAt = null,
+        )
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = false, profile = answers), SnackbarController())
+        viewModel.onEmailChanged("anna@example.com")
+        viewModel.onPasswordChanged("Passw0rdA")
+        val account = CompletableDeferred<SignedInAccount>()
+
+        viewModel.onSignIn { account.complete(it) }
+
+        assertEquals(answers, withTimeout(5_000) { account.await() }.profile)
     }
 
     @Test

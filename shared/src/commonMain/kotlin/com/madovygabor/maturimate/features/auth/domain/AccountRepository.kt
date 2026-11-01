@@ -30,17 +30,18 @@ data class RemoteProfile(
 @OptIn(ExperimentalTime::class)
 interface AccountRepository {
     /**
-     * Writes the profile and the onboarding answers under the signed-in account. The profile's
-     * finish time is written by [completeOnboarding] only, so a sign-up that stops half way does
-     * not look finished on the server.
+     * Writes everything a new account sends in one transaction on the server (`save_sign_up`):
+     * the profile and the onboarding answers, the [consents] with the version of the documents,
+     * and the end of the onboarding at [finishedAt]. Either all of it is saved or nothing, so a
+     * sign-up cannot stop half way; a retry stores each consent once.
      */
-    suspend fun uploadProfile(profile: UserProfile, firstName: String, lastName: String): OperationResult<Unit, AuthError>
-
-    /** Marks the account's onboarding as finished; the last step of a sign-up. */
-    suspend fun completeOnboarding(finishedAt: Instant): OperationResult<Unit, AuthError>
-
-    /** Records what the user accepted, with the version of the documents. */
-    suspend fun recordConsents(consents: Set<ConsentType>): OperationResult<Unit, AuthError>
+    suspend fun saveSignUp(
+        profile: UserProfile,
+        firstName: String,
+        lastName: String,
+        consents: Set<ConsentType>,
+        finishedAt: Instant,
+    ): OperationResult<Unit, AuthError>
 
     /** The signed-in account's profile; null when it has none on the server yet. */
     suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError>

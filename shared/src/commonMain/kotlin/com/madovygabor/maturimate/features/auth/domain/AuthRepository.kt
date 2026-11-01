@@ -68,6 +68,8 @@ interface AuthRepository {
     suspend fun signOut(): OperationResult<Unit, AuthError>
 
     suspend fun sendPasswordResetCode(email: String): OperationResult<Unit, AuthError>
-    /** Checks the code, then sets the new password; the user is signed in afterwards. */
-    suspend fun resetPassword(email: String, code: String, newPassword: String): OperationResult<Unit, AuthError>
+    /** Checks the password reset code; it signs the user in, and the code cannot be used again. */
+    suspend fun verifyResetCode(email: String, code: String): OperationResult<Unit, AuthError>
+    /** Sets the new password of the signed-in user, after [verifyResetCode]. */
+    suspend fun setNewPassword(newPassword: String): OperationResult<Unit, AuthError>
 }

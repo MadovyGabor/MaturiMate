@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.auth.data
 
+import kotlin.test.assertFalse
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
@@ -90,43 +91,22 @@ class AccountTest {
         reminderTime = LocalTime(18, 0),
     )
 
+    // The sign-up used to be six separate requests, so a dropped connection could leave the
+    // account half written; now it is one call, one transaction on the server.
     @Test
-    fun uploadWritesTheProfileUnderTheAccount() = runBlocking {
-        val result = remote().uploadProfile(student, "Anna", "Kovács")
+    fun aSignUpIsOneCallToTheServer() = runBlocking {
+        val result = remote().saveSignUp(student, "Anna", "Kovács", setOf(ConsentType.TERMS, ConsentType.AGE_16), Instant.parse("2026-11-01T10:00:00Z"))
 
         assertEquals(OperationResult.Success(Unit), result)
-        val calls = requests.map { it.first }
-        assertEquals(
-            listOf("POST user_profile", "POST user_settings", "DELETE user_role", "POST user_role", "DELETE user_subject", "POST user_subject"),
-            calls,
-        )
-        val profile = requests[0].second
-        assertTrue("\"first_name\":\"Anna\"" in profile && "\"teaching_language\":\"HU\"" in profile && USER_ID in profile, profile)
-        assertTrue("\"reminder_time\":\"18:00\"" in requests[1].second, requests[1].second)
-        assertTrue("\"level\":\"B2\"" in requests[5].second && "\"source\":\"AUTO\"" in requests[5].second)
-    }
-
-    @Test
-    fun uploadLeavesTheFinishToTheLastStep() = runBlocking {
-        val repository = remote()
-        repository.uploadProfile(student.copy(onboardingCompletedAt = Instant.fromEpochMilliseconds(9_000)), "Anna", "Kovács")
-        assertTrue("onboarding_completed_at" !in requests[0].second, requests[0].second)
-
-        requests.clear()
-        repository.completeOnboarding(Instant.parse("2026-11-01T10:00:00Z"))
-
         val (call, body) = requests.single()
-        assertEquals("PATCH user_profile", call)
-        assertTrue("\"onboarding_completed_at\":\"2026-11-01T10:00:00Z\"" in body, body)
-    }
-
-    @Test
-    fun consentsAreRecordedWithTheDocumentVersion() = runBlocking {
-        remote().recordConsents(setOf(ConsentType.TERMS, ConsentType.AGE_16))
-
-        val (call, body) = requests.single()
-        assertEquals("POST user_consent", call)
-        assertTrue("\"consent_type\":\"TERMS\"" in body && "\"consent_type\":\"AGE_16\"" in body && "\"document_version\":\"1.0\"" in body, body)
+        assertEquals("POST save_sign_up", call)
+        assertTrue("\"p_first_name\":\"Anna\"" in body && "\"p_teaching_language\":\"HU\"" in body, body)
+        assertTrue("\"p_reminder_time\":\"18:00\"" in body && "\"p_role_id\":1" in body, body)
+        assertTrue("\"level\":\"B2\"" in body && "\"source\":\"AUTO\"" in body, body)
+        assertTrue("\"p_consents\":[\"TERMS\",\"AGE_16\"]" in body && "\"p_document_version\":\"1.0\"" in body, body)
+        assertTrue("\"p_onboarding_completed_at\":\"2026-11-01T10:00:00Z\"" in body, body)
+        // the server takes the user from the session, never from the request
+        assertTrue(USER_ID !in body, body)
     }
 
     @Test
@@ -196,27 +176,24 @@ class AccountTest {
         override suspend fun signIn(email: String, password: String) = ok
         override suspend fun signOut() = ok
         override suspend fun sendPasswordResetCode(email: String) = ok
-        override suspend fun resetPassword(email: String, code: String, newPassword: String) = ok
+        override suspend fun verifyResetCode(email: String, code: String) = ok
+        override suspend fun setNewPassword(newPassword: String) = ok
     }
 
     private class FakeAccount(val remote: RemoteProfile? = null) : AccountRepository {
-        var uploaded: Triple<UserProfile, String, String>? = null
+        var saved: Triple<UserProfile, String, String>? = null
         var consents: Set<ConsentType> = emptySet()
         var completedAt: Instant? = null
-        val steps = mutableListOf<String>()
-        override suspend fun uploadProfile(profile: UserProfile, firstName: String, lastName: String): OperationResult<Unit, AuthError> {
-            uploaded = Triple(profile, firstName, lastName)
-            steps += "upload"
-            return OperationResult.Success(Unit)
-        }
-        override suspend fun recordConsents(consents: Set<ConsentType>): OperationResult<Unit, AuthError> {
+        override suspend fun saveSignUp(
+            profile: UserProfile,
+            firstName: String,
+            lastName: String,
+            consents: Set<ConsentType>,
+            finishedAt: Instant,
+        ): OperationResult<Unit, AuthError> {
+            saved = Triple(profile, firstName, lastName)
             this.consents = consents
-            steps += "consents"
-            return OperationResult.Success(Unit)
-        }
-        override suspend fun completeOnboarding(finishedAt: Instant): OperationResult<Unit, AuthError> {
             completedAt = finishedAt
-            steps += "complete"
             return OperationResult.Success(Unit)
         }
         override suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError> = OperationResult.Success(remote)
@@ -241,13 +218,11 @@ class AccountTest {
             .completeSignUp("Anna", "Kovács", marketing = true, finishedAt = Instant.fromEpochMilliseconds(9_000))
 
         assertEquals(OperationResult.Success(Unit), result)
-        // the server sees the onboarding finished only after everything else is written
-        assertEquals(listOf("upload", "consents", "complete"), account.steps)
         assertEquals(Instant.fromEpochMilliseconds(9_000), account.completedAt)
         assertTrue(profiles.profile.first()!!.isOnboardingCompleted)
         assertEquals(USER_ID, provider.userId())
-        assertEquals(UserRole.LEARNER, account.uploaded?.first?.role)
-        assertEquals("Anna", account.uploaded?.second)
+        assertEquals(UserRole.LEARNER, account.saved?.first?.role)
+        assertEquals("Anna", account.saved?.second)
         assertEquals(ConsentType.entries.toSet(), account.consents)
     }
 
@@ -259,7 +234,10 @@ class AccountTest {
 
         val result = AccountSetupImpl(FakeAuth(), FakeAccount(remote), profiles, provider, Dispatchers.Unconfined).completeSignIn()
 
-        assertEquals(OperationResult.Success(true), result)
+        val account = (result as OperationResult.Success).data
+        assertTrue(account.onboardingFinished)
+        // the answers to continue from are the ones just written
+        assertEquals(TeachingLanguage.SK, account.profile?.teachingLanguage)
         val profile = profiles.profile.first()!!
         assertEquals(TeachingLanguage.SK, profile.teachingLanguage)
         assertEquals(UserRole.STUDENT, profile.role)
@@ -274,9 +252,23 @@ class AccountTest {
 
         val result = AccountSetupImpl(FakeAuth(), FakeAccount(null), profiles, provider, Dispatchers.Unconfined).completeSignIn()
 
-        assertEquals(OperationResult.Success(false), result)
+        val account = (result as OperationResult.Success).data
+        assertFalse(account.onboardingFinished)
+        assertEquals(TeachingLanguage.HU, account.profile?.teachingLanguage)
         assertEquals(TeachingLanguage.HU, profiles.profile.first()!!.teachingLanguage)
         assertEquals(USER_ID, provider.userId())
+    }
+
+    @Test
+    fun aServerProfileWithoutSubjectsKeepsTheSubjectsOfThisPhone() = runBlocking {
+        val (provider, profiles) = local()
+        profiles.saveTeachingLanguage(TeachingLanguage.HU)
+        profiles.saveSubjects(listOf(UserSubject(1, compulsory = true)))
+        val remote = RemoteProfile("Anna", "Kovács", student.copy(subjects = emptyList()))
+
+        AccountSetupImpl(FakeAuth(), FakeAccount(remote), profiles, provider, Dispatchers.Unconfined).completeSignIn()
+
+        assertEquals(listOf(UserSubject(1, compulsory = true)), profiles.profile.first()!!.subjects)
     }
 
     private companion object {

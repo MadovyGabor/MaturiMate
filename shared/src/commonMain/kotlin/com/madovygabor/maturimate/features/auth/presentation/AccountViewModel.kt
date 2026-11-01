@@ -159,7 +159,7 @@ class AccountViewModel(
     fun onGoogleSignedIn() {
         busy {
             when (val result = accountSetup.completeSignIn()) {
-                is OperationResult.Success -> if (!result.data) {
+                is OperationResult.Success -> if (!result.data.onboardingFinished) {
                     val user = auth.currentUser()
                     _state.update {
                         it.copy(

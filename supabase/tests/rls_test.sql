@@ -154,12 +154,73 @@ BEGIN
     IF n <> 1 THEN RAISE EXCEPTION 'FAIL: the curator could not resolve the report'; END IF;
 END $$;
 
+-- ---- save_sign_up: the end of a sign-up in one call -----------------
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
+
+SELECT save_sign_up('Béla', 'Nagy', 'HU', DATE '2027-03-08', 'HU', 'Europe/Bratislava', 10::smallint,
+    true, TIME '18:00', 1::smallint, '[{"subject_id": 1, "source": "AUTO", "level": null},
+    {"subject_id": 6, "source": "AUTO", "level": null}]'::jsonb,
+    ARRAY['TERMS', 'PRIVACY', 'AGE_16'], '1.0', now());
+DO $$ BEGIN
+    IF (SELECT first_name FROM user_profile) IS DISTINCT FROM 'Béla'
+        OR (SELECT onboarding_completed_at FROM user_profile) IS NULL
+        OR (SELECT reminder_time FROM user_settings) IS DISTINCT FROM TIME '18:00'
+        OR (SELECT array_agg(role_id) FROM user_role) IS DISTINCT FROM ARRAY[1::smallint]
+        OR (SELECT count(*) FROM user_subject) <> 2
+        OR (SELECT count(*) FROM user_consent) <> 3 THEN
+        RAISE EXCEPTION 'FAIL: save_sign_up did not write everything';
+    END IF;
+END $$;
+
+-- a retry (the answer got lost) replaces the answers and keeps one copy of each consent
+SELECT save_sign_up('Béla', 'Nagy', 'HU', DATE '2027-03-08', 'HU', 'Europe/Bratislava', 15::smallint,
+    false, NULL, 2::smallint, '[{"subject_id": 4, "source": "CHOSEN", "level": null}]'::jsonb,
+    ARRAY['TERMS', 'PRIVACY', 'AGE_16'], '1.0', now());
+DO $$ BEGIN
+    IF (SELECT count(*) FROM user_consent) <> 3
+        OR (SELECT array_agg(role_id) FROM user_role) IS DISTINCT FROM ARRAY[2::smallint]
+        OR (SELECT array_agg(subject_id) FROM user_subject) IS DISTINCT FROM ARRAY[4::smallint]
+        OR (SELECT daily_goal_minutes FROM user_settings) <> 15 THEN
+        RAISE EXCEPTION 'FAIL: a retry of save_sign_up duplicated or kept old rows';
+    END IF;
+END $$;
+
+-- a withdrawn consent can be given again
+UPDATE user_consent SET withdrawn_at = now() + interval '1 minute' WHERE consent_type = 'TERMS';
+SELECT save_sign_up('Béla', 'Nagy', 'HU', NULL, 'HU', 'Europe/Bratislava', 15::smallint,
+    false, NULL, 2::smallint, '[]'::jsonb, ARRAY['TERMS'], '1.0', now());
+DO $$ BEGIN
+    IF (SELECT count(*) FROM user_consent WHERE consent_type = 'TERMS') <> 2 THEN
+        RAISE EXCEPTION 'FAIL: a withdrawn consent could not be given again';
+    END IF;
+END $$;
+
+-- the function cannot give a server role, and writes nothing of another user
+DO $$ BEGIN
+    PERFORM save_sign_up('Béla', 'Nagy', 'HU', NULL, 'HU', 'Europe/Bratislava', 15::smallint,
+        false, NULL, 5::smallint, '[]'::jsonb, ARRAY[]::text[], '1.0', now());
+    RAISE EXCEPTION 'FAIL: save_sign_up made B an admin';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+DO $$ BEGIN
+    IF (SELECT first_name FROM user_profile) IS DISTINCT FROM 'Anna' THEN
+        RAISE EXCEPTION 'FAIL: save_sign_up of B changed A';
+    END IF;
+END $$;
+
 -- ---- Not signed in: nothing ------------------------------------------
 RESET ROLE;
 SET LOCAL ROLE anon;
 DO $$ BEGIN
     PERFORM count(*) FROM user_profile;
     RAISE EXCEPTION 'FAIL: anon reads profiles';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+DO $$ BEGIN
+    PERFORM save_sign_up('X', 'Y', 'HU', NULL, 'HU', 'Europe/Bratislava', 10::smallint,
+        false, NULL, 1::smallint, '[]'::jsonb, ARRAY[]::text[], '1.0', now());
+    RAISE EXCEPTION 'FAIL: anon called save_sign_up';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 

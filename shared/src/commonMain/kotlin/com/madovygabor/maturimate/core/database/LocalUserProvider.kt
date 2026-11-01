@@ -47,12 +47,17 @@ class LocalUserProvider(
     }.distinctUntilChanged()
 
     /**
-     * Moves every row of the guest to the account (sign-up, or sign-in on this phone), in one
-     * transaction, so nothing answered or practised as a guest is lost (roadmap 7.5).
+     * Makes [accountId] the user of this phone after a sign-up or sign-in, in one transaction. A
+     * guest's rows move to the account, so nothing answered or practised as a guest is lost
+     * (roadmap 7.5). Another account's rows are not handed over: they are removed.
      */
     fun adoptAccount(accountId: String) {
         val current = userId()
-        if (current != accountId) queries.adoptAccount(accountId = accountId, guestId = current)
+        when {
+            current == accountId -> Unit
+            isGuest() -> queries.adoptAccount(accountId = accountId, guestId = current)
+            else -> queries.switchAccount(previousId = current, accountId = accountId)
+        }
         cached = accountId
     }
 

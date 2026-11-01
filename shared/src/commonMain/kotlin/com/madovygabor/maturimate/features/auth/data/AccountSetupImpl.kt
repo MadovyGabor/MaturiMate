@@ -7,6 +7,7 @@ import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.ConsentType
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -44,31 +45,29 @@ class AccountSetupImpl(
         adopt(accountId)
         if (profiles.saveNames(firstName, lastName) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
         val profile = profiles.profile.first() ?: return OperationResult.Error(AuthError.UNKNOWN)
-        val uploaded = account.uploadProfile(profile, firstName, lastName)
-        if (uploaded is OperationResult.Error) return uploaded
         val consents = setOf(ConsentType.TERMS, ConsentType.PRIVACY, ConsentType.AGE_16) +
             if (marketing) setOf(ConsentType.MARKETING) else emptySet()
-        val recorded = account.recordConsents(consents)
-        if (recorded is OperationResult.Error) return recorded
-        // only a complete upload counts as finished on the server
-        val completed = account.completeOnboarding(finishedAt)
-        if (completed is OperationResult.Error) return completed
+        // one transaction on the server: all of it is saved, or nothing
+        val saved = account.saveSignUp(profile, firstName, lastName, consents, finishedAt)
+        if (saved is OperationResult.Error) return saved
         // last: finishing the onboarding takes the app to the home screen
         if (profiles.completeOnboarding(finishedAt) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
         return OperationResult.Success(Unit)
     }
 
-    private suspend fun signIn(): OperationResult<Boolean, AuthError> {
+    private suspend fun signIn(): OperationResult<SignedInAccount, AuthError> {
         val accountId = auth.currentUser()?.id ?: return OperationResult.Error(AuthError.INVALID_CREDENTIALS)
         adopt(accountId)
         val remote = when (val result = account.downloadProfile()) {
             is OperationResult.Success -> result.data
             is OperationResult.Error -> return OperationResult.Error(result.error)
-        } ?: return OperationResult.Success(false)
-        if (!write(remote.profile) || profiles.saveNames(remote.firstName, remote.lastName) is OperationResult.Error) {
+        }
+        if (remote != null && (!write(remote.profile) || profiles.saveNames(remote.firstName, remote.lastName) is OperationResult.Error)) {
             return OperationResult.Error(AuthError.UNKNOWN)
         }
-        return OperationResult.Success(remote.profile.isOnboardingCompleted)
+        // read after the writes, so the onboarding continues from these answers and not from older ones
+        val local = profiles.profile.first()
+        return OperationResult.Success(SignedInAccount(remote?.profile?.isOnboardingCompleted == true, local))
     }
 
     private fun adopt(accountId: String) = localUser.adoptAccount(accountId)
@@ -78,7 +77,8 @@ class AccountSetupImpl(
         val saves = buildList {
             profile.teachingLanguage?.let { add(profiles.saveTeachingLanguage(it)) }
             profile.role?.let { add(profiles.saveRole(it)) }
-            add(profiles.saveSubjects(profile.subjects))
+            // a server profile without subjects never replaces the ones chosen on this phone
+            if (profile.subjects.isNotEmpty()) add(profiles.saveSubjects(profile.subjects))
             profile.graduationDate?.let { add(profiles.saveGraduationDate(it)) }
             profile.dailyGoalMinutes?.let { add(profiles.saveDailyGoal(it)) }
             add(profiles.saveReminder(profile.reminderEnabled, profile.reminderTime))

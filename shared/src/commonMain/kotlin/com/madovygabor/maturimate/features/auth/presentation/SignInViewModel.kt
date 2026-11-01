@@ -8,6 +8,7 @@ import com.madovygabor.maturimate.features.auth.domain.AccountRules
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +39,8 @@ data class SignInUiState(
     val emailError: FieldError? = null,
     val passwordError: FieldError? = null,
     val codeError: FieldError? = null,
+    /** The reset code was accepted: only the new password is left, the code is not checked again. */
+    val resetCodeVerified: Boolean = false,
     val busy: Boolean = false,
 )
 
@@ -59,20 +62,23 @@ class SignInViewModel(
     fun onNewPasswordChanged(value: String) = _state.update { it.copy(newPassword = value, passwordError = null) }
     fun onCodeChanged(value: String) = _state.update { it.copy(code = value.filter { c -> c.isDigit() }.take(AccountRules.CODE_LENGTH), codeError = null) }
 
-    fun onForgotPassword() = _state.update { it.copy(phase = SignInPhase.RESET_REQUEST, code = "", newPassword = "") }
+    fun onForgotPassword() = _state.update { it.copy(phase = SignInPhase.RESET_REQUEST, code = "", newPassword = "", resetCodeVerified = false) }
 
     /** Back inside the screen; false when the form is shown and Back leaves the screen. */
     fun onBack(): Boolean {
-        if (_state.value.phase == SignInPhase.FORM) return false
-        _state.update { it.copy(phase = SignInPhase.FORM, code = "", codeError = null, passwordError = null) }
+        val current = _state.value
+        if (current.phase == SignInPhase.FORM) return false
+        // an accepted reset code signed the user in; leaving without a new password signs out again
+        if (current.resetCodeVerified) viewModelScope.launch { auth.signOut() }
+        _state.update { it.copy(phase = SignInPhase.FORM, code = "", codeError = null, passwordError = null, resetCodeVerified = false) }
         return true
     }
 
     /**
-     * "Belépés". [onSignedIn] gets whether the account finished the onboarding before: true goes
-     * home, false continues the onboarding from the account's answers.
+     * "Belépés". [onSignedIn] gets the account: one that finished the onboarding goes home,
+     * otherwise the onboarding continues from the answers it brought to this phone.
      */
-    fun onSignIn(onSignedIn: (Boolean) -> Unit) {
+    fun onSignIn(onSignedIn: (SignedInAccount) -> Unit) {
         val current = _state.value
         if (!AccountRules.isEmail(current.email)) return _state.update { it.copy(emailError = FieldError.EMAIL_INVALID) }
         if (current.password.isEmpty()) return
@@ -91,7 +97,7 @@ class SignInViewModel(
     }
 
     /** The sign-up code of an unconfirmed account. */
-    fun onConfirm(onSignedIn: (Boolean) -> Unit) {
+    fun onConfirm(onSignedIn: (SignedInAccount) -> Unit) {
         val current = _state.value
         if (!AccountRules.isCode(current.code)) return _state.update { it.copy(codeError = FieldError.CODE_INVALID) }
         busy {
@@ -115,28 +121,42 @@ class SignInViewModel(
         }
     }
 
-    /** The reset code and the new password; the user is signed in afterwards. */
-    fun onResetPassword(onSignedIn: (Boolean) -> Unit) {
+    /**
+     * The reset code and the new password; the user is signed in afterwards. The code is checked
+     * once: it is used up then, so when the new password is refused, a retry only sets the password.
+     */
+    fun onResetPassword(onSignedIn: (SignedInAccount) -> Unit) {
         val current = _state.value
-        if (!AccountRules.isCode(current.code)) return _state.update { it.copy(codeError = FieldError.CODE_INVALID) }
+        if (!current.resetCodeVerified && !AccountRules.isCode(current.code)) return _state.update { it.copy(codeError = FieldError.CODE_INVALID) }
         if (!AccountRules.isStrongPassword(current.newPassword)) return _state.update { it.copy(passwordError = FieldError.PASSWORD_WEAK) }
         busy {
-            when (val result = auth.resetPassword(current.email.trim(), current.code, current.newPassword)) {
+            if (!current.resetCodeVerified) {
+                when (val verified = auth.verifyResetCode(current.email.trim(), current.code)) {
+                    is OperationResult.Success -> _state.update { it.copy(resetCodeVerified = true) }
+                    is OperationResult.Error -> {
+                        if (verified.error == AuthError.INVALID_CODE) _state.update { it.copy(codeError = FieldError.CODE_INVALID) } else showError(verified.error)
+                        return@busy
+                    }
+                }
+            }
+            when (val result = auth.setNewPassword(current.newPassword)) {
                 is OperationResult.Success -> finish(onSignedIn)
-                is OperationResult.Error ->
-                    if (result.error == AuthError.INVALID_CODE) _state.update { it.copy(codeError = FieldError.CODE_INVALID) } else showError(result.error)
+                is OperationResult.Error -> {
+                    if (result.error == AuthError.WEAK_PASSWORD) _state.update { it.copy(passwordError = FieldError.PASSWORD_WEAK) }
+                    showError(result.error)
+                }
             }
         }
     }
 
     /** Google answered: the account's profile comes to this phone. */
-    fun onGoogleSignedIn(onSignedIn: (Boolean) -> Unit) = busy { finish(onSignedIn) }
+    fun onGoogleSignedIn(onSignedIn: (SignedInAccount) -> Unit) = busy { finish(onSignedIn) }
 
     fun onGoogleFailed(error: AuthError) {
         viewModelScope.launch { showError(error) }
     }
 
-    private suspend fun finish(onSignedIn: (Boolean) -> Unit) {
+    private suspend fun finish(onSignedIn: (SignedInAccount) -> Unit) {
         when (val result = accountSetup.completeSignIn()) {
             is OperationResult.Success -> onSignedIn(result.data)
             is OperationResult.Error -> showError(result.error)

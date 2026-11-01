@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate
 
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onFirst
@@ -96,13 +97,14 @@ class OnboardingFlowTest {
         override suspend fun signIn(email: String, password: String) = ok
         override suspend fun signOut() = ok
         override suspend fun sendPasswordResetCode(email: String) = ok
-        override suspend fun resetPassword(email: String, code: String, newPassword: String) = ok
+        override suspend fun verifyResetCode(email: String, code: String) = ok
+        override suspend fun setNewPassword(newPassword: String) = ok
     }
 
     private object NoSetup : AccountSetup {
         override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> =
             OperationResult.Success(Unit)
-        override suspend fun completeSignIn(): OperationResult<Boolean, AuthError> = OperationResult.Success(false)
+        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(false, null))
     }
 
     // only subjects() is used; every other call fails

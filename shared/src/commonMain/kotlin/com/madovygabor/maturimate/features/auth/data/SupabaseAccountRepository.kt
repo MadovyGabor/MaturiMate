@@ -13,6 +13,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -33,54 +34,34 @@ class SupabaseAccountRepository(
 
     private fun userId(): String = auth.currentUserOrNull()?.id ?: throw NotSignedIn()
 
-    override suspend fun uploadProfile(profile: UserProfile, firstName: String, lastName: String) = call {
-        val userId = userId()
-        postgrest.from("user_profile").upsert(
-            ProfileRow(
-                userId = userId,
+    override suspend fun saveSignUp(
+        profile: UserProfile,
+        firstName: String,
+        lastName: String,
+        consents: Set<ConsentType>,
+        finishedAt: Instant,
+    ) = call {
+        // the server takes the user from the session (auth.uid()); this only checks there is one
+        userId()
+        postgrest.rpc(
+            "save_sign_up",
+            SignUpParams(
                 firstName = firstName,
                 lastName = lastName,
                 teachingLanguage = profile.teachingLanguage?.name,
                 graduationDate = profile.graduationDate?.toString(),
-                onboardingCompletedAt = null,
-            )
-        )
-        postgrest.from("user_settings").upsert(
-            SettingsRow(
-                userId = userId,
                 uiLanguage = profile.uiLanguage.name,
                 timezone = profile.timezone,
                 dailyGoalMinutes = profile.dailyGoalMinutes,
                 reminderEnabled = profile.reminderEnabled,
                 reminderTime = profile.reminderTime?.toString(),
-            )
+                roleId = profile.role?.id,
+                subjects = profile.subjects.map { SubjectParam(it.subjectId, if (it.compulsory) "AUTO" else "CHOSEN", it.level?.name) },
+                consents = consents.map { it.name },
+                documentVersion = DOCUMENT_VERSION,
+                onboardingCompletedAt = finishedAt.toString(),
+            ),
         )
-        // the onboarding roles are replaced; roles the server gives (curator, admin) stay
-        postgrest.from("user_role").delete {
-            filter {
-                eq("user_id", userId)
-                isIn("role_id", UserRole.entries.map { it.id })
-            }
-        }
-        profile.role?.let { postgrest.from("user_role").insert(RoleRow(userId, it.id)) }
-        postgrest.from("user_subject").delete { filter { eq("user_id", userId) } }
-        if (profile.subjects.isNotEmpty()) {
-            postgrest.from("user_subject").insert(profile.subjects.map { it.toRow(userId) })
-        }
-        Unit
-    }
-
-    override suspend fun completeOnboarding(finishedAt: Instant) = call {
-        val userId = userId()
-        postgrest.from("user_profile").update(mapOf("onboarding_completed_at" to finishedAt.toString())) {
-            filter { eq("user_id", userId) }
-        }
-        Unit
-    }
-
-    override suspend fun recordConsents(consents: Set<ConsentType>) = call {
-        val userId = userId()
-        postgrest.from("user_consent").insert(consents.map { ConsentRow(userId, it.name, DOCUMENT_VERSION) })
         Unit
     }
 
@@ -135,9 +116,6 @@ class SupabaseAccountRepository(
 
     private class NotSignedIn : Exception()
 
-    private fun UserSubject.toRow(userId: String) =
-        SubjectRow(userId, subjectId, if (compulsory) "AUTO" else "CHOSEN", level?.name)
-
     companion object {
         /** Version of the terms and the privacy notice the consents refer to. */
         const val DOCUMENT_VERSION = "1.0"
@@ -178,9 +156,28 @@ private data class SubjectRow(
     val level: String? = null,
 )
 
+/** The parameters of the `save_sign_up` function (supabase/migrations). */
 @Serializable
-private data class ConsentRow(
-    @SerialName("user_id") val userId: String,
-    @SerialName("consent_type") val consentType: String,
-    @SerialName("document_version") val documentVersion: String,
+private data class SignUpParams(
+    @SerialName("p_first_name") val firstName: String,
+    @SerialName("p_last_name") val lastName: String,
+    @SerialName("p_teaching_language") val teachingLanguage: String?,
+    @SerialName("p_graduation_date") val graduationDate: String?,
+    @SerialName("p_ui_language") val uiLanguage: String,
+    @SerialName("p_timezone") val timezone: String,
+    @SerialName("p_daily_goal_minutes") val dailyGoalMinutes: Int?,
+    @SerialName("p_reminder_enabled") val reminderEnabled: Boolean,
+    @SerialName("p_reminder_time") val reminderTime: String?,
+    @SerialName("p_role_id") val roleId: Long?,
+    @SerialName("p_subjects") val subjects: List<SubjectParam>,
+    @SerialName("p_consents") val consents: List<String>,
+    @SerialName("p_document_version") val documentVersion: String,
+    @SerialName("p_onboarding_completed_at") val onboardingCompletedAt: String,
+)
+
+@Serializable
+private data class SubjectParam(
+    @SerialName("subject_id") val subjectId: Long,
+    val source: String,
+    val level: String?,
 )

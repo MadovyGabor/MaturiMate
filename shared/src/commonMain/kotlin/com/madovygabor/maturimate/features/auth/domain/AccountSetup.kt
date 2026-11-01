@@ -1,8 +1,17 @@
 package com.madovygabor.maturimate.features.auth.domain
 
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+
+/** The account on this phone after a sign-in. */
+data class SignedInAccount(
+    /** Whether the account finished the onboarding before: it goes home. */
+    val onboardingFinished: Boolean,
+    /** The answers on this phone after the sign-in, to continue the onboarding from. */
+    val profile: UserProfile?,
+)
 
 /** What happens on this phone and on the server after a sign-up or a sign-in. */
 interface AccountSetup {
@@ -18,8 +27,6 @@ interface AccountSetup {
     /**
      * After signing in to an existing account: the guest's rows become the account's, and the
      * account's profile on the server, if it has one, replaces the answers on this phone.
-     *
-     * @return Whether the account has finished the onboarding before.
      */
-    suspend fun completeSignIn(): OperationResult<Boolean, AuthError>
+    suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError>
 }

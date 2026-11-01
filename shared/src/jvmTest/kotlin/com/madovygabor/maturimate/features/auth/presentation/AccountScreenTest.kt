@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.auth.presentation
 
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
@@ -72,7 +73,8 @@ class AccountScreenTest {
         override suspend fun signIn(email: String, password: String) = ok
         override suspend fun signOut() = ok
         override suspend fun sendPasswordResetCode(email: String) = ok
-        override suspend fun resetPassword(email: String, code: String, newPassword: String) = ok
+        override suspend fun verifyResetCode(email: String, code: String) = ok
+        override suspend fun setNewPassword(newPassword: String) = ok
     }
 
     private class FakeSetup(val existingProfile: Boolean = false) : AccountSetup {
@@ -81,7 +83,7 @@ class AccountScreenTest {
             signedUp = Triple(firstName, lastName, marketing)
             return OperationResult.Success(Unit)
         }
-        override suspend fun completeSignIn(): OperationResult<Boolean, AuthError> = OperationResult.Success(existingProfile)
+        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(existingProfile, null))
     }
 
     private fun profiles(): UserProfileRepositoryImpl {
