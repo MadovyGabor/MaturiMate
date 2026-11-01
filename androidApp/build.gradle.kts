@@ -32,7 +32,13 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            // R8 removes the code and resources the app does not use (most of the Material icons)
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // signed with the debug key until the beta has its own key, so a release build can be
+            // installed and tested on a phone (./gradlew :androidApp:installRelease)
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
