@@ -66,3 +66,7 @@ sqldelight {
     }
 }
 
+// Test classes run in several JVMs at once; each JVM still runs its classes one after another
+tasks.withType<Test>().configureEach {
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+}

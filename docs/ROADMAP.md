@@ -92,7 +92,7 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 * **4.2 in short.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). `user_consent` (already in the design) records which terms and privacy version was accepted and when, and the marketing consent; it gets an `AGE_16` type for the age confirmation. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [x] **4.3.** Apply the schema to Supabase; keep the local Docker database in line. Applied through the Supabase connector; the migration file names match the versions Supabase recorded. A second migration fixes the database advisors' findings (fixed `search_path` on the trigger functions, `rls_auto_enable()` not callable through the API, indexes on five foreign keys).
 * [x] **4.4.** Row level security policies, with tests (`supabase/tests/rls_test.sql`, run in CI). Signed-in users read and write only their own rows; they can give themselves only the student, learner or teacher role; consents can be added and withdrawn, not rewritten; content reports are resolved by curators and admins; the leaderboard is read-only. Content tables have no policy, so the API does not expose them. Not signed in: no access.
-* [x] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off. Settings: [supabase-setup.md](supabase-setup.md).
+* [x] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off. Settings: [supabase-setup.md](../llm/supabase-setup.md).
 * [x] **4.7.** E-mail sending through Resend with the `maturimate.madovygabor.com` subdomain (custom SMTP); then "Confirm email" back on with templates that carry the 6-digit code (sign-up confirmation, password reset). Needed before the account screen of Milestone 5 can be tested.
 * [x] **4.6.** Key handling: only the public key in the app, secrets outside the repository. `core/config/SupabaseConfig.kt` holds the project URL, the publishable key and the Google web client id; secrets stay in Supabase, Resend, Google Cloud and `.env` files (gitignored).
 
@@ -124,7 +124,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 
 ## Milestone 6: Toolchain update (AGP 9)
 
-Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-01, so the unit engine is built on the new module layout and versions (see [DECISIONS](DECISIONS.md) 2026-11-01). The plan, the versions and what changes: [toolchain-agp9.md](toolchain-agp9.md). The build tooling changes; the app's behaviour does not. Every tool and library goes to its newest stable version (no alpha, beta or release candidate).
+Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-01, so the unit engine is built on the new module layout and versions (see [DECISIONS](DECISIONS.md) 2026-11-01). The plan, the versions and what changes: [toolchain-agp9.md](../llm/toolchain-agp9.md). The build tooling changes; the app's behaviour does not. Every tool and library goes to its newest stable version (no alpha, beta or release candidate).
 
 * [x] **6.1.** Plan: target versions, what AGP 9 changes, the new module layout (`shared`, `androidApp`, `desktopApp`), the order of the steps.
 * [x] **6.2.** `:database` moves to the Android-KMP library plugin (`com.android.kotlin.multiplatform.library`), still on AGP 8.13.
@@ -139,7 +139,7 @@ Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-
 
 ## Milestone 6a: Code review fixes
 
-Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](review-2026-11-01.md). *Added on 2026-11-01; waiting for the owner's approval.*
+Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](../llm/review-2026-11-01.md). *Added on 2026-11-01; waiting for the owner's approval.*
 
 * [x] **6a.1.** Error handling: crash on unexpected server data, the profile read error that ends in the onboarding (and the flaky `AppViewModelTest`), the onboarding that went back to the welcome screen after the language, dropped errors and cancellations, one user database call at a time.
 * [ ] **6a.2.** Account flow: password reset after a refused password, resuming the onboarding after sign-in, two accounts on one phone, the snackbar that blocks buttons.
@@ -147,6 +147,7 @@ Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and 
 * [ ] **6a.4.** Android release: backup without the session, R8 shrinking (28.5 MB APK today).
 * [ ] **6a.5.** Tests and coverage: Kover, the missing tests, the shared profile flow.
 * [ ] **6a.6.** Cleanup of dead code.
+* [/] **6a.7.** Faster CI: one run per commit (no separate `pull_request` run), no run for documentation-only changes, the Android build as its own job beside the tests, parallel Gradle builds and parallel test JVMs. *Added on 2026-11-01; checked locally, the first CI run comes with the next push.*
 
 ---
 

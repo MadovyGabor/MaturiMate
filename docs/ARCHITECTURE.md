@@ -13,7 +13,7 @@ For the current status of each part, see the "Current status" section of the [RE
 | Component | Version (from `../gradle/libs.versions.toml`) | Notes |
 |---|---|---|
 | Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target in `:shared` and `:database` |
-| Gradle, Android Gradle Plugin | 9.8.2, 9.5.0 | Built-in Kotlin; shared modules use the Android-KMP library plugin (`com.android.kotlin.multiplatform.library`); see [toolchain-agp9.md](toolchain-agp9.md) |
+| Gradle, Android Gradle Plugin | 9.8.2, 9.5.0 | Built-in Kotlin; shared modules use the Android-KMP library plugin (`com.android.kotlin.multiplatform.library`); see [toolchain-agp9.md](../llm/toolchain-agp9.md) |
 | Compose Multiplatform | 1.12.2 | Shared UI for Android and desktop (Jetpack Compose 1.12.1 on Android) |
 | Material 3 (Compose Multiplatform) | 1.9.0 | Own version line; the newest stable |
 | Navigation3 for Compose Multiplatform | 1.2.0 | |

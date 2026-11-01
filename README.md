@@ -202,7 +202,7 @@ Desktop packaging is configured for Dmg, Msi and Deb (`desktopApp/build.gradle.k
 
 - Placeholders and mock data: `ExamWriteScreen` is a text placeholder; the History entry is a text placeholder; profile subject statistics are hard-coded values; the subject list and the exam list are static, with no data source.
 - Tests cover the database, the content pipeline and the repositories (70 tests). No tests exist for the onboarding, profile, or navigation code. No coverage tool is configured.
-- CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every push and pull request in three separate jobs: database, content pipeline (with a PostgreSQL 16 service), and app (tests plus the Android APK and desktop jar). Each job shows its test results as a table in the run summary and as its own check.
+- CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every push that changes more than documentation, in four parallel jobs: database, content pipeline (with a PostgreSQL 16 service), app (tests and the desktop jar) and the Android build. A pull request shows the result of its branch's push. Each job shows its test results as a table in the run summary and as its own check.
 - Localization: Slovak in `values` (the default for every phone language except Hungarian), Hungarian in `values-hu`. The old setup and profile screens still have hard-coded Hungarian text; they are rebuilt in Milestone 5.
 
 ## Development approach

@@ -97,3 +97,8 @@ dependencies {
     // Compose previews in Android Studio; the Android-KMP library has no debug variant
     "androidRuntimeClasspath"(libs.compose.ui.tooling)
 }
+
+// Test classes run in several JVMs at once; each JVM still runs its classes one after another
+tasks.withType<Test>().configureEach {
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+}
