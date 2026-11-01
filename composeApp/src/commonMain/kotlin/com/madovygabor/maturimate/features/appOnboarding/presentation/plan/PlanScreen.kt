@@ -34,7 +34,6 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.onboarding
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.hoursAndMinutes
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.label
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
-import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.SharingStarted
@@ -65,8 +64,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-/** A subject in the plan, with its level when it has one. */
-data class PlanSubject(val subject: CatalogSubject, val level: SubjectLevel?)
 
 /** The answers turned into a plan (docs/onboarding/README.md, screen 8). */
 data class PlanUiState(
@@ -74,7 +71,7 @@ data class PlanUiState(
     /** Days until the exam; students only. */
     val daysLeft: Int? = null,
     val dailyGoalMinutes: Int = DEFAULT_GOAL,
-    val subjects: List<PlanSubject> = emptyList(),
+    val subjects: List<CatalogSubject> = emptyList(),
     /** The reminder time when the reminder is on. */
     val reminder: LocalTime? = null,
 ) {
@@ -94,7 +91,7 @@ class PlanViewModel(
                 role = profile?.role,
                 daysLeft = profile?.graduationDate?.takeIf { profile.role == UserRole.STUDENT }?.let { today.daysUntil(it).coerceAtLeast(0) },
                 dailyGoalMinutes = profile?.dailyGoalMinutes ?: DEFAULT_GOAL,
-                subjects = profile?.subjects.orEmpty().mapNotNull { saved -> CatalogSubject.byId(saved.subjectId)?.let { PlanSubject(it, saved.level) } },
+                subjects = profile?.subjects.orEmpty().mapNotNull { saved -> CatalogSubject.byId(saved.subjectId) },
                 reminder = profile?.reminderTime?.takeIf { profile.reminderEnabled },
             )
         }
@@ -143,12 +140,11 @@ fun PlanContent(state: PlanUiState, onBack: () -> Unit, onNext: () -> Unit) {
         }
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2)) {
             state.subjects.forEach { planned ->
-                val name = stringResource(planned.subject.label)
-                Fact(Icons.AutoMirrored.Rounded.MenuBook, planned.level?.let { "$name (${it.name})" } ?: name)
+                Fact(Icons.AutoMirrored.Rounded.MenuBook, stringResource(planned.label))
             }
             state.reminder?.let { Fact(Icons.Rounded.Notifications, stringResource(Res.string.plan_reminder, it.hoursAndMinutes())) }
         }
-        Text(stringResource(Res.string.plan_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.plan_change_later), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -167,7 +163,7 @@ private fun PlanCard(label: String, value: String, note: String) {
         ) {
             Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onBackground)
-            Text(note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(note, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -187,7 +183,7 @@ private fun Fact(icon: ImageVector, text: String) {
             horizontalArrangement = Arrangement.spacedBy(spacing.space3),
         ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(MaterialTheme.layout.iconSmall))
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
+            Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
         }
     }
 }
@@ -199,7 +195,7 @@ private fun PlanContentPreview() {
         PlanContent(
             PlanUiState(
                 role = UserRole.STUDENT, daysLeft = 135, dailyGoalMinutes = 10,
-                subjects = listOf(PlanSubject(CatalogSubject.HUNGARIAN, null), PlanSubject(CatalogSubject.ENGLISH, SubjectLevel.B2)),
+                subjects = listOf(CatalogSubject.HUNGARIAN, CatalogSubject.ENGLISH_B2),
                 reminder = LocalTime(18, 0),
             ),
             {}, {},

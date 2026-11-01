@@ -145,7 +145,7 @@ fun ProfileContent(state: ProfileUiState?, onEdit: (OnboardingStep) -> Unit) {
             state.daysLeft?.let { days ->
                 Countdown(stringResource(Res.string.plan_until_exam), pluralStringResource(Res.plurals.plan_days, days, days))
             }
-            Text(stringResource(Res.string.profile_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(Res.string.profile_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
                 state.steps.forEach { step ->
                     AnswerRow(stringResource(step.label), answerText(step, state.profile), onClick = { onEdit(step) })
@@ -172,11 +172,8 @@ private fun answerText(step: OnboardingStep, profile: UserProfile): String {
             null -> notSet
         }
         OnboardingStep.SUBJECTS -> profile.subjects
-            .mapNotNull { saved -> CatalogSubject.byId(saved.subjectId)?.let { it to saved.level } }
-            .map { (subject, level) ->
-                val name = stringResource(subject.label)
-                if (level != null) "$name (${level.name})" else name
-            }
+            .mapNotNull { saved -> CatalogSubject.byId(saved.subjectId) }
+            .map { stringResource(it.label) }
             .joinToString(", ")
             .ifEmpty { notSet }
         OnboardingStep.DATE -> profile.graduationDate?.let { longDate(it) } ?: notSet

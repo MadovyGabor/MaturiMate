@@ -114,6 +114,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen with the forgotten password, and shows the "Már van fiókom" button on the welcome screen. After sign-up the guest's rows become the account's and the profile and consents go to Supabase; after sign-in the account's profile comes to the phone.
 * [x] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped: `App` picks the start screen and the language from the profile; `onboardingBackStack` rebuilds the steps up to the first unanswered one (the reminder, the plan and the account are always shown again). An end-to-end test (`OnboardingFlowTest`) goes from the welcome screen to the home screen.
 * [x] **5.14.** Profile screen update and tests.
+* [x] **5.15. Fixes after the first phone test:** tab navigation, fewer labels and larger text on the onboarding, Google sign-in at the end of the onboarding (Google first, then the name and the consents in the app, and only then the rows on the server), the sign-up e-mail with the 6-digit code instead of a link, and the exam subjects on the live server, with `HU_SJSL` for Hungarian schools, English as `ANJ_B1` and `ANJ_B2`, and every subject for teachers.
 
 *Steps 5.4 to 5.14 renumbered on 2026-10-31 to follow the nine screens of [the onboarding flow](onboarding/README.md#5-flow-32); role, subjects, reminder and plan were missing.*
 
@@ -123,7 +124,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 
 Goal: one complete lesson that works end to end. After that, new units are mostly new data.
 
-* [ ] **6.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time.
+* [ ] **6.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time. Lessons and tasks have a Hungarian and a Slovak text under one id (needed for Mathematics, DECISIONS 2026-11-01); the app shows the teaching language.
 * [ ] **6.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
 * [ ] **6.3. Reading passage view:** a text shown together with its tasks.
 * [ ] **6.4.** Loading the first unit through the importer and the content database. The exporter builds two files: the starter pack bundled in the app (first lesson only) and the full content file.
@@ -149,11 +150,15 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 
 ## Milestone 9: UI polish and beta
 
+*Android is the target platform; desktop is for development. Small bugs, polish, animations and platform tuning are collected and done here, after the main subjects work, not between the earlier milestones (owner's choice, 2026-11-01).*
+
 * [ ] **9.0. Toolchain to the newest versions, on its own branch:** AGP 9 with `composeApp` split into a shared Kotlin Multiplatform library and a thin Android app module, compileSdk 37, Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11 and the newest Gradle; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced. See [DECISIONS](DECISIONS.md) 2026-10-31.
 * [ ] **9.1.** Animations, reading view polish, accessibility checks.
 * [ ] **9.2.** Review of the user database tables before the first testers install the app.
 * [ ] **9.3.** Closed beta of the Hungarian subject on Android.
 * [ ] **9.4.** Localization of the UI strings (Slovak and Hungarian).
+* [ ] **9.5. Profile settings:** the name and the account in the profile, "Fiók létrehozása" for guests, and a reset that starts over. *Added on 2026-11-01; not part of the onboarding.*
+* [ ] **9.6. Exam dates:** the written exams start on the Monday of the second week of March; the app computes the date from this rule and takes the official date when it is published. *Added on 2026-11-01; how the official date reaches the app is open.*
 
 ---
 
@@ -163,6 +168,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **10.2.** Content download after sign-up and later updates, as described under "Data architecture": a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. Large downloads ask before using mobile data.
 * [ ] **10.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
 * [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download.
+* [ ] **10.3b. Consent documents:** the terms of use and the privacy notice written and published (`maturimate.madovygabor.com`), linked from the consent text on the account step, with real document versions instead of "1.0". *Added on 2026-11-01.*
 * [ ] **10.4.** Public release of the Hungarian subject.
 
 ---
@@ -170,7 +176,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 ## Milestone 11: More subjects and platforms
 
 * [ ] **11.1. Slovak:** new content and the grammar task types.
-* [ ] **11.2. English (B1/B2):** level filtering, cloze tasks. Listening tasks with own recordings or transcripts.
+* [ ] **11.2. English (B1/B2):** level filtering, cloze tasks. Listening tasks with own recordings or transcripts. B1 and B2 are two subjects (`ANJ_B1`, `ANJ_B2`, DECISIONS 2026-11-01).
 * [ ] **11.3. Mathematics:** formula rendering, numeric answers with comma and dot normalisation.
 * [ ] **11.4. Platforms:** desktop (a target already exists), then iOS, then web.
 

@@ -40,12 +40,15 @@ class AccountSetupImpl(
         adopt(accountId)
         if (profiles.saveNames(firstName, lastName) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
         val profile = profiles.profile.first() ?: return OperationResult.Error(AuthError.UNKNOWN)
-        val uploaded = account.uploadProfile(profile.copy(onboardingCompletedAt = finishedAt), firstName, lastName)
+        val uploaded = account.uploadProfile(profile, firstName, lastName)
         if (uploaded is OperationResult.Error) return uploaded
         val consents = setOf(ConsentType.TERMS, ConsentType.PRIVACY, ConsentType.AGE_16) +
             if (marketing) setOf(ConsentType.MARKETING) else emptySet()
         val recorded = account.recordConsents(consents)
         if (recorded is OperationResult.Error) return recorded
+        // only a complete upload counts as finished on the server
+        val completed = account.completeOnboarding(finishedAt)
+        if (completed is OperationResult.Error) return completed
         // last: finishing the onboarding takes the app to the home screen
         if (profiles.completeOnboarding(finishedAt) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
         return OperationResult.Success(Unit)

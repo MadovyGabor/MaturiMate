@@ -48,7 +48,7 @@ Not everyone prepares for the exam, so the flow asks first what the app is for. 
 
 Teachers get the same app as everyone else. There is no teacher mode (classes, assigning tasks) in V1; see [DECISIONS](../DECISIONS.md).
 
-**Subjects.** The subject step is a multiple choice. The compulsory exam subjects are preselected by the teaching language and cannot be removed: Slovak language and literature, English, and for a Hungarian-language school also Hungarian language and literature. Mathematics and later subjects are optional. English always asks for the level: B1, B2 or "I don't know yet", which is saved as B1. Subjects without content yet are shown with a "Hamarosan" (coming soon) label. Stored in `user_subject` (`source` = `AUTO` for compulsory, `CHOSEN` for picked; the English level in `level`).
+**Subjects.** The subject step is a multiple choice. The compulsory exam subjects are preselected by the teaching language and cannot be removed: for a Slovak-language school Slovak language and literature (`SK_SJL`) and English; for a Hungarian-language school Hungarian language and literature (`HU_MJL`), Slovak language and Slovak literature (`HU_SJSL`) and English. Mathematics and later subjects are optional. English always asks for the level: B1, B2 or "I don't know yet", which is saved as B1; the level decides which English subject is saved (`ANJ_B1` or `ANJ_B2`). A teacher gets every subject of both school languages, with English B1 and B2 as two cards. Stored in `user_subject` (`source` = `AUTO` for compulsory, `CHOSEN` for picked). *Changed on 2026-11-01, see DECISIONS.*
 
 ## 4. User data
 
@@ -58,7 +58,7 @@ Ask only for what is used. Everything is stored per account; the account id come
 | :--- | :--- | :--- | :--- |
 | Teaching language (HU/SK) | subjects, app language | `user_profile.teaching_language`, `user_settings.ui_language` | everyone |
 | Role | which questions follow | `user_role` | everyone |
-| Subjects, English level | content, home screen | `user_subject`, the level in `user_subject.level` | everyone |
+| Subjects, English level | content, home screen | `user_subject` (the level is the English subject: `ANJ_B1` or `ANJ_B2`) | everyone |
 | Exam date | countdown, plan | `user_profile.graduation_date` | students |
 | Daily goal | streak, plan | `user_settings.daily_goal_minutes` | students, learners |
 | Reminder and its time | notifications | `user_settings.reminder_*` | anyone who wants it |
@@ -111,7 +111,7 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 ## 7. Texts (3.4)
 
-The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are app strings for now (`subject_hu_mjl`, `subject_sk_sjl`, `subject_anj`, `subject_mat`), because the onboarding offers subjects whose content is not installed yet; see [DECISIONS](../DECISIONS.md).
+The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are app strings for now (`subject_hu_mjl`, `subject_hu_sjsl`, `subject_sk_sjl`, `subject_anj`, `subject_anj_b1`, `subject_anj_b2`, `subject_mat`), because the onboarding offers subjects whose content is not installed yet; see [DECISIONS](../DECISIONS.md).
 
 **Status:** the Hungarian text is final after the owner's review. **Every Slovak line needs a check by a native speaker** before the release. ⚠ marks a line that may be tight on a button, chip or the desktop step list.
 
@@ -293,6 +293,7 @@ New in step 5.12 (not in the prototype; please review):
 | `reset_title` (new) | Új jelszó | Nové heslo |
 | `reset_why` (new) | Küldünk egy 6 jegyű kódot az e-mail címedre, azzal adhatsz meg új jelszót. | Pošleme ti 6-miestny kód na e-mail, s ním si nastavíš nové heslo. |
 | `reset_send` (new) | Kód küldése | Poslať kód |
+| `account_consent_required` (new) | A folytatáshoz fogadd el a feltételeket és az adatvédelmi tájékoztatót. | Ak chceš pokračovať, prijmi podmienky a zásady ochrany súkromia. |
 | `reset_new_password` (new) | Új jelszó | Nové heslo |
 | `reset_save` (new) | Jelszó mentése | Uložiť heslo |
 

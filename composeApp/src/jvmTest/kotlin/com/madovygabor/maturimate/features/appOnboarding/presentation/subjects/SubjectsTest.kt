@@ -26,7 +26,6 @@ import com.madovygabor.maturimate.features.learning.domain.model.Subject
 import com.madovygabor.maturimate.features.learning.domain.model.Track
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
-import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
@@ -86,7 +85,8 @@ class SubjectsTest {
 
         val state = SubjectsViewModel(repository, content, SnackbarController()).loaded()
 
-        assertEquals(CatalogSubject.entries, state.items.map { it.subject })
+        assertEquals(listOf(CatalogSubject.HUNGARIAN, CatalogSubject.SLOVAK_HU, CatalogSubject.ENGLISH_B1, CatalogSubject.MATHEMATICS), state.items.map { it.subject })
+        assertEquals(listOf(false, false, true, false), state.items.map { it.asksLevel })
         assertEquals(listOf(true, true, true, false), state.items.map { it.selected })
         assertEquals(listOf(true, true, true, false), state.items.map { it.locked })
         // only the Hungarian subject has content
@@ -103,30 +103,54 @@ class SubjectsTest {
 
         val state = SubjectsViewModel(repository, content, SnackbarController()).loaded()
 
-        assertEquals(listOf(CatalogSubject.SLOVAK, CatalogSubject.ENGLISH, CatalogSubject.MATHEMATICS), state.items.map { it.subject })
+        assertEquals(listOf(CatalogSubject.SLOVAK, CatalogSubject.ENGLISH_B1, CatalogSubject.MATHEMATICS), state.items.map { it.subject })
     }
 
     @Test
-    fun teacherPicksFreelyAndUnknownLevelIsSavedAsB1() = runBlocking {
+    fun teacherGetsBothSchoolsAndBothEnglishLevels() = runBlocking {
         val repository = repository()
         repository.saveTeachingLanguage(TeachingLanguage.HU)
         repository.saveRole(UserRole.TEACHER)
         val viewModel = SubjectsViewModel(repository, content, SnackbarController())
 
         val loaded = viewModel.loaded()
-        assertTrue(loaded.items.none { it.selected || it.locked })
+        assertTrue(loaded.items.none { it.selected || it.locked || it.asksLevel })
+        // the own school's subjects first, then the Slovak school's
+        assertEquals(
+            listOf(
+                CatalogSubject.HUNGARIAN, CatalogSubject.SLOVAK_HU, CatalogSubject.ENGLISH_B1,
+                CatalogSubject.ENGLISH_B2, CatalogSubject.MATHEMATICS, CatalogSubject.SLOVAK,
+            ),
+            loaded.items.map { it.subject },
+        )
 
-        viewModel.onToggled(CatalogSubject.ENGLISH)
+        viewModel.onToggled(CatalogSubject.ENGLISH_B1)
+        viewModel.onToggled(CatalogSubject.ENGLISH_B2)
+        viewModel.onToggled(CatalogSubject.SLOVAK)
+        assertTrue(viewModel.state.value.canContinue)
+        val done = CompletableDeferred<UserRole?>()
+        viewModel.onNext { done.complete(it) }
+
+        assertEquals(UserRole.TEACHER, withTimeout(5_000) { done.await() })
+        assertEquals(listOf(3L, 6L, 2L), repository.profile.first()!!.subjects.map { it.subjectId })
+    }
+
+    @Test
+    fun learnerLevelPicksTheEnglishSubjectAndUnknownIsB1() = runBlocking {
+        val repository = repository()
+        repository.saveTeachingLanguage(TeachingLanguage.HU)
+        repository.saveRole(UserRole.LEARNER)
+        val viewModel = SubjectsViewModel(repository, content, SnackbarController())
+        viewModel.loaded()
+
+        viewModel.onToggled(CatalogSubject.ENGLISH_B1)
         viewModel.onToggled(CatalogSubject.MATHEMATICS)
         viewModel.onLevelSelected(LevelChoice.UNKNOWN)
         val done = CompletableDeferred<UserRole?>()
         viewModel.onNext { done.complete(it) }
 
-        assertEquals(UserRole.TEACHER, withTimeout(5_000) { done.await() })
-        assertEquals(
-            listOf(UserSubject(3, compulsory = false, level = SubjectLevel.B1), UserSubject(4, compulsory = false)),
-            repository.profile.first()!!.subjects,
-        )
+        assertEquals(UserRole.LEARNER, withTimeout(5_000) { done.await() })
+        assertEquals(listOf(UserSubject(3, compulsory = false), UserSubject(4, compulsory = false)), repository.profile.first()!!.subjects)
     }
 
     @Test
@@ -147,11 +171,11 @@ class SubjectsTest {
         val repository = repository()
         repository.saveTeachingLanguage(TeachingLanguage.HU)
         repository.saveRole(UserRole.LEARNER)
-        repository.saveSubjects(listOf(UserSubject(3, compulsory = false, level = SubjectLevel.B2)))
+        repository.saveSubjects(listOf(UserSubject(6, compulsory = false)))
 
         val state = SubjectsViewModel(repository, content, SnackbarController()).loaded()
 
-        assertEquals(listOf(CatalogSubject.ENGLISH), state.items.filter { it.selected }.map { it.subject })
+        assertEquals(listOf(CatalogSubject.ENGLISH_B1), state.items.filter { it.selected }.map { it.subject })
         assertEquals(LevelChoice.B2, state.level)
         assertTrue(state.canContinue)
     }
@@ -161,7 +185,9 @@ class SubjectsTest {
         var state by mutableStateOf(
             SubjectsUiState(
                 role = UserRole.LEARNER,
-                items = CatalogSubject.forLanguage(TeachingLanguage.HU).map { SubjectItem(it, false, false, true) },
+                items = (CatalogSubject.forLanguage(TeachingLanguage.HU) - CatalogSubject.ENGLISH_B2).map {
+                    SubjectItem(it, false, false, true, asksLevel = it.level != null)
+                },
             )
         )
         setContent {
@@ -194,8 +220,8 @@ class SubjectsTest {
         val dir = File("build/screenshots/subjects").apply { mkdirs() }
         val state = SubjectsUiState(
             role = UserRole.STUDENT,
-            items = CatalogSubject.forLanguage(TeachingLanguage.HU).map {
-                SubjectItem(it, it.compulsory, it.compulsory, it == CatalogSubject.HUNGARIAN)
+            items = (CatalogSubject.forLanguage(TeachingLanguage.HU) - CatalogSubject.ENGLISH_B2).map {
+                SubjectItem(it, it.compulsory, it.compulsory, it == CatalogSubject.HUNGARIAN, asksLevel = it.level != null)
             },
             level = LevelChoice.UNKNOWN,
         )

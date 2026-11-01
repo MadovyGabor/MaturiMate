@@ -17,7 +17,6 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.Onboarding
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
-import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.Dispatchers
@@ -60,14 +59,14 @@ class PlanTest {
         repository.saveRole(UserRole.STUDENT)
         repository.saveGraduationDate(LocalDate(2027, 3, 15))
         repository.saveDailyGoal(10)
-        repository.saveSubjects(listOf(UserSubject(1, true), UserSubject(3, true, SubjectLevel.B2)))
+        repository.saveSubjects(listOf(UserSubject(1, true), UserSubject(6, true)))
         repository.saveReminder(true, LocalTime(18, 0))
 
         val state = withTimeout(5_000) { PlanViewModel(repository, today).state.first { it?.role != null } }!!
 
         assertEquals(135, state.daysLeft)
         assertEquals(23, state.hoursUntilExam)
-        assertEquals(listOf(PlanSubject(CatalogSubject.HUNGARIAN, null), PlanSubject(CatalogSubject.ENGLISH, SubjectLevel.B2)), state.subjects)
+        assertEquals(listOf(CatalogSubject.HUNGARIAN, CatalogSubject.ENGLISH_B2), state.subjects)
         assertEquals(LocalTime(18, 0), state.reminder)
     }
 
@@ -122,9 +121,9 @@ class PlanTest {
         daysLeft = 135,
         dailyGoalMinutes = 10,
         subjects = listOf(
-            PlanSubject(CatalogSubject.HUNGARIAN, null),
-            PlanSubject(CatalogSubject.SLOVAK, null),
-            PlanSubject(CatalogSubject.ENGLISH, SubjectLevel.B1),
+            CatalogSubject.HUNGARIAN,
+            CatalogSubject.SLOVAK_HU,
+            CatalogSubject.ENGLISH_B1,
         ),
         reminder = LocalTime(18, 0),
     )

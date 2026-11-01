@@ -3,7 +3,6 @@ package com.madovygabor.maturimate.features.auth.presentation
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -31,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.account_create
+import maturimate.composeapp.generated.resources.account_consent_required
 import maturimate.composeapp.generated.resources.account_google
 import maturimate.composeapp.generated.resources.account_title
 import maturimate.composeapp.generated.resources.code_title
@@ -42,6 +42,7 @@ import javax.imageio.ImageIO
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
@@ -175,14 +176,50 @@ class AccountScreenTest {
     }
 
     @Test
-    fun consentUnlocksCreatingTheAccountAndGoogle() = runComposeUiTest {
-        setContent { AppTheme(darkTheme = false) { AccountContent(AccountUiState(), UserRole.STUDENT, AccountActions()) } }
-        onNodeWithText(text(Res.string.account_create)).assertIsNotEnabled()
-        onNodeWithText(text(Res.string.account_google)).assertIsNotEnabled()
+    fun newGoogleAccountWaitsForTheNameAndTheConsent() = runBlocking {
+        val auth = FakeAuth().apply { user = AccountUser("id", "anna@gmail.com", "Anna", "Kovács") }
+        val setup = FakeSetup(existingProfile = false)
+        val viewModel = AccountViewModel(auth, setup, profiles(), SnackbarController())
 
-        setContent { AppTheme(darkTheme = false) { AccountContent(AccountUiState(consent = true), UserRole.STUDENT, AccountActions()) } }
+        viewModel.onGoogleSignedIn()
+        viewModel.idle()
+        // back from Google: the name is filled in, but nothing is set up before the consent
+        assertEquals("anna@gmail.com", viewModel.state.value.googleEmail)
+        assertEquals("Anna", viewModel.state.value.firstName)
+        assertNull(setup.signedUp)
+
+        viewModel.onConsentChanged(true)
+        viewModel.onCreateAccount()
+        viewModel.idle()
+        assertEquals(Triple("Anna", "Kovács", false), setup.signedUp)
+    }
+
+    @Test
+    fun googleOpensBeforeTheConsentButTheSignUpAsksForIt() = runBlocking {
+        val auth = FakeAuth()
+        val viewModel = AccountViewModel(auth, FakeSetup(), profiles(), SnackbarController())
+        var googleOpened = false
+
+        viewModel.onGoogle { googleOpened = true }
+        assertTrue(googleOpened)
+        assertFalse(viewModel.state.value.consentMissing)
+
+        viewModel.fill()
+        viewModel.onConsentChanged(false)
+        viewModel.onCreateAccount()
+        assertNull(auth.signedUp)
+        assertTrue(viewModel.state.value.consentMissing)
+
+        viewModel.onConsentChanged(true)
+        assertFalse(viewModel.state.value.consentMissing)
+    }
+
+    @Test
+    fun theButtonsWorkBeforeTheConsentAndTheMissingConsentIsShown() = runComposeUiTest {
+        setContent { AppTheme(darkTheme = false) { AccountContent(AccountUiState(consentMissing = true), UserRole.STUDENT, AccountActions()) } }
         onNodeWithText(text(Res.string.account_create)).assertIsEnabled()
         onNodeWithText(text(Res.string.account_google)).assertIsEnabled()
+        onNodeWithText(text(Res.string.account_consent_required)).assertExists()
     }
 
     /** Pictures of the form and the code step, both themes and languages, into build/screenshots/account. */

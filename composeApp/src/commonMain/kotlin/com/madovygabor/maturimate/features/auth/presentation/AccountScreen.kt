@@ -22,6 +22,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.account_browse
 import maturimate.composeapp.generated.resources.account_consent
+import maturimate.composeapp.generated.resources.account_consent_required
 import maturimate.composeapp.generated.resources.account_create
 import maturimate.composeapp.generated.resources.account_email
 import maturimate.composeapp.generated.resources.account_first_name
@@ -62,7 +63,7 @@ fun AccountScreen(
             onChanged = viewModel::onChanged,
             onConsentChanged = viewModel::onConsentChanged,
             onNewsChanged = viewModel::onNewsChanged,
-            onGoogle = google,
+            onGoogle = { viewModel.onGoogle(google) },
             onCreate = viewModel::onCreateAccount,
             onBrowse = viewModel::onBrowseAsGuest,
             onCodeChanged = viewModel::onCodeChanged,
@@ -99,24 +100,24 @@ fun AccountContent(state: AccountUiState, role: UserRole?, actions: AccountActio
 private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountActions) {
     OnboardingScaffold(
         actions = listOf(
-            OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = state.consent && !state.busy),
+            OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = !state.busy),
             OnboardingAction(stringResource(Res.string.account_browse), actions.onBrowse, AppButtonVariant.TEXT, enabled = !state.busy),
         ),
         stackedActions = true,
         progress = OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBack),
     ) {
         Text(stringResource(Res.string.account_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.account_why), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.account_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.googleEmail != null) {
             Text(stringResource(Res.string.account_google_signed, state.googleEmail), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground)
         } else {
-            // Google needs the consent first, like the e-mail sign-up
+            // Google comes first; the name and the consent follow on this screen
             AppButton(
                 text = stringResource(Res.string.account_google),
                 onClick = actions.onGoogle,
                 modifier = Modifier.fillMaxWidth(),
                 variant = AppButtonVariant.OUTLINED,
-                enabled = state.consent && !state.busy,
+                enabled = !state.busy,
             )
             DividerWithText(stringResource(Res.string.account_or_email))
         }
@@ -149,7 +150,10 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
                 password = true,
             )
         }
-        CheckRow(stringResource(Res.string.account_consent), state.consent, actions.onConsentChanged)
+        CheckRow(
+            stringResource(Res.string.account_consent), state.consent, actions.onConsentChanged,
+            error = stringResource(Res.string.account_consent_required).takeIf { state.consentMissing },
+        )
         CheckRow(stringResource(Res.string.account_news), state.news, actions.onNewsChanged)
     }
 }
@@ -166,7 +170,7 @@ private fun CodeStep(state: AccountUiState, email: String, role: UserRole?, acti
         progress = OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBackToForm),
     ) {
         Text(stringResource(Res.string.code_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.code_sent, email), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.code_sent, email), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         AppTextField(
             value = state.code,
             onValueChange = actions.onCodeChanged,
