@@ -93,6 +93,6 @@ val sharedModule = module {
     viewModel { PlanViewModel(get()) }
     viewModelOf(::AccountViewModel)
     viewModelOf(::SignInViewModel)
-    viewModelOf(::ProfileViewModel)
+    viewModel { ProfileViewModel(get()) }
 }
 

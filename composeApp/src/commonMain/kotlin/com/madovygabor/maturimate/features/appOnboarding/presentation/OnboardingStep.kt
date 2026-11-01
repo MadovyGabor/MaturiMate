@@ -1,9 +1,12 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
+import maturimate.composeapp.generated.resources.common_next
+import maturimate.composeapp.generated.resources.common_save
 import maturimate.composeapp.generated.resources.onboarding_step_account
 import maturimate.composeapp.generated.resources.onboarding_step_date
 import maturimate.composeapp.generated.resources.onboarding_step_goal
@@ -78,3 +81,12 @@ data class OnboardingProgress(
     /** 1-based number of the current step. */
     val number: Int get() = steps.indexOf(current) + 1
 }
+
+/**
+ * True when a question screen is opened from the profile to change its answer: the screen has
+ * a plain back button instead of the step header, and "Mentés" instead of "Tovább".
+ */
+val LocalEditingAnswer = staticCompositionLocalOf { false }
+
+/** The text of a question screen's main button. */
+fun nextLabel(editing: Boolean): StringResource = if (editing) Res.string.common_save else Res.string.common_next

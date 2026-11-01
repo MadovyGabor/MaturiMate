@@ -113,7 +113,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.11.** "A te terved" summary: days until the exam with the hours of practice (students), the daily goal and its hours in a year (learners), the subjects with the English level, and the reminder.
 * [x] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen with the forgotten password, and shows the "Már van fiókom" button on the welcome screen. After sign-up the guest's rows become the account's and the profile and consents go to Supabase; after sign-in the account's profile comes to the phone.
 * [x] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped: `App` picks the start screen and the language from the profile; `onboardingBackStack` rebuilds the steps up to the first unanswered one (the reminder, the plan and the account are always shown again). An end-to-end test (`OnboardingFlowTest`) goes from the welcome screen to the home screen.
-* [ ] **5.14.** Profile screen update and tests.
+* [x] **5.14.** Profile screen update and tests.
 
 *Steps 5.4 to 5.14 renumbered on 2026-10-31 to follow the nine screens of [the onboarding flow](onboarding/README.md#5-flow-32); role, subjects, reminder and plan were missing.*
 

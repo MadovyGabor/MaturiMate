@@ -58,6 +58,11 @@
     <string name="subject_mat">Matematika</string>
 
     <!-- Onboarding: exam date -->
+    <string name="common_save">Uložiť</string>
+    <string name="profile_title">Môj profil</string>
+    <string name="profile_why">Ťukni na odpoveď, ktorú chceš zmeniť.</string>
+    <string name="profile_reminder_off">Vypnutá</string>
+    <string name="profile_not_set">Nenastavené</string>
     <string name="common_cancel">Zrušiť</string>
     <string name="common_ok">OK</string>
     <string name="date_title">Kedy maturuješ?</string>

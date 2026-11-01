@@ -9,6 +9,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.navigation3.runtime.NavKey
 import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.AppViewModel
 import com.madovygabor.maturimate.core.presentation.locale.LocalAppLocale
@@ -42,12 +45,15 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
             ) {
                 // nothing to show until the profile has been read once
                 val appState = state ?: return@Box
+                // the open tab outlives the rebuild, so a language changed in the profile stays there
+                val mainTab = remember { mutableStateOf<NavKey>(Route.Main.Subject) }
                 CompositionLocalProvider(LocalAppLocale provides appState.language?.name?.lowercase()) {
                     key(appState.language, appState.onboardingCompleted) {
                         // Main navigation host that handles transitions between routes
                         NavigationRoute(
                             modifier = Modifier.systemPadding(),
                             startRoute = if (appState.onboardingCompleted) Route.Main else Route.AppOnboarding,
+                            mainTab = mainTab,
                         )
                     }
                 }

@@ -17,7 +17,9 @@ import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceChip
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
+import com.madovygabor.maturimate.features.appOnboarding.presentation.nextLabel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingQuestionViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
@@ -28,7 +30,6 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserProfileReposit
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.first
 import maturimate.composeapp.generated.resources.Res
-import maturimate.composeapp.generated.resources.common_next
 import maturimate.composeapp.generated.resources.goal_minutes
 import maturimate.composeapp.generated.resources.goal_title
 import maturimate.composeapp.generated.resources.goal_why
@@ -77,7 +78,7 @@ fun GoalContent(
     onNext: () -> Unit,
 ) {
     OnboardingScaffold(
-        actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
+        actions = listOf(OnboardingAction(stringResource(nextLabel(LocalEditingAnswer.current)), onNext, enabled = state.canContinue)),
         progress = OnboardingProgress(OnboardingStep.GOAL, onboardingSteps(role), onBack),
     ) {
         Text(stringResource(Res.string.goal_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
@@ -111,7 +112,7 @@ fun GoalContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!LocalEditingAnswer.current) Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

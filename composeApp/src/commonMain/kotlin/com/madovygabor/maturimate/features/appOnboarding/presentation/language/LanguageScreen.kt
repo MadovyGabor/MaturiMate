@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
+import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
+import com.madovygabor.maturimate.features.appOnboarding.presentation.nextLabel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
@@ -21,7 +23,6 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.components
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
-import maturimate.composeapp.generated.resources.common_next
 import maturimate.composeapp.generated.resources.language_hu
 import maturimate.composeapp.generated.resources.language_hu_desc
 import maturimate.composeapp.generated.resources.language_sk
@@ -65,7 +66,7 @@ fun LanguageContent(
     onNext: () -> Unit,
 ) {
     OnboardingScaffold(
-        actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
+        actions = listOf(OnboardingAction(stringResource(nextLabel(LocalEditingAnswer.current)), onNext, enabled = state.canContinue)),
         progress = OnboardingProgress(OnboardingStep.LANGUAGE, onboardingSteps(role), onBack),
     ) {
         Text(
@@ -98,7 +99,7 @@ fun LanguageContent(
                 onClick = { onSelected(TeachingLanguage.SK) },
             )
         }
-        Text(
+        if (!LocalEditingAnswer.current) Text(
             text = stringResource(Res.string.onboarding_change_later),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

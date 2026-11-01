@@ -19,7 +19,9 @@ import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppDatePickerDialog
 import com.madovygabor.maturimate.core.presentation.utils.longDate
+import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
+import com.madovygabor.maturimate.features.appOnboarding.presentation.nextLabel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
@@ -31,7 +33,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import maturimate.composeapp.generated.resources.Res
 import maturimate.composeapp.generated.resources.common_cancel
-import maturimate.composeapp.generated.resources.common_next
 import maturimate.composeapp.generated.resources.common_ok
 import maturimate.composeapp.generated.resources.date_days_left
 import maturimate.composeapp.generated.resources.date_other
@@ -78,7 +79,7 @@ fun DateContent(
     val custom = state.selected?.takeIf { it !in suggestions }
 
     OnboardingScaffold(
-        actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
+        actions = listOf(OnboardingAction(stringResource(nextLabel(LocalEditingAnswer.current)), onNext, enabled = state.canContinue)),
         progress = OnboardingProgress(OnboardingStep.DATE, onboardingSteps(UserRole.STUDENT), onBack),
     ) {
         Text(stringResource(Res.string.date_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
@@ -109,7 +110,7 @@ fun DateContent(
                 onClick = { picking = true },
             )
         }
-        Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!LocalEditingAnswer.current) Text(stringResource(Res.string.onboarding_change_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 
     if (picking) {

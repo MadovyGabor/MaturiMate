@@ -17,7 +17,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
+import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
+import com.madovygabor.maturimate.features.appOnboarding.presentation.nextLabel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
@@ -25,7 +27,6 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.components
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.composeapp.generated.resources.Res
-import maturimate.composeapp.generated.resources.common_next
 import maturimate.composeapp.generated.resources.onboarding_change_later
 import maturimate.composeapp.generated.resources.role_learner
 import maturimate.composeapp.generated.resources.role_learner_desc
@@ -72,7 +73,7 @@ fun RoleContent(
     onNext: () -> Unit,
 ) {
     OnboardingScaffold(
-        actions = listOf(OnboardingAction(stringResource(Res.string.common_next), onNext, enabled = state.canContinue)),
+        actions = listOf(OnboardingAction(stringResource(nextLabel(LocalEditingAnswer.current)), onNext, enabled = state.canContinue)),
         // the step count follows the role as soon as one is picked
         progress = OnboardingProgress(OnboardingStep.ROLE, onboardingSteps(state.selected), onBack),
     ) {
@@ -100,7 +101,7 @@ fun RoleContent(
                 )
             }
         }
-        Text(
+        if (!LocalEditingAnswer.current) Text(
             text = stringResource(Res.string.onboarding_change_later),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
