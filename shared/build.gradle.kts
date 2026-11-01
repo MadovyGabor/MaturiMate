@@ -3,6 +3,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    alias(libs.plugins.kover)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
@@ -101,4 +102,21 @@ dependencies {
 // Test classes run in several JVMs at once; each JVM still runs its classes one after another
 tasks.withType<Test>().configureEach {
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+}
+
+// Test coverage (./gradlew :shared:koverLog, :shared:koverHtmlReport). Generated code, Composable functions and previews is left out.
+kover {
+    reports {
+        // ./gradlew :shared:koverVerify fails when the line coverage drops under this (CI runs it)
+        verify {
+            rule { minBound(80) }
+        }
+        filters {
+            excludes {
+                packages("maturimate.shared.generated.resources")
+                annotatedBy("androidx.compose.runtime.Composable", "androidx.compose.ui.tooling.preview.Preview")
+                classes("*ComposableSingletons*")
+            }
+        }
+    }
 }

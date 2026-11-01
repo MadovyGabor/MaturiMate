@@ -4,6 +4,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    alias(libs.plugins.kover)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.sqldelight)
@@ -69,4 +70,19 @@ sqldelight {
 // Test classes run in several JVMs at once; each JVM still runs its classes one after another
 tasks.withType<Test>().configureEach {
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+}
+
+// Test coverage (./gradlew :database:koverLog, :database:koverHtmlReport). Generated code (the SQLDelight queries) is left out.
+kover {
+    reports {
+        // ./gradlew :database:koverVerify fails when the line coverage drops under this (CI runs it)
+        verify {
+            rule { minBound(80) }
+        }
+        filters {
+            excludes {
+                packages("com.madovygabor.maturimate.database.content", "com.madovygabor.maturimate.database.user")
+            }
+        }
+    }
 }

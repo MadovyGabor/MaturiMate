@@ -6,6 +6,8 @@ android-targetSdk = "37"
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
 composeHotReload = "1.2.0"
+# Test coverage
+kover = "0.9.11"
 composeMultiplatform = "1.12.2"
 # Material 3 and the icons have their own version lines; stable versions only
 composeMaterial3 = "1.9.0"
@@ -96,5 +98,6 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 #Kotlin Serialization Plugin
 kotlin-Serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 #SQLDelight Plugin
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

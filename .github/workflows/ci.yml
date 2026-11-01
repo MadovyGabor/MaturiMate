@@ -37,6 +37,12 @@ jobs:
       - name: Tests
         run: ./gradlew :database:jvmTest
 
+      # line coverage in the log and the run summary; fails under 80 %
+      - name: Coverage
+        run: |
+          ./gradlew :database:koverLog :database:koverVerify --console=plain | tee kover.txt
+          grep "line coverage" kover.txt | sed 's/^/Database: /' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Test report
         if: always()
         uses: mikepenz/action-junit-report@v6
@@ -120,6 +126,12 @@ jobs:
 
       - name: Tests
         run: ./gradlew :shared:jvmTest
+
+      # line coverage in the log and the run summary; fails under 80 %
+      - name: Coverage
+        run: |
+          ./gradlew :shared:koverLog :shared:koverVerify --console=plain | tee kover.txt
+          grep "line coverage" kover.txt | sed 's/^/App: /' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test report
         if: always()
