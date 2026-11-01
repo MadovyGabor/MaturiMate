@@ -7,6 +7,10 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -58,5 +62,22 @@ class LocalUserProviderTest {
         assertNull(database.profileQueries.selectProfile("guest-1").executeAsOneOrNull())
         // the profile follows the new id
         assertEquals(UserRole.STUDENT, withTimeout(5_000) { profiles.profile.first { it?.role != null } }?.role)
+    }
+
+    // A save used to read the id before its transaction, so a sign-up moving the rows in between
+    // made it write to the old guest id, where the answer was lost.
+    @Test
+    fun savesDuringASignUpEndUpUnderTheAccount() = runBlocking {
+        val dispatcher = Dispatchers.IO.limitedParallelism(1)
+        val provider = LocalUserProvider(database) { "guest-1" }
+        val profiles = UserProfileRepositoryImpl(database, provider, dispatcher)
+
+        val saves = (1..30).map { minutes -> async(Dispatchers.Default) { profiles.saveDailyGoal(minutes) } }
+        val adoption = async(Dispatchers.Default) { withContext(dispatcher) { provider.adoptAccount("account-1") } }
+        (saves + adoption).awaitAll()
+
+        assertNull(database.profileQueries.selectProfile("guest-1").executeAsOneOrNull())
+        assertNull(database.profileQueries.selectSettings("guest-1").executeAsOneOrNull())
+        assertTrue(database.profileQueries.selectSettings("account-1").executeAsOne().daily_goal_minutes in 1L..30L)
     }
 }

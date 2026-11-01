@@ -16,6 +16,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -120,13 +121,18 @@ class UserProfileRepositoryImpl(
     private suspend fun save(block: (userId: String) -> Unit): OperationResult<Unit, DataError> =
         withContext(dispatcher) {
             try {
-                val userId = localUser.userId()
+                // the guest id is created in its own transaction, so a failed save cannot roll it back
+                localUser.userId()
                 database.transaction {
+                    // read again inside, so a sign-up that moves the guest's rows cannot come in between
+                    val userId = localUser.userId()
                     queries.ensureProfile(userId)
                     queries.ensureSettings(userId, timeZone())
                     block(userId)
                 }
                 OperationResult.Success(Unit)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 OperationResult.Error(e.toDataError())
             }

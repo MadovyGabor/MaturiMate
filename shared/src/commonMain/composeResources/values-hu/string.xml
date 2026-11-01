@@ -183,6 +183,11 @@
     <string name="reset_new_password">Új jelszó</string>
     <string name="reset_save">Jelszó mentése</string>
 
+    <!-- The profile cannot be read at the start -->
+    <string name="app_load_error_title">Nem sikerült betölteni az adataidat</string>
+    <string name="app_load_error_text">Próbáld újra. Ha nem segít, zárd be az alkalmazást, és nyisd meg újra.</string>
+    <string name="retry">Újrapróbálom</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">A vizsga nem lehet a múltban.</string>
     <string name="error_date_null">Kérlek, válassz dátumot.</string>

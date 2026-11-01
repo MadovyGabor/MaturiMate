@@ -11,6 +11,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.Subject
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.Topic
 import com.madovygabor.maturimate.features.learning.domain.model.UnitTask
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -66,6 +67,8 @@ class ContentRepositoryImpl(
             try {
                 val db = source.get() ?: return@withContext OperationResult.Error(LearningError.NO_CONTENT)
                 block(db)?.let { OperationResult.Success(it) } ?: OperationResult.Error(LearningError.NOT_FOUND)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 OperationResult.Error(LearningError.DATABASE_ERROR)
             }

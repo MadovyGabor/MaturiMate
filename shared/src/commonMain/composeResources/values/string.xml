@@ -192,6 +192,11 @@
     <string name="reset_new_password">Nové heslo</string>
     <string name="reset_save">Uložiť heslo</string>
 
+    <!-- The profile cannot be read at the start -->
+    <string name="app_load_error_title">Nepodarilo sa načítať tvoje údaje</string>
+    <string name="app_load_error_text">Skús to znova. Ak to nepomôže, zatvor aplikáciu a otvor ju znova.</string>
+    <string name="retry">Skúsiť znova</string>
+
     <!-- Old setup and profile screens, replaced in Milestone 5 -->
     <string name="error_date_past">Skúška nemôže byť v minulosti.</string>
     <string name="error_date_null">Vyber, prosím, dátum.</string>

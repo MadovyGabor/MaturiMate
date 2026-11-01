@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.presentation.navigation
 
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.MutableState
@@ -23,6 +24,8 @@ fun NavigationRoute(
     startRoute: Route,
     /** The tab the main screen opens on; it follows the user's choice. */
     mainTab: MutableState<NavKey>,
+    /** The language the app is built with (`AppState.language`). */
+    appLanguage: TeachingLanguage?,
 ){
 
     val rootBackStack = rememberNavBackStack(
@@ -56,7 +59,7 @@ fun NavigationRoute(
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
                 // finishing it saves the onboarding end; App then starts on Main
-                AppOnboardingNavigation()
+                AppOnboardingNavigation(appLanguage = appLanguage)
             }
             //Fullscreen exam writing screen
             entry<Route.ExamWrite> {

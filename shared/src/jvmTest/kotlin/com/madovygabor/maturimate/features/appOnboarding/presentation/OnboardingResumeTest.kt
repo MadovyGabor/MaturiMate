@@ -5,7 +5,22 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
+import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.features.userProfile.domain.DataError
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlin.test.assertNotNull
+import kotlin.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -120,5 +135,44 @@ class OnboardingResumeTest {
         val teacher = profile(TeachingLanguage.SK, UserRole.TEACHER).copy(subjects = listOf(UserSubject(4, false)))
         assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(teacher).last())
         assertTrue(Route.AppOnboarding.Date !in onboardingBackStack(teacher) && Route.AppOnboarding.Goal !in onboardingBackStack(teacher))
+    }
+
+    // After a new language the app is rebuilt at once, but the stack may still come from the
+    // profile before the change; the onboarding then started on the welcome screen again.
+    @Test
+    fun aStackFromBeforeTheLanguageChangeIsNotUsed() {
+        val beforeLanguage = OnboardingResumeState(listOf(Route.AppOnboarding.Welcome), language = null)
+        val afterLanguage = OnboardingResumeState(onboardingBackStack(profile(TeachingLanguage.HU)), language = TeachingLanguage.HU)
+        val unreadable = OnboardingResumeState(listOf(Route.AppOnboarding.Welcome), language = null, fallback = true)
+
+        assertTrue(!beforeLanguage.matches(TeachingLanguage.HU))
+        assertTrue(afterLanguage.matches(TeachingLanguage.HU))
+        assertTrue(unreadable.matches(TeachingLanguage.HU))
+    }
+
+    @Test
+    fun aFailedFinishShowsASnackbar() = runBlocking<Unit> {
+        val snackbar = SnackbarController()
+        val navigation = OnboardingNavigationViewModel(CannotFinish(), snackbar)
+        val event = async(Dispatchers.Default) { withTimeout(5_000) { snackbar.events.first() } }
+        delay(100)
+
+        navigation.finish()
+
+        assertNotNull(event.await())
+    }
+
+    /** Saving the end of the onboarding fails, the disk is full. */
+    private class CannotFinish : UserProfileRepository {
+        override val profile: Flow<UserProfile?> = flowOf(null)
+        private val ok: OperationResult<Unit, DataError> = OperationResult.Success(Unit)
+        override suspend fun saveTeachingLanguage(language: TeachingLanguage) = ok
+        override suspend fun saveRole(role: UserRole) = ok
+        override suspend fun saveSubjects(subjects: List<UserSubject>) = ok
+        override suspend fun saveGraduationDate(date: LocalDate) = ok
+        override suspend fun saveReminder(enabled: Boolean, time: LocalTime?) = ok
+        override suspend fun saveDailyGoal(minutes: Int) = ok
+        override suspend fun saveNames(firstName: String, lastName: String) = ok
+        override suspend fun completeOnboarding(at: Instant): OperationResult<Unit, DataError> = OperationResult.Error(DataError.STORAGE_FULL)
     }
 }

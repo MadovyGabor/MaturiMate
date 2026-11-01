@@ -137,6 +137,19 @@ Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-
 
 ---
 
+## Milestone 6a: Code review fixes
+
+Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](review-2026-11-01.md). *Added on 2026-11-01; waiting for the owner's approval.*
+
+* [x] **6a.1.** Error handling: crash on unexpected server data, the profile read error that ends in the onboarding (and the flaky `AppViewModelTest`), the onboarding that went back to the welcome screen after the language, dropped errors and cancellations, one user database call at a time.
+* [ ] **6a.2.** Account flow: password reset after a refused password, resuming the onboarding after sign-in, two accounts on one phone, the snackbar that blocks buttons.
+* [ ] **6a.3.** Server consistency: the onboarding answers in one transaction, consents once.
+* [ ] **6a.4.** Android release: backup without the session, R8 shrinking (28.5 MB APK today).
+* [ ] **6a.5.** Tests and coverage: Kover, the missing tests, the shared profile flow.
+* [ ] **6a.6.** Cleanup of dead code.
+
+---
+
 ## Milestone 7: Unit engine with one small unit
 
 Goal: one complete lesson that works end to end. After that, new units are mostly new data.

@@ -18,7 +18,11 @@ import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-/** [AccountSetup] over the local user database and the account's rows on the server. */
+/**
+ * [AccountSetup] over the local user database and the account's rows on the server. In the app
+ * [dispatcher] is the user database's one-at-a-time dispatcher, so moving the guest's rows cannot
+ * overlap a save; the network calls suspend without holding it.
+ */
 @OptIn(ExperimentalTime::class)
 class AccountSetupImpl(
     private val auth: AuthRepository,

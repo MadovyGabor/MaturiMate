@@ -12,7 +12,6 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.exceptions.HttpRequestException
-import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.LocalDate
@@ -96,22 +95,24 @@ class SupabaseAccountRepository(
         RemoteProfile(
             firstName = profile.firstName,
             lastName = profile.lastName,
+            // a value this app version does not know is left out instead of failing the sign-in
             profile = UserProfile(
-                teachingLanguage = profile.teachingLanguage?.let { TeachingLanguage.valueOf(it) },
+                teachingLanguage = enumOrNull<TeachingLanguage>(profile.teachingLanguage),
                 role = roles.firstNotNullOfOrNull { UserRole.fromId(it.roleId) },
-                graduationDate = profile.graduationDate?.let { LocalDate.parse(it) },
-                uiLanguage = settings?.uiLanguage?.let { TeachingLanguage.valueOf(it) } ?: TeachingLanguage.SK,
+                graduationDate = parseOrNull(profile.graduationDate, LocalDate::parse),
+                uiLanguage = enumOrNull<TeachingLanguage>(settings?.uiLanguage) ?: TeachingLanguage.SK,
                 dailyGoalMinutes = settings?.dailyGoalMinutes,
                 timezone = settings?.timezone ?: "Europe/Bratislava",
-                onboardingCompletedAt = profile.onboardingCompletedAt?.let { Instant.parse(it) },
-                subjects = subjects.map { UserSubject(it.subjectId, it.source == "AUTO", it.level?.let { level -> SubjectLevel.valueOf(level) }) },
+                onboardingCompletedAt = parseOrNull(profile.onboardingCompletedAt, Instant::parse),
+                subjects = subjects.map { UserSubject(it.subjectId, it.source == "AUTO", enumOrNull<SubjectLevel>(it.level)) },
                 reminderEnabled = settings?.reminderEnabled ?: false,
                 // Postgres returns "18:00:00"
-                reminderTime = settings?.reminderTime?.let { LocalTime.parse(it) },
+                reminderTime = parseOrNull(settings?.reminderTime, LocalTime::parse),
             ),
         )
     }
 
+    /** Runs the requests; every failure becomes an [AuthError], so a bad answer cannot crash the app. */
     private suspend fun <T> call(block: suspend () -> T): OperationResult<T, AuthError> =
         try {
             OperationResult.Success(block())
@@ -119,11 +120,18 @@ class SupabaseAccountRepository(
             throw e
         } catch (e: HttpRequestException) {
             OperationResult.Error(AuthError.NETWORK)
-        } catch (e: RestException) {
-            OperationResult.Error(AuthError.UNKNOWN)
         } catch (e: NotSignedIn) {
             OperationResult.Error(AuthError.INVALID_CREDENTIALS)
+        } catch (e: Exception) {
+            // RestException, and rows this version cannot decode
+            OperationResult.Error(AuthError.UNKNOWN)
         }
+
+    private inline fun <reified T : Enum<T>> enumOrNull(name: String?): T? =
+        name?.let { value -> enumValues<T>().firstOrNull { it.name == value } }
+
+    private fun <T> parseOrNull(value: String?, parse: (String) -> T): T? =
+        value?.let { runCatching { parse(it) }.getOrNull() }
 
     private class NotSignedIn : Exception()
 

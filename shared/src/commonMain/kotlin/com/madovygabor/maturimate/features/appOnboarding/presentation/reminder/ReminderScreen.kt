@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.madovygabor.maturimate.core.presentation.utils.readOrNull
 import kotlinx.datetime.LocalTime
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_cancel
@@ -84,7 +85,7 @@ class ReminderViewModel(
 
     init {
         viewModelScope.launch {
-            val saved = runCatching { repository.profile.first()?.reminderTime }.getOrNull()
+            val saved = readOrNull { repository.profile.first()?.reminderTime }
             if (saved != null) _state.update { it.copy(time = saved) }
         }
     }

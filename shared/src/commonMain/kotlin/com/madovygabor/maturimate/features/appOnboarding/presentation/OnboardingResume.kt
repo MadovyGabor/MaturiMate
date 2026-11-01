@@ -2,7 +2,12 @@ package com.madovygabor.maturimate.features.appOnboarding.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.core.presentation.utils.retryReads
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
@@ -30,26 +35,57 @@ fun onboardingBackStack(profile: UserProfile?): List<Route> = buildList {
 }
 
 /**
+ * The first back stack of the onboarding, with the app language of the profile it was computed
+ * from (null before a teaching language is saved, as in `AppState`).
+ */
+data class OnboardingResumeState(
+    val backStack: List<Route>,
+    val language: TeachingLanguage?,
+    /** True when the profile could not be read: the welcome screen, whatever the language. */
+    val fallback: Boolean = false,
+) {
+    /** Whether this stack belongs to the profile the app was built with, in [appLanguage]. */
+    fun matches(appLanguage: TeachingLanguage?): Boolean = fallback || language == appLanguage
+}
+
+/**
  * Gives the onboarding navigation its first back stack from the saved answers, and finishes
  * the onboarding after the last step.
  */
 @OptIn(ExperimentalTime::class)
-class OnboardingNavigationViewModel(private val repository: UserProfileRepository) : ViewModel() {
+class OnboardingNavigationViewModel(
+    private val repository: UserProfileRepository,
+    private val snackbarController: SnackbarController,
+) : ViewModel() {
 
-    /** Null while the profile is being read. */
-    val backStack: StateFlow<List<Route>?> = repository.profile
-        .map(::onboardingBackStack)
-        .catch { emit(listOf(Route.AppOnboarding.Welcome)) }
+    /**
+     * Null while the profile is being read; the welcome screen when it cannot be read. This
+     * ViewModel outlives the rebuild after a new app language, so the screen checks [OnboardingResumeState.matches]
+     * before it uses the stack: it may still come from the profile before the change.
+     */
+    val resume: StateFlow<OnboardingResumeState?> = repository.profile
+        .map { profile ->
+            OnboardingResumeState(
+                backStack = onboardingBackStack(profile),
+                language = profile?.uiLanguage?.takeIf { profile.teachingLanguage != null },
+            )
+        }
+        .retryReads()
+        .catch { emit(OnboardingResumeState(listOf(Route.AppOnboarding.Welcome), language = null, fallback = true)) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** The saved role, for the steps after the role question. */
     val role: StateFlow<UserRole?> = repository.profile
         .map { it?.role }
+        .retryReads()
         .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** Marks the onboarding as finished; the app then shows the home screen. */
+    /** Marks the onboarding as finished; the app then shows the home screen. A failed save says so. */
     fun finish() {
-        viewModelScope.launch { repository.completeOnboarding(Clock.System.now()) }
+        viewModelScope.launch {
+            val result = repository.completeOnboarding(Clock.System.now())
+            if (result is OperationResult.Error) snackbarController.showSnackbar(message = result.error.toUiText())
+        }
     }
 }

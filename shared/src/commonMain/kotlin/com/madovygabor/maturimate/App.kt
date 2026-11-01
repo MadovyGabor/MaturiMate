@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavKey
 import androidx.compose.ui.Modifier
+import com.madovygabor.maturimate.core.presentation.AppLoadErrorScreen
 import com.madovygabor.maturimate.core.presentation.AppViewModel
 import com.madovygabor.maturimate.core.presentation.locale.LocalAppLocale
 import com.madovygabor.maturimate.core.presentation.navigation.NavigationRoute
@@ -33,6 +34,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun App(viewModel: AppViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsState()
+    val failed by viewModel.failed.collectAsState()
 
     // Apply the application's Material 3 theme
     AppTheme {
@@ -44,7 +46,10 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                     .background(color = MaterialTheme.colorScheme.background)
             ) {
                 // nothing to show until the profile has been read once
-                val appState = state ?: return@Box
+                val appState = state ?: run {
+                    if (failed) AppLoadErrorScreen(onRetry = viewModel::retry, modifier = Modifier.systemPadding())
+                    return@Box
+                }
                 // the open tab outlives the rebuild, so a language changed in the profile stays there
                 val mainTab = remember { mutableStateOf<NavKey>(Route.Main.Subject) }
                 CompositionLocalProvider(LocalAppLocale provides appState.language?.name?.lowercase()) {
@@ -54,6 +59,7 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                             modifier = Modifier.systemPadding(),
                             startRoute = if (appState.onboardingCompleted) Route.Main else Route.AppOnboarding,
                             mainTab = mainTab,
+                            appLanguage = appState.language,
                         )
                     }
                 }

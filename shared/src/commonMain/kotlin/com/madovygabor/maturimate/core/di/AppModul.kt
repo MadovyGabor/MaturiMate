@@ -38,13 +38,19 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 
 /**
  * Platform-specific module declaration.
  * Implemented in androidMain and desktopMain.
  */
 expect val platformModule : org.koin.core.module.Module
+
+/** The dispatcher of the user database (see [sharedModule]). */
+private val USER_DATABASE = named("userDatabase")
 
 /**
  * Shared dependencies for all platforms.
@@ -62,16 +68,19 @@ val sharedModule = module {
     single<ContentRepository> { ContentRepositoryImpl(get()) }
     // Whose rows the user database holds: a guest id until sign-up
     single { LocalUserProvider(get()) }
-    single<ProgressRepository> { ProgressRepositoryImpl(get(), get()) }
+    // Every call to the user database runs on this dispatcher, one at a time: no two transactions
+    // overlap, and a sign-up that moves the guest's rows cannot interleave with a save
+    single(USER_DATABASE) { Dispatchers.IO.limitedParallelism(1) }
+    single<ProgressRepository> { ProgressRepositoryImpl(get(), get(), get(USER_DATABASE)) }
 
     // Profile and settings of the local user
-    single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get()) }
+    single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }
 
     // Supabase: accounts (sign-up, sign-in, password reset)
     single { createAppSupabaseClient() }
     single<AuthRepository> { AuthRepositoryImpl(get<SupabaseClient>().auth) }
     single<AccountRepository> { SupabaseAccountRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
-    single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get()) }
+    single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE)) }
 
     // Domain Logic / Validators
     singleOf(::MaturitaValidator)
@@ -82,7 +91,7 @@ val sharedModule = module {
     singleOf(::SnackbarController)
 
     // ViewModels
-    viewModelOf(::AppViewModel)
+    viewModel { AppViewModel(get()) }
     viewModelOf(::OnboardingNavigationViewModel)
     viewModelOf(::LanguageViewModel)
     viewModelOf(::RoleViewModel)

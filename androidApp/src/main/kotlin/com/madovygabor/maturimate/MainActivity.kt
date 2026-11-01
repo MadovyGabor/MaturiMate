@@ -27,8 +27,9 @@ class MainActivity : ComponentActivity() {
         // Enable immersive edge-to-edge display
         enableEdgeToEdge()
 
-        // Keep the splash screen until the profile has been read: App picks the start screen from it
-        splashScreen.setKeepOnScreenCondition { appViewModel.state.value == null }
+        // Keep the splash screen until the profile has been read (App picks the start screen from it),
+        // or until it is clear that it cannot be read and App shows the error screen
+        splashScreen.setKeepOnScreenCondition { appViewModel.state.value == null && !appViewModel.failed.value }
 
         setContent {
             App(appViewModel)

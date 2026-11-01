@@ -14,6 +14,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.DailyActivity
 import com.madovygabor.maturimate.features.learning.domain.model.Streak
 import com.madovygabor.maturimate.features.learning.domain.model.TaskProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -120,6 +121,8 @@ class ProgressRepositoryImpl(
         withContext(dispatcher) {
             try {
                 OperationResult.Success(block())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 OperationResult.Error(LearningError.DATABASE_ERROR)
             }

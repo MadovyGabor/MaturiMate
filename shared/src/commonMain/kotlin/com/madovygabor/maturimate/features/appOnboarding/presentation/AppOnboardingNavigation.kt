@@ -20,6 +20,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.R
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsScreen
+import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -34,11 +35,14 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun AppOnboardingNavigation(
+    /** The language the app was built with (`AppState.language`). */
+    appLanguage: TeachingLanguage?,
     navigationViewModel: OnboardingNavigationViewModel = koinViewModel(),
 ) {
-    // The first back stack comes from the saved answers, so the onboarding continues where it stopped
-    val startStack by navigationViewModel.backStack.collectAsState()
-    val initialStack = startStack ?: return
+    // The first back stack comes from the saved answers, so the onboarding continues where it
+    // stopped; after a new language it waits for the stack of that profile, not the one before
+    val resume by navigationViewModel.resume.collectAsState()
+    val initialStack = resume?.takeIf { it.matches(appLanguage) }?.backStack ?: return
 
     // Initialize the backstack with serialization support for Type-Safe routing
     val onboardingBackStack = rememberNavBackStack(
@@ -130,7 +134,7 @@ fun AppOnboardingNavigation(
                     onBack = back,
                     onSignedIn = { finished ->
                         if (!finished) {
-                            val resumed = navigationViewModel.backStack.value ?: listOf(Route.AppOnboarding.Welcome)
+                            val resumed = navigationViewModel.resume.value?.backStack ?: listOf(Route.AppOnboarding.Welcome)
                             onboardingBackStack.clear()
                             onboardingBackStack.addAll(resumed)
                         }

@@ -6,6 +6,7 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
 import com.madovygabor.maturimate.features.userProfile.domain.DataError
+import com.madovygabor.maturimate.core.presentation.utils.readOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,7 +40,7 @@ open class OnboardingQuestionViewModel<T : Any>(
 
     init {
         viewModelScope.launch {
-            val saved = runCatching { load() }.getOrNull()
+            val saved = readOrNull { load() }
             // a choice made while loading wins over the saved one
             _state.update { if (it.selected == null) it.copy(selected = saved) else it }
         }

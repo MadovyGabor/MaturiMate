@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.features.profileDetails.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.madovygabor.maturimate.core.presentation.utils.retryReads
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.isAnswered
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
@@ -56,6 +57,7 @@ class ProfileViewModel(
                 )
             }
         }
+        .retryReads()
         .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 

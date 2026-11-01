@@ -153,6 +153,33 @@ class AccountTest {
     }
 
     @Test
+    fun unknownValuesFromTheServerAreLeftOut() = runBlocking {
+        val repository = remote { table ->
+            when (table) {
+                "user_profile" -> """[{"user_id":"$USER_ID","first_name":"Anna","last_name":"Kovács","teaching_language":"DE","graduation_date":"not a date"}]"""
+                "user_settings" -> """[{"user_id":"$USER_ID","ui_language":"DE","timezone":"Europe/Bratislava","reminder_enabled":false,"reminder_time":"later"}]"""
+                "user_subject" -> """[{"user_id":"$USER_ID","subject_id":3,"source":"CHOSEN","level":"C1"}]"""
+                else -> "[]"
+            }
+        }
+
+        val remote = (repository.downloadProfile() as OperationResult.Success).data!!
+
+        assertEquals(null, remote.profile.teachingLanguage)
+        assertEquals(null, remote.profile.graduationDate)
+        assertEquals(TeachingLanguage.SK, remote.profile.uiLanguage)
+        assertEquals(null, remote.profile.reminderTime)
+        assertEquals(listOf(UserSubject(3, false, level = null)), remote.profile.subjects)
+    }
+
+    @Test
+    fun anAnswerThatCannotBeReadIsAnErrorNotACrash() = runBlocking {
+        val repository = remote { table -> if (table == "user_profile") """{"unexpected": true}""" else "[]" }
+
+        assertEquals(OperationResult.Error(AuthError.UNKNOWN), repository.downloadProfile())
+    }
+
+    @Test
     fun accountWithoutAProfileDownloadsNothing() = runBlocking {
         assertEquals(OperationResult.Success(null), remote().downloadProfile())
     }

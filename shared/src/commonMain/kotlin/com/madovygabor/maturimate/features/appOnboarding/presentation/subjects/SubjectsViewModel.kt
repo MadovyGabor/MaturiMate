@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.madovygabor.maturimate.core.presentation.utils.readOrNull
 
 /** The English level answer; "I don't know yet" is saved as B1. */
 enum class LevelChoice { B1, B2, UNKNOWN }
@@ -61,7 +62,7 @@ class SubjectsViewModel(
 
     init {
         viewModelScope.launch {
-            val profile = runCatching { repository.profile.first() }.getOrNull()
+            val profile = readOrNull { repository.profile.first() }
             val readyCodes = when (val subjects = contentRepository.subjects()) {
                 is OperationResult.Success -> subjects.data.map { it.code }.toSet()
                 is OperationResult.Error -> emptySet()
