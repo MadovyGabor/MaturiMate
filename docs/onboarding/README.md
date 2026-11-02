@@ -32,7 +32,7 @@ Patterns seen in well-known learning and habit apps (Duolingo, Babbel, Brilliant
 4. **Every question says why it is asked**, in one short line under the question.
 5. **Back is always possible; nothing is lost.** Answers are saved to the user database after each screen.
 6. **Works offline until the account step.** The questions and the guest mode need no network; creating an account does.
-7. **The account screen is the last step**, with a quiet "Körülnézek" option. Signing in becomes required after the first lesson (Milestone 6.5).
+7. **The account screen is the last step**, with a quiet "Körülnézek" option. Signing in becomes required after the first lesson (step 7.5).
 8. **No dark patterns**: no pre-ticked marketing consent, no fake urgency, "not now" is always visible on permission screens.
 9. **Design system only**: one main button per screen, step counter as text above the progress bar, `headline-medium` questions.
 
@@ -73,7 +73,7 @@ Not asked: date of birth (the age is confirmed instead; V1 is for users aged 16 
 
 A guest ("Körülnézek") has no server account, name or e-mail: the answers stay on the phone under a temporary local id. Nothing is sent to the server before the user signs up and accepts the terms. Signing in is required after the first lesson.
 
-Before the public release (Milestone 10), the privacy notice and the terms of use are checked by a legal professional.
+Before the public release (Milestone 11), the privacy notice and the terms of use are checked by a legal professional.
 
 ## 5. Flow (3.2)
 
@@ -95,13 +95,13 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 **After the onboarding**
 
-* **After the first lesson**, a guest must create an account or sign in: the account screen without "Körülnézek". The guest's local data moves to the new account id, so no progress is lost (step 6.5).
+* **After the first lesson**, a guest must create an account or sign in: the account screen without "Körülnézek". The guest's local data moves to the new account id, so no progress is lost (step 7.5).
 * **Back** works on every screen and keeps the answers. Only the reminder and the account screen can be skipped; every other question has a default or a clear choice.
 * **Everything can be changed later** in the profile: language, role, subjects, English level, exam date, goal, reminder, name.
 
 ## 6. Prototype (3.3)
 
-[prototype.html](prototype.html) is a clickable prototype of the flow above. Open it in a browser from this folder (it loads the logo from `composeApp/` and the fonts from Google Fonts).
+[prototype.html](prototype.html) is a clickable prototype of the flow above. Open it in a browser from this folder (it loads the logo from `shared/` and the fonts from Google Fonts).
 
 * **Phone, Tablet, PC** switch the same app between three layouts, following the app's breakpoints: one column below 600 dp; a centred, wider column with the buttons on the right from 600 dp; from about 1000 dp two panes, with the logo and a step list on the left and the question on the right.
 * **Light and dark** follow the design system tokens. On dark surfaces the logo sits on a cream tile.

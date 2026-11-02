@@ -25,7 +25,7 @@ From the repository root:
 ./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801 -PcontentDir=content
 ```
 
-Exports into `composeApp/src/commonMain/composeResources/files/` (gitignored). The app installs this file on first start, and on later starts only when its `content_version` is higher than the installed one. A build without bundled content runs, but has no lessons.
+Exports into `shared/src/commonMain/composeResources/files/` (gitignored). The app installs this file on first start, and on later starts only when its `content_version` is higher than the installed one. A build without bundled content runs, but has no lessons.
 
 ## Import (server copy)
 

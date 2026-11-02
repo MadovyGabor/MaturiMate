@@ -1,8 +1,15 @@
 name: CI
 
+# Every push to any branch; a pull request shows the result of its branch's push, so there is no
+# separate pull_request run (it would test the same commit twice). Changes that touch only
+# documentation start no run; tokens.json is the exception, the theme test checks it.
 on:
   push:
-  pull_request:
+    paths:
+      - "**"
+      - "!docs/**"
+      - "!**.md"
+      - "docs/design-system/tokens.json"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -20,19 +27,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Tests
         run: ./gradlew :database:jvmTest
 
+      # line coverage in the log and the run summary; fails under 80 %
+      - name: Coverage
+        run: |
+          ./gradlew :database:koverLog :database:koverVerify --console=plain | tee kover.txt
+          grep "line coverage" kover.txt | sed 's/^/Database: /' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Test report
         if: always()
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           check_name: Database tests
           report_paths: database/build/test-results/jvmTest/*.xml
@@ -66,12 +79,12 @@ jobs:
       REQUIRE_POSTGRES: "true"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Schema migrations and row level security tests
         env:
@@ -87,7 +100,7 @@ jobs:
 
       - name: Test report
         if: always()
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           check_name: Content pipeline tests
           report_paths: tools/content-pipeline/build/test-results/test/*.xml
@@ -96,33 +109,55 @@ jobs:
           require_tests: true
 
   app:
-    name: App (repositories, Android and desktop build)
+    name: App (tests and desktop build)
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
 
       # Bundle the made-up test content, so the app's content provider test runs too
       - name: Bundle test content
         run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101
 
       - name: Tests
-        run: ./gradlew :composeApp:jvmTest
+        run: ./gradlew :shared:jvmTest
+
+      # line coverage in the log and the run summary; fails under 80 %
+      - name: Coverage
+        run: |
+          ./gradlew :shared:koverLog :shared:koverVerify --console=plain | tee kover.txt
+          grep "line coverage" kover.txt | sed 's/^/App: /' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test report
         if: always()
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           check_name: App tests
-          report_paths: composeApp/build/test-results/jvmTest/*.xml
+          report_paths: shared/build/test-results/jvmTest/*.xml
           detailed_summary: true
           include_passed: true
           require_tests: true
 
-      - name: Build Android and desktop
-        run: ./gradlew :composeApp:assembleDebug :composeApp:jvmJar
+      - name: Build desktop
+        run: ./gradlew :desktopApp:jar
+
+  # The Android build is the slowest part, so it runs beside the tests instead of after them
+  android:
+    name: Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build Android
+        run: ./gradlew :androidApp:assembleDebug

@@ -26,7 +26,7 @@ tasks.named<JavaExec>("run") {
 // ./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801 [-PcontentDir=content]
 tasks.register<JavaExec>("bundleContent") {
     group = "content"
-    description = "Exports the content files into composeApp/src/commonMain/composeResources/files."
+    description = "Exports the content files into shared/src/commonMain/composeResources/files."
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set(application.mainClass)
     workingDir = rootDir
@@ -36,7 +36,7 @@ tasks.register<JavaExec>("bundleContent") {
         listOf(
             "export",
             contentDir.get(),
-            "composeApp/src/commonMain/composeResources/files",
+            "shared/src/commonMain/composeResources/files",
             "--version=${contentVersion.orNull ?: error("-PcontentVersion=yyyyMMddNN is required")}",
         )
     }

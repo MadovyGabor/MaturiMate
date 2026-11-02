@@ -60,7 +60,7 @@ CREATE TABLE user_subject (
 );
 
 -- Phone only: whose rows the local tables hold. A guest gets a temporary id ("guest-" and a
--- random UUID); sign-up replaces it with the account's id (roadmap step 6.5). One row at most.
+-- random UUID); sign-up replaces it with the account's id (roadmap step 7.5). One row at most.
 CREATE TABLE local_user (
     slot      INTEGER NOT NULL CONSTRAINT pk_local_user PRIMARY KEY,
     user_id   TEXT    NOT NULL,
@@ -87,6 +87,21 @@ UPDATE OR REPLACE user_unit_progress SET user_id = :accountId WHERE user_id = :g
 UPDATE OR REPLACE user_task_progress SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_streak SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE activity_log SET user_id = :accountId WHERE user_id = :guestId;
+INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
+}
+
+-- Signing in to another account on this phone: the previous account's rows are removed (they
+-- are on the server after its sign-up) instead of being given to the new account.
+switchAccount {
+DELETE FROM user_profile WHERE user_id = :previousId;
+DELETE FROM user_settings WHERE user_id = :previousId;
+DELETE FROM user_role WHERE user_id = :previousId;
+DELETE FROM user_subject WHERE user_id = :previousId;
+DELETE FROM attempt WHERE user_id = :previousId;
+DELETE FROM user_unit_progress WHERE user_id = :previousId;
+DELETE FROM user_task_progress WHERE user_id = :previousId;
+DELETE FROM user_streak WHERE user_id = :previousId;
+DELETE FROM activity_log WHERE user_id = :previousId;
 INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
 }
 

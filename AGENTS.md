@@ -11,7 +11,7 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 | touch modules, layers, navigation or data | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | build or change UI | [docs/design-system/README.md](docs/design-system/README.md) and [tokens.json](docs/design-system/tokens.json) |
 | touch content, the validator, exporter or importer | [tools/content-pipeline/README.md](tools/content-pipeline/README.md) |
-| touch Supabase settings (auth, providers, e-mail) | [docs/supabase-setup.md](docs/supabase-setup.md) |
+| touch Supabase settings (auth, providers, e-mail) | [docs/supabase-setup.md](llm/supabase-setup.md) |
 | touch the server database | [dbServer/README.md](dbServer/README.md); the schema is in `supabase/migrations` (add a new migration, never edit an applied one); row level security is tested in `supabase/tests/rls_test.sql` |
 
 ## How we work
@@ -25,13 +25,14 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 ## Commands
 
 ```bash
-./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest   # all tests
-./gradlew :composeApp:assembleDebug                                            # Android debug APK
-./gradlew :composeApp:run                                                      # desktop app
-./gradlew :composeApp:compileKotlinJvm                                         # quick compile check
+./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest   # all tests
+./gradlew :androidApp:assembleDebug                                        # Android debug APK
+./gradlew :desktopApp:run                                                  # desktop app
+./gradlew :desktopApp:hotRun                                               # desktop app with hot reload
+./gradlew :shared:compileKotlinJvm                                         # quick compile check
 ```
 
-`:composeApp:jvmTest` needs bundled content; CI creates it with `./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101`.
+`:shared:jvmTest` needs bundled content; CI creates it with `./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101`.
 
 ## Rules
 

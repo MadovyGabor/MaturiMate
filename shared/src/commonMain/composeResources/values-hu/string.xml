@@ -1,0 +1,194 @@
+<resources>
+    <string name="app_name">MaturiMate</string>
+
+    <!-- Onboarding: welcome (docs/onboarding/README.md) -->
+    <string name="welcome_tagline">Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul.</string>
+    <string name="welcome_start">Kezdjük</string>
+    <string name="welcome_have_account">Már van fiókom</string>
+    <string name="onboarding_side_tagline">Rövid leckék és gyakorlás az érettségiig.</string>
+
+    <!-- Onboarding: common -->
+    <string name="common_next">Tovább</string>
+    <string name="common_back">Vissza</string>
+    <string name="onboarding_step">%1$d. lépés / %2$d</string>
+    <string name="onboarding_change_later">Később a profilodban bármikor módosíthatod.</string>
+    <string name="onboarding_step_language">Nyelv</string>
+    <string name="onboarding_step_role">Szerepkör</string>
+    <string name="onboarding_step_subjects">Tantárgyak</string>
+    <string name="onboarding_step_date">Érettségi dátuma</string>
+    <string name="onboarding_step_goal">Napi cél</string>
+    <string name="onboarding_step_reminder">Emlékeztető</string>
+    <string name="onboarding_step_plan">A te terved</string>
+    <string name="onboarding_step_account">Fiók</string>
+
+    <!-- Onboarding: teaching language. The two options are always in their own language. -->
+    <string name="language_title">Milyen tanítási nyelvű iskolába jársz?</string>
+    <string name="language_why">Ebből tudjuk, milyen tantárgyakból érettségizel. Az appot is ezen a nyelven látod.</string>
+    <string name="language_hu">Magyar</string>
+    <string name="language_hu_desc">Magyar tanítási nyelvű iskola</string>
+    <string name="language_sk">Slovenský</string>
+    <string name="language_sk_desc">Škola s vyučovacím jazykom slovenským</string>
+
+    <!-- Onboarding: role -->
+    <string name="role_title">Mire szeretnéd használni az appot?</string>
+    <string name="role_why">Ehhez igazítjuk a következő kérdéseket.</string>
+    <string name="role_student">Érettségire készülök</string>
+    <string name="role_student_desc">Visszaszámlálás, napi cél és gyakorlás az érettségi tantárgyaiból.</string>
+    <string name="role_learner">Csak tanulni szeretnék</string>
+    <string name="role_learner_desc">Leckék és gyakorlás, érettségi dátum nélkül.</string>
+    <string name="role_teacher">Tanár vagyok</string>
+    <string name="role_teacher_desc">Megnézem és kipróbálom a tartalmat.</string>
+
+    <!-- Onboarding: subjects. Subject names until the content has them all. -->
+    <string name="subjects_title_student">Miből érettségizel?</string>
+    <string name="subjects_title_learner">Mit szeretnél tanulni?</string>
+    <string name="subjects_title_teacher">Mit tanítasz?</string>
+    <string name="subjects_why_student">A kötelező tantárgyakat már kijelöltük. Ha mást is választasz, jelöld be.</string>
+    <string name="subjects_why_other">Jelöld be, ami érdekel. Többet is választhatsz.</string>
+    <string name="subjects_compulsory">Kötelező</string>
+    <string name="subjects_coming_soon">Hamarosan</string>
+    <string name="subjects_english_level">Milyen szinten?</string>
+    <string name="level_unknown">Még nem tudom</string>
+    <string name="subjects_level_unknown_hint">B1-gyel kezdünk, később átállíthatod.</string>
+    <string name="subject_hu_mjl">Magyar nyelv és irodalom</string>
+    <string name="subject_hu_sjsl">Szlovák nyelv és szlovák irodalom</string>
+    <string name="subject_sk_sjl">Szlovák nyelv és irodalom</string>
+    <string name="subject_anj">Angol nyelv</string>
+    <string name="subject_anj_b1">Angol nyelv (B1)</string>
+    <string name="subject_anj_b2">Angol nyelv (B2)</string>
+    <string name="subject_mat">Matematika</string>
+
+    <!-- Onboarding: exam date -->
+    <string name="common_save">Mentés</string>
+    <string name="profile_title">Profilom</string>
+    <string name="profile_why">Koppints arra a válaszra, amit módosítanál.</string>
+    <string name="profile_reminder_off">Kikapcsolva</string>
+    <string name="profile_not_set">Nincs beállítva</string>
+    <string name="common_cancel">Mégse</string>
+    <string name="common_ok">OK</string>
+    <string name="date_title">Mikor érettségizel?</string>
+    <string name="date_why">Ebből számoljuk a visszaszámlálást és a tervedet.</string>
+    <string name="date_spring">%1$d tavasza</string>
+    <plurals name="date_written_days">
+        <item quantity="one">Írásbeli: %1$s · %2$d nap múlva</item>
+        <item quantity="other">Írásbeli: %1$s · %2$d nap múlva</item>
+    </plurals>
+    <plurals name="date_days_left">
+        <item quantity="one">%1$s · %2$d nap múlva</item>
+        <item quantity="other">%1$s · %2$d nap múlva</item>
+    </plurals>
+    <string name="date_other">Más dátum</string>
+    <string name="date_other_desc">Válaszd ki a naptárból</string>
+    <string name="date_picker_title">Érettségi dátuma</string>
+    <!-- %1$d year, %2$s month name, %3$d day -->
+    <string name="date_long">%1$d. %2$s %3$d.</string>
+    <string-array name="months">
+        <item>január</item>
+        <item>február</item>
+        <item>március</item>
+        <item>április</item>
+        <item>május</item>
+        <item>június</item>
+        <item>július</item>
+        <item>augusztus</item>
+        <item>szeptember</item>
+        <item>október</item>
+        <item>november</item>
+        <item>december</item>
+    </string-array>
+
+    <!-- Onboarding: daily goal -->
+    <string name="goal_title">Mennyi időt szánsz naponta a tanulásra?</string>
+    <string name="goal_why">Ehhez mérjük a napi sorozatodat.</string>
+    <plurals name="goal_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d) -->
+    <plurals name="goal_year_hint">
+        <item quantity="one">Napi %1$d perc egy év alatt körülbelül %2$d óra gyakorlás.</item>
+        <item quantity="other">Napi %1$d perc egy év alatt körülbelül %2$d óra gyakorlás.</item>
+    </plurals>
+
+    <!-- Onboarding: reminder -->
+    <string name="reminder_title">Emlékeztessünk naponta?</string>
+    <string name="reminder_why">Egy rövid értesítés a választott időben segít, hogy ne szakadjon meg a sorozatod.</string>
+    <string name="reminder_time">Melyik időpontban?</string>
+    <string name="reminder_permission_hint">A következő lépésben a telefon engedélyt kér az értesítésekhez.</string>
+    <string name="reminder_turn_on">Bekapcsolom</string>
+    <string name="reminder_not_now">Most nem</string>
+
+    <!-- Onboarding: your plan -->
+    <string name="plan_title">A te terved</string>
+    <string name="plan_until_exam">Érettségiig</string>
+    <plurals name="plan_days">
+        <item quantity="one">%1$d nap</item>
+        <item quantity="other">%1$d nap</item>
+    </plurals>
+    <!-- the quantity is the hours (%2$d) -->
+    <plurals name="plan_student_total">
+        <item quantity="one">Napi %1$d perccel ez körülbelül %2$d óra gyakorlás.</item>
+        <item quantity="other">Napi %1$d perccel ez körülbelül %2$d óra gyakorlás.</item>
+    </plurals>
+    <string name="plan_daily_goal">Napi cél</string>
+    <plurals name="plan_learner_year">
+        <item quantity="one">Egy év alatt körülbelül %1$d óra.</item>
+        <item quantity="other">Egy év alatt körülbelül %1$d óra.</item>
+    </plurals>
+    <string name="plan_reminder">Emlékeztető minden nap %1$s-kor</string>
+    <string name="plan_change_later">Mindent módosíthatsz később a profilodban.</string>
+
+    <!-- Onboarding: account. The code step and some errors are new; see docs/onboarding/README.md. -->
+    <string name="account_title">Hozd létre a fiókodat</string>
+    <string name="account_why">Így nem vész el a haladásod, és másik telefonon is folytathatod.</string>
+    <string name="account_google">Folytatás Google-lel</string>
+    <string name="account_google_signed">Google-fiókkal: %1$s</string>
+    <string name="account_or_email">vagy e-maillel</string>
+    <string name="account_last_name">Vezetéknév</string>
+    <string name="account_first_name">Keresztnév</string>
+    <string name="account_email">E-mail cím</string>
+    <string name="signin_password">Jelszó</string>
+    <string name="account_password_hint">Legalább 8 karakter, kis- és nagybetűvel és számmal.</string>
+    <string name="account_consent">Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót.</string>
+    <string name="account_consent_required">A folytatáshoz fogadd el a feltételeket és az adatvédelmi tájékoztatót.</string>
+    <string name="account_news">Kérek híreket és újdonságokat e-mailben.</string>
+    <string name="account_create">Fiók létrehozása</string>
+    <string name="account_browse">Körülnézek</string>
+    <string name="code_title">Írd be a kódot</string>
+    <string name="code_sent">Elküldtük a 6 jegyű kódot ide: %1$s. Nézd meg a levélszemetet is.</string>
+    <string name="code_label">6 jegyű kód</string>
+    <string name="code_confirm">Megerősítés</string>
+    <string name="code_resend">Új kódot kérek</string>
+    <string name="error_last_name_empty">Add meg a vezetékneved.</string>
+    <string name="error_first_name_empty">Add meg a keresztneved.</string>
+    <string name="error_email_invalid">Ez nem tűnik e-mail címnek. Ellenőrizd.</string>
+    <string name="error_password_weak">A jelszó legalább 8 karakter legyen, és tartalmazzon kisbetűt, nagybetűt és számot.</string>
+    <string name="error_email_taken">Ezzel az e-mail címmel már van fiók. Lépj be helyette.</string>
+    <string name="error_network">Nincs internetkapcsolat. Próbáld újra, ha újra van net.</string>
+    <string name="error_signin">Hibás e-mail cím vagy jelszó.</string>
+    <string name="error_email_not_confirmed">Ezt a fiókot még nem erősítetted meg. Írd be a levélben kapott kódot.</string>
+    <string name="error_code_invalid">Hibás vagy lejárt kód. Ellenőrizd, vagy kérj újat.</string>
+    <string name="error_same_password">Az új jelszó nem lehet ugyanaz, mint a régi.</string>
+    <string name="error_too_many">Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.</string>
+    <string name="error_unknown">Valami nem sikerült. Próbáld újra.</string>
+
+    <!-- Sign-in ("Már van fiókom") and forgotten password; the reset texts are new -->
+    <string name="signin_title">Belépés</string>
+    <string name="signin_why">Lépj be, és betöltjük a profilodat és a haladásodat.</string>
+    <string name="signin_button">Belépés</string>
+    <string name="signin_forgot">Elfelejtetted a jelszavad?</string>
+    <string name="reset_title">Új jelszó</string>
+    <string name="reset_why">Küldünk egy 6 jegyű kódot az e-mail címedre, azzal adhatsz meg új jelszót.</string>
+    <string name="reset_send">Kód küldése</string>
+    <string name="reset_new_password">Új jelszó</string>
+    <string name="reset_save">Jelszó mentése</string>
+
+    <!-- The profile cannot be read at the start -->
+    <string name="app_load_error_title">Nem sikerült betölteni az adataidat</string>
+    <string name="app_load_error_text">Próbáld újra. Ha nem segít, zárd be az alkalmazást, és nyisd meg újra.</string>
+    <string name="retry">Újrapróbálom</string>
+
+    <!-- Errors of saving an answer -->
+    <string name="error_storage_full">Megtelt a tárhely.</string>
+    <string name="error_io">Nem sikerült menteni. Próbáld újra.</string>
+</resources>

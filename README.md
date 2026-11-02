@@ -2,12 +2,12 @@
 
 > Kotlin Multiplatform app for Android and desktop (JVM), in early development. The product goal is an offline-first learning app (short lessons and practice tasks) for high school students who prepare for the graduation exam (*maturita*) in Slovakia. [VISION.md](docs/VISION.md) still describes the earlier plan; see the update below.
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.9.1-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.12.2-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
 [![Platform](https://img.shields.io/badge/Platform-Android_%7C_Desktop_(JVM)-3DDC84.svg?logo=android&logoColor=white)](https://github.com/MadovyGabor/MaturiMate)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM_%2B_StateFlow-brightgreen.svg)](#architecture)
 [![Database](https://img.shields.io/badge/Database-SQLDelight_%2B_PostgreSQL-blue.svg)](https://cashapp.github.io/sqldelight/)
-[![DI](https://img.shields.io/badge/DI-Koin_4.1.1-red.svg)](https://insert-koin.io/)
+[![DI](https://img.shields.io/badge/DI-Koin_4.2.2-red.svg)](https://insert-koin.io/)
 
 ## Update, 2026-10-22: change of plan
 
@@ -80,7 +80,7 @@ This section describes the code on `main`, after Milestone 1 (core and database)
 
 ### In progress
 
-- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 6.
+- The subject and exam selection screens are still a static shell. They read hard-coded subject data and do not use the database yet; the lesson and practice screens come in Milestone 7.
 - Next: the design system in the code (Milestone 2), then the onboarding rework with Supabase accounts (Milestones 3 to 5). See [ROADMAP.md](docs/ROADMAP.md).
 - The real lessons and tasks are written in a separate private repository, cloned into `content/` (gitignored).
 
@@ -104,17 +104,18 @@ Versions are taken from `gradle/libs.versions.toml` on `main`.
 
 | Component | Version | Notes |
 | :--- | :--- | :--- |
-| Kotlin | 2.2.20 | Also used for the Compose compiler plugin and the serialization plugin |
-| Compose Multiplatform | 1.9.1 | Shared UI in `commonMain` |
-| Koin | 4.1.1 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`; Android and Compose extras |
-| Navigation3 (`navigation3-ui`) | 1.0.0-alpha06 | **Alpha** |
-| AndroidX lifecycle (`viewmodel-compose`) | 2.10.0-alpha07 | **Alpha** |
-| kotlinx.serialization (JSON) | 1.9.0 | Navigation key polymorphism; content manifest and content files |
-| kotlinx.datetime | 0.7.1 | Date handling |
-| kotlinx.coroutines | 1.10.2 | `StateFlow`, `SharedFlow`, `viewModelScope` |
-| SQLDelight | 2.2.1 | Content and user databases (`:database` module) |
-| PostgreSQL | 16 (Docker), JDBC 42.7.4 | Local development database and content importer; not used by the app |
-| Android | minSdk 24, compileSdk 36, targetSdk 36 | Android Gradle Plugin 8.13.0 |
+| Kotlin | 2.4.21 | Also used for the Compose compiler plugin and the serialization plugin |
+| Compose Multiplatform | 1.12.2 | Shared UI in `shared/src/commonMain`; Material 3 1.9.0 |
+| Koin | 4.2.2 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`; Android and Compose extras |
+| Navigation3 (`navigation3-ui`) | 1.2.0 | |
+| AndroidX lifecycle (`viewmodel-compose`) | 2.11.0 | |
+| kotlinx.serialization (JSON) | 1.12.0 | Navigation key polymorphism; content manifest and content files |
+| kotlinx.datetime | 0.8.0 | Date handling |
+| kotlinx.coroutines | 1.11.0 | `StateFlow`, `SharedFlow`, `viewModelScope` |
+| SQLDelight | 2.4.1 | Content and user databases (`:database` module) |
+| supabase-kt | 3.8.0 | Sign-up and sign-in; Ktor 3.6.1 |
+| PostgreSQL | 17 (Supabase), 16 (Docker), JDBC 42.7.14 | Server database and content importer; not used by the app directly |
+| Android | minSdk 26, compileSdk 37, targetSdk 37 | Android Gradle Plugin 9.5.0, Gradle 9.8.2 |
 | JVM | `jvmTarget` 11 for Android; JDK 21 for the build | See [Setup](#setup) |
 
 ## Architecture
@@ -130,7 +131,7 @@ Layering is not uniform:
 - `features/profileDetails`, `features/subjects` and `features/examTaking` have only `presentation` code.
 - `core/domain` contains the shared `OperationResult` and `Error` types.
 
-User profile domain: `UserProfile`, `UserProfileRepository` (interface), `TeachingLanguage` and `DataError`; the onboarding domain keeps `MaturitaValidator`. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
+User profile domain: `UserProfile`, `UserProfileRepository` (interface), `TeachingLanguage` and `DataError`. The learning domain has its own `Subject` model; the subject screens still use two presentation classes named `Subject`: `core/presentation/utils/StatickUiSettings.kt` and `features/subjects/presentation/SubjectListTabScreen.kt`.
 
 Profile data: `UserProfileRepositoryImpl` writes one field per save to `user_profile` and `user_settings`; the first save creates both rows. The app starts on the home screen once `user_profile.onboarding_completed_at` is set.
 
@@ -147,7 +148,9 @@ MaturiMate/
 ├── supabase/                Supabase settings and the schema migrations (27 tables)
 ├── dbServer/                local PostgreSQL in Docker with the same schema
 ├── content/                 lesson and task files (private repository, gitignored)
-├── composeApp/              the app (Android and desktop)
+├── shared/                  shared UI, features and platform code (Android and desktop)
+├── androidApp/              the Android app (entry point, manifest, icons)
+├── desktopApp/              the desktop app (entry point, packaging)
 │   └── src/
 │       ├── commonMain/      App.kt, core/ (database, di, domain, presentation), features/
 │       ├── androidMain/     MainActivity, Koin platform module
@@ -162,26 +165,27 @@ MaturiMate/
 
 Requirements:
 
-- JDK 21.
-- Android SDK Platform 36 (for the Android target). Put its path in `local.properties`; that file is not committed.
-- Android Studio or IntelliJ IDEA with the Compose Multiplatform plugin is optional.
-
-Important: `gradle.properties` line 4 sets `org.gradle.java.home` to a JDK 21 (JBR) path under a local Windows user profile. This path exists only on the original development machine. On any other machine, change that line to your JDK 21 location, or remove it and set `JAVA_HOME`.
+- JDK 21 (the one bundled with Android Studio works; AGP 9 needs at least 17).
+- Android SDK Platform 37 (for the Android target). Put the SDK path in `local.properties`; that file is not committed.
+- Android Studio with AGP 9.5 support, or IntelliJ IDEA with the Compose Multiplatform plugin, is optional. Run configurations: `androidApp` for Android, `desktopApp` for desktop.
 
 Commands:
 
 ```bash
 # Android debug APK
-./gradlew :composeApp:assembleDebug
+./gradlew :androidApp:assembleDebug
 
 # Desktop application
-./gradlew :composeApp:run
+./gradlew :desktopApp:run
+
+# Desktop application with Compose Hot Reload
+./gradlew :desktopApp:hotRun
 
 # Compile the desktop (JVM) target
-./gradlew :composeApp:compileKotlinJvm
+./gradlew :shared:compileKotlinJvm
 
 # Tests (database, content pipeline, app)
-./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest
+./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest
 
 # Bundle the content files into the app (needs the content/ folder)
 ./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801
@@ -192,14 +196,13 @@ docker compose -f dbServer/docker-compose.yml up -d
 
 On Windows PowerShell, replace `./gradlew` with `.\gradlew.bat`.
 
-Desktop packaging is configured for Dmg, Msi and Deb (`composeApp/build.gradle.kts`). Packaging has not been run.
+Desktop packaging is configured for Dmg, Msi and Deb (`desktopApp/build.gradle.kts`). Packaging has not been run.
 
 ## Known limitations
 
 - Placeholders and mock data: `ExamWriteScreen` is a text placeholder; the History entry is a text placeholder; profile subject statistics are hard-coded values; the subject list and the exam list are static, with no data source.
-- Alpha dependencies: `androidx.lifecycle` 2.10.0-alpha07 and Navigation3 1.0.0-alpha06.
 - Tests cover the database, the content pipeline and the repositories (70 tests). No tests exist for the onboarding, profile, or navigation code. No coverage tool is configured.
-- CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every push and pull request in three separate jobs: database, content pipeline (with a PostgreSQL 16 service), and app (tests plus the Android APK and desktop jar). Each job shows its test results as a table in the run summary and as its own check.
+- CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every push that changes more than documentation, in four parallel jobs: database, content pipeline (with a PostgreSQL 16 service), app (tests and the desktop jar) and the Android build. A pull request shows the result of its branch's push. Each job shows its test results as a table in the run summary and as its own check.
 - Localization: Slovak in `values` (the default for every phone language except Hungarian), Hungarian in `values-hu`. The old setup and profile screens still have hard-coded Hungarian text; they are rebuilt in Milestone 5.
 
 ## Development approach

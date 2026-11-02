@@ -1,6 +1,6 @@
 # MaturiMate Architecture
 
-This document describes the architecture of the code in this repository. It was last checked against the code on 2026-10-28, after Milestone 1 (core and database), which is merged into `main`.
+This document describes the architecture of the code in this repository. Its stack and module layout were last checked on 2026-11-01, after the toolchain update (Milestone 6); the other sections were last checked on 2026-10-28, after Milestone 1 (core and database).
 
 For the current status of each part, see the "Current status" section of the [README](../README.md).
 
@@ -12,11 +12,13 @@ For the current status of each part, see the "Current status" section of the [RE
 
 | Component | Version (from `../gradle/libs.versions.toml`) | Notes |
 |---|---|---|
-| Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target |
-| Gradle, Android Gradle Plugin | 9.5.1, 8.13.2 | AGP 8 runs on Gradle up to 9.5; see [DECISIONS](DECISIONS.md) 2026-10-31 |
-| Compose Multiplatform | 1.11.1 | Shared UI for Android and desktop; 1.12 needs AGP 9 |
-| Navigation3 for Compose Multiplatform | 1.1.2 | |
-| AndroidX Lifecycle (ViewModel) | 2.10.0 | |
+| Kotlin Multiplatform | Kotlin 2.4.21 | Android target and desktop `jvm()` target in `:shared` and `:database` |
+| Gradle, Android Gradle Plugin | 9.8.2, 9.5.0 | Built-in Kotlin; shared modules use the Android-KMP library plugin (`com.android.kotlin.multiplatform.library`); see [toolchain-agp9.md](../llm/toolchain-agp9.md) |
+| Compose Multiplatform | 1.12.2 | Shared UI for Android and desktop (Jetpack Compose 1.12.1 on Android) |
+| Material 3 (Compose Multiplatform) | 1.9.0 | Own version line; the newest stable |
+| Navigation3 for Compose Multiplatform | 1.2.0 | |
+| AndroidX Lifecycle (ViewModel) | 2.11.0 | |
+| Compose Hot Reload | 1.2.0 | `:desktopApp` (`./gradlew :desktopApp:hotRun`) |
 | Koin | 4.2.2 | `koin-core`, `koin-compose`, `koin-compose-viewmodel`, plus Android artifacts |
 | kotlinx.serialization | 1.12.0 | Polymorphic navigation routes; `content-manifest.json` (`:database`); content files (`../tools/content-pipeline`) |
 | kotlinx.datetime | 0.8.0 | Used for `LocalDate` and time zone handling |
@@ -24,10 +26,10 @@ For the current status of each part, see the "Current status" section of the [RE
 | SQLDelight | 2.4.1 | Content and user databases (`:database` module) |
 | PostgreSQL JDBC driver | 42.7.14 | `../tools/content-pipeline` only (server copy of the content) |
 | PostgreSQL | 17 (Supabase), 16 (Docker) | Server database on Supabase; a local copy in Docker (`../dbServer/docker-compose.yml`) for development and the importer |
-| supabase-kt (Auth, ComposeAuth) | 3.8.0 | Sign-up, sign-in and password reset; Ktor 3.5.1 with the OkHttp engine on Android and desktop |
+| supabase-kt (Auth, ComposeAuth) | 3.8.0 | Sign-up, sign-in and password reset; Ktor 3.6.1 with the OkHttp engine on Android and desktop |
 | Supabase CLI | 2.122.0 | Schema migrations (`../supabase/migrations`) |
 
-Android targets use `minSdk` 26 (needed by supabase-kt), `compileSdk` 36, and `targetSdk` 36. The Android target uses `jvmTarget` `JVM_11`. Desktop packaging is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
+Android uses `minSdk` 26 (needed by supabase-kt), `compileSdk` 37, and `targetSdk` 37, with `jvmTarget` `JVM_11`. The build runs on JDK 17 or newer (CI uses 21). Desktop packaging (`:desktopApp`) is configured for DMG, MSI, and DEB formats, but has not been built as part of this document.
 
 ---
 
@@ -37,46 +39,53 @@ Gradle modules:
 
 | Module | Kind | Contents |
 |---|---|---|
-| `:composeApp` | Kotlin Multiplatform app (Android, desktop) | UI, features, Koin wiring |
+| `:shared` | Kotlin Multiplatform library (Android, desktop) | UI, features, Koin wiring, platform (expect/actual) code, Compose resources |
+| `:androidApp` | Android app | `MainActivity`, `MyApplication`, manifest, launcher icons, splash theme |
+| `:desktopApp` | Kotlin/JVM desktop app | `main()`, the window, desktop packaging, Compose Hot Reload |
 | `:database` | Kotlin Multiplatform library (Android, desktop) | SQLDelight schemas of the content and user databases, platform drivers, content installer |
 | `:tools:content-pipeline` | Kotlin/JVM command-line tool | Validates the content files; exports `content.db`; imports the server copy into PostgreSQL |
 
 Other folders: `supabase/` (Supabase project settings `config.toml` and the schema in `migrations/`, 27 tables), `dbServer/` (local PostgreSQL in Docker with the same schema and a stand-in for Supabase Auth; see [dbServer/README.md](../dbServer/README.md)), `content/` (lesson and task files: a separate private repository cloned here, gitignored), `docs/` (vision, roadmap and this document).
 
-The app source tree, relative to `../composeApp/src`:
+The app source tree, relative to `../shared/src`:
 
 ```
 commonMain/kotlin/com/madovygabor/maturimate/
 ├── App.kt
 ├── core/
-│   ├── database/           # ContentDatabaseProvider (installs and opens the content database)
+│   ├── config/             # SupabaseConfig.kt (public values only)
+│   ├── database/           # ContentDatabaseProvider, LocalUserProvider
 │   ├── di/                 # Koin modules (AppModul.kt, initKoin.kt)
 │   ├── domain/error/       # Error.kt, OperationResult.kt
-│   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/
+│   ├── network/            # Supabase client factory
+│   └── presentation/       # MainFrame.kt, navigation/, theme/, uiComponents/, utils/, locale/
 └── features/
-    ├── appOnboarding/      # data/, domain/, presentation/
+    ├── appOnboarding/      # presentation/ (one folder per question screen)
+    ├── auth/               # data/, domain/, presentation/ (account and sign-in screens)
     ├── examTaking/         # ExamWriteScreen.kt (placeholder)
     ├── learning/           # data/, domain/ (no presentation yet)
     ├── profileDetails/     # presentation/ only
-    └── subjects/           # presentation/ only
+    ├── subjects/           # presentation/ only
+    └── userProfile/        # data/, domain/ (profile, subjects, exam dates)
 commonMain/composeResources/files/   # bundled content.db + content-manifest.json (generated, gitignored)
 androidMain/kotlin/...      # Android actuals (AppModul.android.kt, ...)
 jvmMain/kotlin/...          # Desktop actuals (AppModul.jvm.kt, ...)
-commonTest/kotlin/...       # One placeholder test (ComposeAppCommonTest.kt)
-jvmTest/kotlin/...          # Content provider and repository tests
+jvmTest/kotlin/...          # Repository, ViewModel and screen tests, and the whole onboarding flow
 ```
+
+The app modules hold only the entry points: `../androidApp/src/main` (`MainActivity.kt`, `core/di/MyApplication.kt`, `AndroidManifest.xml`, `res/`) and `../desktopApp/src/main` (`main.kt`).
 
 ---
 
 ## 3. Layering
 
-`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 6. The other features contain only presentation code:
+`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 7. The other features contain only presentation code:
 
 * `features/profileDetails` contains only `presentation/`.
 * `features/subjects` contains only `presentation/`.
 * `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
-`userProfile` holds the profile, settings and role of the local user: the domain has `UserProfile`, `TeachingLanguage`, `UserRole`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database (`user_profile`, `user_settings`, `user_role`; saving a role replaces the student, learner or teacher role and keeps roles the server gives). `appOnboarding` has `MaturitaValidator` in its domain and the onboarding screens in its presentation layer. Each question screen has its own small ViewModel; the one-answer questions (language, role, and the next simple ones) extend `OnboardingQuestionViewModel<T>`, which loads the saved answer, keeps the selection, saves on Next and shows a snackbar when saving fails, so a screen's ViewModel only says how its answer is read and saved.  `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client, `SupabaseAccountRepository` over Postgrest (the account's profile, settings, role, subjects and consents on the server) and `AccountSetupImpl`, which runs after a sign-up or a sign-in: it moves the guest's rows to the account (`LocalUserProvider.adoptAccount`), then uploads the profile and consents, or downloads the account's profile. Supabase classes stay in the data layer and in `core/network/`.
+`userProfile` holds the profile, settings and role of the local user: the domain has `UserProfile`, `TeachingLanguage`, `UserRole`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database (`user_profile`, `user_settings`, `user_role`; saving a role replaces the student, learner or teacher role and keeps roles the server gives). `appOnboarding` has the onboarding screens in its presentation layer. Each question screen has its own small ViewModel; the one-answer questions (language, role, and the next simple ones) extend `OnboardingQuestionViewModel<T>`, which loads the saved answer, keeps the selection, saves on Next and shows a snackbar when saving fails, so a screen's ViewModel only says how its answer is read and saved.  `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset in two steps: the code, then the new password), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client, `SupabaseAccountRepository` over Postgrest (the account's profile, settings, role, subjects and consents on the server) and `AccountSetupImpl`, which runs after a sign-up or a sign-in: it moves the guest's rows to the account (`LocalUserProvider.adoptAccount`), then saves the profile, answers and consents in one server call (`save_sign_up`, one transaction), or downloads the account's profile. Supabase classes stay in the data layer and in `core/network/`.
 
 The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
 
@@ -168,7 +177,7 @@ Files (Git) ──┤
 
 ### 9.2 Content in the app
 
-* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `../composeApp/src/commonMain/composeResources/files`. These files are gitignored; a build without them runs, but has no content.
+* `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `../shared/src/commonMain/composeResources/files`. These files are gitignored; a build without them runs, but has no content.
 * `ContentInstaller` (`:database`) installs a content file only if its schema version equals the app's, its size and SHA-256 match the manifest, and its `content_version` is higher than the installed one. It writes a temporary file and renames it over the old one, manifest last. The user database is never touched.
 * `ContentDatabaseProvider` (`core/database`) installs the bundled file on first use and opens the installed one; it returns null when there is no content. Checked on the Android emulator (API 37): installed on first start, "up to date" after a restart.
 * Not built yet: downloading newer content files. They will go through the same installer; the open content driver must be closed before a swap.
@@ -183,7 +192,7 @@ Files (Git) ──┤
 
 ## 10. Not built yet
 
-* Screens that use the content and progress (Milestone 6). The current subject and exam screens still show static data (sections 3 and 5).
+* Screens that use the content and progress (Milestone 7). The current subject and exam screens still show static data (sections 3 and 5).
 * Content updates by download and sync of progress (see the [ROADMAP](ROADMAP.md)). Accounts exist: sign-up, sign-in and the profile on the server (step 5.12).
 
 ---
@@ -192,18 +201,19 @@ Files (Git) ──┤
 
 | Module | Tests | What they cover |
 |---|---|---|
-| `:database` (`jvmTest`) | 12 | Schema constraints and queries on in-memory SQLite; the content installer |
+| `:database` (`jvmTest`) | 19 | Schema constraints and queries on in-memory SQLite; the content installer |
 | `:tools:content-pipeline` | 40 | Validator rules; PostgreSQL writer against a throwaway database with the real DDL (skipped when no local PostgreSQL); exporter |
-| `:composeApp` (`jvmTest`, `commonTest`) | 132 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
+| `:shared` (`jvmTest`) | 167 | Content provider with the bundled file (skipped without it); the whole onboarding from the welcome screen to the home screen with the real navigation (`OnboardingFlowTest`); `AppViewModel`; design tokens against the code; the onboarding resume and the steps per role; `OnboardingQuestionViewModel` and `RoleViewModel` on an in-memory database; the welcome, language, role, subject, date, goal, reminder, plan, account and sign-in screens and their ViewModels (Compose UI tests, plus pictures at phone, tablet and desktop size in both themes and languages, written to `composeApp/build/screenshots/`); repositories, the auth repository against a mocked Supabase (Ktor `MockEngine`); the app's Supabase client; placeholder test. `AuthRepositoryLiveTest` signs in to the real project with a test account and is skipped unless `MATURIMATE_TEST_EMAIL` and `MATURIMATE_TEST_PASSWORD` are set |
 
-Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :composeApp:jvmTest`.
+Run all with `./gradlew :database:jvmTest :tools:content-pipeline:test :shared:jvmTest`.
 
-CI (`.github/workflows/ci.yml`) runs on every push and pull request, with one job per module so a failure points at the part that broke:
+CI (`.github/workflows/ci.yml`) runs on every push that changes more than documentation (a pull request shows its branch's run), with parallel jobs so a failure points at the part that broke:
 
 | Job | Runs | Notes |
 |---|---|---|
-| Database (SQLDelight) | `:database:jvmTest` | |
-| Content pipeline | `:tools:content-pipeline:test` | PostgreSQL 16 service; `REQUIRE_POSTGRES=true`, so the importer tests fail instead of being skipped |
-| App | `:composeApp:jvmTest`, then the Android APK and the desktop jar | Bundles the test fixture as content, so the content provider test runs too |
+| Database (SQLDelight) | `:database:jvmTest`, coverage | Kover line coverage in the summary; fails under 80 % |
+| Content pipeline | migrations and row level security tests, `:tools:content-pipeline:test` | PostgreSQL 16 service; `REQUIRE_POSTGRES=true`, so the importer tests fail instead of being skipped |
+| App | `:shared:jvmTest`, coverage, the desktop jar (`:desktopApp`) | Bundles the test fixture as content, so the content provider test runs too; coverage as for the database |
+| Android build | `:androidApp:assembleDebug` | Beside the tests, because it is the slowest part |
 
 Each job publishes its JUnit results as its own check and as a table (every test, passed or failed) in the run summary.

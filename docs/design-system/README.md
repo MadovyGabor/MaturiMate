@@ -10,7 +10,7 @@ Files in this folder:
 | [components/](components) | One page per component: what it is for, what the caller provides, which tokens it uses. |
 | [screens.html](screens.html) | Sample screens (onboarding, practice, home) in both themes, with a contrast table. Open it in a browser. |
 
-A change starts in `tokens.json`. The Compose theme (`composeApp/.../core/presentation/theme/`) follows it.
+A change starts in `tokens.json`. The Compose theme (`shared/.../core/presentation/theme/`) follows it.
 
 ## Voice and copy
 
@@ -46,7 +46,7 @@ A change starts in `tokens.json`. The Compose theme (`composeApp/.../core/presen
 ## Icons and logo
 
 - Material Symbols, **Rounded** style, 24 dp, in the color of the surrounding text.
-- Do not redraw or recolor the logo. Both files are in `composeApp/src/commonMain/composeResources/drawable/`: `logoTransparent.png` on the light cream background, and `logo.png` (the logo on its own cream square) as a rounded tile on dark surfaces. The `AppLogo` component chooses by the theme in effect.
+- Do not redraw or recolor the logo. Both files are in `shared/src/commonMain/composeResources/drawable/`: `logoTransparent.png` on the light cream background, and `logo.png` (the logo on its own cream square) as a rounded tile on dark surfaces. The `AppLogo` component chooses by the theme in effect.
 
 ## Accessibility
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backup and device-to-device transfer on Android 12 and newer (code review 2026-11-01, 4.1).
+     Left out: the shared preferences, where supabase-kt keeps the signed-in session with its
+     refresh token, so a restored phone is not signed in without the password; and content.db,
+     which the app installs again from its own file. The user database (answers, progress) stays. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="content.db" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="content.db" />
+    </device-transfer>
+</data-extraction-rules>

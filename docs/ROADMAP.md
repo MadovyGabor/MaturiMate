@@ -1,12 +1,14 @@
 # MaturiMate Roadmap
 
+> **Updated 2026-11-01:** the toolchain update (AGP 9) becomes Milestone 6, before the unit engine; the milestones after it move up by one. The reasons are in [DECISIONS](DECISIONS.md).
+>
 > **Updated 2026-10-30:** the design system comes first, and the onboarding comes together with accounts (Supabase). Milestones are split into small steps. The reasons are in [DECISIONS](DECISIONS.md).
 >
 > **Updated 2026-10-22: change of plan.** The first version (V1) is a micro-learning app with content written for this project (short lessons and practice tasks). Digitising the official exam papers moved to V2 and depends on permission from the exam authority (NIVAM). The reasons are in the [README](../README.md). The milestones of the earlier plan are summarised at the end.
 
 Legend: `[x]` = done; `[/]` = in progress; `[ ]` = planned, not started.
 
-The order below is the working order: core first, then the design system, then onboarding with accounts, then the unit engine, then content, then release. Each milestone runs on its own branch, and each step is reviewed before the next one starts. Subjects follow one after another: Hungarian first, then Slovak, English and Mathematics.
+The order below is the working order: core first, then the design system, then onboarding with accounts, then the toolchain update, then the unit engine, then content, then release. Each milestone runs on its own branch, and each step is reviewed before the next one starts. Subjects follow one after another: Hungarian first, then Slovak, English and Mathematics.
 
 ---
 
@@ -36,7 +38,7 @@ How it works:
 * **The content files are the source of truth.** Lessons and tasks are written as files (Markdown and JSON) in a private repository, checked by a validator, and exported into the content database file. The same files are imported into PostgreSQL, because the user tables there reference content rows.
 * **Content reaches the phone as a whole file, in two stages.** The app ships only a small starter pack (the first lesson), so the first start and the guest work without a network. After sign-up the app downloads the full content file from private Supabase Storage (served through its CDN) with a short-lived signed link, checks it by version, size and hash, and installs it in place of the starter pack. Newer files arrive the same way, without an app release.
 * **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
-* **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 10, before the public Hungarian release.
+* **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 11, before the public Hungarian release.
 * **One design, two dialects.** The PostgreSQL schema lives in `../supabase/migrations`; changes are new migrations. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
 * **Passwords** are handled by Supabase Auth. The app holds only the public key; row level security decides which rows a user may read or write.
 * **Hosting:** Supabase (PostgreSQL, Auth and Storage in one; check pricing and limits before signing up), with occasional `pg_dump` backups. The connection string stays in `DATABASE_URL`, outside the repository. Media (images, later audio) is stored separately in object storage and downloaded and cached by the app.
@@ -90,7 +92,7 @@ See [DECISIONS](DECISIONS.md) (2026-10-30) for why Supabase.
 * **4.2 in short.** Schema change: `user_id` becomes a UUID, user tables reference `auth.users`, the own user and password tables are removed (PostgreSQL DDL and SQLDelight). `user_consent` (already in the design) records which terms and privacy version was accepted and when, and the marketing consent; it gets an `AGE_16` type for the age confirmation. `date_of_birth` becomes nullable; the user role is added to the phone database.
 * [x] **4.3.** Apply the schema to Supabase; keep the local Docker database in line. Applied through the Supabase connector; the migration file names match the versions Supabase recorded. A second migration fixes the database advisors' findings (fixed `search_path` on the trigger functions, `rls_auto_enable()` not callable through the API, indexes on five foreign keys).
 * [x] **4.4.** Row level security policies, with tests (`supabase/tests/rls_test.sql`, run in CI). Signed-in users read and write only their own rows; they can give themselves only the student, learner or teacher role; consents can be added and withdrawn, not rewritten; content reports are resolved by curators and admins; the leaderboard is read-only. Content tables have no policy, so the API does not expose them. Not signed in: no access.
-* [x] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off. Settings: [supabase-setup.md](supabase-setup.md).
+* [x] **4.5.** Enable e-mail and Google sign-in. Anonymous sign-ins stay off. Settings: [supabase-setup.md](../llm/supabase-setup.md).
 * [x] **4.7.** E-mail sending through Resend with the `maturimate.madovygabor.com` subdomain (custom SMTP); then "Confirm email" back on with templates that carry the 6-digit code (sign-up confirmation, password reset). Needed before the account screen of Milestone 5 can be tested.
 * [x] **4.6.** Key handling: only the public key in the app, secrets outside the repository. `core/config/SupabaseConfig.kt` holds the project URL, the publishable key and the Google web client id; secrets stay in Supabase, Resend, Google Cloud and `.env` files (gitignored).
 
@@ -109,7 +111,7 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 * [x] **5.7.** Subjects: compulsory ones preselected by the teaching language, the English level (B1 / B2 / "Még nem tudom") in `user_subject.level`. With `AppChoiceChip`; the next step now follows the role (`nextRoute`), and the onboarding ends after the last step built so far.
 * [x] **5.8.** Graduation date (students only): the next two spring exams as cards and "Más dátum" with a calendar limited to the next three years (`AppDatePickerDialog`). The old setup screen and its `OnboardingViewModel` are removed.
 * [x] **5.9.** Daily goal (students and learners): 5, 10, 15 or 20 minutes as chips, 10 preselected, with the hours in a year. The goal stays empty in the database until it is answered.
-* [x] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it. Only the setting is saved (`reminder_enabled`, `reminder_time`); sending the daily notification comes with the streak (8.1).
+* [x] **5.10.** Reminder: time picker, then the notification permission; "Most nem" skips it. Only the setting is saved (`reminder_enabled`, `reminder_time`); sending the daily notification comes with the streak (9.1).
 * [x] **5.11.** "A te terved" summary: days until the exam with the hours of practice (students), the daily goal and its hours in a year (learners), the subjects with the English level, and the reminder.
 * [x] **5.12.** Account screen: Google and e-mail (with the 6-digit code), plus a small "Körülnézek" button that continues as a local guest. The same step adds the sign-in screen with the forgotten password, and shows the "Már van fiókom" button on the welcome screen. After sign-up the guest's rows become the account's and the profile and consents go to Supabase; after sign-in the account's profile comes to the phone.
 * [x] **5.13.** The start screen is chosen from the user database, and an unfinished onboarding resumes where it stopped: `App` picks the start screen and the language from the profile; `onboardingBackStack` rebuilds the steps up to the first unanswered one (the reminder, the plan and the account are always shown again). An end-to-end test (`OnboardingFlowTest`) goes from the welcome screen to the home screen.
@@ -120,81 +122,109 @@ Each screen step also builds the components it needs (buttons, chips, progress b
 
 ---
 
-## Milestone 6: Unit engine with one small unit
+## Milestone 6: Toolchain update (AGP 9)
+
+Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-01, so the unit engine is built on the new module layout and versions (see [DECISIONS](DECISIONS.md) 2026-11-01). The plan, the versions and what changes: [toolchain-agp9.md](../llm/toolchain-agp9.md). The build tooling changes; the app's behaviour does not. Every tool and library goes to its newest stable version (no alpha, beta or release candidate).
+
+* [x] **6.1.** Plan: target versions, what AGP 9 changes, the new module layout (`shared`, `androidApp`, `desktopApp`), the order of the steps.
+* [x] **6.2.** `:database` moves to the Android-KMP library plugin (`com.android.kotlin.multiplatform.library`), still on AGP 8.13.
+* [x] **6.3.** `composeApp` is renamed to `shared` (paths, Compose resources imports, CI, docs); nothing else changes.
+* [x] **6.4.** New `:androidApp` module (activity, application class, manifest, launcher icons, splash); `:shared` becomes a Kotlin Multiplatform library with the Android-KMP library plugin. The application id stays `com.madovygabor.maturimate`.
+* [x] **6.5.** New `:desktopApp` module (`main.kt`, window, desktop packaging, hot reload).
+* [x] **6.6.** AGP 9.5 and Gradle 9.8, compileSdk and targetSdk 37, built-in Kotlin; obsolete Gradle properties removed.
+* [x] **6.7.** Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11, Ktor 3.6; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced; unused catalog entries removed.
+* [x] **6.8.** CI (new action versions, JDK 21), run commands and documentation follow the new layout; test on a phone (update over the installed app, Google sign-in, content, reminder) and on desktop. *Tested by the owner on 2026-11-01 (Android with Google sign-in, desktop with hot reload, Android Studio). The first CI run on the new setup comes with the next push.*
+
+---
+
+## Milestone 6a: Code review fixes
+
+Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](../llm/review-2026-11-01.md). *Added and done on 2026-11-01; open: the phone test of the backup.*
+
+* [x] **6a.1.** Error handling: crash on unexpected server data, the profile read error that ends in the onboarding (and the flaky `AppViewModelTest`), the onboarding that went back to the welcome screen after the language, dropped errors and cancellations, one user database call at a time.
+* [x] **6a.2.** Account flow: password reset after a refused password, resuming the onboarding after sign-in, two accounts on one phone, the snackbar that blocks buttons.
+* [x] **6a.3.** Server consistency: the end of a sign-up in one transaction (`save_sign_up`), consents once. *Applied to the live project on 2026-11-01 (version 20261101214731).*
+* [/] **6a.4.** Android release: backup without the session, R8 shrinking (APK from 28.5 MB to 4.9 MB). *Builds; the release build is not tried on a phone yet (testing goes on with debug builds).*
+* [x] **6a.5.** Tests and coverage: Kover with an 80 % minimum in CI (`shared` 89.8 %, `database` 86.4 %), the missing tests. *The shared profile flow is left out (see the review notes, 5.2); Android device tests wait for an emulator in CI.*
+* [x] **6a.6.** Cleanup of dead code.
+* [/] **6a.7.** Faster CI: one run per commit (no separate `pull_request` run), no run for documentation-only changes, the Android build as its own job beside the tests, parallel Gradle builds and parallel test JVMs. *Added on 2026-11-01; checked locally, the first CI run comes with the next push.*
+
+---
+
+## Milestone 7: Unit engine with one small unit
 
 Goal: one complete lesson that works end to end. After that, new units are mostly new data.
 
-* [ ] **6.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time. Lessons and tasks have a Hungarian and a Slovak text under one id (needed for Mathematics, DECISIONS 2026-11-01); the app shows the teaching language.
-* [ ] **6.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
-* [ ] **6.3. Reading passage view:** a text shown together with its tasks.
-* [ ] **6.4.** Loading the first unit through the importer and the content database. The exporter builds two files: the starter pack bundled in the app (first lesson only) and the full content file.
-* [ ] **6.5. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
+* [ ] **7.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time. Lessons and tasks have a Hungarian and a Slovak text under one id (needed for Mathematics, DECISIONS 2026-11-01); the app shows the teaching language.
+* [ ] **7.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
+* [ ] **7.3. Reading passage view:** a text shown together with its tasks.
+* [ ] **7.4.** Loading the first unit through the importer and the content database. The exporter builds two files: the starter pack bundled in the app (first lesson only) and the full content file.
+* [ ] **7.5. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
 
 ---
 
-## Milestone 7: Exam-style practice with own content
+## Milestone 8: Exam-style practice with own content
 
-* [ ] **7.1.** A practice mode that combines a passage and its tasks, with a plain time limit (no special time extension).
-* [ ] **7.2.** Grading, result screen and task-by-task review.
-* [ ] **7.3.** Local history of finished attempts.
-
----
-
-## Milestone 8: Streak, progress and the Hungarian content
-
-* [ ] **8.1.** Daily streak and per-topic progress, stored locally; the daily reminder notification at the time saved in the onboarding (5.10).
-* [ ] **8.2.** Hungarian units, written together with the engine. *Open question: the planned "30 main topics". It is not decided yet whether this means 30 topics or 30 lessons.*
-* [ ] **8.3.** Review of missed tasks (error vault) as a later addition.
+* [ ] **8.1.** A practice mode that combines a passage and its tasks, with a plain time limit (no special time extension).
+* [ ] **8.2.** Grading, result screen and task-by-task review.
+* [ ] **8.3.** Local history of finished attempts.
 
 ---
 
-## Milestone 9: UI polish and beta
+## Milestone 9: Streak, progress and the Hungarian content
+
+* [ ] **9.1.** Daily streak and per-topic progress, stored locally; the daily reminder notification at the time saved in the onboarding (5.10).
+* [ ] **9.2.** Hungarian units, written together with the engine. *Open question: the planned "30 main topics". It is not decided yet whether this means 30 topics or 30 lessons.*
+* [ ] **9.3.** Review of missed tasks (error vault) as a later addition.
+
+---
+
+## Milestone 10: UI polish and beta
 
 *Android is the target platform; desktop is for development. Small bugs, polish, animations and platform tuning are collected during the earlier milestones and done here, once the Hungarian subject is ready and before the release (owner's choice, 2026-11-01).*
 
-* [ ] **9.0. Toolchain to the newest versions, on its own branch:** AGP 9 with `composeApp` split into a shared Kotlin Multiplatform library and a thin Android app module, compileSdk 37, Compose Multiplatform 1.12, Navigation3 1.2, Lifecycle 2.11 and the newest Gradle; the deprecated `compose.*` dependency aliases, `uiTooling` and the old `@Preview` import are replaced. See [DECISIONS](DECISIONS.md) 2026-10-31.
-* [ ] **9.0a. Bug fixes:** the bugs found while testing on a phone since the onboarding (5.15), collected here as they are found:
+* [ ] **10.0. Bug fixes:** the bugs found while testing on a phone since the onboarding (5.15), collected here as they are found:
   * The labels of the bottom navigation bar are Hungarian in both languages.
   * After a change of the teaching language the subjects are not asked again (a Hungarian school's subjects stay when switching to Slovak).
-  * The "Tantárgyak" tab still shows the old hard-coded list, not the user's subjects (rebuilt with the units, Milestone 6).
+  * The "Tantárgyak" tab still shows the old hard-coded list, not the user's subjects (rebuilt with the units, Milestone 7).
   * `AppViewModelTest.teachingLanguageSetsTheAppLanguageAndTheEndGoesHome` times out now and then without a code change (seen on 2026-11-01; passes on a rerun).
   * Google sign-in on desktop is not tried yet (it works on Android).
-  * Unconfirmed e-mail sign-ups stay in Supabase Auth; a cleanup belongs to 10.3a.
-* [ ] **9.1.** Animations, reading view polish, accessibility checks.
-* [ ] **9.2.** Review of the user database tables before the first testers install the app.
-* [ ] **9.3.** Closed beta of the Hungarian subject on Android.
-* [ ] **9.4.** Localization of the UI strings (Slovak and Hungarian).
-* [ ] **9.5. Profile settings:** the name and the account in the profile, "Fiók létrehozása" for guests, and a reset that starts over. *Added on 2026-11-01; not part of the onboarding.*
-* [/] **9.6. Exam dates:** the written exams start on the Monday of the second week of March; the app computes the date from this rule (done on 2026-11-01, `ExamDates.secondWeekWeekday`) and takes the official date when it is published. *How the official date reaches the app is open.*
+  * Unconfirmed e-mail sign-ups stay in Supabase Auth; a cleanup belongs to 11.3a.
+* [ ] **10.1.** Animations, reading view polish, accessibility checks.
+* [ ] **10.2.** Review of the user database tables before the first testers install the app.
+* [ ] **10.3.** Closed beta of the Hungarian subject on Android.
+* [ ] **10.4.** Localization of the UI strings (Slovak and Hungarian).
+* [ ] **10.5. Profile settings:** the name and the account in the profile, "Fiók létrehozása" for guests, and a reset that starts over. *Added on 2026-11-01; not part of the onboarding.*
+* [/] **10.6. Exam dates:** the written exams start on the Monday of the second week of March; the app computes the date from this rule (done on 2026-11-01, `ExamDates.secondWeekWeekday`) and takes the official date when it is published. *How the official date reaches the app is open.*
 
 ---
 
-## Milestone 10: Sync and the public Hungarian release
+## Milestone 11: Sync and the public Hungarian release
 
-* [ ] **10.1.** Sync of user data between the phone and Supabase.
-* [ ] **10.2.** Content download after sign-up and later updates, as described under "Data architecture": a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. Large downloads ask before using mobile data.
-* [ ] **10.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
-* [ ] **10.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download.
-* [ ] **10.3b. Consent documents:** the terms of use and the privacy notice written and published (`maturimate.madovygabor.com`), linked from the consent text on the account step, with real document versions instead of "1.0". *Added on 2026-11-01.*
-* [ ] **10.4.** Public release of the Hungarian subject.
-
----
-
-## Milestone 11: More subjects and platforms
-
-* [ ] **11.1. Slovak:** new content and the grammar task types.
-* [ ] **11.2. English (B1/B2):** level filtering, cloze tasks. Listening tasks with own recordings or transcripts. B1 and B2 are two subjects (`ANJ_B1`, `ANJ_B2`, DECISIONS 2026-11-01).
-* [ ] **11.3. Mathematics:** formula rendering, numeric answers with comma and dot normalisation.
-* [ ] **11.4. Platforms:** desktop (a target already exists), then iOS, then web.
+* [ ] **11.1.** Sync of user data between the phone and Supabase.
+* [ ] **11.2.** Content download after sign-up and later updates, as described under "Data architecture": a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. Large downloads ask before using mobile data.
+* [ ] **11.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
+* [ ] **11.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download.
+* [ ] **11.3b. Consent documents:** the terms of use and the privacy notice written and published (`maturimate.madovygabor.com`), linked from the consent text on the account step, with real document versions instead of "1.0". *Added on 2026-11-01.*
+* [ ] **11.4.** Public release of the Hungarian subject.
 
 ---
 
-## Milestone 12 (V2): Official exam content
+## Milestone 12: More subjects and platforms
+
+* [ ] **12.1. Slovak:** new content and the grammar task types.
+* [ ] **12.2. English (B1/B2):** level filtering, cloze tasks. Listening tasks with own recordings or transcripts. B1 and B2 are two subjects (`ANJ_B1`, `ANJ_B2`, DECISIONS 2026-11-01).
+* [ ] **12.3. Mathematics:** formula rendering, numeric answers with comma and dot normalisation.
+* [ ] **12.4. Platforms:** desktop (a target already exists), then iOS, then web.
+
+---
+
+## Milestone 13 (V2): Official exam content
 
 Only after NIVAM gives permission. The request is planned for when the app works and there are real usage numbers to show. If it is refused, the app continues on its own content.
 
-* [ ] **12.1.** Written permission covering papers, answer keys, audio, offline caching, attribution and free or paid use.
-* [ ] **12.2.** Official papers and listening tasks with audio, loaded as new rows. The exam table returns as a database migration.
+* [ ] **13.1.** Written permission covering papers, answer keys, audio, offline caching, attribution and free or paid use.
+* [ ] **13.2.** Official papers and listening tasks with audio, loaded as new rows. The exam table returns as a database migration.
 
 ---
 
