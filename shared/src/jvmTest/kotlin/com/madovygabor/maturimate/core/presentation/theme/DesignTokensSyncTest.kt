@@ -178,6 +178,11 @@ class DesignTokensSyncTest {
             "border-thick" to layout.borderThick.value,
             "logo-large" to layout.logoLarge.value,
             "logo-small" to layout.logoSmall.value,
+            "path-line" to layout.pathLine.value,
+            "path-node" to layout.pathNode.value,
+            "path-node-small" to layout.pathNodeSmall.value,
+            "progress-ring" to layout.progressRing.value,
+            "progress-ring-stroke" to layout.progressRingStroke.value,
         )
 
         val values = tokenList("layout")

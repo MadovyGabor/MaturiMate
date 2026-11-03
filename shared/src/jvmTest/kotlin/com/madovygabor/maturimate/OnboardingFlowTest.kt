@@ -20,6 +20,7 @@ import com.madovygabor.maturimate.features.auth.domain.AuthState
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.Subject
+import com.madovygabor.maturimate.features.learning.domain.model.Topic
 import com.madovygabor.maturimate.features.learning.domain.model.Track
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
@@ -107,10 +108,12 @@ class OnboardingFlowTest {
         override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(false, null))
     }
 
-    // only subjects() is used; every other call fails
+    // the subject list and the subjects tab read the subjects and their root topics; every other call fails
     private object StarterContent : ContentRepository by unsupportedContent {
         override suspend fun subjects(): OperationResult<List<Subject>, LearningError> =
             OperationResult.Success(listOf(Subject(1, "HU_MJL", "Magyar", "Maďarčina", Track.HU, null)))
+        override suspend fun rootTopics(subjectId: Long): OperationResult<List<Topic>, LearningError> =
+            OperationResult.Success(emptyList())
     }
 
     @BeforeTest

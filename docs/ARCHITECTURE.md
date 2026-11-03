@@ -63,9 +63,8 @@ commonMain/kotlin/com/madovygabor/maturimate/
     ├── appOnboarding/      # presentation/ (one folder per question screen)
     ├── auth/               # data/, domain/, presentation/ (account and sign-in screens)
     ├── examTaking/         # ExamWriteScreen.kt (placeholder)
-    ├── learning/           # data/, domain/ (no presentation yet)
+    ├── learning/           # data/, domain/, presentation/ (subjects tab: subjects, parts, topics, path)
     ├── profileDetails/     # presentation/ only
-    ├── subjects/           # presentation/ only
     └── userProfile/        # data/, domain/ (profile, subjects, exam dates)
 commonMain/composeResources/files/   # bundled content.db + content-manifest.json (generated, gitignored)
 androidMain/kotlin/...      # Android actuals (AppModul.android.kt, ...)
@@ -79,20 +78,14 @@ The app modules hold only the entry points: `../androidApp/src/main` (`MainActiv
 
 ## 3. Layering
 
-`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/` and `domain/` (section 9.3); its screens come in Milestone 7. The other features contain only presentation code:
+`features/appOnboarding` has the full `data/`, `domain/`, and `presentation/` split. `features/learning` has `data/`, `domain/` (section 9.3) and `presentation/`. The other features contain only presentation code:
 
 * `features/profileDetails` contains only `presentation/`.
-* `features/subjects` contains only `presentation/`.
 * `features/examTaking` contains a single placeholder screen, `ExamWriteScreen.kt`.
 
 `userProfile` holds the profile, settings and role of the local user: the domain has `UserProfile`, `TeachingLanguage`, `UserRole`, `DataError` and the `UserProfileRepository` interface, the data layer `UserProfileRepositoryImpl` over the user database (`user_profile`, `user_settings`, `user_role`; saving a role replaces the student, learner or teacher role and keeps roles the server gives). `appOnboarding` has the onboarding screens in its presentation layer. Each question screen has its own small ViewModel; the one-answer questions (language, role, and the next simple ones) extend `OnboardingQuestionViewModel<T>`, which loads the saved answer, keeps the selection, saves on Next and shows a snackbar when saving fails, so a screen's ViewModel only says how its answer is read and saved.  `auth` holds accounts: the domain has `AuthState`, `AuthError` and the `AuthRepository` interface (sign-up with a 6-digit code, sign-in, sign-out, password reset in two steps: the code, then the new password), the data layer `AuthRepositoryImpl` over the Auth plugin of the Supabase client, `SupabaseAccountRepository` over Postgrest (the account's profile, settings, role, subjects and consents on the server) and `AccountSetupImpl`, which runs after a sign-up or a sign-in: it moves the guest's rows to the account (`LocalUserProvider.adoptAccount`), then saves the profile, answers and consents in one server call (`save_sign_up`, one transaction), or downloads the account's profile. Supabase classes stay in the data layer and in `core/network/`.
 
-The subject screens do not use the database yet. Their `Subject` model is in the presentation layer, and there are two such classes (the domain model `features/learning/domain/model/Subject` is a third, separate class):
-
-* `core/presentation/utils/StatickUiSettings.kt:20` defines `data class Subject(...)` with the UI fields and a `dbIdMapping` field. A static map of subjects is defined in the same file.
-* `features/subjects/presentation/SubjectListTabScreen.kt:86` defines a second `data class Subject(...)`.
-
-The subject list in `SubjectListTabScreen.kt` is a static `listOf(...)` (line 40) with the subjects MATH, ENGLISH, HUNGARIAN, and SLOVAK.
+**The learning path (Milestone 7, step 7.1).** `LearningCourse` (`features/learning/domain`) builds what the subjects tab shows from the `ContentRepository` and the `ProgressRepository`: the subjects of the installed content with the progress in them, the big parts of a subject, the topics below a topic with their progress, and the steps of a leaf topic (lessons and tests) with the state of each (done, current, to do; the first step not done is the current one). A topic with topics below it is a `TopicLevel.Branch` (its topics, then its `FINAL` test), a leaf topic a `TopicLevel.Path`; the tree can be any depth. `SubjectListViewModel` combines it with the user's subjects (`CatalogSubject`); `TopicViewModel` reads one level (`TopicTarget`). Both read again whenever their screen comes back, so progress made deeper in shows. The screens are `SubjectListScreen` and `TopicScreen`, built from `AppPathStep` (a node on the vertical line and a card; the line is drawn by the steps) and `AppProgressRing`. A tap on a lesson or a test says it is coming soon until the screens of steps 7.2 to 7.5 exist.
 
 ---
 
@@ -118,7 +111,7 @@ Navigation uses JetBrains Navigation3 with `@Serializable` routes. `Route` is a 
 
 `NavigationRoot.kt` registers the polymorphic subclasses for `Main`, `AppOnboarding`, and `ExamWrite` (lines 28-32). `ExamWrite` renders `ExamWriteScreen()` (lines 64-66). `ExamWriteScreen` currently displays the text "Exam Write Screen" (`features/examTaking/ExamWriteScreen.kt:25`). The `History` tab shows a placeholder text (`core/presentation/navigation/MainFrame/MainFrameNavigation.kt:61`).
 
-Tapping a subject in `SubjectNavigation.kt` pushes `Route.Main.Subject.ExamList(it)` to the back stack (lines 33-34). `ExamSelectionScreen.kt` reads the subject from the static `SubjectStaticData` (line 44) and has a `// TODO: Use Koin to inject the ViewModel` comment (line 39). The exam list is not connected to a data source, and tapping an exam does not open `ExamWriteScreen` with an exam ID.
+The subjects tab has its own back stack inside the tab (`LearningNavigation`, `features/learning/presentation`): `Route.Main.Subject.Selection` (the subjects), `Route.Main.Subject.Parts(subjectId)` (the big parts of a subject) and `Route.Main.Subject.Topic(topicId)` (the topics below a topic, or the path of a leaf topic, one route for every depth). Each entry has its own ViewModel store.
 
 ---
 
@@ -192,7 +185,7 @@ Files (Git) ──┤
 
 ## 10. Not built yet
 
-* Screens that use the content and progress (Milestone 7). The current subject and exam screens still show static data (sections 3 and 5).
+* The lesson and test screens (Milestone 7, steps 7.2 to 7.5); the subjects tab already uses the content and the progress.
 * Content updates by download and sync of progress (see the [ROADMAP](ROADMAP.md)). Accounts exist: sign-up, sign-in and the profile on the server (step 5.12).
 
 ---

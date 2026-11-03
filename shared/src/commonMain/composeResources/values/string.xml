@@ -200,4 +200,20 @@
     <!-- Errors of saving an answer -->
     <string name="error_storage_full">Úložisko je plné.</string>
     <string name="error_io">Uloženie sa nepodarilo. Skús to znova.</string>
+
+    <!-- Learning: subjects, parts, topics and the path (docs/learning/prototype.html) -->
+    <string name="learning_subjects_title">Predmety</string>
+    <string name="learning_subjects_intro">Tvoje maturitné predmety. Vyber si jeden a uč sa po témach.</string>
+    <string name="learning_subjects_empty">Zatiaľ nemáš vybraté žiadne predmety. Pridaj ich vo svojom profile.</string>
+    <string name="learning_subject_parts">Časti: %1$d</string>
+    <string name="learning_parts_title">Čo sa chceš učiť?</string>
+    <string name="learning_topics_hint">Vyber si tému. V každej nájdeš lekcie, mini testy a záverečný test.</string>
+    <string name="learning_steps_done">Hotové: %1$d z %2$d</string>
+    <string name="learning_step_lesson_meta">Lekcia · %1$d min</string>
+    <string name="learning_step_tasks_meta">Úlohy: %1$d</string>
+    <string name="learning_step_done">Hotovo</string>
+    <string name="learning_step_next">Ďalší krok</string>
+    <string name="learning_step_soon">Táto časť príde čoskoro.</string>
+    <string name="learning_load_error">Obsah sa nepodarilo načítať.</string>
+    <string name="learning_retry">Skúsiť znova</string>
 </resources>

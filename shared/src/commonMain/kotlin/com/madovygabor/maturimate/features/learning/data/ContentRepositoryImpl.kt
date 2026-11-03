@@ -33,6 +33,10 @@ class ContentRepositoryImpl(
         db.topicQueries.selectRootsBySubject(subjectId).executeAsList().map { it.toDomain() }
     }
 
+    override suspend fun topic(topicId: Long): OperationResult<Topic, LearningError> = read { db ->
+        db.topicQueries.selectById(topicId).executeAsOneOrNull()?.toDomain()
+    }
+
     override suspend fun childTopics(topicId: Long): OperationResult<List<Topic>, LearningError> = read { db ->
         db.topicQueries.selectChildren(topicId).executeAsList().map { it.toDomain() }
     }

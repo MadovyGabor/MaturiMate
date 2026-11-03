@@ -44,6 +44,16 @@ data class Layout(
     val logoLarge: Dp = 168.dp,
     /** Logo in the side panel. */
     val logoSmall: Dp = 52.dp,
+    /** Thickness of the vertical line of a learning path. */
+    val pathLine: Dp = 4.dp,
+    /** Node of a lesson (circle) or a test (rounded square) on the learning path. */
+    val pathNode: Dp = 42.dp,
+    /** Node of a mini test on the learning path. */
+    val pathNodeSmall: Dp = 34.dp,
+    /** Size of the progress ring of a topic. */
+    val progressRing: Dp = 40.dp,
+    /** Thickness of the progress ring. */
+    val progressRingStroke: Dp = 4.dp,
 )
 
 private val AppLayout = Layout()

@@ -46,7 +46,9 @@ sealed interface Route : NavKey {
             @Serializable
             data object Selection : Route // Main Subject selection Screen
             @Serializable
-            data class ExamList(val subjectId: String) : Route // Exam list for a specific subject
+            data class Parts(val subjectId: Long) : Route // The big parts of a subject
+            @Serializable
+            data class Topic(val topicId: Long) : Route // The topics below a topic, or the path of a topic
         }
 
         // History Feature

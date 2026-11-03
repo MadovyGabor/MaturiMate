@@ -34,6 +34,7 @@ enum class LearningError : Error {
 interface ContentRepository {
     suspend fun subjects(): OperationResult<List<Subject>, LearningError>
     suspend fun rootTopics(subjectId: Long): OperationResult<List<Topic>, LearningError>
+    suspend fun topic(topicId: Long): OperationResult<Topic, LearningError>
     suspend fun childTopics(topicId: Long): OperationResult<List<Topic>, LearningError>
     /** The topic and every topic below it, for reviews over a subtree. */
     suspend fun subtreeTopicIds(topicId: Long): OperationResult<List<Long>, LearningError>

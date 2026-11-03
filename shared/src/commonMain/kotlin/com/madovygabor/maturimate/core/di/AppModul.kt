@@ -26,6 +26,10 @@ import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
+import com.madovygabor.maturimate.features.learning.domain.LearningCourse
+import com.madovygabor.maturimate.features.learning.presentation.SubjectListViewModel
+import com.madovygabor.maturimate.features.learning.presentation.TopicTarget
+import com.madovygabor.maturimate.features.learning.presentation.TopicViewModel
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
@@ -72,6 +76,9 @@ val sharedModule = module {
     single(USER_DATABASE) { Dispatchers.IO.limitedParallelism(1) }
     single<ProgressRepository> { ProgressRepositoryImpl(get(), get(), get(USER_DATABASE)) }
 
+    // The learning path: subjects, parts, topics, steps and their progress
+    single { LearningCourse(get(), get()) }
+
     // Profile and settings of the local user
     single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }
 
@@ -99,5 +106,7 @@ val sharedModule = module {
     viewModelOf(::AccountViewModel)
     viewModelOf(::SignInViewModel)
     viewModel { ProfileViewModel(get()) }
+    viewModel { SubjectListViewModel(get(), get()) }
+    viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
 }
 

@@ -191,4 +191,20 @@
     <!-- Errors of saving an answer -->
     <string name="error_storage_full">Megtelt a tárhely.</string>
     <string name="error_io">Nem sikerült menteni. Próbáld újra.</string>
+
+    <!-- Learning: subjects, parts, topics and the path (docs/learning/prototype.html) -->
+    <string name="learning_subjects_title">Tantárgyak</string>
+    <string name="learning_subjects_intro">Az érettségi tantárgyaid. Válassz egyet, és tanulj témánként.</string>
+    <string name="learning_subjects_empty">Még nincs kiválasztott tantárgyad. A profilodban felveheted őket.</string>
+    <string name="learning_subject_parts">%1$d nagy rész</string>
+    <string name="learning_parts_title">Mit szeretnél tanulni?</string>
+    <string name="learning_topics_hint">Válassz egy témát. Mindegyikben leckék, mini tesztek és egy témazáró vár.</string>
+    <string name="learning_steps_done">%1$d / %2$d lépés kész</string>
+    <string name="learning_step_lesson_meta">Lecke · %1$d perc</string>
+    <string name="learning_step_tasks_meta">%1$d feladat</string>
+    <string name="learning_step_done">Kész</string>
+    <string name="learning_step_next">Következő</string>
+    <string name="learning_step_soon">Ez a rész hamarosan elkészül.</string>
+    <string name="learning_load_error">A tartalmat nem sikerült betölteni.</string>
+    <string name="learning_retry">Újra</string>
 </resources>
