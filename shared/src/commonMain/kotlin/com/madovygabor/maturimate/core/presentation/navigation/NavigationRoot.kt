@@ -14,6 +14,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.MainFrameNavigation
 import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboardingNavigation
 import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
+import com.madovygabor.maturimate.features.learning.presentation.LessonScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
@@ -36,6 +37,7 @@ fun NavigationRoute(
                     subclass(Route.Main::class, Route.Main.serializer())
                     subclass(Route.AppOnboarding::class, Route.AppOnboarding.serializer())
                     subclass(Route.ExamWrite::class, Route.ExamWrite.serializer())
+                    subclass(Route.Lesson::class, Route.Lesson.serializer())
                 }
             }
         },
@@ -53,13 +55,17 @@ fun NavigationRoute(
         entryProvider = entryProvider {
             //The main application content with bottom navigation
             entry<Route.Main> {
-                MainFrameNavigation(mainTab = mainTab)
+                MainFrameNavigation(mainTab = mainTab, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) })
             }
 
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
                 // finishing it saves the onboarding end; App then starts on Main
                 AppOnboardingNavigation(appLanguage = appLanguage)
+            }
+            // A lesson, one page at a time, without the navigation bar
+            entry<Route.Lesson> { route ->
+                LessonScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() })
             }
             //Fullscreen exam writing screen
             entry<Route.ExamWrite> {

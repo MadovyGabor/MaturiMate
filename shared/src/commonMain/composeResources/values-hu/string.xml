@@ -207,4 +207,19 @@
     <string name="learning_step_soon">Ez a rész hamarosan elkészül.</string>
     <string name="learning_load_error">A tartalmat nem sikerült betölteni.</string>
     <string name="learning_retry">Újra</string>
+    <string name="learning_save_error">A leckét nem sikerült elmenteni. Próbáld újra.</string>
+
+    <!-- Lesson screen -->
+    <string name="lesson_box_example">Példa</string>
+    <string name="lesson_box_tip">Tipp</string>
+    <string name="lesson_box_note">Jegyzet</string>
+    <string name="lesson_box_warning">Figyelem</string>
+    <string name="lesson_close">Kilépés</string>
+    <string name="lesson_contents">Tartalom</string>
+    <string name="lesson_finish">Befejezés</string>
+    <string name="lesson_previous">Előző oldal</string>
+    <string name="lesson_minutes">kb. %1$d perc</string>
+    <string name="lesson_page_position">%1$d / %2$d</string>
+    <string name="lesson_page_description">%1$d. oldal / %2$d</string>
+    <string name="lesson_page_n">%1$d. oldal</string>
 </resources>

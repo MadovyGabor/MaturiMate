@@ -27,6 +27,7 @@ import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningCourse
+import com.madovygabor.maturimate.features.learning.presentation.LessonViewModel
 import com.madovygabor.maturimate.features.learning.presentation.SubjectListViewModel
 import com.madovygabor.maturimate.features.learning.presentation.TopicTarget
 import com.madovygabor.maturimate.features.learning.presentation.TopicViewModel
@@ -108,5 +109,6 @@ val sharedModule = module {
     viewModel { ProfileViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }
     viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
+    viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get()) }
 }
 

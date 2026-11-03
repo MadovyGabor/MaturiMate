@@ -183,6 +183,7 @@ class DesignTokensSyncTest {
             "path-node-small" to layout.pathNodeSmall.value,
             "progress-ring" to layout.progressRing.value,
             "progress-ring-stroke" to layout.progressRingStroke.value,
+            "accent-bar" to layout.accentBar.value,
         )
 
         val values = tokenList("layout")

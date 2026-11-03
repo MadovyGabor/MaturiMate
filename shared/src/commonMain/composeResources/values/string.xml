@@ -216,4 +216,19 @@
     <string name="learning_step_soon">Táto časť príde čoskoro.</string>
     <string name="learning_load_error">Obsah sa nepodarilo načítať.</string>
     <string name="learning_retry">Skúsiť znova</string>
+    <string name="learning_save_error">Lekciu sa nepodarilo uložiť. Skús to znova.</string>
+
+    <!-- Lesson screen -->
+    <string name="lesson_box_example">Príklad</string>
+    <string name="lesson_box_tip">Tip</string>
+    <string name="lesson_box_note">Poznámka</string>
+    <string name="lesson_box_warning">Pozor</string>
+    <string name="lesson_close">Zavrieť</string>
+    <string name="lesson_contents">Obsah</string>
+    <string name="lesson_finish">Dokončiť</string>
+    <string name="lesson_previous">Predchádzajúca strana</string>
+    <string name="lesson_minutes">asi %1$d min</string>
+    <string name="lesson_page_position">%1$d / %2$d</string>
+    <string name="lesson_page_description">Strana %1$d z %2$d</string>
+    <string name="lesson_page_n">Strana %1$d</string>
 </resources>

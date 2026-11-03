@@ -22,7 +22,9 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun MainFrameNavigation(
     mainTab: MutableState<NavKey>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Opens a lesson over the whole screen. */
+    onOpenLesson: (Long) -> Unit = {},
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
@@ -57,7 +59,7 @@ fun MainFrameNavigation(
                         //Entries for the main bottom navigation destinations per feature
                         // Subject feature navigation
                         entry<Route.Main.Subject> {
-                            LearningNavigation()
+                            LearningNavigation(onOpenLesson = onOpenLesson)
                         }
                         // History screen placeholder
                         entry<Route.Main.History> {

@@ -64,6 +64,7 @@ fun TopicScreen(
     subject: CatalogSubject?,
     onBack: () -> Unit,
     onTopicClick: (TopicSummary) -> Unit,
+    onLessonClick: (Long) -> Unit,
     viewModel: TopicViewModel = koinViewModel(key = target.toString()) { parametersOf(target) },
 ) {
     // read again whenever the screen comes back, so progress made deeper in shows here
@@ -74,7 +75,8 @@ fun TopicScreen(
         subjectName = subject?.let { stringResource(it.label) },
         onBack = onBack,
         onTopicClick = onTopicClick,
-        onStepClick = { viewModel.onStepClicked() },
+        // a lesson opens; the screens of the tests come in a later step, until then a tap says so
+        onStepClick = { step -> if (step.kind == StepKind.LESSON) onLessonClick(step.unit.id) else viewModel.onStepClicked() },
         onRetry = viewModel::refresh,
     )
 }

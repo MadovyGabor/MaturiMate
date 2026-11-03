@@ -54,6 +54,8 @@ data class Layout(
     val progressRing: Dp = 40.dp,
     /** Thickness of the progress ring. */
     val progressRingStroke: Dp = 4.dp,
+    /** Width of the gold bar at the side of a tip box in a lesson. */
+    val accentBar: Dp = 4.dp,
 )
 
 private val AppLayout = Layout()
