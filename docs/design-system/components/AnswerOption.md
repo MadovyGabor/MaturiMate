@@ -2,7 +2,7 @@
 
 One option of a multiple-choice task, with a letter key. After checking it shows a correct or wrong state.
 
-- **The caller provides:** the letter, the answer text, the state (`DEFAULT`, `SELECTED`, `CORRECT`, `WRONG`, `DIMMED`) and the click handler.
+- **The caller provides:** the letter (none for a step of an ordering task), the answer text, the state (`DEFAULT`, `SELECTED`, `CORRECT`, `WRONG`, `DIMMED`) and the click handler.
 - `DEFAULT`: `surface-container-lowest` background, `outline` border.
 - `SELECTED`: 2 dp `primary` border, `primary-container` background.
 - `CORRECT`: 2 dp `success` border, `success-container` background, check icon.

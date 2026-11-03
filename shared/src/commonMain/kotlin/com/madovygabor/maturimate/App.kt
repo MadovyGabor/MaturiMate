@@ -19,6 +19,7 @@ import com.madovygabor.maturimate.core.presentation.locale.LocalAppLocale
 import com.madovygabor.maturimate.core.presentation.navigation.NavigationRoute
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.systemPadding
+import com.madovygabor.maturimate.core.presentation.systemPaddingExceptBottom
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.MainScaffoldWrapper
 import org.koin.compose.viewmodel.koinViewModel
@@ -56,7 +57,7 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                     key(appState.language, appState.onboardingCompleted) {
                         // Main navigation host that handles transitions between routes
                         NavigationRoute(
-                            modifier = Modifier.systemPadding(),
+                            modifier = Modifier.systemPaddingExceptBottom(),
                             startRoute = if (appState.onboardingCompleted) Route.Main else Route.AppOnboarding,
                             mainTab = mainTab,
                             appLanguage = appState.language,

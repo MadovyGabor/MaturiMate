@@ -30,7 +30,8 @@ import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppPathStep
-import com.madovygabor.maturimate.core.presentation.uiComponents.AppProgressRing
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppProgressCard
+import com.madovygabor.maturimate.core.presentation.uiComponents.CardProgress
 import com.madovygabor.maturimate.core.presentation.uiComponents.PathStepState
 import com.madovygabor.maturimate.core.presentation.uiComponents.PathStepStyle
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.label
@@ -43,7 +44,10 @@ import com.madovygabor.maturimate.features.learning.domain.model.TopicSummary
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_back
+import maturimate.shared.generated.resources.learning_part_meta
 import maturimate.shared.generated.resources.learning_parts_title
+import maturimate.shared.generated.resources.learning_steps_fraction
+import maturimate.shared.generated.resources.learning_topic_meta
 import maturimate.shared.generated.resources.learning_step_done
 import maturimate.shared.generated.resources.learning_step_lesson_meta
 import maturimate.shared.generated.resources.learning_step_next
@@ -126,12 +130,7 @@ fun TopicContent(
                         }
                     }
                     items(level.topics, key = { it.topic.id }) { summary ->
-                        TopicRow(summary, onClick = { onTopicClick(summary) })
-                    }
-                    level.finalTest?.let { step ->
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            Step(step, isFirst = true, isLast = true, onClick = { onStepClick(step) })
-                        }
+                        TopicRow(summary, compact = columns == 1 && level.title != null, onClick = { onTopicClick(summary) })
                     }
                 }
             }
@@ -195,21 +194,22 @@ private fun Step(step: PathStep, isFirst: Boolean, isLast: Boolean, onClick: () 
     )
 }
 
-/** A topic of a list: the progress ring, its title and how many steps are done. */
+/** A part or a topic of a list: its name, what it is about, what is in it and how far the student has got. */
 @Composable
-private fun TopicRow(summary: TopicSummary, onClick: () -> Unit) {
-    val spacing = MaterialTheme.spacing
-    val description = stringResource(Res.string.learning_steps_done, summary.steps.done, summary.steps.total)
-    LearningCard(onClick = onClick) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space3)) {
-            AppProgressRing(summary.steps.done, summary.steps.total, description)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                Text(summary.topic.title, style = MaterialTheme.typography.titleMedium)
-                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
-        }
-    }
+private fun TopicRow(summary: TopicSummary, compact: Boolean, onClick: () -> Unit) {
+    AppProgressCard(
+        title = summary.topic.title,
+        // the topics inside a part are a plain list: the name and how far the student has got
+        subtitle = if (compact) null else summary.topic.description,
+        meta = when {
+            compact -> null
+            summary.childTopics > 0 -> stringResource(Res.string.learning_part_meta, summary.childTopics, summary.steps.total)
+            else -> stringResource(Res.string.learning_topic_meta, summary.lessons, summary.tests)
+        },
+        progress = CardProgress(summary.steps.fraction, stringResource(Res.string.learning_steps_fraction, summary.steps.done, summary.steps.total)),
+        onClick = onClick,
+        compact = compact,
+    )
 }
 
 @Composable

@@ -246,4 +246,10 @@
     <string name="test_back_to_path">Vissza az útvonalra</string>
     <string name="test_locked">Előbb fejezd be az előző lépést.</string>
     <string name="lesson_next_test">Mehet a teszt</string>
+    <string name="learning_steps_fraction">%1$d / %2$d</string>
+    <string name="learning_part_meta">%1$d téma · %2$d lépés</string>
+    <string name="learning_topic_meta">%1$d lecke · %2$d teszt</string>
+    <string name="test_answer_here">Írd ide…</string>
+    <string name="test_one_word">1 szó</string>
+    <string name="test_correct_value">Helyes: %1$s</string>
 </resources>

@@ -35,6 +35,7 @@ import com.madovygabor.maturimate.core.presentation.utils.AppRichText
  * @param placeholder What an empty answer says, for example "válassz…".
  * @param active This item gets the next answer.
  * @param state `DEFAULT` before checking; `CORRECT` or `WRONG` after it.
+ * @param correction For a wrong pair, what belongs there ("Helyes: metafora").
  */
 @Composable
 fun AppMatchPair(
@@ -46,6 +47,7 @@ fun AppMatchPair(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    correction: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val layout = MaterialTheme.layout
@@ -86,6 +88,9 @@ fun AppMatchPair(
                     AnswerState.WRONG -> Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(layout.iconSmall))
                     else -> Unit
                 }
+            }
+            if (correction != null) {
+                Text(correction, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }

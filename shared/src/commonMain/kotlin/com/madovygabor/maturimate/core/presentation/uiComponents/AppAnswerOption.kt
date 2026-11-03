@@ -57,12 +57,12 @@ internal fun answerColors(state: AnswerState): AnswerColors {
  * One option of a multiple-choice task, with a letter (docs/design-system/components/AnswerOption.md).
  * A right or wrong option also shows a check or an X, so the state is not shown by color alone.
  *
- * @param letter The label of the option, for example "A".
+ * @param letter The label of the option, for example "A"; null for an option without one.
  * @param text The option text (the text format of the content).
  */
 @Composable
 fun AppAnswerOption(
-    letter: String,
+    letter: String?,
     text: String,
     state: AnswerState,
     onClick: () -> Unit,
@@ -88,13 +88,15 @@ fun AppAnswerOption(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(spacing.space3),
         ) {
-            Surface(
-                modifier = Modifier.size(layout.stepDot + spacing.space1),
-                shape = MaterialTheme.shapes.small,
-                color = look.badge,
-                contentColor = look.onBadge,
-            ) {
-                Box(contentAlignment = Alignment.Center) { Text(letter, style = MaterialTheme.typography.labelMedium) }
+            if (letter != null) {
+                Surface(
+                    modifier = Modifier.size(layout.stepDot + spacing.space1),
+                    shape = MaterialTheme.shapes.small,
+                    color = look.badge,
+                    contentColor = look.onBadge,
+                ) {
+                    Box(contentAlignment = Alignment.Center) { Text(letter, style = MaterialTheme.typography.labelMedium) }
+                }
             }
             Box(Modifier.weight(1f)) { AppRichText(text, MaterialTheme.typography.bodyLarge) }
             when (state) {

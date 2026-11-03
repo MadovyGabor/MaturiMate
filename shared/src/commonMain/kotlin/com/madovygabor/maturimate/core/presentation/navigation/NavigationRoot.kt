@@ -2,7 +2,12 @@ package com.madovygabor.maturimate.core.presentation.navigation
 
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
+import com.madovygabor.maturimate.core.presentation.systemBottomPadding
 import androidx.compose.runtime.MutableState
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -65,24 +70,32 @@ fun NavigationRoute(
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
                 // finishing it saves the onboarding end; App then starts on Main
-                AppOnboardingNavigation(appLanguage = appLanguage)
+                BottomInsetBox { AppOnboardingNavigation(appLanguage = appLanguage) }
             }
             // A test, one task at a time, without the navigation bar
             entry<Route.Test> { route ->
-                TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() })
+                BottomInsetBox { TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() }) }
             }
             // A lesson, one page at a time, without the navigation bar
             entry<Route.Lesson> { route ->
-                LessonScreen(
-                    unitId = route.unitId,
-                    onClose = { rootBackStack.removeLastOrNull() },
-                    onOpenTest = { rootBackStack.add(Route.Test(it)) },
-                )
+                BottomInsetBox {
+                    LessonScreen(
+                        unitId = route.unitId,
+                        onClose = { rootBackStack.removeLastOrNull() },
+                        onOpenTest = { rootBackStack.add(Route.Test(it)) },
+                    )
+                }
             }
             //Fullscreen exam writing screen
             entry<Route.ExamWrite> {
-                ExamWriteScreen()
+                BottomInsetBox { ExamWriteScreen() }
             }
         }
     )
+}
+
+/** A screen without a bottom bar: it keeps clear of the system navigation bar, and its background reaches behind it. */
+@Composable
+private fun BottomInsetBox(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBottomPadding()) { content() }
 }

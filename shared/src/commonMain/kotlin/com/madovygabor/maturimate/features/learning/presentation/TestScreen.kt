@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
@@ -51,9 +53,11 @@ import com.madovygabor.maturimate.core.presentation.uiComponents.AppGapSlot
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppMatchPair
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppProgressBar
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppResultRow
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppTag
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTextField
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTrueFalseCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.FeedbackLine
+import com.madovygabor.maturimate.core.presentation.uiComponents.TagStyle
 import com.madovygabor.maturimate.core.presentation.utils.AppRichText
 import com.madovygabor.maturimate.core.presentation.utils.TextPart
 import com.madovygabor.maturimate.core.presentation.utils.plainText
@@ -70,7 +74,10 @@ import maturimate.shared.generated.resources.learning_load_error
 import maturimate.shared.generated.resources.learning_retry
 import maturimate.shared.generated.resources.lesson_close
 import maturimate.shared.generated.resources.lesson_page_position
+import maturimate.shared.generated.resources.test_answer_here
 import maturimate.shared.generated.resources.test_check
+import maturimate.shared.generated.resources.test_correct_value
+import maturimate.shared.generated.resources.test_one_word
 import maturimate.shared.generated.resources.test_correct
 import maturimate.shared.generated.resources.test_empty
 import maturimate.shared.generated.resources.test_finish
@@ -193,9 +200,7 @@ fun TestContent(state: TestUiState, actions: TestActions) {
 private fun TopBar(state: TestUiState.Ready, onClose: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space3)) {
         IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(Res.string.lesson_close)) }
-        Box(Modifier.weight(1f)) {
-            AppProgressBar(state.index.toFloat() / state.tasks.size, color = MaterialTheme.extendedColors.brandGold)
-        }
+        Box(Modifier.weight(1f)) { AppProgressBar(state.index.toFloat() / state.tasks.size, color = MaterialTheme.extendedColors.brandGold) }
         Text(
             stringResource(Res.string.lesson_page_position, state.index + 1, state.tasks.size),
             style = MaterialTheme.typography.labelSmall,
@@ -302,23 +307,31 @@ private fun ColumnScope.TaskBody(state: TestUiState.Ready, actions: TestActions)
         }
         TaskFormat.SHORT_ANSWER -> Scrolling {
             question()
-            AppTextField(
-                value = state.typed,
-                onValueChange = actions.onType,
-                label = stringResource(Res.string.test_your_answer),
-                enabled = true,
-                readOnly = state.checked,
-                correct = state.result?.correct,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                Text(
+                    stringResource(Res.string.test_your_answer).uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                AppTextField(
+                    value = state.typed,
+                    onValueChange = actions.onType,
+                    label = null,
+                    placeholder = stringResource(Res.string.test_answer_here),
+                    readOnly = state.checked,
+                    correct = state.result?.correct,
+                )
+            }
             val answerHint = state.hint
-            if (answerHint != null && !state.checked) {
-                if (state.hintShown) {
-                    Text(
-                        stringResource(Res.string.test_hint, answerHint.firstLetter.uppercase(), answerHint.length),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                } else {
-                    AppButton(stringResource(Res.string.test_hint_request), actions.onHint, variant = AppButtonVariant.TEXT)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                // how long the answer may be, and a hint of the answer (the first letter and the length)
+                if (task.answerWordLimit == 1) AppTag(stringResource(Res.string.test_one_word)) else Spacer(Modifier.size(0.dp))
+                if (answerHint != null && !state.checked) {
+                    if (state.hintShown) {
+                        AppTag(stringResource(Res.string.test_hint, answerHint.firstLetter.uppercase(), answerHint.length), style = TagStyle.HIGHLIGHT)
+                    } else {
+                        AppButton(stringResource(Res.string.test_hint_request), actions.onHint, variant = AppButtonVariant.TEXT)
+                    }
                 }
             }
         }
@@ -338,6 +351,7 @@ private fun ColumnScope.TaskBody(state: TestUiState.Ready, actions: TestActions)
                         state = slotState(state, slot),
                         onClick = { actions.onActivate(slot) },
                         enabled = !state.checked,
+                        correction = rightAnswerFor(state, slot)?.let { stringResource(Res.string.test_correct_value, it) },
                     )
                 }
             }
@@ -455,6 +469,13 @@ private fun GapSentence(text: String, gap: @Composable (Int) -> Unit) {
     }
     // the line height follows the gaps, so it is left unset
     Text(annotated, inlineContent = inline, style = MaterialTheme.extendedTypography.reading.copy(lineHeight = TextUnit.Unspecified))
+}
+
+/** What belongs in a slot that was answered wrong, after checking; null for a right slot or before checking. */
+private fun rightAnswerFor(state: TestUiState.Ready, slot: Int): String? {
+    if (state.result?.slots?.get(slot) != false) return null
+    val key = state.task.key.firstOrNull { it.slot == slot } ?: return null
+    return state.task.answerOptions.firstOrNull { it.label == key.optionLabel }?.text
 }
 
 /** The state of an option of a multiple-choice or true-or-false task. */

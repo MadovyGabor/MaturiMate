@@ -19,6 +19,7 @@ import com.madovygabor.maturimate.core.presentation.theme.layout
  * Outlined text field with a label and a helper or error text
  * (docs/design-system/components/TextField.md).
  *
+ * @param label The label on the border; null for a field whose label sits above it.
  * @param error What is wrong and what to do; shown instead of [helper] and marks the field.
  * @param password Hides the characters.
  * @param correct For an answer field after checking: true is shown green, false red (with [readOnly]); null is a normal field.
@@ -27,7 +28,7 @@ import com.madovygabor.maturimate.core.presentation.theme.layout
 fun AppTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
+    label: String?,
     modifier: Modifier = Modifier,
     helper: String? = null,
     error: String? = null,
@@ -36,6 +37,8 @@ fun AppTextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     correct: Boolean? = null,
+    /** Grey text inside the empty field ("Írd ide…"); a field with no [label] relies on it. */
+    placeholder: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val extended = MaterialTheme.extendedColors
@@ -44,7 +47,8 @@ fun AppTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth().heightIn(min = MaterialTheme.layout.choiceCardMinHeight),
-        label = { Text(label) },
+        label = label?.let { { Text(it) } },
+        placeholder = placeholder?.let { { Text(it) } },
         supportingText = support?.let { { Text(it) } },
         isError = error != null || correct == false,
         singleLine = true,

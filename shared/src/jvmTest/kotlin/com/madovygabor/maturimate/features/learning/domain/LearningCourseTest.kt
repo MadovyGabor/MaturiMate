@@ -95,6 +95,9 @@ class LearningCourseTest {
         assertEquals(10L, part.topic.id)
         assertEquals(StepCount(1, 5), part.steps)
         assertEquals(2, part.lessons)
+        // two published topics below it (the hidden one is not counted); 5 steps, 2 of them lessons, so 3 tests
+        assertEquals(2, part.childTopics)
+        assertEquals(3, part.tests)
     }
 
     @Test
@@ -122,6 +125,10 @@ class LearningCourseTest {
         assertEquals(null, branch.parentTitle)
         assertEquals(listOf(11L, 12L), branch.topics.map { it.topic.id })
         assertEquals(StepCount(2, 3), branch.topics[0].steps)
+        // a topic with lessons and tests holds no topics: 1 lesson and 2 tests
+        assertEquals(0, branch.topics[0].childTopics)
+        assertEquals(1, branch.topics[0].lessons)
+        assertEquals(2, branch.topics[0].tests)
         assertEquals(StepCount(0, 1), branch.topics[1].steps)
         val final = branch.finalTest!!
         assertEquals(StepKind.FINAL_TEST, final.kind)

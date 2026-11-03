@@ -9,7 +9,7 @@ import kotlinx.datetime.plus
 /**
  * Dates around the maturita. The spring written exams start on the Monday of the second week
  * of March (the second Monday of March); the official date replaces it once it is published
- * (ROADMAP 10.6).
+ * (ROADMAP 8.5).
  */
 object ExamDates {
     /** Exam dates can be chosen up to this many years ahead. */

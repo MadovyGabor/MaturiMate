@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
@@ -84,11 +85,12 @@ class LearningScreensTest {
     }
 
     @Test
-    fun branchListsTheTopicsAndTheFinalTest() = runDesktopComposeUiTest {
+    fun branchListsTheTopicsWithoutTheFinalTest() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
         val branch = TopicLevel.Branch(
             title = "Nyelvtan",
             parentTitle = null,
-            topics = listOf(TopicSummary(topic, lessons = 2, steps = StepCount(1, 3))),
+            topics = listOf(TopicSummary(Topic(11, null, 10, "Szóképek", "Hasonlat és metafora", 1), lessons = 2, steps = StepCount(1, 3))),
             finalTest = PathStep(test(9, "Összefoglaló", PracticeKind.FINAL), StepKind.FINAL_TEST, StepState.TODO),
         )
         var opened: Long? = null
@@ -98,7 +100,11 @@ class LearningScreensTest {
             }
         }
 
-        onNodeWithText("Összefoglaló").assertIsEnabled()
+        onNodeWithText("Összefoglaló").assertDoesNotExist()
+        // the card tells what the topic is about, what is in it and how far the student has got
+        onNodeWithText("Hasonlat és metafora").assertIsDisplayed()
+        onNodeWithText("2 lecke · 1 teszt").assertIsDisplayed()
+        onNodeWithText("1 / 3").assertIsDisplayed()
         onNodeWithText("Szóképek").performClick()
         assertEquals(11L, opened)
     }

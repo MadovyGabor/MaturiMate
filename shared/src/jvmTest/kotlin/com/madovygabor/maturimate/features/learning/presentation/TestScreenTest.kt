@@ -379,4 +379,37 @@ class TestScreenTest {
         assertEquals(1, again)
         assertEquals(1, back)
     }
+
+    @Test
+    fun shortAnswerHasItsPlaceholderAndTheLengthOfTheAnswer() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(ready(2))
+
+        onNodeWithText("Írd ide…").assertIsDisplayed()
+        onNodeWithText("1 szó").assertIsDisplayed()
+        onNodeWithText("A VÁLASZOD").assertIsDisplayed()
+    }
+
+    @Test
+    fun orderingNumbersTheStepsInTheOrderTheyArePicked() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val calls = Calls()
+        show(ready(4, choices = mapOf(1 to "B", 2 to "D")), calls)
+
+        onNodeWithText("Elolvasom.").assertIsDisplayed()
+        onNodeWithText("Megkeresem.").assertIsDisplayed()
+        onNodeWithText("Megnevezem.").assertIsDisplayed()
+        onNodeWithText("Megmagyarázom.").assertIsDisplayed()
+        onNodeWithText("Elolvasom.").performClick()
+        assertEquals(listOf("B"), calls.picked)
+    }
+
+    @Test
+    fun aWrongPairShowsWhatBelongsToIt() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(ready(3, choices = mapOf(1 to "B", 2 to "A"), check = true))
+
+        onNodeWithText("Helyes: hasonlat").assertIsDisplayed()
+        onNodeWithText("Helyes: metafora").assertIsDisplayed()
+    }
 }

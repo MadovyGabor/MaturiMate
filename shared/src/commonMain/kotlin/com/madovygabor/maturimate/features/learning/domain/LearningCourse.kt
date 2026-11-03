@@ -97,6 +97,7 @@ class LearningCourse(
             topic = topic,
             lessons = units.count { it is LearningUnit.Summary },
             steps = StepCount(units.count { it.id in done }, units.size),
+            childTopics = content.childTopics(topic.id).orThrow().size,
         )
     }
 

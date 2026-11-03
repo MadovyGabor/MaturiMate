@@ -32,7 +32,7 @@ Patterns seen in well-known learning and habit apps (Duolingo, Babbel, Brilliant
 4. **Every question says why it is asked**, in one short line under the question.
 5. **Back is always possible; nothing is lost.** Answers are saved to the user database after each screen.
 6. **Works offline until the account step.** The questions and the guest mode need no network; creating an account does.
-7. **The account screen is the last step**, with a quiet "Körülnézek" option. Signing in becomes required after the first lesson (step 11.2b).
+7. **The account screen is the last step**, with a quiet "Körülnézek" option. Signing in becomes required after the first lesson (step 11.5).
 8. **No dark patterns**: no pre-ticked marketing consent, no fake urgency, "not now" is always visible on permission screens.
 9. **Design system only**: one main button per screen, step counter as text above the progress bar, `headline-medium` questions.
 
@@ -73,7 +73,7 @@ Not asked: date of birth (the age is confirmed instead; V1 is for users aged 16 
 
 A guest ("Körülnézek") has no server account, name or e-mail: the answers stay on the phone under a temporary local id. Nothing is sent to the server before the user signs up and accepts the terms. Signing in is required after the first lesson.
 
-Before the public release (Milestone 11), the privacy notice and the terms of use are checked by a legal professional.
+Before the public release (Milestone 12), the privacy notice and the terms of use are checked by a legal professional.
 
 ## 5. Flow (3.2)
 

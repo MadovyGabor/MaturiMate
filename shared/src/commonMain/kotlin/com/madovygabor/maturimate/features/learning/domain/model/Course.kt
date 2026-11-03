@@ -38,7 +38,12 @@ data class TopicSummary(
     val topic: Topic,
     val lessons: Int,
     val steps: StepCount,
-)
+    /** The topics directly below it; 0 for a topic with lessons and tests. */
+    val childTopics: Int = 0,
+) {
+    /** The tests among the steps. */
+    val tests: Int get() = steps.total - lessons
+}
 
 /**
  * What a level of the topic tree shows. A topic with topics below it is a [Branch], a topic without

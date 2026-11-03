@@ -122,7 +122,7 @@ fun AppPathStep(
                         modifier = Modifier.weight(1f),
                         style = if (style == PathStepStyle.MINI) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
                     )
-                    if (stateLabel != null) StateTag(stateLabel, done = state == PathStepState.DONE)
+                    if (stateLabel != null) AppTag(stateLabel, style = if (state == PathStepState.DONE) TagStyle.SUCCESS else TagStyle.HIGHLIGHT)
                 }
                 Text(meta, style = MaterialTheme.typography.bodySmall)
             }
@@ -177,21 +177,5 @@ private fun PathNode(style: PathStepStyle, state: PathStepState, size: Dp, halo:
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun StateTag(label: String, done: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = if (done) MaterialTheme.extendedColors.successContainer else colors.primaryContainer,
-        contentColor = if (done) MaterialTheme.extendedColors.onSuccessContainer else colors.onPrimaryContainer,
-    ) {
-        Text(
-            label,
-            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.space2, vertical = MaterialTheme.spacing.space1 / 2),
-            style = MaterialTheme.typography.labelSmall,
-        )
     }
 }
