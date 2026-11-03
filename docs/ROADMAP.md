@@ -155,6 +155,8 @@ Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and 
 
 Goal: one complete lesson that works end to end. After that, new units are mostly new data.
 
+* [x] **7.0. Design of the learning screens:** a clickable prototype ([docs/learning/prototype.html](learning/prototype.html)): subjects, big parts, topic list, the path with the line that fills, lesson pages with a table of contents (a side list on tablet and desktop), the seven task formats with feedback, the result. Reviewed by the owner on 2026-11-03.
+* [ ] **7.0a. Content model for the lessons:** pages and boxes in the lesson file (`unit_page`), `practice_kind` (`MINI`, `TOPIC`, `FINAL`; `FINAL` on a parent topic), `task_option.explanation` (`why`); the loader, validator, exporter and importer, and a Supabase migration. Then the sample content is rewritten like the prototype (Szóképek, Szófajok, Az ember tragédiája). Format: [content-pipeline README](../tools/content-pipeline/README.md#lesson-files-pages-and-boxes), decisions of 2026-11-03.
 * [ ] **7.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time. Lessons and tasks have a Hungarian and a Slovak text under one id (needed for Mathematics, DECISIONS 2026-11-01); the app shows the teaching language.
 * [ ] **7.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
 * [ ] **7.3. Reading passage view:** a text shown together with its tasks.

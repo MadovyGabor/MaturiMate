@@ -63,6 +63,59 @@ A complete example is the test fixture `src/test/resources/content-valid/`.
 * Texts use only `**bold**`, `*italic*` and `[[n]]` gap markers.
 * Files named `*_private.json` are never read.
 
+## Lesson files (pages and boxes)
+
+*Specification; the loader, validator and exporter learn it in Milestone 7, step 7.0a.* A lesson (`SUMMARY` unit) is one Markdown file: front matter, then the text. The format uses well-known syntax, so any Markdown editor shows it sensibly.
+
+```markdown
+---
+learning_unit_id: 910101
+title: Toldi: az indulás
+estimated_minutes: 4
+sort_order: 10
+is_published: true
+source_type: OWN
+---
+## Ki az a Toldi Miklós?
+
+Text of the first page, with **bold** and *italic*.
+
+:::example
+A box with an example.
+:::
+
+## A testvérek
+
+Text of the second page.
+
+:::tip
+A box with the thing to remember.
+:::
+```
+
+* **`## Title` starts a page.** The title appears in the table of contents of the lesson. Text before the first `##` is a page without a title; a file without any `##` is one page. Only level 2 headings are allowed.
+* **Boxes** are written `:::type` … `:::`, alone on their lines. Types: `example`, `tip`, `note`, `warning`. The keyword is the same in every language; the label ("Példa", "Príklad") is an app string in both languages. An unknown type, a box that is not closed, or a box inside a box is an error.
+* **Inside a page and a box** only `**bold**`, `*italic*` and paragraphs are allowed, like everywhere else (no lists, links, code or HTML).
+* **A short page** fits one phone screen without scrolling (about 60 to 90 words); a longer text, such as the plot of a work, is split into several pages.
+* **Several parts of one topic** are several files in its folder; the number in the file name and the `sort_order` give the order, with tests between them. For example `10-intro.md`, `20-mini.json`, `30-part2.md`, `40-mini.json`, `50-test.json`.
+
+## Tests (practice units)
+
+A practice unit (`*.json`) has a `practice_kind`:
+
+| Kind | Where | Meaning |
+| :--- | :--- | :--- |
+| `MINI` | leaf topic | a short test after one part of a lesson |
+| `TOPIC` | leaf topic | the test of the whole topic (for example all of one work) |
+| `FINAL` | parent topic | a test of everything below it (for example all of one author); its tasks come from the topics below |
+
+Only `FINAL` units may sit on a parent topic; every other unit sits on a leaf topic. The tasks of a unit are listed by id, so a `FINAL` test can use tasks of any topic below its own.
+
+## Explanations
+
+* `explanation` (task, required): why the correct answer is correct. It works for every format.
+* `why` (option, optional): why this option is wrong. The app shows it only to a student who picked that option. Write it where two answers are easy to mix up.
+
 ## What an import does (PostgreSQL)
 
 * Upserts rows by id. A second run with the same files changes nothing.
