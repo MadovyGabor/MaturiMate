@@ -86,7 +86,8 @@ selectActiveByTopic:
 SELECT * FROM task WHERE topic_id = :topicId AND is_active = 1 ORDER BY task_id;
 
 selectOptions:
-SELECT * FROM task_option WHERE task_id = :taskId ORDER BY option_role, option_label;
+-- in the order of the content file (the ids follow the position), not by label: "I" (true) comes before "H" (false)
+SELECT * FROM task_option WHERE task_id = :taskId ORDER BY option_role, option_id;
 
 selectKeys:
 SELECT * FROM task_key WHERE task_id = :taskId ORDER BY answer_slot;

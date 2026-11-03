@@ -42,6 +42,12 @@ class ContentRepositoryImplTest {
         topicQueries.insert(Topic(12, null, 10, "Rejtett", null, 2, false))
         taskFormatQueries.insert(Task_format(1, "MATCHING", "Matching", "CHOICE", null))
         taskFormatQueries.insert(Task_format(2, "GAP_FILL", "Gap fill", "TEXT", null))
+        taskFormatQueries.insert(Task_format(3, "TRUE_FALSE", "True or false", "CHOICE", null))
+        // true comes first in the file, though "H" sorts before "I"
+        taskQueries.insert(Task(102, 11, 3, "Igaz?", null, 1, null, true, 0))
+        taskQueries.insertOption(Task_option(10201, 102, "ANSWER", "I", "igaz", null))
+        taskQueries.insertOption(Task_option(10202, 102, "ANSWER", "H", "hamis", null))
+        taskQueries.insertKey(Task_key(102, 1, null, 10201))
         taskQueries.insert(Task(100, 11, 1, "Párosítsd!", null, 2, null, true, 0))
         taskQueries.insertOption(Task_option(10001, 100, "PROMPT", "1", "Olyan, mint a tűz.", null))
         taskQueries.insertOption(Task_option(10002, 100, "ANSWER", "A", "hasonlat", "A hasonlat összehasonlít."))
@@ -114,6 +120,11 @@ class ContentRepositoryImplTest {
         val task = repository.task(100).data()
         assertEquals(TaskFormat.MATCHING, task.format)
         assertEquals(listOf(KeySlot(slot = 1, optionLabel = "A", promptLabel = "1")), task.key)
+    }
+
+    @Test
+    fun optionsComeInTheOrderOfTheContentFile() = runBlocking {
+        assertEquals(listOf("I", "H"), repository.task(102).data().options.map { it.label })
     }
 
     @Test

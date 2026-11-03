@@ -19,7 +19,7 @@ import kotlinx.serialization.modules.polymorphic
  * level down to the path of a topic. Its own back stack lives inside the tab.
  */
 @Composable
-fun LearningNavigation(onOpenLesson: (Long) -> Unit) {
+fun LearningNavigation(onOpenLesson: (Long) -> Unit, onOpenTest: (Long) -> Unit) {
     val backStack = rememberNavBackStack(
         configuration = SavedStateConfiguration {
             serializersModule = SerializersModule {
@@ -56,6 +56,7 @@ fun LearningNavigation(onOpenLesson: (Long) -> Unit) {
                     onBack = { backStack.removeLastOrNull() },
                     onTopicClick = { backStack.add(Route.Main.Subject.Topic(it.topic.id)) },
                     onLessonClick = onOpenLesson,
+                    onTestClick = onOpenTest,
                 )
             }
             entry<Route.Main.Subject.Topic> { route ->
@@ -65,6 +66,7 @@ fun LearningNavigation(onOpenLesson: (Long) -> Unit) {
                     onBack = { backStack.removeLastOrNull() },
                     onTopicClick = { backStack.add(Route.Main.Subject.Topic(it.topic.id)) },
                     onLessonClick = onOpenLesson,
+                    onTestClick = onOpenTest,
                 )
             }
         },

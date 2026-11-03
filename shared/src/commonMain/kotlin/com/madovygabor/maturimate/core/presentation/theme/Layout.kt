@@ -56,6 +56,10 @@ data class Layout(
     val progressRingStroke: Dp = 4.dp,
     /** Width of the gold bar at the side of a tip box in a lesson. */
     val accentBar: Dp = 4.dp,
+    /** Smallest height of an answer option of a multiple-choice task. */
+    val answerOptionMinHeight: Dp = 56.dp,
+    /** Smallest height of the big true or false answer. */
+    val trueFalseCardMinHeight: Dp = 140.dp,
 )
 
 private val AppLayout = Layout()

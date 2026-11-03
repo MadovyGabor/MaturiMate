@@ -3,16 +3,12 @@ package com.madovygabor.maturimate.features.learning.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
-import com.madovygabor.maturimate.core.presentation.utils.UiText
-import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.learning.domain.LearningCourse
 import com.madovygabor.maturimate.features.learning.domain.model.TopicLevel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import maturimate.shared.generated.resources.Res
-import maturimate.shared.generated.resources.learning_step_soon
 
 /** What a level of the topic tree is read for: the parts of a subject, or one topic. */
 sealed interface TopicTarget {
@@ -30,16 +26,10 @@ sealed interface TopicUiState {
 class TopicViewModel(
     private val course: LearningCourse,
     private val target: TopicTarget,
-    private val snackbarController: SnackbarController,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<TopicUiState>(TopicUiState.Loading)
     val state: StateFlow<TopicUiState> = _state.asStateFlow()
-
-    /** The lesson and test screens come in later steps of the milestone; until then a tap says so. */
-    fun onStepClicked() {
-        viewModelScope.launch { snackbarController.showSnackbar(UiText.StringRes(Res.string.learning_step_soon)) }
-    }
 
     /** Reads again, so progress made on another screen shows when the user comes back. */
     fun refresh() {

@@ -15,6 +15,7 @@ import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.MainFra
 import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboardingNavigation
 import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
 import com.madovygabor.maturimate.features.learning.presentation.LessonScreen
+import com.madovygabor.maturimate.features.learning.presentation.TestScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
@@ -38,6 +39,7 @@ fun NavigationRoute(
                     subclass(Route.AppOnboarding::class, Route.AppOnboarding.serializer())
                     subclass(Route.ExamWrite::class, Route.ExamWrite.serializer())
                     subclass(Route.Lesson::class, Route.Lesson.serializer())
+                    subclass(Route.Test::class, Route.Test.serializer())
                 }
             }
         },
@@ -55,13 +57,19 @@ fun NavigationRoute(
         entryProvider = entryProvider {
             //The main application content with bottom navigation
             entry<Route.Main> {
-                MainFrameNavigation(mainTab = mainTab, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) })
+                MainFrameNavigation(mainTab = mainTab, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
+                    onOpenTest = { rootBackStack.add(Route.Test(it)) },
+                )
             }
 
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
                 // finishing it saves the onboarding end; App then starts on Main
                 AppOnboardingNavigation(appLanguage = appLanguage)
+            }
+            // A test, one task at a time, without the navigation bar
+            entry<Route.Test> { route ->
+                TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() })
             }
             // A lesson, one page at a time, without the navigation bar
             entry<Route.Lesson> { route ->

@@ -213,7 +213,6 @@
     <string name="learning_step_tasks_meta">Úlohy: %1$d</string>
     <string name="learning_step_done">Hotovo</string>
     <string name="learning_step_next">Ďalší krok</string>
-    <string name="learning_step_soon">Táto časť príde čoskoro.</string>
     <string name="learning_load_error">Obsah sa nepodarilo načítať.</string>
     <string name="learning_retry">Skúsiť znova</string>
     <string name="learning_save_error">Lekciu sa nepodarilo uložiť. Skús to znova.</string>
@@ -231,4 +230,16 @@
     <string name="lesson_page_position">%1$d / %2$d</string>
     <string name="lesson_page_description">Strana %1$d z %2$d</string>
     <string name="lesson_page_n">Strana %1$d</string>
+
+    <!-- Test screen: the tasks of a test -->
+    <string name="test_check">Skontrolovať</string>
+    <string name="test_correct">Správne!</string>
+    <string name="test_wrong">Nie celkom.</string>
+    <string name="test_right_answer">Správna odpoveď:</string>
+    <string name="test_why_not">Prečo nie toto?</string>
+    <string name="test_your_answer">Tvoja odpoveď</string>
+    <string name="test_hint_request">Požiadať o nápovedu</string>
+    <string name="test_hint">Prvé písmeno: %1$s · počet písmen: %2$d</string>
+    <string name="test_empty">Pre tento test zatiaľ nie sú dostupné úlohy.</string>
+    <string name="test_finish">Dokončiť</string>
 </resources>

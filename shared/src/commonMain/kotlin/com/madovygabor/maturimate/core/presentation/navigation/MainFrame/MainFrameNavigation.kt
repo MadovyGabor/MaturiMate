@@ -25,6 +25,8 @@ fun MainFrameNavigation(
     modifier: Modifier = Modifier,
     /** Opens a lesson over the whole screen. */
     onOpenLesson: (Long) -> Unit = {},
+    /** Opens a test over the whole screen. */
+    onOpenTest: (Long) -> Unit = {},
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
@@ -59,7 +61,7 @@ fun MainFrameNavigation(
                         //Entries for the main bottom navigation destinations per feature
                         // Subject feature navigation
                         entry<Route.Main.Subject> {
-                            LearningNavigation(onOpenLesson = onOpenLesson)
+                            LearningNavigation(onOpenLesson = onOpenLesson, onOpenTest = onOpenTest)
                         }
                         // History screen placeholder
                         entry<Route.Main.History> {

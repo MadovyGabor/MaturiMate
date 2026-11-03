@@ -184,6 +184,8 @@ class DesignTokensSyncTest {
             "progress-ring" to layout.progressRing.value,
             "progress-ring-stroke" to layout.progressRingStroke.value,
             "accent-bar" to layout.accentBar.value,
+            "answer-option-min-height" to layout.answerOptionMinHeight.value,
+            "true-false-card-min-height" to layout.trueFalseCardMinHeight.value,
         )
 
         val values = tokenList("layout")
