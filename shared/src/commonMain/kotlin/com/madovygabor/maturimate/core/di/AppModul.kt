@@ -27,6 +27,7 @@ import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningCourse
+import com.madovygabor.maturimate.features.learning.domain.TestRecorder
 import com.madovygabor.maturimate.features.learning.presentation.LessonViewModel
 import com.madovygabor.maturimate.features.learning.presentation.SubjectListViewModel
 import com.madovygabor.maturimate.features.learning.presentation.TestSessionViewModel
@@ -80,6 +81,8 @@ val sharedModule = module {
 
     // The learning path: subjects, parts, topics, steps and their progress
     single { LearningCourse(get(), get()) }
+    // What a test round leaves in the user database: the attempt, the answers, the progress
+    single { TestRecorder(get()) }
 
     // Profile and settings of the local user
     single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }
@@ -109,8 +112,8 @@ val sharedModule = module {
     viewModelOf(::SignInViewModel)
     viewModel { ProfileViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }
-    viewModel { (target: TopicTarget) -> TopicViewModel(get(), target) }
+    viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
     viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get()) }
-    viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get()) }
+    viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
 }
 

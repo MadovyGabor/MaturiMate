@@ -165,10 +165,25 @@ class ContentValidatorTest {
     )
 
     @Test
-    fun roundSizeCannotExceedCoreTasks() = assertError(
-        valid.copy(practices = valid.practices.map { it.copy(file = it.file.copy(roundSize = 4)) }),
-        "round_size 4 is larger than the 3 core tasks",
+    fun roundSizeCannotExceedTheTasks() = assertError(
+        valid.copy(practices = valid.practices.map { if (it.file.learningUnitId == 101L) it.copy(file = it.file.copy(roundSize = 6)) else it }),
+        "round_size 6 is larger than the 5 tasks",
     )
+
+    @Test
+    fun roundSizeCannotBeSmallerThanTheRequiredTasks() = assertError(
+        valid.copy(practices = valid.practices.map { if (it.file.learningUnitId == 101L) it.copy(file = it.file.copy(roundSize = 2)) else it }),
+        "round_size 2 is smaller than the 3 required (core) tasks",
+    )
+
+    @Test
+    fun aRoundCanBeFilledWithRandomTasksBeyondTheRequiredOnes() {
+        // 3 required and 2 more in the pool: a round of 4 is valid
+        assertEquals(
+            emptyList(),
+            errorsOf(valid.copy(practices = valid.practices.map { if (it.file.learningUnitId == 101L) it.copy(file = it.file.copy(roundSize = 4)) else it })),
+        )
+    }
 
     @Test
     fun practiceTasksMustExist() = assertError(

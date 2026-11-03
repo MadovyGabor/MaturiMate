@@ -10,6 +10,7 @@ import com.madovygabor.maturimate.database.content.Task_key
 import com.madovygabor.maturimate.database.content.Task_option
 import com.madovygabor.maturimate.database.content.Topic
 import com.madovygabor.maturimate.database.content.Unit_task
+import com.madovygabor.maturimate.database.user.Attempt_answer
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.database.user.User_profile
 import com.madovygabor.maturimate.database.user.User_role
@@ -45,6 +46,22 @@ class DatabaseSchemaTest {
         taskQueries.insertKey(Task_key(100, 1, null, 1000))
         learningUnitQueries.insert(Learning_unit(50, 11, "PRACTICE", "Gyakorlás", "TOPIC", 3, 5, 10, 1, true, 0))
         learningUnitQueries.insertUnitTask(Unit_task(50, 100, 1, true))
+    }
+
+    // A phone with database version 2 gets the table of the answers by the migration 2.sqm.
+    @Test
+    fun migrationAddsTheTableOfTheAnswers() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn())
+        UserDatabase.Schema.create(driver)
+        driver.execute(null, "DROP TABLE attempt_answer", 0)
+
+        UserDatabase.Schema.migrate(driver, 2, 3)
+
+        val db = UserDatabase(driver)
+        db.progressQueries.insertAttempt("u", "UNIT_ROUND", null, 50, 1_000)
+        val attemptId = db.progressQueries.lastInsertedId().executeAsOne()
+        db.progressQueries.upsertAttemptAnswer(Attempt_answer(attemptId, 100, "u", false, 0, 1, 2_000, "1=A"))
+        assertEquals(false, db.progressQueries.selectAnswersOfAttempt(attemptId).executeAsOne().is_correct)
     }
 
     @Test

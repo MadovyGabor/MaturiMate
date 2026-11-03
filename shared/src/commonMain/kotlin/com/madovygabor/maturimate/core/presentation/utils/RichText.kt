@@ -57,6 +57,9 @@ fun splitGaps(text: String): List<TextPart> = buildList {
     if (last < text.length) add(TextPart.Text(text.substring(last)))
 }
 
+/** A text as plain words, for a line in a list: the markers are removed and a `[[n]]` gap becomes an ellipsis. */
+fun plainText(text: String): String = text.replace(GAP, "…").replace("*", "").replace(Regex("""\s+"""), " ").trim()
+
 /** The words of a text without the markers, for the reading time. */
 fun wordCount(text: String): Int = text.replace("*", "").split(Regex("""\s+""")).count { it.isNotBlank() }
 

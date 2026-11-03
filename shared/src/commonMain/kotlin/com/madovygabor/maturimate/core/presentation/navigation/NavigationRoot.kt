@@ -73,7 +73,11 @@ fun NavigationRoute(
             }
             // A lesson, one page at a time, without the navigation bar
             entry<Route.Lesson> { route ->
-                LessonScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() })
+                LessonScreen(
+                    unitId = route.unitId,
+                    onClose = { rootBackStack.removeLastOrNull() },
+                    onOpenTest = { rootBackStack.add(Route.Test(it)) },
+                )
             }
             //Fullscreen exam writing screen
             entry<Route.ExamWrite> {

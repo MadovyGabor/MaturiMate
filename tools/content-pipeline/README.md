@@ -111,6 +111,8 @@ A practice unit (`*.json`) has a `practice_kind`:
 | `TOPIC` | leaf topic | the test of the whole topic (for example all of one work) |
 | `FINAL` | parent topic | a test of everything below it (for example all of one author); its tasks come from the topics below |
 
+A test round shows `round_size` tasks: every **required** task (`"is_core": true`, the default) and random ones of the other tasks (`"is_core": false`) to fill the round, in random order. `round_size` is at least the number of required tasks and at most the number of all tasks. For example 20 tasks with `round_size` 10 and no required task: every round shows a random half.
+
 Only `FINAL` units may sit on a parent topic (a `FINAL` test on a leaf topic is an error); every other unit sits on a leaf topic. The tasks of a unit are listed by id; the tasks of a `FINAL` test must all lie in topics below its own. The exporter writes the pages into the `unit_page` and `page_block` tables, the kind into `learning_unit.practice_kind`.
 
 ## Explanations

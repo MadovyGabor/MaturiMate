@@ -33,7 +33,13 @@ sealed interface LessonUiState {
     data object Failed : LessonUiState
 
     /** [index] is the page being read, from 0. */
-    data class Ready(val title: String, val pages: List<LessonPage>, val index: Int) : LessonUiState {
+    data class Ready(
+        val title: String,
+        val pages: List<LessonPage>,
+        val index: Int,
+        /** The test right after this lesson in its topic; the lesson goes on to it. */
+        val nextTest: Long? = null,
+    ) : LessonUiState {
         val page: LessonPage get() = pages[index]
         val isFirst: Boolean get() = index == 0
         val isLast: Boolean get() = index == pages.lastIndex
@@ -63,10 +69,10 @@ class LessonViewModel(
     private val _state = MutableStateFlow<LessonUiState>(LessonUiState.Loading)
     val state: StateFlow<LessonUiState> = _state.asStateFlow()
 
-    private val _finished = Channel<Unit>(Channel.BUFFERED)
+    private val _finished = Channel<Long?>(Channel.BUFFERED)
 
-    /** Emits once when the lesson is finished and saved. */
-    val finished: Flow<Unit> = _finished.receiveAsFlow()
+    /** Emits once when the lesson is finished and saved: the id of the test that follows it, or null. */
+    val finished: Flow<Long?> = _finished.receiveAsFlow()
 
     init {
         load()
@@ -78,7 +84,7 @@ class LessonViewModel(
                 is OperationResult.Success -> {
                     val unit = result.data
                     if (unit is LearningUnit.Summary && unit.pages.isNotEmpty()) {
-                        LessonUiState.Ready(unit.title, unit.pages, index = 0)
+                        LessonUiState.Ready(unit.title, unit.pages, index = 0, nextTest = nextTestAfter(unit))
                     } else {
                         LessonUiState.Failed
                     }
@@ -87,6 +93,12 @@ class LessonViewModel(
             }
         }
     }
+
+    /** The test that comes right after the lesson in its topic, if the next step is one. */
+    private suspend fun nextTestAfter(unit: LearningUnit): Long? =
+        (content.units(unit.topicId) as? OperationResult.Success)?.data
+            ?.filter { it.sortOrder > unit.sortOrder }?.minByOrNull { it.sortOrder }
+            ?.takeIf { it is LearningUnit.Practice }?.id
 
     fun next() = move { it.index + 1 }
 
@@ -111,7 +123,7 @@ class LessonViewModel(
                 UnitProgress(unitId, UnitProgressStatus.COMPLETED, startedAt = earlier?.startedAt ?: time, completedAt = time)
             )
             when (saved) {
-                is OperationResult.Success -> _finished.send(Unit)
+                is OperationResult.Success -> _finished.send((_state.value as? LessonUiState.Ready)?.nextTest)
                 is OperationResult.Error -> snackbarController.showSnackbar(UiText.StringRes(Res.string.learning_save_error))
             }
         }

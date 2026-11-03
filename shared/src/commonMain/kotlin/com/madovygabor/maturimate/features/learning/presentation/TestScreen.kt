@@ -27,10 +27,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -52,13 +50,17 @@ import com.madovygabor.maturimate.core.presentation.uiComponents.AppGapField
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppGapSlot
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppMatchPair
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppProgressBar
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppResultRow
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTextField
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTrueFalseCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.FeedbackLine
 import com.madovygabor.maturimate.core.presentation.utils.AppRichText
 import com.madovygabor.maturimate.core.presentation.utils.TextPart
+import com.madovygabor.maturimate.core.presentation.utils.plainText
 import com.madovygabor.maturimate.core.presentation.utils.richText
 import com.madovygabor.maturimate.core.presentation.utils.splitGaps
+import com.madovygabor.maturimate.features.learning.domain.Answer
+import com.madovygabor.maturimate.features.learning.domain.RoundEntry
 import com.madovygabor.maturimate.features.learning.domain.model.OptionRole
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
@@ -80,6 +82,11 @@ import maturimate.shared.generated.resources.test_hint_request
 import maturimate.shared.generated.resources.test_match_hint
 import maturimate.shared.generated.resources.test_order_hint
 import maturimate.shared.generated.resources.test_pick_placeholder
+import maturimate.shared.generated.resources.test_again
+import maturimate.shared.generated.resources.test_back_to_path
+import maturimate.shared.generated.resources.test_result_good
+import maturimate.shared.generated.resources.test_pass_needed
+import maturimate.shared.generated.resources.test_result_failed
 import maturimate.shared.generated.resources.test_right_answer
 import maturimate.shared.generated.resources.test_wrong
 import maturimate.shared.generated.resources.test_why_not
@@ -101,6 +108,8 @@ class TestActions(
     val onClear: (Int) -> Unit = {},
     val onActivate: (Int) -> Unit = {},
     val onTypeIn: (Int, String) -> Unit = { _, _ -> },
+    /** Starts a new round after the result. */
+    val onAgain: () -> Unit = {},
 )
 
 /** A test: its tasks one after the other, with feedback after each (docs/learning/prototype.html). */
@@ -111,13 +120,12 @@ fun TestScreen(
     viewModel: TestSessionViewModel = koinViewModel(key = "test$unitId") { parametersOf(unitId) },
 ) {
     val state by viewModel.state.collectAsState()
-    val close by rememberUpdatedState(onClose)
-    // after the last task the screen closes
-    LaunchedEffect(viewModel) { viewModel.finished.collect { close() } }
     TestContent(
         state = state,
         actions = TestActions(
-            onClose = onClose,
+            // leaving in the middle of a round ends its attempt as abandoned; after the result it changes nothing
+            onClose = { viewModel.leave(); onClose() },
+            onAgain = viewModel::load,
             onSelect = viewModel::select,
             onType = viewModel::type,
             onHint = viewModel::showHint,
@@ -154,6 +162,7 @@ fun TestContent(state: TestUiState, actions: TestActions) {
                     }
                 }
             }
+            is TestUiState.Result -> ResultContent(state, actions)
             is TestUiState.Ready -> BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 Column(Modifier.widthIn(max = layout.contentMaxWidth).fillMaxHeight()) {
                     Column(
@@ -193,6 +202,70 @@ private fun TopBar(state: TestUiState.Ready, onClose: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** The end of a round: how it went, every task in a row, and what to do next. */
+@Composable
+private fun ResultContent(state: TestUiState.Result, actions: TestActions) {
+    val spacing = MaterialTheme.spacing
+    val layout = MaterialTheme.layout
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = layout.contentMaxWidth).fillMaxHeight()) {
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = spacing.space4).padding(top = spacing.space4),
+                verticalArrangement = Arrangement.spacedBy(spacing.space4),
+            ) {
+                IconButton(onClick = actions.onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(Res.string.lesson_close)) }
+                Text(state.title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(if (state.passed) Res.string.test_result_good else Res.string.test_result_failed),
+                    style = MaterialTheme.typography.headlineMedium,
+                )
+                Text(stringResource(Res.string.lesson_page_position, state.correctCount, state.total), style = MaterialTheme.typography.displayMedium)
+                AppProgressBar(state.correctCount.toFloat() / state.total.coerceAtLeast(1), color = MaterialTheme.extendedColors.brandGold)
+                if (!state.passed) {
+                    // the next step of the path stays locked until a round is passed
+                    Text(
+                        stringResource(Res.string.test_pass_needed),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                    state.entries.forEach { entry ->
+                        AppResultRow(
+                            correct = entry.correct,
+                            title = plainText(entry.task.questionText),
+                            lines = if (entry.correct) emptyList() else reviewLines(entry),
+                        )
+                    }
+                }
+            }
+            Column(Modifier.fillMaxWidth().padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                // a passed round goes back to the path; one that is not passed tries again first
+                val back = stringResource(Res.string.test_back_to_path)
+                val again = stringResource(Res.string.test_again)
+                if (state.passed) {
+                    AppButton(back, actions.onClose, modifier = Modifier.fillMaxWidth())
+                    AppButton(again, actions.onAgain, modifier = Modifier.fillMaxWidth(), variant = AppButtonVariant.OUTLINED)
+                } else {
+                    AppButton(again, actions.onAgain, modifier = Modifier.fillMaxWidth())
+                    AppButton(back, actions.onClose, modifier = Modifier.fillMaxWidth(), variant = AppButtonVariant.OUTLINED)
+                }
+            }
+        }
+    }
+}
+
+/** What opens under a wrong task of the result: the right answer, why not the chosen option, the explanation. */
+@Composable
+private fun reviewLines(entry: RoundEntry): List<FeedbackLine> = buildList {
+    val task = entry.task
+    correctAnswerText(task)?.let { add(FeedbackLine(stringResource(Res.string.test_right_answer), it)) }
+    val chosen = (entry.answer as? Answer.Choice)?.labels?.get(1)
+    task.options.firstOrNull { it.role == OptionRole.ANSWER && it.label == chosen }?.why
+        ?.let { add(FeedbackLine(stringResource(Res.string.test_why_not), it)) }
+    task.explanation?.let { add(FeedbackLine(null, it)) }
 }
 
 private val Task.answerOptions get() = options.filter { it.role == OptionRole.ANSWER }

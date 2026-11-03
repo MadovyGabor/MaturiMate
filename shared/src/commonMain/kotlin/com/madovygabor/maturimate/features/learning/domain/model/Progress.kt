@@ -24,6 +24,21 @@ data class Attempt(
     val maxPoints: Int?,
 )
 
+/**
+ * The answer to one task in a round: right or wrong, the points, and what the student answered
+ * ([givenAnswer], short text such as `1=B;2=A`, for review).
+ */
+@OptIn(ExperimentalTime::class)
+data class AttemptAnswer(
+    val attemptId: Long,
+    val taskId: Long,
+    val isCorrect: Boolean,
+    val earnedPoints: Int,
+    val maxPoints: Int,
+    val answeredAt: Instant,
+    val givenAnswer: String?,
+)
+
 enum class UnitProgressStatus { IN_PROGRESS, COMPLETED }
 
 @OptIn(ExperimentalTime::class)

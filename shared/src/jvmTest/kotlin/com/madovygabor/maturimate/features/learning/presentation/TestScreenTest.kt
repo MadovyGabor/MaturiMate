@@ -13,7 +13,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
+import com.madovygabor.maturimate.features.learning.domain.Answer
 import com.madovygabor.maturimate.features.learning.domain.AnswerChecker
+import com.madovygabor.maturimate.features.learning.domain.RoundEntry
+import com.madovygabor.maturimate.features.learning.domain.TestRecorder
 import com.madovygabor.maturimate.features.learning.domain.model.AcceptedAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.KeySlot
 import com.madovygabor.maturimate.features.learning.domain.model.OptionRole
@@ -24,7 +27,12 @@ import kotlinx.coroutines.runBlocking
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_next
 import maturimate.shared.generated.resources.test_check
+import maturimate.shared.generated.resources.test_again
+import maturimate.shared.generated.resources.test_back_to_path
 import maturimate.shared.generated.resources.test_correct
+import maturimate.shared.generated.resources.test_result_good
+import maturimate.shared.generated.resources.test_pass_needed
+import maturimate.shared.generated.resources.test_result_failed
 import maturimate.shared.generated.resources.test_empty
 import maturimate.shared.generated.resources.test_finish
 import maturimate.shared.generated.resources.test_hint_request
@@ -290,5 +298,85 @@ class TestScreenTest {
         show(ready(6, texts = mapOf(1 to "azonosít", 2 to "x"), check = true))
 
         onNodeWithText("azonosít, összehasonlít", substring = true).assertIsDisplayed()
+    }
+
+    private fun entry(task: Task, answer: Answer): RoundEntry {
+        val result = AnswerChecker.check(task, answer)
+        return RoundEntry(task, answer, result, TestRecorder.earnedPoints(task, result), task.maxPoints)
+    }
+
+    private fun result(vararg entries: RoundEntry) = TestUiState.Result("Mini teszt", entries.toList())
+
+    private val twoRightOneWrong = result(
+        entry(multipleChoice, Answer.Choice(mapOf(1 to "A"))), // wrong, A has a why
+        entry(trueFalse, Answer.Choice(mapOf(1 to "I"))),
+        entry(shortAnswer, Answer.Typed(mapOf(1 to "Megszemélyesítés"))),
+    )
+
+    @Test
+    fun resultShowsTheScoreAndEveryTask() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(twoRightOneWrong)
+
+        onNodeWithText(text(Res.string.test_result_failed)).assertIsDisplayed()
+        onNodeWithText("2 / 3").assertIsDisplayed()
+        onNodeWithText("Melyik szókép azonosít két dolgot?").assertIsDisplayed()
+        onNodeWithText("A hasonlatban szerepel a mint.").assertIsDisplayed()
+    }
+
+    @Test
+    fun aRoundThatIsNotPassedSaysWhatIsNeededAndOffersAnotherTry() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var again = 0
+        var back = 0
+        // one task wrong is already not passed
+        val failed = twoRightOneWrong
+        setContent {
+            AppTheme { TestContent(failed, TestActions(onAgain = { again++ }, onClose = { back++ })) }
+        }
+
+        onNodeWithText(text(Res.string.test_result_failed)).assertIsDisplayed()
+        onNodeWithText(text(Res.string.test_pass_needed)).assertIsDisplayed()
+        // trying again is the main button now; the way back is still there
+        onNodeWithText(text(Res.string.test_again)).performClick()
+        onNodeWithText(text(Res.string.test_back_to_path)).performClick()
+        assertEquals(1, again)
+        assertEquals(1, back)
+    }
+
+    @Test
+    fun aGoodRoundIsPraised() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(result(entry(trueFalse, Answer.Choice(mapOf(1 to "I"))), entry(shortAnswer, Answer.Typed(mapOf(1 to "Megszemélyesítés")))))
+
+        onNodeWithText(text(Res.string.test_result_good)).assertIsDisplayed()
+    }
+
+    @Test
+    fun aWrongTaskOpensToTheRightAnswerTheWhyAndTheExplanation() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(twoRightOneWrong)
+
+        onNodeWithText(text(Res.string.test_right_answer), substring = true).assertDoesNotExist()
+        onNodeWithText("Melyik szókép azonosít két dolgot?").performClick()
+
+        onNodeWithText("metafora", substring = true).assertIsDisplayed()
+        onNodeWithText("A hasonlat összehasonlít.", substring = true).assertIsDisplayed()
+        onNodeWithText("A metafora azonosít.", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun resultOffersAnotherRoundAndTheWayBack() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var again = 0
+        var back = 0
+        setContent {
+            AppTheme { TestContent(twoRightOneWrong, TestActions(onAgain = { again++ }, onClose = { back++ })) }
+        }
+
+        onNodeWithText(text(Res.string.test_again)).performClick()
+        onNodeWithText(text(Res.string.test_back_to_path)).performClick()
+        assertEquals(1, again)
+        assertEquals(1, back)
     }
 }

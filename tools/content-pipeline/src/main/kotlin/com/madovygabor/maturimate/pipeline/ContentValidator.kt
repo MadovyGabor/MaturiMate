@@ -229,8 +229,10 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
                     error(where, "FINAL test: task ${it.entry.taskId} is not in a topic below this one")
                 }
             }
+            // a round shows round_size tasks: every required (core) task, and random ones of the rest to fill it
             val core = u.tasks.count { it.isCore }
-            if (u.roundSize > core) error(where, "round_size ${u.roundSize} is larger than the $core core tasks")
+            if (u.roundSize > u.tasks.size) error(where, "round_size ${u.roundSize} is larger than the ${u.tasks.size} tasks")
+            if (u.roundSize < core) error(where, "round_size ${u.roundSize} is smaller than the $core required (core) tasks")
         }
 
         // sort_order is unique within a topic (uq_learning_unit_order)

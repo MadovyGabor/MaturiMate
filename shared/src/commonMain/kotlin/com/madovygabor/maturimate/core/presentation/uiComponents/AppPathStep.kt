@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Quiz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -84,6 +86,7 @@ fun AppPathStep(
         Surface(
             modifier = Modifier
                 .weight(1f)
+                .alpha(if (state == PathStepState.TODO) 0.6f else 1f)
                 .padding(start = spacing.space3, top = spacing.space2, bottom = spacing.space2)
                 .clip(MaterialTheme.shapes.medium)
                 .clickable(role = Role.Button, onClick = onClick),
@@ -161,7 +164,8 @@ private fun PathNode(style: PathStepStyle, state: PathStepState, size: Dp, halo:
             },
         ) {
             Box(contentAlignment = Alignment.Center) {
-                val icon = if (state == PathStepState.DONE) Icons.Rounded.Check else when (style) {
+                // a step still ahead is locked until the ones before it are done
+                val icon = if (state == PathStepState.DONE) Icons.Rounded.Check else if (state == PathStepState.TODO) Icons.Rounded.Lock else when (style) {
                     PathStepStyle.LESSON -> Icons.AutoMirrored.Rounded.MenuBook
                     PathStepStyle.MINI -> Icons.Rounded.Quiz
                     PathStepStyle.TEST -> Icons.Rounded.EmojiEvents

@@ -239,4 +239,11 @@
     <string name="test_gap_fill_hint">Írd be a hiányzó szavakat a hézagokba.</string>
     <string name="test_pick_placeholder">válassz…</string>
     <string name="test_gap_description">%1$d. hézag</string>
+    <string name="test_result_good">Szép munka!</string>
+    <string name="test_result_failed">Még nem sikerült</string>
+    <string name="test_pass_needed">A következő lépés csak akkor nyílik meg, ha az összes feladatot jól oldod meg.</string>
+    <string name="test_again">Újra</string>
+    <string name="test_back_to_path">Vissza az útvonalra</string>
+    <string name="test_locked">Előbb fejezd be az előző lépést.</string>
+    <string name="lesson_next_test">Mehet a teszt</string>
 </resources>

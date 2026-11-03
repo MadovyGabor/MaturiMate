@@ -8,6 +8,7 @@ import com.madovygabor.maturimate.features.learning.data.mapper.toRow
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
 import com.madovygabor.maturimate.features.learning.domain.model.Attempt
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.DailyActivity
@@ -60,6 +61,14 @@ class ProgressRepositoryImpl(
         maxPoints: Int,
     ): OperationResult<Unit, LearningError> = run {
         progress.finishAttempt(status.name, finishedAt.toEpochMilliseconds(), earnedPoints.toLong(), maxPoints.toLong(), attemptId)
+    }
+
+    override suspend fun recordAnswer(answer: AttemptAnswer): OperationResult<Unit, LearningError> = run {
+        progress.upsertAttemptAnswer(answer.toRow(userId()))
+    }
+
+    override suspend fun answersOfAttempt(attemptId: Long): OperationResult<List<AttemptAnswer>, LearningError> = run {
+        progress.selectAnswersOfAttempt(attemptId).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun attempts(): OperationResult<List<Attempt>, LearningError> = run {

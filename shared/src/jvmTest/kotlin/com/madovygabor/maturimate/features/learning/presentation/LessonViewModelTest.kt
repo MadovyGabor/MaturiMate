@@ -22,6 +22,7 @@ import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -43,6 +44,10 @@ class LessonViewModelTest {
         learningUnitQueries.insertPage(Unit_page(50, 3, null))
         learningUnitQueries.insertBlock(Page_block(50, 3, 1, "TIP", "Tipp."))
         learningUnitQueries.insert(Learning_unit(51, 10, "PRACTICE", "Teszt", "MINI", 2, 3, 10, 2, true, 0))
+        // a last lesson with no test after it
+        learningUnitQueries.insert(Learning_unit(60, 10, "SUMMARY", "Utolsó lecke", null, 3, 5, 10, 9, true, 0))
+        learningUnitQueries.insertPage(Unit_page(60, 1, null))
+        learningUnitQueries.insertBlock(Page_block(60, 1, 1, "PARAGRAPH", "Szöveg."))
     }
 
     private val content = ContentRepositoryImpl({ database }, Dispatchers.Unconfined)
@@ -70,6 +75,12 @@ class LessonViewModelTest {
         assertEquals(0, state.index)
         assertEquals(true, state.isFirst)
         assertEquals(false, state.isLast)
+    }
+
+    @Test
+    fun theLessonKnowsTheTestThatFollowsIt() = runBlocking<Unit> {
+        assertEquals(51L, viewModel(unitId = 50).ready().nextTest)
+        assertNull(viewModel(unitId = 60).ready().nextTest)
     }
 
     @Test
@@ -105,7 +116,8 @@ class LessonViewModelTest {
         viewModel.ready()
 
         viewModel.finish()
-        withTimeout(5_000) { viewModel.finished.first() }
+        // the test that follows the lesson is opened next
+        assertEquals(51L, withTimeout(5_000) { viewModel.finished.first() })
 
         val progress = saved.single()
         assertEquals(50L, progress.learningUnitId)

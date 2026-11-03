@@ -248,4 +248,11 @@
     <string name="test_gap_fill_hint">Doplň chýbajúce slová do medzier.</string>
     <string name="test_pick_placeholder">vyber…</string>
     <string name="test_gap_description">Medzera %1$d</string>
+    <string name="test_result_good">Pekná práca!</string>
+    <string name="test_result_failed">Zatiaľ sa nepodarilo</string>
+    <string name="test_pass_needed">Ďalší krok sa otvorí, až keď vyriešiš všetky úlohy správne.</string>
+    <string name="test_again">Znova</string>
+    <string name="test_back_to_path">Späť na cestu</string>
+    <string name="test_locked">Najprv dokonči predchádzajúci krok.</string>
+    <string name="lesson_next_test">Ďalej na test</string>
 </resources>

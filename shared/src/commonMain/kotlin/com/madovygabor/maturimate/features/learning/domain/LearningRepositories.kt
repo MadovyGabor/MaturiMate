@@ -3,6 +3,7 @@ package com.madovygabor.maturimate.features.learning.domain
 import com.madovygabor.maturimate.core.domain.error.Error
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.features.learning.domain.model.Attempt
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.DailyActivity
@@ -56,6 +57,9 @@ interface ProgressRepository {
         earnedPoints: Int,
         maxPoints: Int,
     ): OperationResult<Unit, LearningError>
+    /** Records the answer to one task of a round; a second answer to the same task replaces the first. */
+    suspend fun recordAnswer(answer: AttemptAnswer): OperationResult<Unit, LearningError>
+    suspend fun answersOfAttempt(attemptId: Long): OperationResult<List<AttemptAnswer>, LearningError>
     suspend fun attempts(): OperationResult<List<Attempt>, LearningError>
     suspend fun attemptsOfUnit(learningUnitId: Long): OperationResult<List<Attempt>, LearningError>
 

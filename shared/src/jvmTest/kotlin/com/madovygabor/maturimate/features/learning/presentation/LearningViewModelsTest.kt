@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.database.content.ContentDatabase
 import com.madovygabor.maturimate.database.content.Learning_unit
 import com.madovygabor.maturimate.database.content.Page_block
@@ -125,7 +126,7 @@ class LearningViewModelsTest {
 
     @Test
     fun partsOfASubjectAreListed() = runBlocking<Unit> {
-        val state = TopicViewModel(course(), TopicTarget.SubjectParts(1)).loaded()
+        val state = TopicViewModel(course(), TopicTarget.SubjectParts(1), SnackbarController()).loaded()
 
         assertIs<TopicUiState.Ready>(state)
         val level = assertIs<TopicLevel.Branch>(state.level)
@@ -134,7 +135,7 @@ class LearningViewModelsTest {
 
     @Test
     fun aLeafTopicShowsItsPath() = runBlocking<Unit> {
-        val state = TopicViewModel(course(completed = setOf(50)), TopicTarget.Topic(11)).loaded()
+        val state = TopicViewModel(course(completed = setOf(50)), TopicTarget.Topic(11), SnackbarController()).loaded()
 
         assertIs<TopicUiState.Ready>(state)
         val path = assertIs<TopicLevel.Path>(state.level)
@@ -143,8 +144,18 @@ class LearningViewModelsTest {
     }
 
     @Test
+    fun aLockedStepSaysItIsLocked() = runBlocking<Unit> {
+        val snackbar = SnackbarController()
+        val viewModel = TopicViewModel(course(), TopicTarget.Topic(11), snackbar)
+
+        viewModel.onLockedStepClicked()
+
+        assertIs<com.madovygabor.maturimate.core.presentation.utils.UiText.StringRes>(withTimeout(5_000) { snackbar.events.first() }.message)
+    }
+
+    @Test
     fun anUnknownTopicFails() = runBlocking<Unit> {
-        assertIs<TopicUiState.Failed>(TopicViewModel(course(), TopicTarget.Topic(999)).loaded())
+        assertIs<TopicUiState.Failed>(TopicViewModel(course(), TopicTarget.Topic(999), SnackbarController()).loaded())
     }
 }
 

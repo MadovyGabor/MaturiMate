@@ -8,17 +8,23 @@ import com.madovygabor.maturimate.features.learning.domain.AnswerChecker
 import com.madovygabor.maturimate.features.learning.domain.AnswerHint
 import com.madovygabor.maturimate.features.learning.domain.AnswerResult
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
+import com.madovygabor.maturimate.features.learning.domain.RoundEntry
+import com.madovygabor.maturimate.features.learning.domain.RoundPlanner
+import com.madovygabor.maturimate.features.learning.domain.TestRecorder
 import com.madovygabor.maturimate.features.learning.domain.model.AnswerMode
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.random.Random
+import kotlin.time.ExperimentalTime
 
 sealed interface TestUiState {
     data object Loading : TestUiState
@@ -31,7 +37,7 @@ sealed interface TestUiState {
      * One task of the round. The answer is kept per slot (a gap, a pair, a position): [choices] holds the chosen
      * option label of each slot, [texts] the written text. A multiple-choice or true-or-false task and a short
      * answer use slot 1. [activeSlot] is the pair of a matching task that gets the next answer. [result] is null
-     * until the answer is checked.
+     * until the answer is checked; [entries] are the tasks of the round answered so far.
      */
     data class Ready(
         val title: String,
@@ -42,6 +48,7 @@ sealed interface TestUiState {
         val activeSlot: Int? = null,
         val hintShown: Boolean = false,
         val result: AnswerResult? = null,
+        val entries: List<RoundEntry> = emptyList(),
     ) : TestUiState {
         val task: Task get() = tasks[index]
         val isLast: Boolean get() = index == tasks.lastIndex
@@ -69,30 +76,49 @@ sealed interface TestUiState {
         val answer: Answer
             get() = if (task.format.answerMode == AnswerMode.CHOICE) Answer.Choice(choices) else Answer.Typed(texts)
     }
+
+    /** The end of a round: how every task went. */
+    data class Result(val title: String, val entries: List<RoundEntry>) : TestUiState {
+        val correctCount: Int get() = entries.count { it.correct }
+        val total: Int get() = entries.size
+        val earnedPoints: Int get() = entries.sumOf { it.earnedPoints }
+        val maxPoints: Int get() = entries.sumOf { it.maxPoints }
+
+        /** The round is passed: the test is done and the next step of the path opens. */
+        val passed: Boolean get() = TestRecorder.passed(entries)
+    }
 }
 
 /**
- * Runs the tasks of a test unit one after the other: choose or write, check, see the feedback, go on. A round is
- * the first `roundSize` active core tasks of the unit. The result of the round and the progress are not kept yet
- * (step 7.5); after the last task the screen closes.
+ * Runs a round of a test unit: choose or write, check, see the feedback, go on, and at the end the result.
+ *
+ * * A round is chosen by [RoundPlanner]: the required tasks of the unit and random ones to fill `roundSize`, in
+ *   random order.
+ * * [TestRecorder] keeps what happens: the attempt, every answer, the progress of the tasks and, at the end of
+ *   the round, the unit as done. Saving runs in the background and does not wait for the screen.
+ * * Leaving in the middle ends the attempt as abandoned; what was answered stays recorded.
  */
+@OptIn(ExperimentalTime::class)
 class TestSessionViewModel(
     private val unitId: Long,
     private val content: ContentRepository,
+    private val recorder: TestRecorder,
+    private val random: Random = Random.Default,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<TestUiState>(TestUiState.Loading)
     val state: StateFlow<TestUiState> = _state.asStateFlow()
 
-    private val _finished = Channel<Unit>(Channel.BUFFERED)
+    private var attemptId: Long? = null
 
-    /** Emits once after the last task. */
-    val finished: Flow<Unit> = _finished.receiveAsFlow()
+    /** The last background save; the next one and the end of the round wait for it, so the order is kept. */
+    private var saving: Job? = null
 
     init {
         load()
     }
 
+    /** Starts a round (also again after the result). */
     fun load() {
         viewModelScope.launch {
             _state.value = TestUiState.Loading
@@ -104,12 +130,13 @@ class TestSessionViewModel(
         val unit = (content.unit(unitId) as? OperationResult.Success)?.data as? LearningUnit.Practice ?: return TestUiState.Failed
         val unitTasks = (content.unitTasks(unitId) as? OperationResult.Success)?.data ?: return TestUiState.Failed
         val tasks = mutableListOf<Task>()
-        for (entry in unitTasks.filter { it.isCore && it.isActive }) {
-            if (tasks.size == unit.roundSize) break
-            val task = (content.task(entry.taskId) as? OperationResult.Success)?.data ?: return TestUiState.Failed
-            tasks += task
+        for (id in RoundPlanner.plan(unitTasks, unit.roundSize, random)) {
+            tasks += (content.task(id) as? OperationResult.Success)?.data ?: return TestUiState.Failed
         }
-        return if (tasks.isEmpty()) TestUiState.Empty else fresh(TestUiState.Ready(unit.title, tasks, index = 0))
+        if (tasks.isEmpty()) return TestUiState.Empty
+        attemptId = (recorder.start(unitId) as? OperationResult.Success)?.data ?: return TestUiState.Failed
+        saving = null
+        return fresh(TestUiState.Ready(unit.title, tasks, index = 0))
     }
 
     /** A multiple-choice or true-or-false answer. */
@@ -159,17 +186,48 @@ class TestSessionViewModel(
 
     fun showHint() = update { if (!it.checked && it.hint != null) it.copy(hintShown = true) else it }
 
-    /** Checks the answer; it is the same for every format (`AnswerChecker`). */
-    fun check() = update { if (it.canCheck) it.copy(result = AnswerChecker.check(it.task, it.answer)) else it }
+    /** Checks the answer, which is the same for every format (`AnswerChecker`), and records it. */
+    fun check() = update { state ->
+        if (!state.canCheck) return@update state
+        val answer = state.answer
+        val result = AnswerChecker.check(state.task, answer)
+        val entry = RoundEntry(state.task, answer, result, TestRecorder.earnedPoints(state.task, result), state.task.maxPoints)
+        val attempt = attemptId
+        if (attempt != null) save { recorder.answer(attempt, entry.task, answer, result) }
+        state.copy(result = result, entries = state.entries + entry)
+    }
 
-    /** The next task, or the end of the round after the last one. */
+    /** The next task, or the result after the last one. */
     fun next() {
         val state = _state.value as? TestUiState.Ready ?: return
         if (!state.checked) return
         if (state.isLast) {
-            _finished.trySend(Unit)
+            val attempt = attemptId
+            if (attempt != null) save { recorder.finish(attempt, unitId, state.entries) }
+            _state.value = TestUiState.Result(state.title, state.entries)
         } else {
             _state.value = fresh(state.copy(index = state.index + 1, choices = emptyMap(), texts = emptyMap(), hintShown = false, result = null))
+        }
+    }
+
+    /** The student leaves the round in the middle: the attempt ends as abandoned. */
+    fun leave() {
+        val state = _state.value as? TestUiState.Ready ?: return
+        val attempt = attemptId ?: return
+        save { recorder.abandon(attempt, state.entries) }
+    }
+
+    /**
+     * Saves in the background, after the earlier save. It keeps going when the screen is closed at once (the view
+     * model is then cleared), so a finished or abandoned round is never lost.
+     */
+    private fun save(block: suspend () -> Unit) {
+        val previous = saving
+        saving = viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            withContext(NonCancellable) {
+                previous?.join()
+                block()
+            }
         }
     }
 

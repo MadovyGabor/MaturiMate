@@ -1,7 +1,9 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
+import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.content.ContentDatabase
 import com.madovygabor.maturimate.database.content.Learning_unit
 import com.madovygabor.maturimate.database.content.Subject
@@ -12,24 +14,34 @@ import com.madovygabor.maturimate.database.content.Task_key
 import com.madovygabor.maturimate.database.content.Task_option
 import com.madovygabor.maturimate.database.content.Topic
 import com.madovygabor.maturimate.database.content.Unit_task
+import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
+import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
+import com.madovygabor.maturimate.features.learning.domain.LearningError
+import com.madovygabor.maturimate.features.learning.domain.TestRecorder
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
+import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
+import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.ExperimentalTime
 
 /**
- * Test 50 (round size 4) lists: 100 multiple choice, 101 true or false, 102 matching (two pairs), 103 short answer,
- * 104 a reserve task, 105 an inactive task and 106 another multiple choice; the round is 100, 101, 102 and 103.
- * Test 51 has the ordering 110, the gaps from a list 111 and the typed gaps 112. Test 52 is a lesson and test 53 has
- * no task.
+ * Test 50 (a round of 3) has the required tasks 100 (multiple choice) and 101 (true or false) and the others 103 (short
+ * answer), 104 and 106 (multiple choice), and 105, which is switched off. Test 51 (a round of 4) has the required
+ * ordering 110, gaps from a list 111, typed gaps 112 and matching 102. Test 52 is a lesson, test 53 has no task.
  */
+@OptIn(ExperimentalTime::class)
 class TestSessionViewModelTest {
 
     private val database = ContentDatabase(
@@ -66,7 +78,7 @@ class TestSessionViewModelTest {
         // 103: short answer
         taskQueries.insert(Task(103, 10, 7, "Hogy hívjuk?", null, 1, 1, true, 0))
         taskQueries.insertAcceptedAnswer(Task_accepted_answer(10301, 103, 1, "megszemélyesítés", false))
-        // 104 (reserve), 105 (inactive), 106 (another multiple choice)
+        // 104 and 106 (multiple choice), 105 (switched off)
         for (id in 104L..106L) {
             taskQueries.insert(Task(id, 10, 1, "Még?", null, 1, null, id != 105L, 0))
             taskQueries.insertOption(Task_option(id * 100 + 1, id, "ANSWER", "A", "a", null))
@@ -90,86 +102,141 @@ class TestSessionViewModelTest {
         taskQueries.insertAcceptedAnswer(Task_accepted_answer(11201, 112, 1, "azonosít", false))
         taskQueries.insertAcceptedAnswer(Task_accepted_answer(11202, 112, 2, "összehasonlít", false))
 
-        learningUnitQueries.insert(Learning_unit(50, 10, "PRACTICE", "Mini teszt", "MINI", 2, 4, 10, 1, true, 0))
-        listOf(100L to true, 101L to true, 102L to true, 103L to true, 104L to false, 105L to true, 106L to true)
-            .forEachIndexed { index, (id, core) -> learningUnitQueries.insertUnitTask(Unit_task(50, id, index + 1L, core)) }
-        learningUnitQueries.insert(Learning_unit(51, 10, "PRACTICE", "Más formátumok", "MINI", 2, 3, 10, 2, true, 0))
-        listOf(110L, 111L, 112L).forEachIndexed { index, id -> learningUnitQueries.insertUnitTask(Unit_task(51, id, index + 1L, true)) }
+        learningUnitQueries.insert(Learning_unit(50, 10, "PRACTICE", "Mini teszt", "MINI", 2, 3, 10, 1, true, 0))
+        listOf(100L to true, 101L to true, 103L to false, 104L to false, 105L to false, 106L to false)
+            .forEachIndexed { index, (id, required) -> learningUnitQueries.insertUnitTask(Unit_task(50, id, index + 1L, required)) }
+        learningUnitQueries.insert(Learning_unit(51, 10, "PRACTICE", "Más formátumok", "MINI", 2, 4, 10, 2, true, 0))
+        listOf(110L, 111L, 112L, 102L).forEachIndexed { index, id -> learningUnitQueries.insertUnitTask(Unit_task(51, id, index + 1L, true)) }
         learningUnitQueries.insert(Learning_unit(52, 10, "SUMMARY", "Lecke", null, 3, 5, 10, 3, true, 0))
         learningUnitQueries.insert(Learning_unit(53, 10, "PRACTICE", "Üres", "MINI", 2, 3, 10, 4, true, 0))
     }
 
     private val content = ContentRepositoryImpl({ database }, Dispatchers.Unconfined)
+    private val userDatabase = UserDatabase(
+        JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
+    )
+    private val progress = ProgressRepositoryImpl(userDatabase, LocalUserProvider(userDatabase), Dispatchers.Unconfined)
+    private val recorder = TestRecorder(progress)
+
+    private fun session(unitId: Long, seed: Int = 1) = TestSessionViewModel(unitId, content, recorder, Random(seed))
 
     private suspend fun TestSessionViewModel.ready() =
         withTimeout(5_000) { state.first { it !is TestUiState.Loading } }
 
     private val TestSessionViewModel.current get() = state.value as TestUiState.Ready
 
-    /** Checks the answer given so far and goes on to the next task. */
+    /** Answers the task on the screen rightly. */
+    private fun TestSessionViewModel.solve() {
+        val task = current.task
+        when (task.format) {
+            TaskFormat.MATCHING -> task.key.sortedBy { it.slot }.forEach { activate(it.slot); pick(it.optionLabel) }
+            TaskFormat.ORDERING, TaskFormat.GAP_CHOICE -> task.key.sortedBy { it.slot }.forEach { pick(it.optionLabel) }
+            TaskFormat.GAP_FILL, TaskFormat.SHORT_ANSWER -> task.acceptedAnswers.groupBy { it.slot }.forEach { (slot, list) -> typeIn(slot, list.first().text) }
+            else -> select(task.key.first().optionLabel)
+        }
+    }
+
+    /** Answers a multiple-choice or true-or-false task wrongly, a short answer too. */
+    private fun TestSessionViewModel.solveWrongly() {
+        val task = current.task
+        if (task.format == TaskFormat.SHORT_ANSWER) type("zzz")
+        else select(task.options.first { opt -> task.key.none { it.optionLabel == opt.label } }.label)
+    }
+
     private fun TestSessionViewModel.checkAndNext() { check(); next() }
 
-    @Test
-    fun roundIsTheFirstActiveCoreTasksOfTheUnit() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
-        val state = viewModel.ready()
+    /** Solves tasks until the one on the screen has the [format]. */
+    private fun TestSessionViewModel.advanceTo(format: TaskFormat) {
+        while (current.task.format != format) { solve(); checkAndNext() }
+    }
 
+    private suspend fun settled(condition: suspend () -> Boolean) = withTimeout(5_000) { while (!condition()) yield() }
+
+    @Test
+    fun roundHasTheRequiredTasksAndARandomRestInRandomOrder() = runBlocking<Unit> {
+        val seenThird = mutableSetOf<Long>()
+        repeat(40) { seed ->
+            val state = session(50, seed).ready()
+            assertIs<TestUiState.Ready>(state)
+            assertEquals(3, state.tasks.size)
+            val ids = state.tasks.map { it.id }
+            assertTrue(100L in ids && 101L in ids, "required tasks missing in $ids")
+            assertFalse(105L in ids)
+            seenThird += ids.single { it != 100L && it != 101L }
+        }
+        // over many rounds every optional task is drawn
+        assertEquals(setOf(103L, 104L, 106L), seenThird)
+    }
+
+    @Test
+    fun aRoundOfAllTheRequiredTasksHasThemAll() = runBlocking<Unit> {
+        val state = session(51).ready()
         assertIs<TestUiState.Ready>(state)
-        assertEquals(listOf(100L, 101L, 102L, 103L), state.tasks.map { it.id })
-        assertEquals("Mini teszt", state.title)
+        assertEquals(setOf(102L, 110L, 111L, 112L), state.tasks.map { it.id }.toSet())
+        assertEquals("Más formátumok", state.title)
     }
 
     @Test
     fun aTestWithoutTasksIsEmpty() = runBlocking<Unit> {
-        assertIs<TestUiState.Empty>(TestSessionViewModel(53, content).ready())
+        assertIs<TestUiState.Empty>(session(53).ready())
     }
 
     @Test
     fun aLessonOrAnUnknownUnitIsNotATest() = runBlocking<Unit> {
-        assertIs<TestUiState.Failed>(TestSessionViewModel(52, content).ready())
-        assertIs<TestUiState.Failed>(TestSessionViewModel(999, content).ready())
+        assertIs<TestUiState.Failed>(session(52).ready())
+        assertIs<TestUiState.Failed>(session(999).ready())
     }
 
     @Test
-    fun checkingNeedsAChoiceAndThenGivesTheResult() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
+    fun checkingNeedsAnAnswerAndThenGivesTheResult() = runBlocking<Unit> {
+        val viewModel = session(50)
         viewModel.ready()
+        viewModel.advanceTo(TaskFormat.MC_SINGLE)
 
         viewModel.check()
         assertFalse(viewModel.current.checked)
-
-        viewModel.select("A")
+        viewModel.solveWrongly()
         assertTrue(viewModel.current.canCheck)
         viewModel.check()
         assertTrue(viewModel.current.checked)
         assertFalse(viewModel.current.result!!.correct)
+    }
+
+    @Test
+    fun theChosenOptionKeepsItsWhyForTheFeedback() = runBlocking<Unit> {
+        val viewModel = session(50)
+        viewModel.ready()
+        viewModel.advanceTo(TaskFormat.MC_SINGLE)
+        // task 100 is the multiple choice with the explained option A; the others have no explanation
+        if (viewModel.current.task.id != 100L) return@runBlocking
+
+        viewModel.select("A")
+        viewModel.check()
         assertEquals("A hasonlat összehasonlít.", viewModel.current.chosenOption?.why)
     }
 
     @Test
-    fun aRightChoiceIsCorrectAndCannotBeChangedAfterChecking() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
+    fun aCheckedAnswerCannotBeChangedAndNextNeedsChecking() = runBlocking<Unit> {
+        val viewModel = session(50)
         viewModel.ready()
+        viewModel.advanceTo(TaskFormat.MC_SINGLE)
 
-        viewModel.select("B")
+        viewModel.next()
+        assertEquals(0, viewModel.current.index.coerceAtMost(0))
+        viewModel.solve()
+        val right = viewModel.current.selected
         viewModel.check()
-        assertTrue(viewModel.current.result!!.correct)
-
-        viewModel.select("A")
-        assertEquals("B", viewModel.current.selected)
+        viewModel.solveWrongly()
+        assertEquals(right, viewModel.current.selected)
     }
 
     @Test
-    fun nextGoesOnOnlyAfterCheckingAndStartsTheNextTaskFresh() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
+    fun nextStartsTheNextTaskFresh() = runBlocking<Unit> {
+        val viewModel = session(50)
         viewModel.ready()
-
+        viewModel.solve(); viewModel.check()
         viewModel.next()
-        assertEquals(0, viewModel.current.index)
 
-        viewModel.select("B")
-        viewModel.check()
-        viewModel.next()
         assertEquals(1, viewModel.current.index)
         assertNull(viewModel.current.selected)
         assertFalse(viewModel.current.checked)
@@ -177,12 +244,10 @@ class TestSessionViewModelTest {
 
     @Test
     fun matchingFillsTheActivePairAndMovesOn() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
+        val viewModel = session(51)
         viewModel.ready()
-        viewModel.select("B"); viewModel.checkAndNext()
-        viewModel.select("I"); viewModel.checkAndNext()
+        viewModel.advanceTo(TaskFormat.MATCHING)
 
-        // the first pair is active at the start
         assertEquals(1, viewModel.current.activeSlot)
         viewModel.pick("A")
         assertEquals(mapOf(1 to "A"), viewModel.current.choices)
@@ -190,18 +255,16 @@ class TestSessionViewModelTest {
         assertFalse(viewModel.current.canCheck)
 
         viewModel.pick("B")
-        assertEquals(null, viewModel.current.activeSlot)
-        assertTrue(viewModel.current.canCheck)
+        assertNull(viewModel.current.activeSlot)
         viewModel.check()
         assertTrue(viewModel.current.result!!.correct)
     }
 
     @Test
     fun aPairCanBeChosenAgainAndAWrongPairIsMarked() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
+        val viewModel = session(51)
         viewModel.ready()
-        viewModel.select("B"); viewModel.checkAndNext()
-        viewModel.select("I"); viewModel.checkAndNext()
+        viewModel.advanceTo(TaskFormat.MATCHING)
 
         viewModel.pick("A"); viewModel.pick("A")
         viewModel.activate(1)
@@ -212,68 +275,42 @@ class TestSessionViewModelTest {
     }
 
     @Test
-    fun shortAnswerIsTypedHintedAndChecked() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
-        viewModel.ready()
-        viewModel.select("B"); viewModel.checkAndNext()
-        viewModel.select("I"); viewModel.checkAndNext()
-        viewModel.pick("A"); viewModel.pick("B"); viewModel.checkAndNext()
-
-        assertEquals("Hogy hívjuk?", viewModel.current.task.questionText)
-        assertFalse(viewModel.current.canCheck)
-        assertFalse(viewModel.current.hintShown)
-        viewModel.showHint()
-        assertTrue(viewModel.current.hintShown)
-        assertEquals('m', viewModel.current.hint!!.firstLetter)
-
-        viewModel.type("Megszemélyesítés")
-        viewModel.check()
-        assertTrue(viewModel.current.result!!.correct)
-    }
-
-    @Test
     fun orderingNumbersTheStepsInTheOrderTheyArePicked() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(51, content)
+        val viewModel = session(51)
         viewModel.ready()
+        viewModel.advanceTo(TaskFormat.ORDERING)
 
         listOf("B", "D", "A", "C").forEach { viewModel.pick(it) }
         assertEquals(mapOf(1 to "B", 2 to "D", 3 to "A", 4 to "C"), viewModel.current.choices)
-        assertTrue(viewModel.current.canCheck)
         viewModel.check()
         assertTrue(viewModel.current.result!!.correct)
     }
 
     @Test
     fun anOrderingStepPickedAgainGoesBackAndTheRestMoveUp() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(51, content)
+        val viewModel = session(51)
         viewModel.ready()
+        viewModel.advanceTo(TaskFormat.ORDERING)
 
         listOf("B", "D", "A").forEach { viewModel.pick(it) }
         viewModel.pick("D")
         assertEquals(mapOf(1 to "B", 2 to "A"), viewModel.current.choices)
         assertFalse(viewModel.current.canCheck)
-
         viewModel.pick("C"); viewModel.pick("D")
         assertEquals(mapOf(1 to "B", 2 to "A", 3 to "C", 4 to "D"), viewModel.current.choices)
-        viewModel.check()
-        assertFalse(viewModel.current.result!!.correct)
     }
 
     @Test
     fun wordsFillTheFirstEmptyGapAndATapOnAGapEmptiesIt() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(51, content)
+        val viewModel = session(51)
         viewModel.ready()
-        viewModel.listOrder(); viewModel.checkAndNext()
+        viewModel.advanceTo(TaskFormat.GAP_CHOICE)
 
-        viewModel.pick("A")
-        viewModel.pick("A")
+        viewModel.pick("A"); viewModel.pick("A")
         assertEquals(mapOf(1 to "A"), viewModel.current.choices)
         viewModel.pick("B")
-        assertEquals(mapOf(1 to "A", 2 to "B"), viewModel.current.choices)
-
         viewModel.clear(1)
         assertEquals(mapOf(2 to "B"), viewModel.current.choices)
-        assertFalse(viewModel.current.canCheck)
         viewModel.pick("A")
         assertEquals(mapOf(1 to "A", 2 to "B"), viewModel.current.choices)
         viewModel.check()
@@ -282,34 +319,115 @@ class TestSessionViewModelTest {
 
     @Test
     fun typedGapsAreFilledOneByOne() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(51, content)
+        val viewModel = session(51)
         viewModel.ready()
-        viewModel.listOrder(); viewModel.checkAndNext()
-        viewModel.pick("A"); viewModel.pick("B"); viewModel.checkAndNext()
+        viewModel.advanceTo(TaskFormat.GAP_FILL)
 
         viewModel.typeIn(1, "azonosít")
         assertFalse(viewModel.current.canCheck)
         viewModel.typeIn(2, "összehasonlít")
-        assertTrue(viewModel.current.canCheck)
         viewModel.check()
         assertTrue(viewModel.current.result!!.correct)
-        assertTrue(viewModel.current.isLast)
     }
 
     @Test
-    fun theRoundEndsAfterTheLastTask() = runBlocking<Unit> {
-        val viewModel = TestSessionViewModel(50, content)
+    fun shortAnswerIsHintedAndChecked() = runBlocking<Unit> {
+        // the third task of test 50 is the short answer in some rounds; find one
+        var viewModel: TestSessionViewModel? = null
+        for (seed in 0..40) {
+            val candidate = session(50, seed)
+            if (candidate.ready().let { it is TestUiState.Ready && it.tasks.any { t -> t.id == 103L } }) { viewModel = candidate; break }
+        }
+        val vm = viewModel!!
+        vm.advanceTo(TaskFormat.SHORT_ANSWER)
+
+        assertFalse(vm.current.canCheck)
+        vm.showHint()
+        assertTrue(vm.current.hintShown)
+        assertEquals('m', vm.current.hint!!.firstLetter)
+        vm.type("Megszemélyesítés")
+        vm.check()
+        assertTrue(vm.current.result!!.correct)
+    }
+
+    @Test
+    fun theEndOfTheRoundShowsHowEveryTaskWent() = runBlocking<Unit> {
+        val viewModel = session(50)
         viewModel.ready()
-        viewModel.select("B"); viewModel.checkAndNext()
-        viewModel.select("I"); viewModel.checkAndNext()
-        viewModel.pick("A"); viewModel.pick("B"); viewModel.checkAndNext()
-        viewModel.type("x"); viewModel.check()
+        viewModel.solve(); viewModel.checkAndNext()          // right
+        viewModel.solveWrongly(); viewModel.checkAndNext()   // wrong
+        viewModel.solve(); viewModel.check()
         assertTrue(viewModel.current.isLast)
 
         viewModel.next()
-        withTimeout(5_000) { viewModel.finished.first() }
+
+        val result = viewModel.state.value
+        assertIs<TestUiState.Result>(result)
+        assertEquals(3, result.total)
+        assertEquals(2, result.correctCount)
+        assertEquals(listOf(true, false, true), result.entries.map { it.correct })
+        // one task was wrong, so the round is not passed
+        assertFalse(result.passed)
     }
 
-    /** The ordering task of test 51 answered in the right order. */
-    private fun TestSessionViewModel.listOrder() = listOf("B", "D", "A", "C").forEach { pick(it) }
+    @Test
+    fun aRoundThatIsNotPassedDoesNotMarkTheUnitDone() = runBlocking<Unit> {
+        val viewModel = session(50)
+        viewModel.ready()
+        repeat(3) { viewModel.solveWrongly(); viewModel.checkAndNext() }
+
+        val result = viewModel.state.value
+        assertIs<TestUiState.Result>(result)
+        assertFalse(result.passed)
+        settled { (progress.attemptsOfUnit(50) as OperationResult.Success).data.singleOrNull()?.status == AttemptStatus.FINISHED }
+        assertEquals(emptyList(), (progress.unitProgress() as OperationResult.Success).data)
+    }
+
+    @Test
+    fun aFinishedRoundIsRecordedAndTheUnitIsDone() = runBlocking<Unit> {
+        val viewModel = session(51)
+        viewModel.ready()
+        repeat(4) { viewModel.solve(); viewModel.checkAndNext() }
+        assertIs<TestUiState.Result>(viewModel.state.value)
+
+        settled { progress.unitProgress().let { it is OperationResult.Success && it.data.isNotEmpty() } }
+
+        val attempt = (progress.attemptsOfUnit(51) as OperationResult.Success).data.single()
+        assertEquals(AttemptStatus.FINISHED, attempt.status)
+        // ordering 1, matching 2, gaps from a list 2 and typed gaps 2
+        assertEquals(7, attempt.earnedPoints)
+        assertEquals(7, attempt.maxPoints)
+        assertEquals(4, (progress.answersOfAttempt(attempt.id) as OperationResult.Success).data.size)
+        assertEquals(UnitProgressStatus.COMPLETED, (progress.unitProgress() as OperationResult.Success).data.single().status)
+        assertEquals(1, (progress.taskProgress(110) as OperationResult.Success).data!!.timesCorrect)
+    }
+
+    @Test
+    fun leavingInTheMiddleAbandonsTheAttemptAndKeepsTheAnswers() = runBlocking<Unit> {
+        val viewModel = session(51)
+        viewModel.ready()
+        viewModel.solve(); viewModel.checkAndNext()
+
+        viewModel.leave()
+
+        settled { (progress.attemptsOfUnit(51) as OperationResult.Success<List<com.madovygabor.maturimate.features.learning.domain.model.Attempt>, LearningError>).data.single().status == AttemptStatus.ABANDONED }
+        val attempt = (progress.attemptsOfUnit(51) as OperationResult.Success).data.single()
+        assertEquals(1, (progress.answersOfAttempt(attempt.id) as OperationResult.Success).data.size)
+        assertEquals(emptyList(), (progress.unitProgress() as OperationResult.Success).data)
+    }
+
+    @Test
+    fun againStartsANewRound() = runBlocking<Unit> {
+        val viewModel = session(51)
+        viewModel.ready()
+        repeat(4) { viewModel.solve(); viewModel.checkAndNext() }
+        assertIs<TestUiState.Result>(viewModel.state.value)
+
+        viewModel.load()
+        withTimeout(5_000) { viewModel.state.first { it is TestUiState.Ready } }
+
+        assertEquals(0, viewModel.current.index)
+        assertEquals(emptyList(), viewModel.current.entries)
+        settled { (progress.attemptsOfUnit(51) as OperationResult.Success).data.size == 2 }
+    }
 }

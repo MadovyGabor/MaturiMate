@@ -66,6 +66,7 @@ import maturimate.shared.generated.resources.lesson_close
 import maturimate.shared.generated.resources.lesson_contents
 import maturimate.shared.generated.resources.lesson_finish
 import maturimate.shared.generated.resources.lesson_minutes
+import maturimate.shared.generated.resources.lesson_next_test
 import maturimate.shared.generated.resources.lesson_page_description
 import maturimate.shared.generated.resources.lesson_page_n
 import maturimate.shared.generated.resources.lesson_page_position
@@ -82,12 +83,15 @@ import org.koin.core.parameter.parametersOf
 fun LessonScreen(
     unitId: Long,
     onClose: () -> Unit,
+    /** Opens the test that follows the lesson, after the lesson is closed. */
+    onOpenTest: (Long) -> Unit,
     viewModel: LessonViewModel = koinViewModel(key = "lesson$unitId") { parametersOf(unitId) },
 ) {
     val state by viewModel.state.collectAsState()
     val close by rememberUpdatedState(onClose)
-    // finishing the lesson saves it and then closes the screen
-    LaunchedEffect(viewModel) { viewModel.finished.collect { close() } }
+    val openTest by rememberUpdatedState(onOpenTest)
+    // finishing the lesson saves it, closes the screen and goes on to the test that follows
+    LaunchedEffect(viewModel) { viewModel.finished.collect { next -> close(); next?.let { openTest(it) } } }
     LessonContent(
         state = state,
         onClose = onClose,
@@ -183,7 +187,13 @@ fun LessonContent(
                             }
                         }
                         AppButton(
-                            text = stringResource(if (state.isLast) Res.string.lesson_finish else Res.string.common_next),
+                            text = stringResource(
+                                when {
+                                    !state.isLast -> Res.string.common_next
+                                    state.nextTest != null -> Res.string.lesson_next_test
+                                    else -> Res.string.lesson_finish
+                                }
+                            ),
                             onClick = if (state.isLast) onFinish else onNext,
                             modifier = Modifier.weight(1f),
                         )

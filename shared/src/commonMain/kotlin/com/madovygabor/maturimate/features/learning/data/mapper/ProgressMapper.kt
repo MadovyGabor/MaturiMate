@@ -1,11 +1,13 @@
 package com.madovygabor.maturimate.features.learning.data.mapper
 
 import com.madovygabor.maturimate.database.user.Activity_log
+import com.madovygabor.maturimate.database.user.Attempt_answer
 import com.madovygabor.maturimate.database.user.SelectDueTasks
 import com.madovygabor.maturimate.database.user.User_streak
 import com.madovygabor.maturimate.database.user.User_task_progress
 import com.madovygabor.maturimate.database.user.User_unit_progress
 import com.madovygabor.maturimate.features.learning.domain.model.Attempt
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.DailyActivity
@@ -36,6 +38,29 @@ fun AttemptRow.toDomain() = Attempt(
     finishedAt = finished_at?.toInstant(),
     earnedPoints = earned_points?.toInt(),
     maxPoints = max_points?.toInt(),
+)
+
+@OptIn(ExperimentalTime::class)
+fun Attempt_answer.toDomain() = AttemptAnswer(
+    attemptId = attempt_id,
+    taskId = task_id,
+    isCorrect = is_correct,
+    earnedPoints = earned_points.toInt(),
+    maxPoints = max_points.toInt(),
+    answeredAt = answered_at.toInstant(),
+    givenAnswer = given_answer,
+)
+
+@OptIn(ExperimentalTime::class)
+fun AttemptAnswer.toRow(userId: String) = Attempt_answer(
+    attempt_id = attemptId,
+    task_id = taskId,
+    user_id = userId,
+    is_correct = isCorrect,
+    earned_points = earnedPoints.toLong(),
+    max_points = maxPoints.toLong(),
+    answered_at = answeredAt.toEpochMilliseconds(),
+    given_answer = givenAnswer,
 )
 
 @OptIn(ExperimentalTime::class)

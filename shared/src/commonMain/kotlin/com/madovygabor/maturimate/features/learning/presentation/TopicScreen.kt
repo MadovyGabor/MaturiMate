@@ -76,7 +76,13 @@ fun TopicScreen(
         subjectName = subject?.let { stringResource(it.label) },
         onBack = onBack,
         onTopicClick = onTopicClick,
-        onStepClick = { step -> if (step.kind == StepKind.LESSON) onLessonClick(step.unit.id) else onTestClick(step.unit.id) },
+        onStepClick = { step ->
+            when {
+                step.state == StepState.TODO -> viewModel.onLockedStepClicked()
+                step.kind == StepKind.LESSON -> onLessonClick(step.unit.id)
+                else -> onTestClick(step.unit.id)
+            }
+        },
         onRetry = viewModel::refresh,
     )
 }
