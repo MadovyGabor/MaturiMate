@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MaturiMate learning prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Manrope:wght@400;600;700&display=swap">
+<style>
+/* Clickable prototype of the learning screens (Milestone 7.0, second round). Colors, type and shapes come from docs/design-system/tokens.json. */
+:root {
+  --page-bg: #f3ede3; --page-fg: #211b13; --page-muted: #5a4f40; --page-line: #d3c4ad;
+  --serif: "Literata", Georgia, "Times New Roman", serif;
+  --sans: "Manrope", system-ui, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page-bg: #0f0c08; --page-fg: #ece1d4; --page-muted: #c2b49e; --page-line: #4f4537; color-scheme: dark } }
+:root[data-theme="dark"] { --page-bg: #0f0c08; --page-fg: #ece1d4; --page-muted: #c2b49e; --page-line: #4f4537; color-scheme: dark }
+
+.t-light {
+  --primary: #7b5800; --on-primary: #ffffff; --primary-container: #ffde9c; --on-primary-container: #261a00;
+  --brand-gold: #f2b630; --on-brand-gold: #2b1f00;
+  --secondary: #6f4e37; --secondary-container: #f6dcc8; --on-secondary-container: #2a1709;
+  --tertiary-container: #e9e2d8; --on-tertiary-container: #1e1b17;
+  --success: #2f6b3a; --on-success: #ffffff; --success-container: #cdebc9; --on-success-container: #0f2a14;
+  --error: #b3261e; --on-error: #ffffff; --error-container: #f9dedc; --on-error-container: #410e0b;
+  --background: #fcf8f1; --on-background: #211b13; --on-surface-variant: #4f4537;
+  --sc-lowest: #ffffff; --sc-low: #f7f1e7; --sc: #f2ebdf; --sc-high: #ece4d7; --sc-highest: #e6ddcf;
+  --outline: #807463; --outline-variant: #d3c4ad; --frame: #2b251d;
+}
+.t-dark {
+  --primary: #f4c04e; --on-primary: #402d00; --primary-container: #5c4300; --on-primary-container: #ffde9c;
+  --brand-gold: #f2b630; --on-brand-gold: #2b1f00;
+  --secondary: #e2c0a6; --secondary-container: #59402c; --on-secondary-container: #f6dcc8;
+  --tertiary-container: #4b463f; --on-tertiary-container: #e9e2d8;
+  --success: #9fd49a; --on-success: #0a3914; --success-container: #1f5128; --on-success-container: #cdebc9;
+  --error: #f2b8b5; --on-error: #601410; --error-container: #8c1d18; --on-error-container: #f9dedc;
+  --background: #17130e; --on-background: #ece1d4; --on-surface-variant: #d3c4ad;
+  --sc-lowest: #110e0a; --sc-low: #1f1a14; --sc: #241e17; --sc-high: #2e2820; --sc-highest: #39322a;
+  --outline: #9c8f7c; --outline-variant: #4f4537; --frame: #3a3229;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page-bg); color: var(--page-fg); font-family: var(--sans); }
+.layout { max-width: 1120px; margin: 0 auto; padding: 32px 16px 56px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: start; }
+body[data-dev="tablet"] .layout, body[data-dev="desktop"] .layout { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 800px) { .layout { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
+.side h1 { font: 600 28px/36px var(--serif); margin: 0 0 8px; }
+.side p { margin: 0 0 12px; color: var(--page-muted); font-size: 14px; line-height: 21px; max-width: 60ch; }
+.side h2 { font: 700 12px/16px var(--sans); letter-spacing: 0.4px; text-transform: uppercase; color: var(--page-muted); margin: 20px 0 8px; }
+.side ul { margin: 0 0 12px; padding-left: 18px; color: var(--page-muted); font-size: 14px; line-height: 21px; max-width: 60ch; }
+.jump { display: flex; flex-wrap: wrap; gap: 8px; }
+.jump button, .themebtn { font: 600 13px/18px var(--sans); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--page-line); background: transparent; color: var(--page-fg); cursor: pointer; }
+.jump button:hover, .themebtn:hover, .themebtn.on { background: var(--page-line); }
+
+.phone { width: 360px; max-width: 100%; height: 740px; border-radius: 44px; padding: 9px; background: var(--frame); position: sticky; top: 16px; justify-self: center; }
+body[data-dev="tablet"] .phone { width: 780px; height: 860px; border-radius: 28px; position: static; }
+body[data-dev="desktop"] .phone { width: 1060px; height: 660px; border-radius: 16px; padding: 7px; position: static; }
+.scr { height: 100%; border-radius: 36px; overflow: hidden; background: var(--background); color: var(--on-background); display: flex; flex-direction: column; position: relative; container-type: inline-size; }
+body[data-dev="tablet"] .scr { border-radius: 20px; }
+body[data-dev="desktop"] .scr { border-radius: 10px; }
+body[data-dev="desktop"] .status { display: none; }
+.status { display: flex; justify-content: space-between; padding: 12px 24px 4px; font: 600 12px/16px var(--sans); font-variant-numeric: tabular-nums; flex: none; }
+.shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.content { flex: 1; overflow-y: auto; min-height: 0; }
+.body { display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px; min-height: 100%; width: 100%; margin: 0 auto; }
+.ico { width: 24px; height: 24px; flex: none; fill: currentColor; }
+.ico-sm { width: 20px; height: 20px; flex: none; fill: currentColor; }
+button { font-family: inherit; color: inherit; }
+
+.topbar { display: flex; align-items: center; gap: 12px; color: var(--on-surface-variant); }
+.iconbtn { background: none; border: 0; padding: 8px; margin: -8px; border-radius: 999px; cursor: pointer; color: inherit; display: grid; place-items: center; min-width: 48px; min-height: 48px; }
+.bar { flex: 1; height: 8px; border-radius: 999px; background: var(--sc-highest); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 999px; background: var(--primary); transition: width .25s; }
+.bar.gold > i { background: var(--brand-gold); }
+.segs { flex: 1; display: flex; gap: 4px; }
+.seg { flex: 1; height: 6px; border-radius: 999px; background: var(--sc-highest); }
+.seg.on { background: var(--primary); }
+.h-large { font: 600 28px/36px var(--serif); margin: 0; }
+.lbl { font: 600 12px/16px var(--sans); letter-spacing: 0.4px; text-transform: uppercase; color: var(--on-surface-variant); display: inline-flex; align-items: center; gap: 4px; }
+.muted { color: var(--on-surface-variant); font-size: 14px; line-height: 20px; margin: 0; }
+.spacer { flex: 1; }
+
+.btn { min-height: 48px; border-radius: 999px; border: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px/20px var(--sans); background: var(--primary); color: var(--on-primary); cursor: pointer; }
+.btn[disabled] { background: var(--sc-highest); color: var(--on-surface-variant); cursor: default; opacity: .8; }
+.btn.tonal { background: var(--secondary-container); color: var(--on-secondary-container); }
+.btn.ghost { background: none; color: var(--primary); }
+
+.cards { display: grid; gap: 12px; }
+.card { background: var(--sc-low); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--outline-variant); text-align: left; width: 100%; cursor: pointer; font: inherit; color: inherit; }
+.card.static { cursor: default; }
+.card.soon { opacity: .6; cursor: default; }
+.card h3 { margin: 0; font: 600 20px/26px var(--serif); }
+.card.big { padding: 20px; gap: 10px; }
+.card.big h3 { font-size: 24px; line-height: 30px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tag { font: 600 11px/16px var(--sans); padding: 3px 9px; border-radius: 8px; background: var(--secondary-container); color: var(--on-secondary-container); white-space: nowrap; }
+.tag.done { background: var(--success-container); color: var(--on-success-container); }
+.tag.gold { background: var(--primary-container); color: var(--on-primary-container); }
+.tag.grey { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+
+/* Topic list */
+.group { font: 700 12px/16px var(--sans); letter-spacing: .4px; text-transform: uppercase; color: var(--on-surface-variant); margin: 8px 0 -4px; }
+.item { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 14px; border-radius: 12px; background: var(--sc-low); border: 1px solid var(--outline-variant); width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.item .t { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.item .t b { font: 700 16px/24px var(--sans); }
+.item .t span { font-size: 13px; line-height: 18px; color: var(--on-surface-variant); }
+.ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 700 11px/1 var(--sans); background: conic-gradient(var(--primary) calc(var(--p) * 1%), var(--sc-highest) 0); position: relative; flex: none; }
+.ring::after { content: attr(data-t); position: absolute; inset: 4px; border-radius: 50%; background: var(--sc-low); display: grid; place-items: center; }
+
+/* Table of contents of a lesson */
+.scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); display: flex; align-items: flex-end; justify-content: center; z-index: 5; }
+.tocsheet { width: 100%; max-width: 560px; background: var(--sc-high); color: var(--on-background); border-radius: 28px 28px 0 0; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+.tocsheet h3 { margin: 4px 4px 4px; font: 700 16px/22px var(--sans); }
+.toc-item { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 12px; border-radius: 12px; border: 0; background: none; cursor: pointer; text-align: left; font: 400 16px/24px var(--sans); width: 100%; }
+.toc-item .num { background: var(--sc-highest); color: var(--on-surface-variant); }
+.toc-item.cur { background: var(--primary-container); color: var(--on-primary-container); font-weight: 600; }
+.toc-item.cur .num { background: var(--primary); color: var(--on-primary); }
+.tocside { display: none; }
+.lessonwrap { display: flex; flex-direction: column; min-height: 100%; }
+.lessonwrap .body { flex: 1; }
+.navrow { display: grid; grid-template-columns: auto 1fr; gap: 12px; }
+.navrow .btn.back { width: 56px; padding: 0; }
+
+/* The learning path: a vertical line that fills as the lessons are finished. */
+.path { position: relative; padding-left: 58px; display: flex; flex-direction: column; gap: 14px; padding-top: 4px; padding-bottom: 8px; }
+.path .track, .path .fill { position: absolute; left: 19px; top: 8px; width: 4px; border-radius: 2px; }
+.path .track { bottom: 8px; background: var(--sc-highest); }
+.path .fill { background: var(--brand-gold); height: 0; transition: height .4s; }
+.sechead { position: relative; margin-top: 12px; }
+.sechead:first-of-type { margin-top: 0; }
+.sechead::before { content: ""; position: absolute; left: -42px; top: 12px; width: 14px; height: 14px; border-radius: 50%; background: var(--background); border: 3px solid var(--outline); }
+.sechead h3 { margin: 0; font: 600 22px/30px var(--serif); }
+.sechead span { font-size: 13px; line-height: 18px; color: var(--on-surface-variant); }
+.step { position: relative; display: flex; }
+.node { position: absolute; left: -58px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: var(--sc-high); border: 2px solid var(--outline); color: var(--on-surface-variant); }
+.node.mini { border-radius: 50%; width: 34px; height: 34px; left: -54px; }
+.node.test { border-radius: 12px; }
+.node.done { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.node.current { background: var(--brand-gold); border-color: var(--primary); color: var(--on-brand-gold); box-shadow: 0 0 0 5px var(--primary-container); }
+.stepcard { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--outline-variant); background: var(--sc-low); text-align: left; cursor: pointer; font: inherit; color: inherit; width: 100%; }
+.stepcard b { font: 700 16px/22px var(--sans); }
+.stepcard .m { font-size: 13px; line-height: 18px; color: var(--on-surface-variant); }
+.stepcard.mini { background: var(--tertiary-container); color: var(--on-tertiary-container); padding: 8px 14px; }
+.stepcard.mini .m { color: inherit; opacity: .8; }
+.stepcard.mini b { font-size: 14px; line-height: 20px; }
+.stepcard.test { background: var(--primary-container); color: var(--on-primary-container); border-color: transparent; }
+.stepcard.test .m { color: inherit; opacity: .85; }
+.stepcard.current { border: 2px solid var(--primary); padding: 11px 13px; }
+.stepcard.mini.current { padding: 7px 13px; }
+.stepcard .row { gap: 8px; }
+
+/* Lesson bites: one short card per page, no scrolling. */
+.bite { display: flex; flex-direction: column; gap: 16px; }
+.bite h1 { font: 600 26px/34px var(--serif); margin: 0; text-wrap: balance; }
+.bite p.r { font: 400 19px/31px var(--serif); margin: 0; }
+.example { background: var(--tertiary-container); color: var(--on-tertiary-container); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font: 400 17px/27px var(--serif); }
+.example .lbl { color: inherit; opacity: .8; }
+.key { border-left: 4px solid var(--brand-gold); padding: 4px 0 4px 12px; font: 600 17px/26px var(--serif); }
+
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--sc); padding: 8px 4px 14px; flex: none; }
+.nav div { display: flex; flex-direction: column; align-items: center; gap: 4px; font: 600 11px/14px var(--sans); color: var(--on-surface-variant); }
+.nav .pill { width: 52px; height: 28px; border-radius: 999px; display: grid; place-items: center; }
+.nav .on { color: var(--on-background); }
+.nav .on .pill { background: var(--primary-container); color: var(--on-primary-container); }
+
+/* Tasks */
+.q { font: 600 22px/30px var(--serif); margin: 0; text-wrap: balance; }
+.ans { display: flex; flex-direction: column; gap: 12px; }
+.opt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--outline); background: var(--sc-lowest); font: 400 16px/24px var(--sans); cursor: pointer; text-align: left; width: 100%; color: inherit; }
+.opt b { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 600 13px/1 var(--sans); background: var(--sc-high); color: var(--on-surface-variant); flex: none; }
+.opt > span:not(.num) { flex: 1; }
+.opt .num { flex: none; }
+.body > .bar { flex: none; }
+/* Tasks start at the top of the screen. */
+.taskmain { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; }
+.taskmain > * { margin-block: 0; }
+.taskmain > .tfbig { margin-top: auto; margin-bottom: 40px; }
+.longtext p.r { font: 400 18px/30px var(--serif); }
+.opt.sel { border: 2px solid var(--primary); background: var(--primary-container); color: var(--on-primary-container); padding: 8px 13px; }
+.opt.ok { border: 2px solid var(--success); background: var(--success-container); color: var(--on-success-container); padding: 8px 13px; }
+.opt.ok b { background: var(--success); color: var(--on-success); }
+.opt.bad { border: 2px solid var(--error); background: var(--error-container); color: var(--on-error-container); padding: 8px 13px; }
+.opt.bad b { background: var(--error); color: var(--on-error); }
+.opt.dim { opacity: .55; }
+.stmt { display: flex; flex-direction: column; gap: 8px; }
+.stmt .lbl { display: none; }
+.stmt .q { font: 600 22px/30px var(--serif); margin: 0; text-wrap: balance; }
+.tfbig { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tfcard { min-height: 140px; border-radius: 16px; border: 1px solid var(--outline); background: var(--sc-lowest); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font: 700 18px/24px var(--sans); cursor: pointer; color: inherit; }
+.tfcard .ic { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--tertiary-container); color: var(--on-tertiary-container); }
+.tfcard .ic .ico { width: 30px; height: 30px; }
+.tfcard.sel { border: 2px solid var(--primary); background: var(--primary-container); color: var(--on-primary-container); }
+.tfcard.sel .ic { background: var(--primary); color: var(--on-primary); }
+.tfcard.ok { border: 2px solid var(--success); background: var(--success-container); color: var(--on-success-container); }
+.tfcard.ok .ic { background: var(--success); color: var(--on-success); }
+.tfcard.bad { border: 2px solid var(--error); background: var(--error-container); color: var(--on-error-container); }
+.tfcard.bad .ic { background: var(--error); color: var(--on-error); }
+.tfcard.dim { opacity: .55; }
+.field.big { min-height: 64px; font-size: 20px; line-height: 28px; }
+.field { width: 100%; min-height: 56px; border-radius: 12px; border: 1px solid var(--outline); background: var(--sc-lowest); color: var(--on-background); padding: 0 14px; font: 400 16px/24px var(--sans); }
+.field:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+.field.ok { border: 2px solid var(--success); background: var(--success-container); }
+.field.bad { border: 2px solid var(--error); background: var(--error-container); }
+.sentence { font: 400 19px/44px var(--serif); margin: 0; }
+.sentence .field, .sentence .gap { display: inline-block; width: 128px; min-height: 36px; height: 36px; padding: 0 10px; vertical-align: middle; font-size: 15px; margin: 0 2px; }
+.gap { border-radius: 8px; border: 1px dashed var(--outline); background: var(--sc-lowest); font: 600 14px/34px var(--sans); text-align: center; cursor: pointer; color: var(--on-background); }
+.gap.fill { border: 1px solid var(--primary); background: var(--primary-container); color: var(--on-primary-container); }
+.gap.ok { border: 2px solid var(--success); background: var(--success-container); color: var(--on-success-container); }
+.gap.bad { border: 2px solid var(--error); background: var(--error-container); color: var(--on-error-container); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 48px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--outline); background: var(--sc-lowest); display: flex; align-items: center; font: 600 14px/20px var(--sans); cursor: pointer; color: var(--on-background); }
+.chip.used { opacity: .35; cursor: default; }
+.pair-row { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--sc-low); border: 1px solid var(--outline-variant); cursor: pointer; }
+.pair-row.active { border: 2px solid var(--primary); padding: 11px; }
+.pair-row .p { font: 400 16px/24px var(--sans); }
+.pair-row .a { align-self: flex-start; }
+.ordered { display: flex; flex-direction: column; gap: 8px; }
+.num { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; font: 700 13px/1 var(--sans); flex: none; }
+
+.sheet { margin: 0 -16px -16px; padding: 16px 16px 24px; border-radius: 28px 28px 0 0; display: flex; flex-direction: column; gap: 10px; flex: none; }
+.sheet.ok { background: var(--success-container); color: var(--on-success-container); }
+.sheet.bad { background: var(--error-container); color: var(--on-error-container); }
+.sheet h3 { margin: 0; font: 700 16px/22px var(--sans); display: flex; align-items: center; gap: 8px; }
+.sheet p { margin: 0; font-size: 14px; line-height: 20px; }
+.sheet.ok .btn { background: var(--success); color: var(--on-success); }
+.sheet.bad .btn { background: var(--error); color: var(--on-error); }
+.footer { flex: none; padding: 8px 0 0; }
+
+.score { font: 600 40px/46px var(--serif); font-variant-numeric: tabular-nums; }
+.res { display: flex; align-items: center; gap: 10px; font-size: 15px; line-height: 22px; padding: 8px 0; border-bottom: 1px solid var(--outline-variant); }
+.res > span:last-child { flex: 1; }
+.res > span:first-child { flex: none; display: grid; }
+.res .ok { color: var(--success); } .res .bad { color: var(--error); }
+
+/* Tablet and desktop: a navigation rail on the left, content in a centered column. */
+@container (min-width: 600px) {
+  .shell { flex-direction: row-reverse; }
+  .nav { grid-template-columns: 1fr; align-content: start; gap: 12px; width: 88px; padding: 16px 4px; }
+  .body { max-width: 640px; padding: 24px 24px 24px; }
+  .body.wide { max-width: 860px; }
+  .cards.two { grid-template-columns: 1fr 1fr; }
+}
+/* On a wide window the table of contents of a lesson is always visible at the side. */
+@container (min-width: 700px) {
+  .lessonwrap { display: flex; min-height: 100%; }
+  .tocside { display: flex; flex-direction: column; gap: 4px; width: 250px; flex: none; padding: 24px 12px; border-right: 1px solid var(--outline-variant); }
+  .tocside h3 { margin: 0 4px 8px; font: 600 22px/30px var(--serif); }
+  .tocside .lbl { margin: 0 4px; }
+  .lessonwrap .body { flex: 1; }
+  .tocbtn, .scrim { display: none; }
+  .bite h1 { font-size: 30px; line-height: 38px; }
+  .bite p.r { font-size: 21px; line-height: 34px; }
+}
+</style>
+</head>
+<body data-dev="phone">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.4 6 8 7.4l4.6 4.6L8 16.6 9.4 18l6-6z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M21 5c-1.1-.3-2.3-.5-3.5-.5-2 0-4.1.4-5.5 1.5C10.6 4.9 8.5 4.5 6.5 4.5S2.4 4.9 1 6v14.7c1.4-1.1 3.5-1.5 5.5-1.5s4.1.4 5.5 1.5c1.4-1.1 3.5-1.5 5.5-1.5 1.2 0 2.4.1 3.5.5 .8.2 2 .6 2 .6V6c-.6-.4-1.3-.8-2-1zm0 13.5c-1.1-.3-2.3-.5-3.5-.5-1.7 0-4.1.6-5.5 1.5V8c1.4-.9 3.8-1.5 5.5-1.5 1.2 0 2.4.2 3.5.5z"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9L9 12H6a7 7 0 1 1 2.1 5l-1.4 1.4A9 9 0 1 0 13 3zm-1 5v5l4.3 2.5.7-1.2-3.5-2.1V8z"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></symbol>
+  <symbol id="i-quiz" viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></symbol>
+  <symbol id="i-trophy"viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></symbol>
+</svg>
+
+<div class="layout">
+  <div class="side">
+    <h1>Tanulás: képernyők (2. kör)</h1>
+    <p>A 7. mérföldkő (egységmotor) kattintható vázlata. A tartalom a próbaanyag szövegeiből van, a színek, betűk és formák a design systemből. Kattints végig, vagy ugorj egy képernyőre.</p>
+    <button class="themebtn" id="theme">Sötét téma</button>
+    <h2>Eszköz</h2>
+    <div class="jump" id="dev">
+      <button class="themebtn on" data-dev="phone">Telefon</button>
+      <button class="themebtn" data-dev="tablet">Tablet</button>
+      <button class="themebtn" data-dev="desktop">Asztali</button>
+    </div>
+    <h2>Ugrás</h2>
+    <div class="jump" id="jump"></div>
+    <h2>Ami változott az 1. körhöz képest</h2>
+    <ul>
+      <li>Tantárgy → <b>nagy rész</b> (Nyelvtan / Irodalom) → <b>témalista</b> → egy téma <b>útvonala</b>.</li>
+      <li>Az útvonalon <b>függőleges vonal</b>, ami a haladással aranyra tölt. Három lépéstípus: kerek <b>lecke</b>, kisebb <b>mini teszt</b>, négyzetes <b>témazáró teszt</b>.</li>
+      <li>A lecke <b>falatokra</b> osztva: oldalanként egy gondolat, görgetés nélkül. Lapozás a "Tovább" és a nyíl gombbal, vagy <b>ujjal elhúzva</b>. A jobb felső <b>tartalom</b> gombbal a lecke részeit listából is megnyithatod.</li>
+      <li>Hibás válasznál magyarázat, az első feladatnál a <b>választott rossz opcióra külön</b> is.</li>
+      <li>Tablet és asztali elrendezés: oldalsó sáv, középre igazított oszlop.</li>
+    </ul>
+  </div>
+  <div class="phone t-light" id="phone"><div class="scr" id="scr"></div></div>
+</div>
+
+<script>
+const ICON = (n, c = 'ico') => `<svg class="${c}"><use href="#i-${n}"/></svg>`;
+const md = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
+const norm = s => s.trim().toLowerCase().normalize('NFC');
+
+/* ---- prototype data (stand-in for the content database) ---- */
+const COURSE = {
+  nyelvtan: { title: 'Nyelvtan', sub: 'Szófajok, szóképek, alakzatok', topics: [
+    { title: 'Szóképek', steps: [
+      { type: 'lesson', lesson: 'szokep', title: 'Mi a szókép?', min: 3, done: true },
+      { type: 'mini', title: 'Mini teszt', tasks: [0, 1, 2], done: true },
+      { type: 'lesson', lesson: 'szokep', title: 'Hasonlat és metafora', min: 3, done: false },
+      { type: 'mini', title: 'Mini teszt', tasks: [3, 4], done: false },
+      { type: 'test', title: 'Témazáró teszt', tasks: [0, 1, 2, 3, 4, 5, 6], done: false } ] },
+    { title: 'Szófajok', steps: [
+      { type: 'lesson', lesson: 'szokep', title: 'A szófajok', min: 2, done: false },
+      { type: 'mini', title: 'Mini teszt', tasks: [0, 1], done: false },
+      { type: 'test', title: 'Témazáró teszt', tasks: [0, 1, 2, 3, 4], done: false } ] } ] },
+  irodalom: { title: 'Irodalom', sub: 'Művek és szerzők', topics: [
+    { title: 'Az ember tragédiája', steps: [
+      { type: 'lesson', lesson: 'tragedia', title: 'A mű tartalma', min: 4, done: false },
+      { type: 'mini', title: 'Mini teszt', tasks: [0, 1], done: false },
+      { type: 'test', title: 'Témazáró teszt', tasks: [0, 1, 2], done: false } ] } ] },
+};
+
+const LESSON = [
+  { title: 'Mi a szókép?', text: 'A **szókép** egy szó vagy kifejezés átvitt értelmű használata. Azért használjuk, hogy a mondanivaló színesebb, képszerűbb legyen.',
+    example: 'Amikor azt mondjuk, hogy valakinek *tűz van a szemében*, nem valódi tűzről beszélünk.' },
+  { title: 'Hasonlat és metafora', text: 'A *hasonlat* két dolgot hasonlít össze, és ezt ki is mondja. A *metafora* két dolgot azonosít, a hasonlító szó nélkül.',
+    example: 'Hasonlat: „Olyan gyors, mint a villám."\nMetafora: „Te vagy a napom."', key: 'Ha ott van a *mint*, valószínűleg hasonlat.' },
+  { title: 'Megszemélyesítés', text: 'A *megszemélyesítés* élettelen dolgot vagy állatot emberi tulajdonsággal ruház fel.',
+    example: '„A szél dalolt a fák között."', key: 'Ha a dolog emberként viselkedik, megszemélyesítés.' },
+];
+
+/* A longer reading: the plot of a work in short pages (no example box). Own summary of Madách's public-domain play. */
+const TRAGEDIA = [
+  { title: 'A Paradicsom', text: 'A mű az Úr szavaival kezdődik: a világ megteremtése után Ádám és Éva a Paradicsomban él. Lucifer, a bukott angyal elégedetlen: szerinte az Úr nem engedi, hogy az ember megismerje a világ értelmét. Rábeszéli Évát, hogy egyen a tudás fájáról. Mikor Ádám is követi, kiűzetnek a Paradicsomból.' },
+  { title: 'Ádám álmai', text: 'A kiűzetés után Ádám elkeseredik. Lucifer álmot bocsát rá: egymás után mutatja meg neki az emberiség jövőjét, hogy eldönthesse, érdemes-e küzdeni. Ádám minden színben más történelmi alak bőrében él, Éva pedig mindig mellette van, más-más nőként.' },
+  { title: 'A csalódások', text: 'Ádám előbb a fáraó, majd athéni vezér, római gyönyörkereső, később keresztes lovag és Kepler lesz. Minden korszakban csalódik: a szabadság elbukik, az eszmék kiüresednek, a tudás nem ad boldogságot. A falanszterben már a művészet és az egyéniség is eltűnik.' },
+  { title: 'A vég és a remény', text: 'Az utolsó színben a jégkorszak Földjén Ádám kétségbeesve a halált választaná. Éva azonban azt mondja neki, hogy gyermeket vár. Ádám megtorpan, az Úr pedig a küzdelemre és a reményre buzdítja őt. A mű nyitva hagyja a kérdést, és bizakodással zárul.' },
+];
+const LESSONS = { szokep: LESSON, tragedia: TRAGEDIA };
+const bites = () => LESSONS[S.step.lesson] || LESSON;
+
+const TASKS = [
+  { format: 'MC_SINGLE', q: 'Melyik szókép azonosít két dolgot, hasonlító szó nélkül?', expl: 'A metafora azonosít, a hasonlat viszont összehasonlít, és ezt ki is mondja.',
+    opts: ['hasonlat', 'metafora', 'megszemélyesítés', 'felsorolás'], key: 1,
+    why: { 0: 'A hasonlat összehasonlít, és kimondja a hasonlító szót (mint, olyan).', 2: 'A megszemélyesítés emberi tulajdonságot ad egy dolognak, nem azonosít két dolgot.', 3: 'A felsorolás nem szókép, hanem egy alakzat.' } },
+  { format: 'TRUE_FALSE', q: 'A hasonlatban gyakran szerepel a *mint* kötőszó.', expl: 'Igaz: a hasonlító szó (mint, olyan, akár) kimondja az összehasonlítást.', key: 0 },
+  { format: 'SHORT_ANSWER', q: 'Hogy hívjuk azt a szóképet, amely élettelen dolgot emberi tulajdonsággal ruház fel?', expl: 'Megszemélyesítésnek (perszonifikációnak) hívjuk.',
+    accepted: ['megszemélyesítés', 'perszonifikáció'] },
+  { format: 'MATCHING', q: 'Párosítsd a példát a szóképpel!', expl: 'Az első példában van hasonlító szó (olyan, mint), a másodikban nincs.',
+    prompts: ['Olyan, mint a tűz.', 'Te vagy a napom.'], answers: ['hasonlat', 'metafora'], key: [0, 1] },
+  { format: 'GAP_FILL', q: 'A metafora két dolgot [[1]], a hasonlat [[2]].', expl: 'A metafora azonosít, a hasonlat összehasonlít.',
+    accepted: [['azonosít'], ['összehasonlít', 'összehasonlítja őket']] },
+  { format: 'ORDERING', q: 'Tedd sorrendbe egy szóképelemzés lépéseit!', expl: 'Először elolvasod a szöveget, aztán megkeresed, megnevezed és végül értelmezed a szóképeket.',
+    items: ['Megnevezem a szóképet.', 'Elolvasom a szöveget.', 'Megmagyarázom a hatását.', 'Megkeresem a szóképeket.'], key: [1, 3, 0, 2] },
+  { format: 'GAP_CHOICE', q: 'Az [[1]] a mondatok elején ismétel szavakat, az [[2]] pedig két dolgot szembeállít.', expl: 'Anafora: ismétlés a sorok elején. Ellentét: szembeállítás.',
+    words: ['anafora', 'ellentét', 'fokozás'], key: [0, 1] },
+];
+const FORMAT_NAMES = { MC_SINGLE: 'Feleletválasztós', TRUE_FALSE: 'Igaz vagy hamis', SHORT_ANSWER: 'Rövid válasz', MATCHING: 'Párosítás', GAP_FILL: 'Hézagpótlás (gépelés)', ORDERING: 'Sorrend', GAP_CHOICE: 'Hézagpótlás (szólistából)' };
+
+let S = { screen: 'subjects', cat: 'nyelvtan', topic: 0, toc: false, step: null, queue: [], t: 0, results: [], bite: 0, sel: null, checked: false, ok: false, match: {}, activePair: null, order: [], gaps: [], typed: [], scrollPath: false };
+const stepsOf = cat => COURSE[cat].topics.flatMap(t => t.steps);
+const allSteps = () => COURSE[S.cat].topics[S.topic].steps;
+const currentStep = () => allSteps().find(s => !s.done);
+const dev = () => document.body.dataset.dev;
+
+function nav(active) {
+  const tabs = [['home', 'Főoldal'], ['book', 'Tantárgyak'], ['history', 'Gyakorlás'], ['person', 'Profil']];
+  return `<div class="nav">${tabs.map(([i, l], n) => `<div class="${n === active ? 'on' : ''}"><span class="pill">${ICON(i)}</span>${l}</div>`).join('')}</div>`;
+}
+const status = '<div class="status"><span>9:41</span><span>100%</span></div>';
+const shell = (inner, navHtml = '') => `<div class="shell"><div class="content">${inner}</div>${navHtml}</div>`;
+
+function resetTask() { Object.assign(S, { hint: false, sel: null, checked: false, ok: false, match: {}, activePair: null, order: [], gaps: [], typed: [] }); }
+function startQuiz(step) { S.step = step; S.queue = step.tasks; S.t = 0; S.results = []; resetTask(); S.screen = 'task'; }
+
+function render() {
+  const r = { subjects, categories, topics, path, lesson, task, result }[S.screen]();
+  document.getElementById('scr').innerHTML = status + r;
+  document.querySelectorAll('#jump button').forEach(b => b.dataset.on = b.dataset.go === S.screen);
+  const p = document.querySelector('.path');
+  if (p) {
+    const cur = p.querySelector('.node.current') || [...p.querySelectorAll('.node')].pop();
+    const y = cur.getBoundingClientRect().top + cur.offsetHeight / 2 - p.getBoundingClientRect().top - 8;
+    p.querySelector('.fill').style.height = Math.max(0, y) + 'px';
+    if (S.scrollPath) { S.scrollPath = false; cur.scrollIntoView({ block: 'center' }); }
+  }
+}
+
+function subjects() {
+  return shell(`<div class="body">
+    <h2 class="h-large">Tantárgyak</h2>
+    <p class="muted">Az érettségi tantárgyaid. Válassz egyet, és tanulj témánként.</p>
+    <div class="cards two">
+      <button class="card big" data-act="go" data-to="categories">
+        <div class="row"><h3>Magyar nyelv és irodalom</h3>${ICON('chev')}</div>
+        <p class="muted">2 nagy rész · 4 téma</p>
+        <div class="row"><div class="bar gold"><i style="width:14%"></i></div><span class="lbl">2 / 14</span></div>
+      </button>
+      <div class="card big soon static"><div class="row"><h3>Szlovák nyelv</h3><span class="tag grey">Hamarosan</span></div></div>
+      <div class="card big soon static"><div class="row"><h3>Angol nyelv</h3><span class="tag grey">Hamarosan</span></div></div>
+      <div class="card big soon static"><div class="row"><h3>Matematika</h3><span class="tag grey">Hamarosan</span></div></div>
+    </div></div>`, nav(1));
+}
+
+function categories() {
+  const card = (id, c) => {
+    const st = stepsOf(id), d = st.filter(s => s.done).length;
+    return `<button class="card big" data-act="cat" data-cat="${id}">
+      <div class="row"><h3>${c.title}</h3>${ICON('chev')}</div>
+      <p class="muted">${c.sub}</p>
+      <p class="muted">${c.topics.length} téma · ${st.length} lépés</p>
+      <div class="row"><div class="bar gold"><i style="width:${100 * d / st.length}%"></i></div><span class="lbl">${d} / ${st.length}</span></div></button>`;
+  };
+  return shell(`<div class="body">
+    <div class="topbar"><button class="iconbtn" data-act="go" data-to="subjects" aria-label="Vissza">${ICON('back')}</button><span class="lbl">Magyar nyelv és irodalom</span></div>
+    <h2 class="h-large">Mit szeretnél tanulni?</h2>
+    <div class="cards two">${Object.keys(COURSE).map(id => card(id, COURSE[id])).join('')}</div></div>`, nav(1));
+}
+
+function topics() {
+  const c = COURSE[S.cat];
+  return shell(`<div class="body">
+    <div class="topbar"><button class="iconbtn" data-act="go" data-to="categories" aria-label="Vissza">${ICON('back')}</button><span class="lbl">Magyar nyelv és irodalom</span></div>
+    <h2 class="h-large">${c.title}</h2>
+    <p class="muted">Válassz egy témát. Mindegyikben leckék, mini tesztek és egy témazáró vár.</p>
+    <div class="cards two">${c.topics.map((t, i) => {
+      const d = t.steps.filter(s => s.done).length, pct = Math.round(100 * d / t.steps.length);
+      return `<button class="item" data-act="topic" data-i="${i}">
+        <span class="ring" style="--p:${pct}" data-t="${d}/${t.steps.length}"></span>
+        <span class="t"><b>${t.title}</b><span>${t.steps.filter(s => s.type === 'lesson').length} lecke · ${t.steps.length} lépés</span></span>${ICON('chev')}</button>`;
+    }).join('')}</div></div>`, nav(1));
+}
+
+function stepRow(s) {
+  const cur = s === currentStep();
+  const nodeIcon = s.done ? 'check' : { lesson: 'book', mini: 'quiz', test: 'trophy' }[s.type];
+  const meta = s.type === 'lesson' ? `Lecke · ${s.min} perc` : `${s.tasks.length} feladat`;
+  const idx = allSteps().indexOf(s);
+  return `<div class="step"><span class="node ${s.type} ${s.done ? 'done' : ''} ${cur ? 'current' : ''}">${ICON(nodeIcon, s.type === 'mini' ? 'ico-sm' : 'ico')}</span>
+    <button class="stepcard ${s.type} ${cur ? 'current' : ''}" data-act="step" data-i="${idx}">
+      <div class="row"><b>${s.title}</b>${s.done ? '<span class="tag done">Kész</span>' : cur ? '<span class="tag gold">Következő</span>' : ''}</div>
+      <span class="m">${meta}</span></button></div>`;
+}
+
+function path() {
+  const c = COURSE[S.cat], t = c.topics[S.topic], d = t.steps.filter(s => s.done).length;
+  return shell(`<div class="body">
+    <div class="topbar"><button class="iconbtn" data-act="go" data-to="topics" aria-label="Vissza">${ICON('back')}</button><span class="lbl">${c.title}</span></div>
+    <div><h2 class="h-large">${t.title}</h2><span class="muted">${d} / ${t.steps.length} lépés kész</span></div>
+    <div class="path"><div class="track"></div><div class="fill"></div>${t.steps.map(stepRow).join('')}</div></div>`, nav(1));
+}
+
+function lesson() {
+  const B = bites(), b = B[S.bite], last = S.bite === B.length - 1;
+  const tocItems = B.map((l, i) => `<button class="toc-item ${i === S.bite ? 'cur' : ''}" data-act="bite" data-i="${i}"><span class="num">${i + 1}</span>${l.title}</button>`).join('');
+  return `<div class="shell"><div class="content"><div class="lessonwrap">
+    <aside class="tocside"><span class="lbl">${S.step.title}</span><h3>Tartalom</h3>${tocItems}</aside><div class="body">
+    <div class="topbar"><button class="iconbtn" data-act="go" data-to="path" aria-label="Kilépés">${ICON('close')}</button>
+      <div class="segs">${B.map((_, i) => `<span class="seg ${i <= S.bite ? 'on' : ''}"></span>`).join('')}</div>
+      <button class="iconbtn tocbtn" data-act="toc" aria-label="Tartalom">${ICON('list')}</button></div>
+    <span class="lbl">${ICON('clock', 'ico-sm')} ${S.bite + 1} / ${B.length} · kb. 1 perc</span>
+    <div class="bite ${b.example ? '' : 'longtext'}"><h1>${b.title}</h1><p class="r">${md(b.text)}</p>
+      ${b.example ? `<div class="example"><span class="lbl">Példa</span>${b.example.split('\n').map(l => `<span>${md(l)}</span>`).join('')}</div>` : ''}
+      ${b.key ? `<div class="key">${md(b.key)}</div>` : ''}</div>
+    <div class="spacer"></div>
+    <div class="navrow" style="${S.bite ? '' : 'grid-template-columns:1fr'}">
+      ${S.bite ? `<button class="btn tonal back" data-act="prev" aria-label="Előző">${ICON('back')}</button>` : ''}
+      <button class="btn" data-act="${last ? 'lessonend' : 'nextbite'}">${last ? 'Mehet a mini teszt' : 'Tovább'}</button></div>
+  </div></div></div>${S.toc ? `<div class="scrim" data-act="toc"><div class="tocsheet" data-keep>
+      <h3>Tartalom</h3>${tocItems}</div></div>` : ''}</div>`;
+}
+
+function canCheck() {
+  const t = TASKS[S.queue[S.t]];
+  switch (t.format) {
+    case 'MC_SINGLE': case 'TRUE_FALSE': return S.sel !== null;
+    case 'SHORT_ANSWER': return (S.typed[0] || '').trim().length > 0;
+    case 'GAP_FILL': return t.accepted.every((_, i) => (S.typed[i] || '').trim());
+    case 'MATCHING': return t.prompts.every((_, i) => i in S.match);
+    case 'ORDERING': return S.order.length === t.items.length;
+    case 'GAP_CHOICE': return t.key.every((_, i) => S.gaps[i] !== undefined);
+  }
+}
+function evaluate() {
+  const t = TASKS[S.queue[S.t]];
+  switch (t.format) {
+    case 'MC_SINGLE': case 'TRUE_FALSE': return S.sel === t.key;
+    case 'SHORT_ANSWER': return t.accepted.some(a => norm(a) === norm(S.typed[0]));
+    case 'GAP_FILL': return t.accepted.every((acc, i) => acc.some(a => norm(a) === norm(S.typed[i] || '')));
+    case 'MATCHING': return t.key.every((k, i) => S.match[i] === k);
+    case 'ORDERING': return t.key.every((k, i) => S.order[i] === k);
+    case 'GAP_CHOICE': return t.key.every((k, i) => S.gaps[i] === k);
+  }
+}
+function correctText() {
+  const t = TASKS[S.queue[S.t]];
+  switch (t.format) {
+    case 'MC_SINGLE': return t.opts[t.key];
+    case 'TRUE_FALSE': return t.key === 0 ? 'igaz' : 'hamis';
+    case 'SHORT_ANSWER': return t.accepted[0];
+    case 'GAP_FILL': return t.accepted.map(a => a[0]).join(', ');
+    case 'MATCHING': return t.prompts.map((p, i) => `${p} → ${t.answers[t.key[i]]}`).join('; ');
+    case 'ORDERING': return t.key.map(k => t.items[k]).join(' → ');
+    case 'GAP_CHOICE': return t.key.map(k => t.words[k]).join(', ');
+  }
+}
+const sentence = (t, fn) => md(t.q).replace(/\[\[(\d)]]/g, (_, n) => fn(parseInt(n) - 1));
+
+function taskBody() {
+  const t = TASKS[S.queue[S.t]], c = S.checked, L = 'ABCDEFG';
+  switch (t.format) {
+    case 'MC_SINGLE':
+      return `<h2 class="q">${md(t.q)}</h2><div class="ans">${t.opts.map((o, i) => {
+        let cls = '', ic = '';
+        if (c) { if (i === t.key) { cls = 'ok'; ic = ICON('check', 'ico-sm'); } else if (i === S.sel) { cls = 'bad'; ic = ICON('close', 'ico-sm'); } else cls = 'dim'; }
+        else if (i === S.sel) cls = 'sel';
+        return `<button class="opt ${cls}" data-act="sel" data-i="${i}"><b>${L[i]}</b><span>${o}</span>${ic}</button>`;
+      }).join('')}</div>`;
+    case 'TRUE_FALSE':
+      return `<div class="stmt"><span class="lbl">Állítás</span><p class="q">${md(t.q)}</p></div>
+        <div class="tfbig">${[['Igaz', 'check'], ['Hamis', 'close']].map(([o, ic], i) => {
+        let cls = '';
+        if (c) { if (i === t.key) cls = 'ok'; else if (i === S.sel) cls = 'bad'; else cls = 'dim'; } else if (i === S.sel) cls = 'sel';
+        return `<button class="tfcard ${cls}" data-act="sel" data-i="${i}"><span class="ic">${ICON(ic)}</span>${o}</button>`;
+      }).join('')}</div>`;
+    case 'SHORT_ANSWER': {
+      const a0 = t.accepted[0];
+      return `<div class="stmt"><span class="lbl">Kérdés</span><p class="q">${md(t.q)}</p></div>
+        <label class="lbl" for="sa">A válaszod</label>
+        <input id="sa" class="field big ${c ? (S.ok ? 'ok' : 'bad') : ''}" data-type="0" value="${S.typed[0] || ''}" placeholder="Írd ide…" ${c ? 'disabled' : ''} autocomplete="off">
+        <div class="row"><span class="tag grey">${t.accepted.length ? '1 szó' : ''}</span>
+          ${S.hint ? `<span class="tag gold">Első betű: ${a0[0].toUpperCase()} · ${a0.length} betű</span>` : `<button class="btn ghost" style="width:auto;min-height:36px;padding:0 8px" data-act="hint" ${c ? 'disabled' : ''}>Tipp kérése</button>`}</div>`;
+    }
+    case 'GAP_FILL':
+      return `<p class="sentence">${sentence(t, i => `<input class="field ${c ? (t.accepted[i].some(a => norm(a) === norm(S.typed[i] || '')) ? 'ok' : 'bad') : ''}" data-type="${i}" value="${S.typed[i] || ''}" ${c ? 'disabled' : ''} autocomplete="off" aria-label="${i + 1}. hézag">`)}</p>`;
+    case 'MATCHING':
+      return `<h2 class="q">${md(t.q)}</h2><p class="muted">Koppints egy példára, aztán a hozzá illő szóképre.</p>
+        ${t.prompts.map((p, i) => {
+          const a = S.match[i], state = c ? (a === t.key[i] ? 'ok' : 'bad') : '';
+          return `<div class="pair-row ${S.activePair === i && !c ? 'active' : ''}" data-act="pair" data-i="${i}"><span class="p">${p}</span>
+            <span class="gap ${a !== undefined ? 'fill' : ''} ${state} a" style="width:auto;min-width:140px">${a !== undefined ? t.answers[a] : 'válassz…'}</span></div>`;
+        }).join('')}
+        <div class="chips">${t.answers.map((a, j) => `<button class="chip" data-act="ans" data-j="${j}" ${c ? 'disabled' : ''}>${a}</button>`).join('')}</div>`;
+    case 'ORDERING':
+      return `<h2 class="q">${md(t.q)}</h2><p class="muted">Koppints a lépésekre a helyes sorrendben. Egy kiválasztottra újra koppintva visszateheted.</p>
+        <div class="ordered">${t.items.map((it, i) => {
+          const pos = S.order.indexOf(i);
+          let cls = pos >= 0 ? 'sel' : '';
+          if (c) cls = t.key[pos] === i ? 'ok' : 'bad';
+          return `<button class="opt ${cls}" data-act="ord" data-i="${i}">${pos >= 0 ? `<span class="num">${pos + 1}</span>` : '<b></b>'}<span>${it}</span></button>`;
+        }).join('')}</div>`;
+    case 'GAP_CHOICE':
+      return `<p class="sentence">${sentence(t, i => {
+        const g = S.gaps[i], st = c ? (g === t.key[i] ? 'ok' : 'bad') : '';
+        return `<span class="gap ${g !== undefined ? 'fill' : ''} ${st}" data-act="gapclear" data-i="${i}">${g !== undefined ? t.words[g] : i + 1}</span>`;
+      })}</p><div class="chips">${t.words.map((w, j) => `<button class="chip ${S.gaps.includes(j) ? 'used' : ''}" data-act="word" data-j="${j}" ${c ? 'disabled' : ''}>${w}</button>`).join('')}</div>`;
+  }
+}
+
+function task() {
+  const t = TASKS[S.queue[S.t]], n = S.queue.length;
+  const why = t.why && !S.ok && S.sel !== null ? t.why[S.sel] : null;
+  const sheet = S.checked ? `<div class="sheet ${S.ok ? 'ok' : 'bad'}">
+      <h3>${S.ok ? ICON('check') + ' Helyes!' : ICON('close') + ' Nem egészen.'}</h3>
+      ${S.ok ? '' : `<p><strong>Jó válasz:</strong> ${correctText()}</p>`}
+      ${why ? `<p><strong>Miért nem ez?</strong> ${why}</p>` : ''}
+      <p>${md(t.expl)}</p>
+      <button class="btn" data-act="next">${S.t === n - 1 ? 'Eredmény' : 'Tovább'}</button></div>`
+    : `<div class="footer"><button class="btn" id="check" data-act="check" ${canCheck() ? '' : 'disabled'}>Ellenőrzés</button></div>`;
+  return `<div class="shell"><div class="content"><div class="body">
+    <div class="topbar"><button class="iconbtn" data-act="go" data-to="path" aria-label="Kilépés">${ICON('close')}</button><div class="bar gold"><i style="width:${100 * S.t / n}%"></i></div><span class="lbl">${S.t + 1} / ${n}</span></div>
+    <span class="lbl">${S.step.title} · ${FORMAT_NAMES[t.format]}</span>
+    <div class="taskmain">${taskBody()}</div>
+    ${sheet}
+  </div></div></div>`;
+}
+
+function result() {
+  const good = S.results.filter(Boolean).length, n = S.queue.length;
+  return `<div class="shell"><div class="content"><div class="body">
+    <div class="topbar"><button class="iconbtn" data-act="finish" aria-label="Bezárás">${ICON('close')}</button></div>
+    <span class="lbl">${S.step.title}</span>
+    <h1 class="h-large">${good >= n * 0.7 ? 'Szép munka!' : 'Jó kezdés!'}</h1>
+    <div class="score">${good} / ${n}</div>
+    <div class="bar gold"><i style="width:${100 * good / n}%"></i></div>
+    <div>${S.queue.map((q, i) => `<div class="res">${S.results[i] ? `<span class="ok">${ICON('check')}</span>` : `<span class="bad">${ICON('close')}</span>`}<span>${FORMAT_NAMES[TASKS[q].format]}</span></div>`).join('')}</div>
+    <div class="spacer"></div>
+    <button class="btn" data-act="finish">Vissza az útvonalra</button>
+  </div></div></div>`;
+}
+
+document.getElementById('scr').addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const t = S.queue.length ? TASKS[S.queue[S.t]] : null, i = +el.dataset.i, j = +el.dataset.j;
+  switch (el.dataset.act) {
+    case 'go': S.screen = el.dataset.to; if (S.screen === 'path') S.scrollPath = true; break;
+    case 'cat': S.cat = el.dataset.cat; S.screen = 'topics'; break;
+    case 'topic': S.topic = i; S.screen = 'path'; S.scrollPath = true; break;
+    case 'step': { const s = allSteps()[i]; S.step = s; S.toc = false; if (s.type === 'lesson') { S.bite = 0; S.screen = 'lesson'; } else startQuiz(s); } break;
+    case 'nextbite': S.bite++; break;
+    case 'prev': S.bite--; break;
+    case 'toc': if (e.target.closest('[data-keep]') && !e.target.closest('[data-act=bite]')) return; S.toc = !S.toc; break;
+    case 'bite': S.bite = i; S.toc = false; break;
+    case 'lessonend': { S.step.done = true; const next = currentStep(); if (next && next.type === 'mini') startQuiz(next); else { S.screen = 'path'; S.scrollPath = true; } } break;
+    case 'sel': if (S.checked) return; S.sel = i; break;
+    case 'hint': S.hint = true; break;
+    case 'pair': if (S.checked) return; S.activePair = i; break;
+    case 'ans': if (S.checked || S.activePair === null) return; S.match[S.activePair] = j; S.activePair = t.prompts.findIndex((_, k) => !(k in S.match)); if (S.activePair < 0) S.activePair = null; break;
+    case 'ord': if (S.checked) return; { const p = S.order.indexOf(i); if (p >= 0) S.order.splice(p, 1); else S.order.push(i); } break;
+    case 'word': if (S.checked || S.gaps.includes(j)) return; { const k = t.key.findIndex((_, q) => S.gaps[q] === undefined); if (k >= 0) S.gaps[k] = j; } break;
+    case 'gapclear': if (S.checked) return; delete S.gaps[i]; break;
+    case 'check': if (!canCheck()) return; S.ok = evaluate(); S.checked = true; S.results[S.t] = S.ok; break;
+    case 'next': if (S.t === S.queue.length - 1) S.screen = 'result'; else { S.t++; resetTask(); } break;
+    case 'finish': S.step.done = true; S.screen = 'path'; S.scrollPath = true; break;
+  }
+  render();
+});
+document.getElementById('scr').addEventListener('input', e => {
+  if (e.target.dataset.type === undefined) return;
+  S.typed[+e.target.dataset.type] = e.target.value;
+  const b = document.getElementById('check');
+  if (b) b.disabled = !canCheck();
+});
+
+/* Swipe left or right in a lesson to page through its sections. */
+let swipeX = null;
+const scr = document.getElementById('scr');
+scr.addEventListener('pointerdown', e => { swipeX = S.screen === 'lesson' && !S.toc ? e.clientX : null; });
+scr.addEventListener('pointerup', e => {
+  if (swipeX === null) return;
+  const dx = e.clientX - swipeX; swipeX = null;
+  if (Math.abs(dx) < 60) return;
+  const next = S.bite + (dx < 0 ? 1 : -1);
+  if (next >= 0 && next < bites().length) { S.bite = next; render(); }
+});
+
+/* ---- jump buttons, theme and device switch ---- */
+const jump = document.getElementById('jump');
+function addJump(label, id, fn) {
+  const b = document.createElement('button'); b.textContent = label; b.dataset.go = id; b.onclick = () => { fn(); render(); }; jump.appendChild(b);
+}
+addJump('Tantárgyak', 'subjects', () => S.screen = 'subjects');
+addJump('Nagy részek', 'categories', () => S.screen = 'categories');
+addJump('Témák', 'topics', () => S.screen = 'topics');
+addJump('Útvonal', 'path', () => { S.screen = 'path'; S.scrollPath = true; });
+addJump('Lecke (falat)', 'lesson', () => { S.cat = 'nyelvtan'; S.topic = 0; S.step = allSteps()[2]; S.bite = 1; S.toc = false; S.screen = 'lesson'; });
+addJump('Hosszabb olvasmány', 'lesson', () => { S.cat = 'irodalom'; S.topic = 0; S.step = allSteps()[0]; S.bite = 1; S.toc = false; S.screen = 'lesson'; });
+addJump('Tartalomjegyzék', 'lesson', () => { S.cat = 'nyelvtan'; S.topic = 0; S.step = allSteps()[2]; S.bite = 1; S.toc = true; S.screen = 'lesson'; });
+addJump('Eredmény', 'result', () => { S.step = allSteps()[1]; S.queue = [0, 1, 2]; S.results = [true, false, true]; S.screen = 'result'; });
+TASKS.forEach((t, i) => {
+  const b = document.createElement('button'); b.textContent = FORMAT_NAMES[t.format];
+  b.onclick = () => { S.step = { title: 'Mini teszt' }; S.queue = [i]; S.t = 0; S.results = []; resetTask(); S.screen = 'task'; render(); };
+  jump.appendChild(b);
+});
+
+const phone = document.getElementById('phone');
+document.getElementById('theme').onclick = e => {
+  const dark = phone.classList.toggle('t-dark'); phone.classList.toggle('t-light', !dark);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  e.target.textContent = dark ? 'Világos téma' : 'Sötét téma';
+};
+document.querySelectorAll('#dev button').forEach(b => b.onclick = () => {
+  document.body.dataset.dev = b.dataset.dev;
+  document.querySelectorAll('#dev button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+render();
+</script>
+</body>
+</html>
