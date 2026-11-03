@@ -8,6 +8,7 @@ import com.madovygabor.maturimate.features.learning.domain.AnswerChecker
 import com.madovygabor.maturimate.features.learning.domain.AnswerHint
 import com.madovygabor.maturimate.features.learning.domain.AnswerResult
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
+import com.madovygabor.maturimate.features.learning.domain.model.AnswerMode
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
@@ -19,38 +20,44 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-/** The task formats that have a screen so far; a test leaves the others out until they do (step 7.4). */
-val SUPPORTED_FORMATS = setOf(TaskFormat.MC_SINGLE, TaskFormat.TRUE_FALSE, TaskFormat.SHORT_ANSWER)
-
 sealed interface TestUiState {
     data object Loading : TestUiState
     data object Failed : TestUiState
 
-    /** The test has no task the app can show yet. */
+    /** The test has no task. */
     data object Empty : TestUiState
 
     /**
-     * One task of the round. [selected] is the chosen option label and [typed] the written answer; [result] is
-     * null until the answer is checked.
+     * One task of the round. The answer is kept per slot (a gap, a pair, a position): [choices] holds the chosen
+     * option label of each slot, [texts] the written text. A multiple-choice or true-or-false task and a short
+     * answer use slot 1. [activeSlot] is the pair of a matching task that gets the next answer. [result] is null
+     * until the answer is checked.
      */
     data class Ready(
         val title: String,
         val tasks: List<Task>,
         val index: Int,
-        val selected: String? = null,
-        val typed: String = "",
+        val choices: Map<Int, String> = emptyMap(),
+        val texts: Map<Int, String> = emptyMap(),
+        val activeSlot: Int? = null,
         val hintShown: Boolean = false,
         val result: AnswerResult? = null,
     ) : TestUiState {
         val task: Task get() = tasks[index]
         val isLast: Boolean get() = index == tasks.lastIndex
         val checked: Boolean get() = result != null
+        val slots: List<Int> get() = AnswerChecker.slots(task)
 
-        /** The answer can be checked once something is chosen or written. */
+        /** The chosen option of a multiple-choice or true-or-false task. */
+        val selected: String? get() = choices[1]
+
+        /** The written answer of a short answer. */
+        val typed: String get() = texts[1].orEmpty()
+
+        /** The answer can be checked once every slot is filled. */
         val canCheck: Boolean
-            get() = !checked && when (task.format) {
-                TaskFormat.SHORT_ANSWER -> typed.isNotBlank()
-                else -> selected != null
+            get() = !checked && slots.isNotEmpty() && slots.all {
+                if (task.format.answerMode == AnswerMode.CHOICE) it in choices else texts[it].orEmpty().isNotBlank()
             }
 
         /** The first letter and the length of the answer, for a short answer. */
@@ -60,14 +67,14 @@ sealed interface TestUiState {
         val chosenOption get() = task.options.firstOrNull { it.label == selected }
 
         val answer: Answer
-            get() = if (task.format == TaskFormat.SHORT_ANSWER) Answer.Typed(mapOf(1 to typed)) else Answer.Choice(selected?.let { mapOf(1 to it) }.orEmpty())
+            get() = if (task.format.answerMode == AnswerMode.CHOICE) Answer.Choice(choices) else Answer.Typed(texts)
     }
 }
 
 /**
  * Runs the tasks of a test unit one after the other: choose or write, check, see the feedback, go on. A round is
- * the first `roundSize` active core tasks of the unit whose format has a screen. The result of the round and the
- * progress are not kept yet (step 7.5); after the last task the screen closes.
+ * the first `roundSize` active core tasks of the unit. The result of the round and the progress are not kept yet
+ * (step 7.5); after the last task the screen closes.
  */
 class TestSessionViewModel(
     private val unitId: Long,
@@ -100,14 +107,55 @@ class TestSessionViewModel(
         for (entry in unitTasks.filter { it.isCore && it.isActive }) {
             if (tasks.size == unit.roundSize) break
             val task = (content.task(entry.taskId) as? OperationResult.Success)?.data ?: return TestUiState.Failed
-            if (task.format in SUPPORTED_FORMATS) tasks += task
+            tasks += task
         }
-        return if (tasks.isEmpty()) TestUiState.Empty else TestUiState.Ready(unit.title, tasks, index = 0)
+        return if (tasks.isEmpty()) TestUiState.Empty else fresh(TestUiState.Ready(unit.title, tasks, index = 0))
     }
 
-    fun select(label: String) = update { if (!it.checked) it.copy(selected = label) else it }
+    /** A multiple-choice or true-or-false answer. */
+    fun select(label: String) = choose(1, label)
 
-    fun type(text: String) = update { if (!it.checked) it.copy(typed = text) else it }
+    /** The written answer of a short answer. */
+    fun type(text: String) = typeIn(1, text)
+
+    /** The option [label] for [slot]. */
+    fun choose(slot: Int, label: String) = update { if (!it.checked) it.copy(choices = it.choices + (slot to label)) else it }
+
+    /** The text written in the gap [slot]. */
+    fun typeIn(slot: Int, text: String) = update { if (!it.checked) it.copy(texts = it.texts + (slot to text)) else it }
+
+    /** Empties a gap filled from a list. */
+    fun clear(slot: Int) = update { if (!it.checked) it.copy(choices = it.choices - slot) else it }
+
+    /** Makes a pair of a matching task the one that gets the next answer. */
+    fun activate(slot: Int) = update { if (!it.checked && it.task.format == TaskFormat.MATCHING) it.copy(activeSlot = slot) else it }
+
+    /**
+     * Picks the option [label] where the format puts it: a matching task gives it to the active pair (and the next
+     * pair without an answer becomes active), an ordering task puts it at the next position or, picked again, takes it
+     * back and closes the gap in the order, a gap task fills the first empty gap.
+     */
+    fun pick(label: String) = update { state ->
+        if (state.checked) return@update state
+        when (state.task.format) {
+            TaskFormat.MATCHING -> {
+                val slot = state.activeSlot ?: return@update state
+                val choices = state.choices + (slot to label)
+                state.copy(choices = choices, activeSlot = state.slots.firstOrNull { it !in choices })
+            }
+            TaskFormat.ORDERING -> {
+                val order = state.choices.entries.sortedBy { it.key }.map { it.value }
+                val next = if (label in order) order - label else if (order.size < state.slots.size) order + label else order
+                state.copy(choices = next.mapIndexed { index, value -> index + 1 to value }.toMap())
+            }
+            TaskFormat.GAP_CHOICE -> {
+                if (label in state.choices.values) return@update state
+                val slot = state.slots.firstOrNull { it !in state.choices } ?: return@update state
+                state.copy(choices = state.choices + (slot to label))
+            }
+            else -> state.copy(choices = mapOf(1 to label))
+        }
+    }
 
     fun showHint() = update { if (!it.checked && it.hint != null) it.copy(hintShown = true) else it }
 
@@ -121,9 +169,13 @@ class TestSessionViewModel(
         if (state.isLast) {
             _finished.trySend(Unit)
         } else {
-            _state.value = state.copy(index = state.index + 1, selected = null, typed = "", hintShown = false, result = null)
+            _state.value = fresh(state.copy(index = state.index + 1, choices = emptyMap(), texts = emptyMap(), hintShown = false, result = null))
         }
     }
+
+    /** A task starts with nothing answered; in a matching task the first pair is the active one. */
+    private fun fresh(state: TestUiState.Ready) =
+        state.copy(activeSlot = if (state.task.format == TaskFormat.MATCHING) state.slots.firstOrNull() else null)
 
     private fun update(change: (TestUiState.Ready) -> TestUiState.Ready) {
         val state = _state.value as? TestUiState.Ready ?: return

@@ -32,6 +32,18 @@ class RichTextTest {
     }
 
     @Test
+    fun gapsSplitTheText() {
+        assertEquals(
+            listOf(
+                TextPart.Text("A metafora két dolgot "), TextPart.Gap(1), TextPart.Text(", a hasonlat "), TextPart.Gap(2), TextPart.Text("."),
+            ),
+            splitGaps("A metafora két dolgot [[1]], a hasonlat [[2]]."),
+        )
+        assertEquals(listOf(TextPart.Gap(1), TextPart.Gap(2)), splitGaps("[[1]][[2]]"))
+        assertEquals(listOf(TextPart.Text("Nincs hézag.")), splitGaps("Nincs hézag."))
+    }
+
+    @Test
     fun wordsAreCountedWithoutTheMarkers() {
         assertEquals(4, wordCount("A **szókép** egy *átvitt*"))
         assertEquals(0, wordCount("  "))

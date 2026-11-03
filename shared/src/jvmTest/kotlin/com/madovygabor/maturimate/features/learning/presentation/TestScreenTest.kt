@@ -7,6 +7,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -64,9 +66,41 @@ class TestScreenTest {
         options = emptyList(), key = emptyList(), acceptedAnswers = listOf(AcceptedAnswer(1, "megszemélyesítés", false)), attachments = emptyList(),
     )
 
-    private fun ready(index: Int, selected: String? = null, typed: String = "", hintShown: Boolean = false, check: Boolean = false): TestUiState.Ready {
-        val tasks = listOf(multipleChoice, trueFalse, shortAnswer)
-        val state = TestUiState.Ready("Mini teszt", tasks, index, selected, typed, hintShown)
+    private fun option(label: String, text: String, role: OptionRole = OptionRole.ANSWER) = TaskOption(label, text, role)
+
+    private val matching = Task(
+        4, 1, TaskFormat.MATCHING, "Párosítsd a példát a szóképpel!", null, 2, null, true,
+        options = listOf(option("1", "Olyan, mint a tűz.", OptionRole.PROMPT), option("A", "hasonlat"), option("2", "Te vagy a napom.", OptionRole.PROMPT), option("B", "metafora")),
+        key = listOf(KeySlot(1, "A", "1"), KeySlot(2, "B", "2")), acceptedAnswers = emptyList(), attachments = emptyList(),
+    )
+    private val ordering = Task(
+        5, 1, TaskFormat.ORDERING, "Tedd sorrendbe a lépéseket!", null, 1, null, true,
+        options = listOf(option("A", "Megnevezem."), option("B", "Elolvasom."), option("C", "Megmagyarázom."), option("D", "Megkeresem.")),
+        key = listOf(KeySlot(1, "B", null), KeySlot(2, "D", null), KeySlot(3, "A", null), KeySlot(4, "C", null)), acceptedAnswers = emptyList(), attachments = emptyList(),
+    )
+    private val gapChoice = Task(
+        6, 1, TaskFormat.GAP_CHOICE, "Az [[1]] ismétel, az [[2]] szembeállít.", null, 2, null, true,
+        options = listOf(option("A", "anafora"), option("B", "ellentét"), option("C", "fokozás")),
+        key = listOf(KeySlot(1, "A", null), KeySlot(2, "B", null)), acceptedAnswers = emptyList(), attachments = emptyList(),
+    )
+    private val gapFill = Task(
+        7, 1, TaskFormat.GAP_FILL, "A metafora [[1]], a hasonlat [[2]].", null, 2, null, true,
+        options = emptyList(), key = emptyList(),
+        acceptedAnswers = listOf(AcceptedAnswer(1, "azonosít", false), AcceptedAnswer(2, "összehasonlít", false)), attachments = emptyList(),
+    )
+
+    private fun ready(
+        index: Int, selected: String? = null, typed: String = "", hintShown: Boolean = false, check: Boolean = false,
+        choices: Map<Int, String>? = null, texts: Map<Int, String>? = null, activeSlot: Int? = null,
+    ): TestUiState.Ready {
+        val tasks = listOf(multipleChoice, trueFalse, shortAnswer, matching, ordering, gapChoice, gapFill)
+        val state = TestUiState.Ready(
+            "Mini teszt", tasks, index,
+            choices = choices ?: selected?.let { mapOf(1 to it) }.orEmpty(),
+            texts = texts ?: if (typed.isEmpty()) emptyMap() else mapOf(1 to typed),
+            activeSlot = activeSlot,
+            hintShown = hintShown,
+        )
         return if (check) state.copy(result = AnswerChecker.check(state.task, state.answer)) else state
     }
 
@@ -76,19 +110,27 @@ class TestScreenTest {
         var hint = 0
         var check = 0
         var next = 0
+        val picked = mutableListOf<String>()
+        val cleared = mutableListOf<Int>()
+        val activated = mutableListOf<Int>()
+        val typedIn = mutableListOf<Pair<Int, String>>()
     }
 
     private fun ComposeUiTest.show(state: TestUiState, calls: Calls = Calls()) = setContent {
         AppTheme {
             TestContent(
                 state = state,
-                onClose = {},
-                onSelect = { calls.selected += it },
-                onType = { calls.typed = it },
-                onHint = { calls.hint++ },
-                onCheck = { calls.check++ },
-                onNext = { calls.next++ },
-                onRetry = {},
+                actions = TestActions(
+                    onSelect = { calls.selected += it },
+                    onType = { calls.typed = it },
+                    onHint = { calls.hint++ },
+                    onCheck = { calls.check++ },
+                    onNext = { calls.next++ },
+                    onPick = { calls.picked += it },
+                    onClear = { calls.cleared += it },
+                    onActivate = { calls.activated += it },
+                    onTypeIn = { slot, text -> calls.typedIn += slot to text },
+                ),
             )
         }
     }
@@ -173,7 +215,7 @@ class TestScreenTest {
     @Test
     fun lastTaskEndsWithFinish() = runDesktopComposeUiTest(412, 915) {
         Locale.setDefault(Locale.forLanguageTag("hu"))
-        show(ready(2, typed = "Megszemélyesítés", check = true))
+        show(ready(6, texts = mapOf(1 to "azonosít", 2 to "összehasonlít"), check = true))
 
         onNodeWithText(text(Res.string.test_finish)).assertIsDisplayed()
     }
@@ -184,5 +226,69 @@ class TestScreenTest {
         show(TestUiState.Empty)
 
         onNodeWithText(text(Res.string.test_empty)).assertIsDisplayed()
+    }
+
+    @Test
+    fun matchingShowsThePairsAndTheChips() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val calls = Calls()
+        show(ready(3, activeSlot = 1), calls)
+
+        onNodeWithText("Olyan, mint a tűz.").assertIsDisplayed()
+        onNodeWithText("Te vagy a napom.").performClick()
+        assertEquals(listOf(2), calls.activated)
+        onNodeWithText("metafora").performClick()
+        assertEquals(listOf("B"), calls.picked)
+    }
+
+    @Test
+    fun aWrongMatchingShowsThePairsAsTheRightAnswer() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(ready(3, choices = mapOf(1 to "B", 2 to "A"), check = true))
+
+        onNodeWithText(text(Res.string.test_wrong)).assertIsDisplayed()
+        onNodeWithText("Olyan, mint a tűz. → hasonlat; Te vagy a napom. → metafora", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun orderingNumbersThePickedSteps() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val calls = Calls()
+        show(ready(4, choices = mapOf(1 to "B", 2 to "D")), calls)
+
+        onNodeWithText("Elolvasom.").assertIsDisplayed()
+        onAllNodesWithText("1").assertCountEquals(1)
+        onNodeWithText("Megmagyarázom.").performClick()
+        assertEquals(listOf("C"), calls.picked)
+    }
+
+    @Test
+    fun gapsFromAListShowTheirNumbersAndTheWords() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val calls = Calls()
+        show(ready(5, choices = mapOf(1 to "A")), calls)
+
+        // the word is in its gap and still marked in the list
+        onAllNodesWithText("anafora").assertCountEquals(2)
+        onNodeWithText("fokozás").performClick()
+        assertEquals(listOf("C"), calls.picked)
+    }
+
+    @Test
+    fun typedGapsTakeTextInTheirPlace() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val calls = Calls()
+        show(ready(6), calls)
+
+        onNodeWithContentDescription("2. hézag").performTextInput("összehasonlít")
+        assertEquals(listOf(2 to "összehasonlít"), calls.typedIn)
+    }
+
+    @Test
+    fun wrongTypedGapsShowTheRightWords() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(ready(6, texts = mapOf(1 to "azonosít", 2 to "x"), check = true))
+
+        onNodeWithText("azonosít, összehasonlít", substring = true).assertIsDisplayed()
     }
 }

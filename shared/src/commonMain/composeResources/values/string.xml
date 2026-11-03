@@ -242,4 +242,10 @@
     <string name="test_hint">Prvé písmeno: %1$s · počet písmen: %2$d</string>
     <string name="test_empty">Pre tento test zatiaľ nie sú dostupné úlohy.</string>
     <string name="test_finish">Dokončiť</string>
+    <string name="test_match_hint">Ťukni na príklad a potom na odpoveď, ktorá k nemu patrí.</string>
+    <string name="test_order_hint">Ťukaj na kroky v správnom poradí. Ťuknutím na vybraný krok ho vrátiš späť.</string>
+    <string name="test_gap_choice_hint">Ťukaj na slová, aby sa vložili do medzier. Ťuknutím na vyplnenú medzeru ju vyprázdniš.</string>
+    <string name="test_gap_fill_hint">Doplň chýbajúce slová do medzier.</string>
+    <string name="test_pick_placeholder">vyber…</string>
+    <string name="test_gap_description">Medzera %1$d</string>
 </resources>

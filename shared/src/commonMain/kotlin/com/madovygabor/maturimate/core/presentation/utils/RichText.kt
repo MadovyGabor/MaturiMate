@@ -38,6 +38,25 @@ fun richText(
     append(text.substring(last))
 }
 
+/** A piece of the text of a gap task: some text, or the gap with the number written in `[[n]]`. */
+sealed interface TextPart {
+    data class Text(val text: String) : TextPart
+    data class Gap(val number: Int) : TextPart
+}
+
+private val GAP = Regex("""\[\[(\d+)]]""")
+
+/** Splits the text of a gap task at its `[[n]]` markers, in reading order. */
+fun splitGaps(text: String): List<TextPart> = buildList {
+    var last = 0
+    for (match in GAP.findAll(text)) {
+        if (match.range.first > last) add(TextPart.Text(text.substring(last, match.range.first)))
+        add(TextPart.Gap(match.groupValues[1].toInt()))
+        last = match.range.last + 1
+    }
+    if (last < text.length) add(TextPart.Text(text.substring(last)))
+}
+
 /** The words of a text without the markers, for the reading time. */
 fun wordCount(text: String): Int = text.replace("*", "").split(Regex("""\s+""")).count { it.isNotBlank() }
 

@@ -186,6 +186,9 @@ class DesignTokensSyncTest {
             "accent-bar" to layout.accentBar.value,
             "answer-option-min-height" to layout.answerOptionMinHeight.value,
             "true-false-card-min-height" to layout.trueFalseCardMinHeight.value,
+            "gap-slot-min-width" to layout.gapSlotMinWidth.value,
+            "gap-field-width" to layout.gapFieldWidth.value,
+            "gap-slot-height" to layout.gapSlotHeight.value,
         )
 
         val values = tokenList("layout")

@@ -50,6 +50,15 @@ object AnswerChecker {
         }
     }
 
+    /**
+     * The slots of a task, in order: the keys of a choice task, the gaps that have an accepted answer for a typed
+     * one. A task is answered when every slot is.
+     */
+    fun slots(task: Task): List<Int> = when (task.format.answerMode) {
+        AnswerMode.CHOICE -> task.key.map { it.slot }.distinct().sorted()
+        AnswerMode.TEXT -> task.acceptedAnswers.map { it.slot }.distinct().sorted()
+    }
+
     /** The first letter and the length of the first accepted answer of [slot]; null when there is none. */
     fun hint(task: Task, slot: Int = 1): AnswerHint? =
         task.acceptedAnswers.firstOrNull { it.slot == slot }?.text?.let { normalize(it) }

@@ -60,6 +60,12 @@ data class Layout(
     val answerOptionMinHeight: Dp = 56.dp,
     /** Smallest height of the big true or false answer. */
     val trueFalseCardMinHeight: Dp = 140.dp,
+    /** Smallest width of a gap filled from a word list. */
+    val gapSlotMinWidth: Dp = 96.dp,
+    /** Width of a gap filled by typing. */
+    val gapFieldWidth: Dp = 128.dp,
+    /** Height of a gap in a sentence, filled from a list or by typing. */
+    val gapSlotHeight: Dp = 40.dp,
 )
 
 private val AppLayout = Layout()
