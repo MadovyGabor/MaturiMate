@@ -51,6 +51,29 @@ class SqliteExporterTest {
     }
 
     @Test
+    fun lessonPagesBlocksAndKindsAreExported() {
+        export()
+        val q = open().learningUnitQueries
+
+        assertEquals(listOf("Mi a szókép?", "Tipp"), q.selectPages(100).executeAsList().map { it.title })
+        assertEquals(
+            listOf("PARAGRAPH", "EXAMPLE", "PARAGRAPH", "TIP"),
+            q.selectBlocks(100).executeAsList().map { it.block_type },
+        )
+        assertEquals("TOPIC", q.selectById(101).executeAsOne().practice_kind)
+        assertEquals("FINAL", q.selectById(102).executeAsOne().practice_kind)
+        assertEquals(null, q.selectById(100).executeAsOne().practice_kind)
+    }
+
+    @Test
+    fun wrongOptionExplanationIsExported() {
+        export()
+        val options = open().taskQueries.selectOptions(1001).executeAsList()
+        assertEquals("A hasonlat összehasonlít, és kimondja a hasonlító szót.", options.first { it.option_label == "A" }.why)
+        assertEquals(null, options.first { it.option_label == "B" }.why)
+    }
+
+    @Test
     fun childIdsMatchTheImporter() {
         export()
         val key = open().taskQueries.selectKeys(1001).executeAsOne()

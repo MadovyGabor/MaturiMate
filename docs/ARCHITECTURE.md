@@ -170,7 +170,7 @@ Files (Git) ──┤
               └─→ import → PostgreSQL (server copy; the user tables there reference content by foreign key)
 ```
 
-* The lesson and task files are the source of truth: Markdown for `SUMMARY` lessons, JSON for tasks and `PRACTICE` units, one folder per leaf topic. All ids are written in the files and never change. Format and rules: [tools/content-pipeline/README.md](../tools/content-pipeline/README.md).
+* The lesson and task files are the source of truth: Markdown for `SUMMARY` lessons (pages and boxes, see the [content pipeline](../tools/content-pipeline/README.md#lesson-files-pages-and-boxes)), JSON for tasks and `PRACTICE` units (`MINI`, `TOPIC`, `FINAL`), one folder per topic. All ids are written in the files and never change. Format and rules: [tools/content-pipeline/README.md](../tools/content-pipeline/README.md).
 * Both commands use the same loader and `ContentValidator` (format rules of the design, text format, leaf topics, provenance). Nothing is written if a check fails.
 * The exporter creates the file with the generated `ContentDatabase.Schema` from `:database`, so the file matches what the app reads. It sets `PRAGMA user_version` to the schema version and writes a manifest with `content_version`, size and SHA-256. The same files give a byte-identical file. With `--previous`, it fails if a row of the previous release is missing: rows are switched off (`is_active`, `is_published`), never removed.
 * The importer upserts by id in one transaction, replaces the rows a task owns, deactivates rows missing from the files, and moves the identity sequences past the imported ids.

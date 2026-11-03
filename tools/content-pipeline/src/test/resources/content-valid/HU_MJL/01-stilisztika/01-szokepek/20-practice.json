@@ -1,6 +1,7 @@
 {
   "learning_unit_id": 101,
   "title": "Gyakorlás",
+  "practice_kind": "TOPIC",
   "estimated_minutes": 4,
   "round_size": 3,
   "sort_order": 2,

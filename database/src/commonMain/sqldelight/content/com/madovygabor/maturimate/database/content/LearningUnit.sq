@@ -1,10 +1,11 @@
--- Lesson steps of a leaf topic (summary or practice) and their links to tasks and tags.
+-- Steps of a topic: lessons (SUMMARY, made of pages) and tests (PRACTICE: MINI, TOPIC or FINAL) with their tasks and tags.
+-- Only FINAL tests sit on a parent topic; every other unit sits on a leaf topic (checked by the content validator).
 CREATE TABLE learning_unit (
     learning_unit_id   INTEGER NOT NULL,
     topic_id           INTEGER NOT NULL,
     unit_type          TEXT    NOT NULL,
     title              TEXT    NOT NULL,
-    body_text          TEXT,
+    practice_kind      TEXT,
     estimated_minutes  INTEGER NOT NULL,
     round_size         INTEGER NOT NULL DEFAULT 5,
     xp_reward          INTEGER NOT NULL DEFAULT 10,
@@ -16,12 +17,36 @@ CREATE TABLE learning_unit (
         REFERENCES topic (topic_id) ON DELETE RESTRICT,
     CONSTRAINT uq_learning_unit_order UNIQUE (topic_id, sort_order),
     CONSTRAINT ck_learning_unit_type CHECK (unit_type IN ('SUMMARY', 'PRACTICE')),
-    CONSTRAINT ck_learning_unit_body CHECK (
-        (unit_type = 'SUMMARY'  AND body_text IS NOT NULL) OR
-        (unit_type = 'PRACTICE' AND body_text IS NULL)),
+    CONSTRAINT ck_learning_unit_kind CHECK (
+        (unit_type = 'SUMMARY'  AND practice_kind IS NULL) OR
+        (unit_type = 'PRACTICE' AND practice_kind IN ('MINI', 'TOPIC', 'FINAL'))),
     CONSTRAINT ck_learning_unit_minutes CHECK (estimated_minutes > 0),
     CONSTRAINT ck_learning_unit_round CHECK (round_size > 0),
     CONSTRAINT ck_learning_unit_xp CHECK (xp_reward >= 0)
+);
+
+-- A lesson is read page by page; a page is an ordered list of blocks (paragraphs and boxes).
+CREATE TABLE unit_page (
+    learning_unit_id  INTEGER NOT NULL,
+    page_no           INTEGER NOT NULL,
+    title             TEXT,
+    CONSTRAINT pk_unit_page PRIMARY KEY (learning_unit_id, page_no),
+    CONSTRAINT fk_unit_page_unit FOREIGN KEY (learning_unit_id)
+        REFERENCES learning_unit (learning_unit_id) ON DELETE CASCADE,
+    CONSTRAINT ck_unit_page_no CHECK (page_no >= 1)
+);
+
+CREATE TABLE page_block (
+    learning_unit_id  INTEGER NOT NULL,
+    page_no           INTEGER NOT NULL,
+    block_no          INTEGER NOT NULL,
+    block_type        TEXT    NOT NULL,
+    body_text         TEXT    NOT NULL,
+    CONSTRAINT pk_page_block PRIMARY KEY (learning_unit_id, page_no, block_no),
+    CONSTRAINT fk_page_block_page FOREIGN KEY (learning_unit_id, page_no)
+        REFERENCES unit_page (learning_unit_id, page_no) ON DELETE CASCADE,
+    CONSTRAINT ck_page_block_no CHECK (block_no >= 1),
+    CONSTRAINT ck_page_block_type CHECK (block_type IN ('PARAGRAPH', 'EXAMPLE', 'TIP', 'NOTE', 'WARNING'))
 );
 
 CREATE TABLE unit_task (
@@ -68,6 +93,18 @@ ORDER BY unit_task.is_core DESC, unit_task.sort_order;
 
 insert:
 INSERT INTO learning_unit VALUES ?;
+
+selectPages:
+SELECT * FROM unit_page WHERE learning_unit_id = :learningUnitId ORDER BY page_no;
+
+selectBlocks:
+SELECT * FROM page_block WHERE learning_unit_id = :learningUnitId ORDER BY page_no, block_no;
+
+insertPage:
+INSERT INTO unit_page VALUES ?;
+
+insertBlock:
+INSERT INTO page_block VALUES ?;
 
 insertUnitTask:
 INSERT INTO unit_task VALUES ?;

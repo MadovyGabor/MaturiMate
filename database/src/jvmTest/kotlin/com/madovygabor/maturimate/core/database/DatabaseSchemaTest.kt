@@ -40,10 +40,10 @@ class DatabaseSchemaTest {
         topicQueries.insert(Topic(11, null, 10, "Szóképek", null, 1, true))
         taskFormatQueries.insert(Task_format(1, "MC_SINGLE", "Multiple choice", "CHOICE", null))
         taskQueries.insert(Task(100, 11, 1, "Melyik szókép?", null, 1, null, true, 0))
-        taskQueries.insertOption(Task_option(1000, 100, "ANSWER", "A", "metafora"))
-        taskQueries.insertOption(Task_option(1001, 100, "ANSWER", "B", "hasonlat"))
+        taskQueries.insertOption(Task_option(1000, 100, "ANSWER", "A", "metafora", null))
+        taskQueries.insertOption(Task_option(1001, 100, "ANSWER", "B", "hasonlat", null))
         taskQueries.insertKey(Task_key(100, 1, null, 1000))
-        learningUnitQueries.insert(Learning_unit(50, 11, "PRACTICE", "Gyakorlás", null, 3, 5, 10, 1, true, 0))
+        learningUnitQueries.insert(Learning_unit(50, 11, "PRACTICE", "Gyakorlás", "TOPIC", 3, 5, 10, 1, true, 0))
         learningUnitQueries.insertUnitTask(Unit_task(50, 100, 1, true))
     }
 

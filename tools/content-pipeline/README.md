@@ -50,8 +50,8 @@ content/
       01-szokepek/                  leaf topic
         topic.json
         tasks.json                  tasks of this topic
-        10-summary.md               SUMMARY unit: front matter + text
-        20-practice.json            PRACTICE unit and its task list
+        10-summary.md               SUMMARY unit (a lesson): front matter + pages and boxes
+        20-practice.json            PRACTICE unit (a test) and its task list
 ```
 
 A complete example is the test fixture `src/test/resources/content-valid/`.
@@ -65,7 +65,7 @@ A complete example is the test fixture `src/test/resources/content-valid/`.
 
 ## Lesson files (pages and boxes)
 
-*Specification; the loader, validator and exporter learn it in Milestone 7, step 7.0a.* A lesson (`SUMMARY` unit) is one Markdown file: front matter, then the text. The format uses well-known syntax, so any Markdown editor shows it sensibly.
+A lesson (`SUMMARY` unit) is one Markdown file: front matter, then the text. The format uses well-known syntax, so any Markdown editor shows it sensibly.
 
 ```markdown
 ---
@@ -109,7 +109,7 @@ A practice unit (`*.json`) has a `practice_kind`:
 | `TOPIC` | leaf topic | the test of the whole topic (for example all of one work) |
 | `FINAL` | parent topic | a test of everything below it (for example all of one author); its tasks come from the topics below |
 
-Only `FINAL` units may sit on a parent topic; every other unit sits on a leaf topic. The tasks of a unit are listed by id, so a `FINAL` test can use tasks of any topic below its own.
+Only `FINAL` units may sit on a parent topic (a `FINAL` test on a leaf topic is an error); every other unit sits on a leaf topic. The tasks of a unit are listed by id; the tasks of a `FINAL` test must all lie in topics below its own. The exporter writes the pages into the `unit_page` and `page_block` tables, the kind into `learning_unit.practice_kind`.
 
 ## Explanations
 

@@ -26,7 +26,7 @@ class ContentValidatorTest {
         assertEquals(emptyList(), errorsOf(valid))
         assertEquals(2, valid.topics.size)
         assertEquals(1, valid.summaries.size)
-        assertEquals(1, valid.practices.size)
+        assertEquals(2, valid.practices.size)
         assertEquals(5, valid.tasks.size)
     }
 
@@ -35,7 +35,16 @@ class ContentValidatorTest {
         val summary = valid.summaries.single()
         assertEquals(100, summary.learningUnitId)
         assertEquals("OWN", summary.provenance.sourceType)
-        assertTrue(summary.bodyText.startsWith("A **szókép**"))
+        assertEquals(listOf("Mi a szókép?", "Tipp"), summary.pages.map { it.title })
+        assertEquals(listOf("PARAGRAPH", "EXAMPLE"), summary.pages[0].blocks.map { it.type })
+        assertEquals("TIP", summary.pages[1].blocks.last().type)
+    }
+
+    @Test
+    fun practiceKindsAndWhyAreRead() {
+        assertEquals(mapOf(101L to "TOPIC", 102L to "FINAL"), valid.practices.associate { it.file.learningUnitId to it.file.practiceKind })
+        val why = valid.tasks.first { it.entry.taskId == 1001L }.entry.options.first().why
+        assertTrue(why!!.startsWith("A hasonlat"))
     }
 
     @Test
@@ -179,5 +188,51 @@ class ContentValidatorTest {
     fun unitSortOrderIsUniqueInTopic() = assertError(
         valid.copy(practices = valid.practices.map { it.copy(file = it.file.copy(sortOrder = 1)) }),
         "sort_order 1 is used by more than one unit",
+    )
+
+    private fun withPractice(kind: String, change: (PracticeUnitFile) -> PracticeUnitFile = { it }) =
+        valid.copy(practices = valid.practices.map {
+            if (it.file.learningUnitId == 101L) it.copy(file = change(it.file.copy(practiceKind = kind))) else it
+        })
+
+    @Test
+    fun practiceKindMustBeKnown() = assertError(withPractice("QUIZ"), "practice_kind 'QUIZ' must be one of")
+
+    @Test
+    fun finalTestBelongsToAParentTopic() = assertError(withPractice("FINAL"), "a FINAL test belongs to a parent topic")
+
+    @Test
+    fun miniTestCannotSitOnAParentTopic() = assertError(
+        valid.copy(practices = valid.practices.map {
+            if (it.file.learningUnitId == 102L) it.copy(file = it.file.copy(practiceKind = "MINI")) else it
+        }),
+        "only FINAL tests belong to it",
+    )
+
+    @Test
+    fun finalTestCannotUseTasksOfAnotherBranch() = assertError(
+        valid.copy(
+            topics = valid.topics + LoadedTopic(TopicFile(12, "Másik", null, 2, true), null, null, File("x"), false),
+            tasks = valid.tasks.map { if (it.entry.taskId == 1003L) it.copy(topicId = 12) else it },
+        ),
+        "FINAL test: task 1003 is not in a topic below this one",
+    )
+
+    @Test
+    fun lessonProblemsAreReported() {
+        val broken = valid.copy(summaries = valid.summaries.map {
+            it.copy(pages = listOf(
+                LessonPageData("Üres", emptyList()),
+                LessonPageData(null, listOf(LessonBlockData("EXAMPLE", "Melyik <b>?"))),
+            ))
+        })
+        assertError(broken, "a page needs text")
+        assertError(broken, "contains HTML")
+    }
+
+    @Test
+    fun optionWhyFollowsTheTextFormat() = assertError(
+        withTask(1001) { it.copy(options = it.options.map { o -> o.copy(why = "rossz **jelölés") }) },
+        "option why has an unclosed **",
     )
 }

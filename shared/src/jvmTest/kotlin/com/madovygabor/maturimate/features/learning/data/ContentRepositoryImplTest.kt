@@ -6,6 +6,7 @@ import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.content.ContentDatabase
 import com.madovygabor.maturimate.database.content.Learning_unit
+import com.madovygabor.maturimate.database.content.Page_block
 import com.madovygabor.maturimate.database.content.Subject
 import com.madovygabor.maturimate.database.content.Task
 import com.madovygabor.maturimate.database.content.Task_accepted_answer
@@ -13,11 +14,14 @@ import com.madovygabor.maturimate.database.content.Task_format
 import com.madovygabor.maturimate.database.content.Task_key
 import com.madovygabor.maturimate.database.content.Task_option
 import com.madovygabor.maturimate.database.content.Topic
+import com.madovygabor.maturimate.database.content.Unit_page
 import com.madovygabor.maturimate.database.content.Unit_task
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.AcceptedAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.KeySlot
+import com.madovygabor.maturimate.features.learning.domain.model.BlockType
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
+import com.madovygabor.maturimate.features.learning.domain.model.PracticeKind
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
 import com.madovygabor.maturimate.features.learning.domain.model.Track
 import kotlinx.coroutines.Dispatchers
@@ -39,13 +43,18 @@ class ContentRepositoryImplTest {
         taskFormatQueries.insert(Task_format(1, "MATCHING", "Matching", "CHOICE", null))
         taskFormatQueries.insert(Task_format(2, "GAP_FILL", "Gap fill", "TEXT", null))
         taskQueries.insert(Task(100, 11, 1, "Párosítsd!", null, 2, null, true, 0))
-        taskQueries.insertOption(Task_option(10001, 100, "PROMPT", "1", "Olyan, mint a tűz."))
-        taskQueries.insertOption(Task_option(10002, 100, "ANSWER", "A", "hasonlat"))
+        taskQueries.insertOption(Task_option(10001, 100, "PROMPT", "1", "Olyan, mint a tűz.", null))
+        taskQueries.insertOption(Task_option(10002, 100, "ANSWER", "A", "hasonlat", "A hasonlat összehasonlít."))
         taskQueries.insertKey(Task_key(100, 1, 10001, 10002))
         taskQueries.insert(Task(101, 11, 2, "A metafora [[1]].", null, 1, null, false, 0))
         taskQueries.insertAcceptedAnswer(Task_accepted_answer(10101, 101, 1, "azonosít", false))
-        learningUnitQueries.insert(Learning_unit(50, 11, "SUMMARY", "Mi a szókép?", "A **szókép**...", 3, 5, 10, 1, true, 0))
-        learningUnitQueries.insert(Learning_unit(51, 11, "PRACTICE", "Gyakorlás", null, 4, 1, 10, 2, true, 0))
+        learningUnitQueries.insert(Learning_unit(50, 11, "SUMMARY", "Mi a szókép?", null, 3, 5, 10, 1, true, 0))
+        learningUnitQueries.insertPage(Unit_page(50, 1, "Mi a szókép?"))
+        learningUnitQueries.insertPage(Unit_page(50, 2, null))
+        learningUnitQueries.insertBlock(Page_block(50, 2, 1, "TIP", "Keresd a *mint* szót."))
+        learningUnitQueries.insertBlock(Page_block(50, 1, 2, "EXAMPLE", "Te vagy a napom."))
+        learningUnitQueries.insertBlock(Page_block(50, 1, 1, "PARAGRAPH", "A **szókép**..."))
+        learningUnitQueries.insert(Learning_unit(51, 11, "PRACTICE", "Gyakorlás", "MINI", 4, 1, 10, 2, true, 0))
         learningUnitQueries.insertUnitTask(Unit_task(51, 101, 1, false))
         learningUnitQueries.insertUnitTask(Unit_task(51, 100, 2, true))
     }
@@ -75,9 +84,21 @@ class ContentRepositoryImplTest {
     fun unitsAreMappedByType() = runBlocking {
         val (summary, practice) = repository.units(11).data()
         assertIs<LearningUnit.Summary>(summary)
-        assertEquals("A **szókép**...", summary.bodyText)
+        assertEquals(listOf("Mi a szókép?", null), summary.pages.map { it.title })
+        // blocks come back in block order, whatever the order they were written in
+        assertEquals(listOf(BlockType.PARAGRAPH, BlockType.EXAMPLE), summary.pages[0].blocks.map { it.type })
+        assertEquals("A **szókép**...", summary.pages[0].blocks[0].text)
+        assertEquals(BlockType.TIP, summary.pages[1].blocks.single().type)
         assertIs<LearningUnit.Practice>(practice)
+        assertEquals(PracticeKind.MINI, practice.kind)
         assertEquals(1, practice.roundSize)
+    }
+
+    @Test
+    fun wrongOptionExplanationIsMapped() = runBlocking {
+        val options = repository.task(100).data().options
+        assertEquals("A hasonlat összehasonlít.", options.first { it.label == "A" }.why)
+        assertEquals(null, options.first { it.label == "1" }.why)
     }
 
     @Test

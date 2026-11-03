@@ -1,5 +1,7 @@
 # MaturiMate Roadmap
 
+> **Updated 2026-11-03:** Milestone 7 is redrawn after the prototype of the learning screens: it starts with Hungarian only, works from sample content that goes through the real importer, and has more, smaller steps (7.1 to 7.8). Slovak, English and Mathematics follow in Milestone 12. The reasons are in [DECISIONS](DECISIONS.md).
+>
 > **Updated 2026-11-01:** the toolchain update (AGP 9) becomes Milestone 6, before the unit engine; the milestones after it move up by one. The reasons are in [DECISIONS](DECISIONS.md).
 >
 > **Updated 2026-10-30:** the design system comes first, and the onboarding comes together with accounts (Supabase). Milestones are split into small steps. The reasons are in [DECISIONS](DECISIONS.md).
@@ -139,44 +141,47 @@ Branch: `chore/toolchain-agp9`. Moved here from the polish milestone on 2026-11-
 
 ## Milestone 6a: Code review fixes
 
-Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](../llm/review-2026-11-01.md). *Added and done on 2026-11-01; open: the phone test of the backup.*
+Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and the fixes: [review-2026-11-01.md](../llm/review-2026-11-01.md). *Added and done on 2026-11-01; the phone test of the backup and the first CI runs are done (2026-11-03).*
 
 * [x] **6a.1.** Error handling: crash on unexpected server data, the profile read error that ends in the onboarding (and the flaky `AppViewModelTest`), the onboarding that went back to the welcome screen after the language, dropped errors and cancellations, one user database call at a time.
 * [x] **6a.2.** Account flow: password reset after a refused password, resuming the onboarding after sign-in, two accounts on one phone, the snackbar that blocks buttons.
 * [x] **6a.3.** Server consistency: the end of a sign-up in one transaction (`save_sign_up`), consents once. *Applied to the live project on 2026-11-01 (version 20261101214731).*
-* [/] **6a.4.** Android release: backup without the session, R8 shrinking (APK from 28.5 MB to 4.9 MB). *Builds; the release build is not tried on a phone yet (testing goes on with debug builds).*
+* [x] **6a.4.** Android release: backup without the session, R8 shrinking (APK from 28.5 MB to 4.9 MB). *Tested on a phone by the owner (2026-11-03).*
 * [x] **6a.5.** Tests and coverage: Kover with an 80 % minimum in CI (`shared` 89.8 %, `database` 86.4 %), the missing tests. *The shared profile flow is left out (see the review notes, 5.2); Android device tests wait for an emulator in CI.*
 * [x] **6a.6.** Cleanup of dead code.
-* [/] **6a.7.** Faster CI: one run per commit (no separate `pull_request` run), no run for documentation-only changes, the Android build as its own job beside the tests, parallel Gradle builds and parallel test JVMs. *Added on 2026-11-01; checked locally, the first CI run comes with the next push.*
+* [x] **6a.7.** Faster CI: one run per commit (no separate `pull_request` run), no run for documentation-only changes, the Android build as its own job beside the tests, parallel Gradle builds and parallel test JVMs. *Added on 2026-11-01; running since the merge of the toolchain branch (PR #12).*
 
 ---
 
 ## Milestone 7: Unit engine with one small unit
 
-Goal: one complete lesson that works end to end. After that, new units are mostly new data.
+Goal: lessons and tests that work end to end, for Hungarian first: subjects, parts, topics, the path, lesson pages, the seven task formats, tests and results. After that, new units are mostly new data. The screens follow the prototype of 7.0; every step also covers the tablet and desktop layout. Until the real lessons arrive, the screens run on the sample content of 7.0a ("[PRÓBA]" titles, ids from 900000), which goes through the real exporter and never to Supabase.
 
 * [x] **7.0. Design of the learning screens:** a clickable prototype ([docs/learning/prototype.html](learning/prototype.html)): subjects, big parts, topic list, the path with the line that fills, lesson pages with a table of contents (a side list on tablet and desktop), the seven task formats with feedback, the result. Reviewed by the owner on 2026-11-03.
-* [ ] **7.0a. Content model for the lessons:** pages and boxes in the lesson file (`unit_page`), `practice_kind` (`MINI`, `TOPIC`, `FINAL`; `FINAL` on a parent topic), `task_option.explanation` (`why`); the loader, validator, exporter and importer, and a Supabase migration. Then the sample content is rewritten like the prototype (Szóképek, Szófajok, Az ember tragédiája). Format: [content-pipeline README](../tools/content-pipeline/README.md#lesson-files-pages-and-boxes), decisions of 2026-11-03.
-* [ ] **7.1. Lesson screen:** short lesson text in the app's own text format, estimated reading time. Lessons and tasks have a Hungarian and a Slovak text under one id (needed for Mathematics, DECISIONS 2026-11-01); the app shows the teaching language.
-* [ ] **7.2. Practice tasks:** multiple choice and short answer, instant feedback, accepted answer variants.
-* [ ] **7.3. Reading passage view:** a text shown together with its tasks.
-* [ ] **7.4.** Loading the first unit through the importer and the content database. The exporter builds two files: the starter pack bundled in the app (first lesson only) and the full content file.
-* [ ] **7.5. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
+* [x] **7.0a. Content model for the lessons:** pages and boxes in the lesson file (`unit_page`), `practice_kind` (`MINI`, `TOPIC`, `FINAL`; `FINAL` on a parent topic), `task_option.explanation` (`why`); the loader, validator, exporter and importer, and a Supabase migration. The sample content (private repository, `content/`) is rewritten like the prototype: Nyelvtan with Szóképek, Alakzatok, Szófajok and a final test, Irodalom with Az ember tragédiája. *Done on 2026-11-03; the Supabase migration `20261103120000_lesson_pages.sql` and `PostgresWriterTest` are checked by CI (no local Docker), the migration is not applied to the live project yet.* Format: [content-pipeline README](../tools/content-pipeline/README.md#lesson-files-pages-and-boxes), decisions of 2026-11-03.
+* [ ] **7.1. Navigation and the path:** the "Tantárgyak" tab shows the user's subjects; then the big parts (Nyelvtan, Irodalom), the topic list with progress rings, and the path of a topic with the line that fills (progress from `user_unit_progress`). The app text format (`**bold**`, `*italic*`, `[[n]]`) is rendered by one shared component.
+* [ ] **7.2. Lesson screen:** pages with titles, paragraphs and boxes (the labels are app strings), one page per screen, "Tovább" and swipe, the table of contents (a sheet on the phone, a side list on tablet and desktop), estimated reading time. The first Hungarian text only; the bilingual text model comes with Mathematics (12.3).
+* [ ] **7.3. Tasks, first formats:** multiple choice, true or false and short answer; `AnswerChecker` (tested per format, accepted variants), instant feedback with the explanation and the `why` of the chosen option, the hint of the short answer.
+* [ ] **7.4. The other formats:** matching, ordering, gaps from a word list and typed gaps.
+* [ ] **7.5. Tests and results:** the `MINI`, `TOPIC` and `FINAL` tests (rounds of `round_size` tasks), the result screen, review of the wrong answers, saving the attempt and the unit progress in the user database, the next step of the path opens.
+* [ ] **7.6. Real content path:** the sample content is bundled through `bundleContent`; the exporter builds two files, the starter pack bundled in the app (first lesson only) and the full content file. The real lessons replace the sample ones.
+* [ ] **7.7. Reading passage view:** a text shown together with its tasks (the connected texts of the design).
+* [ ] **7.8. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
 
 ---
 
 ## Milestone 8: Exam-style practice with own content
 
 * [ ] **8.1.** A practice mode that combines a passage and its tasks, with a plain time limit (no special time extension).
-* [ ] **8.2.** Grading, result screen and task-by-task review.
+* [ ] **8.2.** Grading with points, the exam result screen and task-by-task review (the plain result of a test exists since 7.5).
 * [ ] **8.3.** Local history of finished attempts.
 
 ---
 
 ## Milestone 9: Streak, progress and the Hungarian content
 
-* [ ] **9.1.** Daily streak and per-topic progress, stored locally; the daily reminder notification at the time saved in the onboarding (5.10).
-* [ ] **9.2.** Hungarian units, written together with the engine. *Open question: the planned "30 main topics". It is not decided yet whether this means 30 topics or 30 lessons.*
+* [ ] **9.1.** Daily streak and the progress summary, stored locally (the unit progress itself is saved from 7.5); the daily reminder notification at the time saved in the onboarding (5.10).
+* [ ] **9.2.** Hungarian units, written together with the engine, as parts, topics (a work, an author, a language area), lessons and tests. *Open question: the planned "30 main topics". It is not decided yet whether this means 30 topics or 30 lessons.*
 * [ ] **9.3.** Review of missed tasks (error vault) as a later addition.
 
 ---
@@ -188,8 +193,7 @@ Goal: one complete lesson that works end to end. After that, new units are mostl
 * [ ] **10.0. Bug fixes:** the bugs found while testing on a phone since the onboarding (5.15), collected here as they are found:
   * The labels of the bottom navigation bar are Hungarian in both languages.
   * After a change of the teaching language the subjects are not asked again (a Hungarian school's subjects stay when switching to Slovak).
-  * The "Tantárgyak" tab still shows the old hard-coded list, not the user's subjects (rebuilt with the units, Milestone 7).
-  * `AppViewModelTest.teachingLanguageSetsTheAppLanguageAndTheEndGoesHome` times out now and then without a code change (seen on 2026-11-01; passes on a rerun).
+  * The "Tantárgyak" tab still shows the old hard-coded list, not the user's subjects (rebuilt in 7.1).
   * Google sign-in on desktop is not tried yet (it works on Android).
   * Unconfirmed e-mail sign-ups stay in Supabase Auth; a cleanup belongs to 11.3a.
 * [ ] **10.1.** Animations, reading view polish, accessibility checks.

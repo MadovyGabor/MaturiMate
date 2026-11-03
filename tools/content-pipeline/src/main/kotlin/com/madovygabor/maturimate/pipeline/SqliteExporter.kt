@@ -8,6 +8,7 @@ import com.madovygabor.maturimate.core.database.ContentManifest
 import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.database.content.ContentDatabase
 import com.madovygabor.maturimate.database.content.Learning_unit
+import com.madovygabor.maturimate.database.content.Page_block
 import com.madovygabor.maturimate.database.content.Subject
 import com.madovygabor.maturimate.database.content.Tag
 import com.madovygabor.maturimate.database.content.Task
@@ -18,6 +19,7 @@ import com.madovygabor.maturimate.database.content.Task_key
 import com.madovygabor.maturimate.database.content.Task_option
 import com.madovygabor.maturimate.database.content.Task_tag
 import com.madovygabor.maturimate.database.content.Topic
+import com.madovygabor.maturimate.database.content.Unit_page
 import com.madovygabor.maturimate.database.content.Unit_task
 import java.io.File
 import java.security.MessageDigest
@@ -89,14 +91,22 @@ class SqliteExporter {
         }
         content.summaries.forEach {
             db.learningUnitQueries.insert(
-                Learning_unit(it.learningUnitId, it.topicId, "SUMMARY", it.title, it.bodyText,
+                Learning_unit(it.learningUnitId, it.topicId, "SUMMARY", it.title, null,
                     it.estimatedMinutes.toLong(), 5, it.xpReward.toLong(), it.sortOrder.toLong(), it.isPublished, createdAt)
             )
+            it.pages.forEachIndexed { pageIndex, page ->
+                db.learningUnitQueries.insertPage(Unit_page(it.learningUnitId, pageIndex + 1L, page.title))
+                page.blocks.forEachIndexed { blockIndex, block ->
+                    db.learningUnitQueries.insertBlock(
+                        Page_block(it.learningUnitId, pageIndex + 1L, blockIndex + 1L, block.type, block.text)
+                    )
+                }
+            }
         }
         content.practices.forEach { p ->
             val u = p.file
             db.learningUnitQueries.insert(
-                Learning_unit(u.learningUnitId, p.topicId, "PRACTICE", u.title, null, u.estimatedMinutes.toLong(),
+                Learning_unit(u.learningUnitId, p.topicId, "PRACTICE", u.title, u.practiceKind, u.estimatedMinutes.toLong(),
                     u.roundSize.toLong(), u.xpReward.toLong(), u.sortOrder.toLong(), u.isPublished, createdAt)
             )
         }
@@ -126,7 +136,7 @@ class SqliteExporter {
         t.options.forEachIndexed { index, o ->
             val id = childId(t.taskId, index)
             optionIds[o.role to o.label] = id
-            q.insertOption(Task_option(id, t.taskId, o.role, o.label, o.text))
+            q.insertOption(Task_option(id, t.taskId, o.role, o.label, o.text, o.why))
         }
         t.key.forEach { k ->
             q.insertKey(

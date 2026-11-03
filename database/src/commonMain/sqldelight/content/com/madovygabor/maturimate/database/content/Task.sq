@@ -24,6 +24,7 @@ CREATE TABLE task_option (
     option_role   TEXT    NOT NULL DEFAULT 'ANSWER',
     option_label  TEXT    NOT NULL,
     option_text   TEXT    NOT NULL,
+    why           TEXT,
     CONSTRAINT pk_task_option PRIMARY KEY (option_id),
     CONSTRAINT fk_task_option_task FOREIGN KEY (task_id)
         REFERENCES task (task_id) ON DELETE CASCADE,

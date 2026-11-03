@@ -69,8 +69,11 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
             error(describe(it), "tasks must be in a leaf topic (this topic has sub-topics)")
         }
         (content.summaries.filter { it.topicId in nonLeaf }.map { it.source } +
-            content.practices.filter { it.topicId in nonLeaf }.map { it.source }).forEach {
-            error(describe(it), "learning units must be in a leaf topic (this topic has sub-topics)")
+            content.practices.filter { it.topicId in nonLeaf && it.file.practiceKind != "FINAL" }.map { it.source }).forEach {
+            error(describe(it), "learning units must be in a leaf topic (this topic has sub-topics; only FINAL tests belong to it)")
+        }
+        content.practices.filter { it.topicId !in nonLeaf && it.file.practiceKind == "FINAL" }.forEach {
+            error(describe(it.source), "a FINAL test belongs to a parent topic (this topic has no sub-topics)")
         }
     }
 
@@ -121,6 +124,8 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
         t.options.forEach {
             length(where, "option label", it.label, 5)
             length(where, "option text", it.text, 500)
+            length(where, "option why", it.why, 500)
+            it.why?.let { why -> checkText(where, "option why", why) }
             oneOf(where, "option role", it.role, OPTION_ROLES)
             checkText(where, "option text", it.text)
         }
@@ -188,8 +193,18 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
         content.summaries.forEach { u ->
             val where = describe(u.source)
             length(where, "title", u.title, 200)
-            if (u.bodyText.isBlank()) error(where, "a SUMMARY unit needs text")
-            checkText(where, "text", u.bodyText)
+            if (u.pages.isEmpty()) error(where, "a SUMMARY unit needs text")
+            if (u.pages.size > MAX_PAGES) error(where, "at most $MAX_PAGES pages")
+            u.pages.forEachIndexed { index, page ->
+                val pageWhere = "$where (page ${index + 1})"
+                length(pageWhere, "page title", page.title, 200)
+                if (page.blocks.isEmpty()) error(pageWhere, "a page needs text")
+                if (page.blocks.size > MAX_BLOCKS) error(pageWhere, "at most $MAX_BLOCKS blocks on a page")
+                page.blocks.forEach { block ->
+                    if (block.text.isBlank()) error(pageWhere, "an empty ${block.type.lowercase()} block")
+                    checkText(pageWhere, "text", block.text)
+                }
+            }
             positive(where, "estimated_minutes", u.estimatedMinutes)
             if (u.xpReward < 0) error(where, "xp_reward cannot be negative")
             checkProvenance(where, u.provenance)
@@ -203,10 +218,17 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
             positive(where, "round_size", u.roundSize)
             if (u.xpReward < 0) error(where, "xp_reward cannot be negative")
             checkProvenance(where, Provenance(u.sourceType, u.sourceNote, u.reviewedAt))
+            oneOf(where, "practice_kind", u.practiceKind, PRACTICE_KINDS)
 
             if (u.tasks.isEmpty()) error(where, "a PRACTICE unit needs tasks")
             u.tasks.filter { it.taskId !in tasksById }.forEach { error(where, "task ${it.taskId} does not exist") }
             if (u.tasks.map { it.taskId }.toSet().size != u.tasks.size) error(where, "a task is listed twice")
+            if (u.practiceKind == "FINAL") {
+                val below = descendants(content, p.topicId)
+                u.tasks.mapNotNull { tasksById[it.taskId] }.filter { it.topicId !in below }.forEach {
+                    error(where, "FINAL test: task ${it.entry.taskId} is not in a topic below this one")
+                }
+            }
             val core = u.tasks.count { it.isCore }
             if (u.roundSize > core) error(where, "round_size ${u.roundSize} is larger than the $core core tasks")
         }
@@ -233,6 +255,18 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
         content.taskFormats.groupBy { it.code }.filterValues { it.size > 1 }.keys.forEach { errors += "task_format: code $it is used twice" }
         content.tags.groupBy { it.name }.filterValues { it.size > 1 }.keys.forEach { errors += "tag: name $it is used twice" }
         content.subjects.groupBy { it.code }.filterValues { it.size > 1 }.keys.forEach { errors += "subject: code $it is used twice" }
+    }
+
+    /** Ids of the topics below [topicId], at any depth. */
+    private fun descendants(content: ContentSet, topicId: Long): Set<Long> {
+        val children = content.topics.groupBy({ it.parentTopicId }, { it.file.topicId })
+        val found = mutableSetOf<Long>()
+        val queue = ArrayDeque(children[topicId].orEmpty())
+        while (queue.isNotEmpty()) {
+            val id = queue.removeFirst()
+            if (found.add(id)) queue += children[id].orEmpty()
+        }
+        return found
     }
 
     private fun checkProvenance(where: String, p: Provenance) {
@@ -272,6 +306,9 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
     companion object {
         /** Child rows get ids `task_id * 100 + position`, so a task has at most 99 of each. */
         const val MAX_CHILD_ROWS = 99
+        const val MAX_PAGES = 50
+        const val MAX_BLOCKS = 30
+        val PRACTICE_KINDS = setOf("MINI", "TOPIC", "FINAL")
 
         val ANSWER_MODES = setOf("CHOICE", "TEXT")
         val TAG_TYPES = setOf("AUTHOR", "WORK", "PERIOD", "CONCEPT")

@@ -58,11 +58,15 @@ data class Provenance(
     @SerialName("reviewed_at") val reviewedAt: String? = null,
 )
 
-/** A `PRACTICE` learning unit: any `*.json` in a leaf topic folder other than `topic.json` and `tasks.json`. */
+/**
+ * A `PRACTICE` learning unit: any `*.json` in a topic folder other than `topic.json` and `tasks.json`.
+ * `MINI` and `TOPIC` tests sit in a leaf topic, a `FINAL` test in a parent topic.
+ */
 @Serializable
 data class PracticeUnitFile(
     @SerialName("learning_unit_id") val learningUnitId: Long,
     val title: String,
+    @SerialName("practice_kind") val practiceKind: String,
     @SerialName("estimated_minutes") val estimatedMinutes: Int,
     @SerialName("round_size") val roundSize: Int = 5,
     @SerialName("xp_reward") val xpReward: Int = 10,
@@ -110,6 +114,8 @@ data class OptionEntry(
     val label: String,
     val text: String,
     val role: String = "ANSWER",
+    /** Why this option is wrong; shown only to a student who picked it. */
+    val why: String? = null,
 )
 
 /** Options are referenced by their label, prompts (MATCHING only) by the label of a `PROMPT` option. */

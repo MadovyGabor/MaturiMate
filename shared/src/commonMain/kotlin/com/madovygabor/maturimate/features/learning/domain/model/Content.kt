@@ -26,7 +26,19 @@ data class Topic(
     val orderIndex: Int,
 )
 
-/** One step of a leaf topic: a text to read or a set of practice tasks. */
+/** The kind of a practice unit: a short test after part of a lesson, the test of a topic, or a test over a parent topic. */
+enum class PracticeKind { MINI, TOPIC, FINAL }
+
+/** A block of a lesson page: a paragraph or a box. The label of a box is an app string, not part of the content. */
+enum class BlockType { PARAGRAPH, EXAMPLE, TIP, NOTE, WARNING }
+
+/** Text in the app's format (`**bold**`, `*italic*`; paragraphs of a box are separated by a blank line). */
+data class LessonBlock(val type: BlockType, val text: String)
+
+/** One page of a lesson, read without scrolling. [title] is the entry in the table of contents (null for an untitled page). */
+data class LessonPage(val title: String?, val blocks: List<LessonBlock>)
+
+/** One step of a topic: a lesson to read or a test (a set of practice tasks). */
 sealed interface LearningUnit {
     val id: Long
     val topicId: Long
@@ -39,8 +51,7 @@ sealed interface LearningUnit {
         override val id: Long,
         override val topicId: Long,
         override val title: String,
-        /** Text in the app's format: `**bold**`, `*italic*`. */
-        val bodyText: String,
+        val pages: List<LessonPage>,
         override val estimatedMinutes: Int,
         override val xpReward: Int,
         override val sortOrder: Int,
@@ -51,6 +62,7 @@ sealed interface LearningUnit {
         override val topicId: Long,
         override val title: String,
         override val estimatedMinutes: Int,
+        val kind: PracticeKind,
         /** How many tasks one round asks. */
         val roundSize: Int,
         override val xpReward: Int,
@@ -85,6 +97,8 @@ data class TaskOption(
     val label: String,
     val text: String,
     val role: OptionRole,
+    /** Why this option is wrong; shown only to a student who picked it. */
+    val why: String? = null,
 )
 
 /** The correct option of one answer slot; [promptLabel] is the left-hand item of a matching pair. */
