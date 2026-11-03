@@ -1,6 +1,8 @@
 # MaturiMate Roadmap
 
-> **Updated 2026-11-03:** Milestone 7 is redrawn after the prototype of the learning screens: it starts with Hungarian only, works from sample content that goes through the real importer, and has more, smaller steps (7.1 to 7.8). Slovak, English and Mathematics follow in Milestone 12. The reasons are in [DECISIONS](DECISIONS.md).
+> **Updated 2026-11-03 (later):** Milestone 7 is done with steps 7.0 to 7.5. The content path with the starter pack (was 7.6) and the required sign-in after the first lesson (was 7.8) moved to Milestone 11 (11.2a and 11.2b), because they only matter before the release. The reading passage view (was 7.7) is dropped for now: there are no reading comprehension tasks in the first material; it comes back with an extension of the content model when such tasks are added.
+>
+> **Updated 2026-11-03:** Milestone 7 is redrawn after the prototype of the learning screens: it starts with Hungarian only, works from sample content that goes through the real importer, and has more, smaller steps (7.1 to 7.5). Slovak, English and Mathematics follow in Milestone 12. The reasons are in [DECISIONS](DECISIONS.md).
 >
 > **Updated 2026-11-01:** the toolchain update (AGP 9) becomes Milestone 6, before the unit engine; the milestones after it move up by one. The reasons are in [DECISIONS](DECISIONS.md).
 >
@@ -153,7 +155,7 @@ Branch: `chore/toolchain-agp9`, one commit per step. The bugs, their causes and 
 
 ---
 
-## Milestone 7: Unit engine with one small unit
+## Milestone 7: Unit engine with one small unit *(done on 2026-11-03)*
 
 Goal: lessons and tests that work end to end, for Hungarian first: subjects, parts, topics, the path, lesson pages, the seven task formats, tests and results. After that, new units are mostly new data. The screens follow the prototype of 7.0; every step also covers the tablet and desktop layout. Until the real lessons arrive, the screens run on the sample content of 7.0a ("[PRÓBA]" titles, ids from 900000), which goes through the real exporter and never to Supabase.
 
@@ -164,15 +166,12 @@ Goal: lessons and tests that work end to end, for Hungarian first: subjects, par
 * [x] **7.3. Tasks, first formats:** multiple choice, true or false and short answer; `AnswerChecker` (tested per format, accepted variants), instant feedback with the explanation and the `why` of the chosen option, the hint of the short answer. *Done on 2026-11-03: `AnswerChecker` works for all seven formats (tested), the screens for three; `TestSessionViewModel` and `TestScreen` run a test (no result and no saved progress yet, that is 7.5); the other formats are skipped in a round until 7.4. New components: `AppAnswerOption`, `AppTrueFalseCard`, `AppFeedbackSheet`.*
 * [x] **7.4. The other formats:** matching, ordering, gaps from a word list and typed gaps. *Done on 2026-11-03: the answer is kept per slot; new components `AppMatchPair`, `AppGapSlot` and `AppGapField`; the round no longer skips any format.*
 * [x] **7.5. Tests and results:** the `MINI`, `TOPIC` and `FINAL` tests (rounds of `round_size` tasks), the result screen, review of the wrong answers, saving the attempt and the unit progress in the user database, the next step of the path opens. *Done on 2026-11-03, with changes agreed on the way: a round is the required tasks plus random ones to fill `round_size`, in random order; a test is done, and the next step opens, only when a round is passed (every task right; otherwise the result offers another try); the steps of a path are walked in order (the ones ahead are locked, the final test of a parent topic too); a lesson goes on to the test after it; and every answer is recorded in the new `attempt_answer` table (phone migration `2.sqm`, Supabase migration `20261103130000_attempt_answer.sql`, not applied to the live project yet) for the mistake practice (9.3) and the statistics (9.4).*
-* [ ] **7.6. Real content path:** the sample content is bundled through `bundleContent`; the exporter builds two files, the starter pack bundled in the app (first lesson only) and the full content file. The real lessons replace the sample ones.
-* [ ] **7.7. Reading passage view:** a text shown together with its tasks (the connected texts of the design).
-* [ ] **7.8. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked.
 
 ---
 
 ## Milestone 8: Exam-style practice with own content
 
-* [ ] **8.1.** A practice mode that combines a passage and its tasks, with a plain time limit (no special time extension).
+* [ ] **8.1.** A practice mode that combines a passage and its tasks, with a plain time limit (no special time extension). *A passage (a text with tasks that refer to it) does not exist in the content model yet; it is added when the first reading tasks are written.*
 * [ ] **8.2.** Grading with points, the exam result screen and task-by-task review (the plain result of a test exists since 7.5).
 * [ ] **8.3.** Local history of finished attempts.
 
@@ -210,6 +209,8 @@ Goal: lessons and tests that work end to end, for Hungarian first: subjects, par
 
 * [ ] **11.1.** Sync of user data between the phone and Supabase.
 * [ ] **11.2.** Content download after sign-up and later updates, as described under "Data architecture": a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. Large downloads ask before using mobile data.
+* [ ] **11.2a. Content path (starter pack and full file):** the exporter builds two files from the same content, the starter pack bundled in the app (the first lesson of each subject, with the topics above it) and the full content file that 11.2 downloads. The manifest gets a `kind` (`FULL` or `STARTER`) and an explicit content schema number; a full file of the same version replaces an installed starter, never the other way round; `bundleContent -PcontentKind=full|starter` (development builds use the full file, the release the starter). *Moved here from step 7.6 on 2026-11-03: it only matters before the release, together with the download.*
+* [ ] **11.2b. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked. *Moved here from step 7.8 on 2026-11-03: it belongs to the release, together with the starter pack and the download.*
 * [ ] **11.3.** Account deletion and the privacy notice (required by GDPR and the app stores).
 * [ ] **11.3a.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download.
 * [ ] **11.3b. Consent documents:** the terms of use and the privacy notice written and published (`maturimate.madovygabor.com`), linked from the consent text on the account step, with real document versions instead of "1.0". *Added on 2026-11-01.*
