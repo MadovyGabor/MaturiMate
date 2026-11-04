@@ -28,6 +28,7 @@ import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningCourse
 import com.madovygabor.maturimate.features.learning.domain.RecentActivities
+import com.madovygabor.maturimate.features.reminder.domain.ReminderSync
 import com.madovygabor.maturimate.features.learning.domain.StudySettings
 import com.madovygabor.maturimate.features.learning.domain.StudyTracker
 import com.madovygabor.maturimate.features.learning.domain.TestRecorder
@@ -98,6 +99,9 @@ val sharedModule = module {
     single { RecentActivities(get(), get()) }
     // What a test round leaves in the user database: the attempt, the answers, the progress
     single { TestRecorder(get(), get()) }
+
+    // Keeps the planned daily reminder in line with the profile (started by the app)
+    single { ReminderSync(get(), get()) }
 
     // Profile and settings of the local user
     single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }

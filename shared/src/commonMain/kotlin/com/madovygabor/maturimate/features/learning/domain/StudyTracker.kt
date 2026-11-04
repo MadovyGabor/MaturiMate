@@ -71,6 +71,10 @@ class StudyTracker(
         }
     }
 
+    /** True when the student has had a streak at some time, even if it is broken now. */
+    suspend fun hadStreak(): Boolean =
+        ((progress.streak() as? OperationResult.Success)?.data?.longestStreak ?: 0) > 0
+
     private suspend fun advanceStreak(today: LocalDate): OperationResult<Unit, LearningError> {
         val earlier = (progress.streak() as? OperationResult.Success)?.data
         if (earlier?.lastActivityDate == today) return OperationResult.Success(Unit)

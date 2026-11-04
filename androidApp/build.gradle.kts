@@ -50,6 +50,7 @@ android {
 dependencies {
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.kotlinx.datetime)
 
     //Koin Android
     implementation(libs.koin.android)

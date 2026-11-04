@@ -5,6 +5,7 @@ What was decided and why. Newest first. A decision that changes is not deleted: 
 ## 2026-11-04
 
 * **The daily goal counts study minutes only; the streak resets at once.** A day is done when the minutes studied (lessons and tests) reach `daily_goal_minutes`; answered tasks do not count. The streak grows by one on the first goal-reached day after a streak day and goes back to zero after one missed day: no grace day. Reason: the owner's choice, the simplest rule. A streak freeze (maybe paid) can be added later; the streak rules sit in one use case so that is a small change.
+* **The daily reminder is Android only for now.** One inexact alarm (`setAndAllowWhileIdle`, no special permission, a few minutes late is fine) is planned for the saved time; when it fires the app shows the notification unless the day's goal is reached, and plans the next day. The desktop app has no background service, so it shows no reminder. Reason: a reliable reminder needs the system to start the app; on the desktop that would need a service that runs all the time. The text varies from day to day (`chooseReminder`): new student, short streak, long streak (7 days or more), a comeback after a broken streak, and the days until the exam one day in seven; the variant follows the day number, not chance.
 * **New screens use the app's own design language.** Screenshots of other apps in `llm/` are inspiration for layout ideas only; colors, type, shapes and spacing come from `docs/design-system`.
 
 ## 2026-11-03
