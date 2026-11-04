@@ -131,6 +131,6 @@ fun Streak.toRow(userId: String) = User_streak(
 fun Activity_log.toDomain() = DailyActivity(
     date = LocalDate.parse(activity_date),
     xpEarned = xp_earned.toInt(),
-    minutesStudied = minutes_studied.toInt(),
+    secondsStudied = seconds_studied.toInt(),
     tasksAnswered = tasks_answered.toInt(),
 )

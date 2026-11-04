@@ -112,7 +112,7 @@ class ProgressRepositoryImpl(
             userId(),
             activity.date.toString(),
             activity.xpEarned.toLong(),
-            activity.minutesStudied.toLong(),
+            activity.secondsStudied.toLong(),
             activity.tasksAnswered.toLong(),
         )
     }

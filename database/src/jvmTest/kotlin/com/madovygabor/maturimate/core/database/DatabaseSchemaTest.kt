@@ -113,7 +113,7 @@ class DatabaseSchemaTest {
         db.activityQueries.addActivity("user-1", "2026-10-28", 10, 2, 5)
 
         val day = db.activityQueries.selectActivity("user-1", "2026-10-28", "2026-10-28").executeAsOne()
-        assertEquals(5L, day.minutes_studied)
+        assertEquals(5L, day.seconds_studied)
         assertEquals(20L, db.activityQueries.selectTotalXp("user-1").executeAsOne())
     }
 
@@ -190,6 +190,15 @@ class DatabaseSchemaTest {
                 PRIMARY KEY (user_id, subject_id)
             )
         """.trimIndent(), 0)
+        driver.execute(null, """
+            CREATE TABLE activity_log (
+                activity_id INTEGER CONSTRAINT pk_activity_log PRIMARY KEY, user_id TEXT NOT NULL,
+                activity_date TEXT NOT NULL, xp_earned INTEGER NOT NULL DEFAULT 0,
+                minutes_studied INTEGER NOT NULL DEFAULT 0, tasks_answered INTEGER NOT NULL DEFAULT 0,
+                CONSTRAINT uq_activity_log_day UNIQUE (user_id, activity_date)
+            )
+        """.trimIndent(), 0)
+        driver.execute(null, "INSERT INTO activity_log (user_id, activity_date, minutes_studied) VALUES ('guest-1', '2026-11-01', 4)", 0)
         driver.execute(null, "INSERT INTO user_profile (user_id, teaching_language) VALUES ('guest-1', 'HU')", 0)
         driver.execute(null, "INSERT INTO user_subject (user_id, subject_id, added_at) VALUES ('guest-1', 3, 1000)", 0)
 
@@ -199,6 +208,7 @@ class DatabaseSchemaTest {
         val profile = db.profileQueries.selectProfile("guest-1").executeAsOne()
         assertEquals("HU", profile.teaching_language)
         assertNull(profile.onboarding_completed_at)
+        assertEquals(240L, db.activityQueries.selectActivity("guest-1", "2026-11-01", "2026-11-01").executeAsOne().seconds_studied)
         assertNull(db.profileQueries.selectSubjects("guest-1").executeAsOne().level)
         assertFailsWith<Exception> {
             driver.execute(null, "UPDATE user_subject SET level = 'C1' WHERE user_id = 'guest-1'", 0)

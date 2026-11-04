@@ -1,0 +1,21 @@
+-- Version 3 to 4: the study time of a day is counted in seconds, not minutes, so a short lesson counts
+-- (supabase/migrations/20261104120000_activity_seconds.sql). The table is rebuilt because the SQLite of
+-- Android API 24 cannot rename a column.
+
+CREATE TABLE activity_log_new (
+    activity_id      INTEGER CONSTRAINT pk_activity_log PRIMARY KEY,
+    user_id          TEXT    NOT NULL,
+    activity_date    TEXT    NOT NULL,
+    xp_earned        INTEGER NOT NULL DEFAULT 0,
+    seconds_studied  INTEGER NOT NULL DEFAULT 0,
+    tasks_answered   INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT uq_activity_log_day UNIQUE (user_id, activity_date),
+    CONSTRAINT ck_activity_log_values
+        CHECK (xp_earned >= 0 AND seconds_studied >= 0 AND tasks_answered >= 0)
+);
+
+INSERT INTO activity_log_new (activity_id, user_id, activity_date, xp_earned, seconds_studied, tasks_answered)
+SELECT activity_id, user_id, activity_date, xp_earned, minutes_studied * 60, tasks_answered FROM activity_log;
+
+DROP TABLE activity_log;
+ALTER TABLE activity_log_new RENAME TO activity_log;

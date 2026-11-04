@@ -2,6 +2,11 @@
 
 What was decided and why. Newest first. A decision that changes is not deleted: it is marked *Replaced by* with the date of the newer entry.
 
+## 2026-11-04
+
+* **The daily goal counts study minutes only; the streak resets at once.** A day is done when the minutes studied (lessons and tests) reach `daily_goal_minutes`; answered tasks do not count. The streak grows by one on the first goal-reached day after a streak day and goes back to zero after one missed day: no grace day. Reason: the owner's choice, the simplest rule. A streak freeze (maybe paid) can be added later; the streak rules sit in one use case so that is a small change.
+* **New screens use the app's own design language.** Screenshots of other apps in `llm/` are inspiration for layout ideas only; colors, type, shapes and spacing come from `docs/design-system`.
+
 ## 2026-11-03
 
 * **Four tabs, each with one job.** *Kezdőlap* (what to do today: days until the exam, streak and daily goal, a "continue" button, the last three activities), *Tantárgyak* (the lessons, as now), *Gyakorlás* (what to practise: weakest and strongest subjects and topics, mistake practice, review of old material; the detailed analytics may become paid later, but no paywall is built now) and *Profil* (where the student stands: name, description, progress per subject, history, and a gear icon to the settings screen). The old "Előzmények" tab goes away. Reason: the profile shows facts and the practice tab shows what to work on, so the same numbers are not shown twice. Each screen is a prototype first.
