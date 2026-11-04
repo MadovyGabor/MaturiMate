@@ -44,6 +44,28 @@ data class Layout(
     val logoLarge: Dp = 168.dp,
     /** Logo in the side panel. */
     val logoSmall: Dp = 52.dp,
+    /** Thickness of the vertical line of a learning path. */
+    val pathLine: Dp = 4.dp,
+    /** Node of a lesson (circle) or a test (rounded square) on the learning path. */
+    val pathNode: Dp = 42.dp,
+    /** Node of a mini test on the learning path. */
+    val pathNodeSmall: Dp = 34.dp,
+    /** Size of the progress ring of a topic. */
+    val progressRing: Dp = 40.dp,
+    /** Thickness of the progress ring. */
+    val progressRingStroke: Dp = 4.dp,
+    /** Width of the gold bar at the side of a tip box in a lesson. */
+    val accentBar: Dp = 4.dp,
+    /** Smallest height of an answer option of a multiple-choice task. */
+    val answerOptionMinHeight: Dp = 56.dp,
+    /** Smallest height of the big true or false answer. */
+    val trueFalseCardMinHeight: Dp = 140.dp,
+    /** Smallest width of a gap filled from a word list. */
+    val gapSlotMinWidth: Dp = 96.dp,
+    /** Width of a gap filled by typing. */
+    val gapFieldWidth: Dp = 128.dp,
+    /** Height of a gap in a sentence, filled from a list or by typing. */
+    val gapSlotHeight: Dp = 40.dp,
 )
 
 private val AppLayout = Layout()

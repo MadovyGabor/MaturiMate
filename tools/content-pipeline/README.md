@@ -50,18 +50,75 @@ content/
       01-szokepek/                  leaf topic
         topic.json
         tasks.json                  tasks of this topic
-        10-summary.md               SUMMARY unit: front matter + text
-        20-practice.json            PRACTICE unit and its task list
+        10-summary.md               SUMMARY unit (a lesson): front matter + pages and boxes
+        20-practice.json            PRACTICE unit (a test) and its task list
 ```
 
 A complete example is the test fixture `src/test/resources/content-valid/`.
 
 * All ids (`subject_id`, `topic_id`, `learning_unit_id`, `task_id`, …) are written in the files and never change, because the app's user database refers to them.
 * The exam subjects have fixed ids and codes, because the app's onboarding offers them before any content is installed (`CatalogSubject`): 1 `HU_MJL` (Hungarian, Hungarian schools), 2 `SK_SJL` (Slovak, Slovak schools), 3 `ANJ_B1` (English B1), 4 `MAT` (Mathematics), 5 `HU_SJSL` (Slovak language and Slovak literature, Hungarian schools), 6 `ANJ_B2` (English B2). One subject is one exam. A subject's folder uses these.
+* In a gap task (`GAP_CHOICE`, `GAP_FILL`) the `*italic*` and `**bold**` markers must stay inside one piece of text between the gaps; they cannot span a gap.
+* The options of a task keep the order of the file, and the app shows them in it. In a `TRUE_FALSE` task the first option is the true one ("igaz") and the second the false one ("hamis"): the app puts a check on the first and an X on the second.
 * In `tasks.json`, options are referenced by their label (`"key": [{"option": "B"}]`); matching keys also name the prompt label. Ids of options, accepted answers and attachments are derived as `task_id * 100 + position`, so a task has at most 99 of each.
 * Every task and unit has `source_type` (`OWN`, `TEACHER`, `AI_REVIEWED`, `PUBLIC_DOMAIN`). `AI_REVIEWED` needs `reviewed_at`; `TEACHER` and `PUBLIC_DOMAIN` need `source_note`. Provenance is checked, not imported.
 * Texts use only `**bold**`, `*italic*` and `[[n]]` gap markers.
 * Files named `*_private.json` are never read.
+
+## Lesson files (pages and boxes)
+
+A lesson (`SUMMARY` unit) is one Markdown file: front matter, then the text. The format uses well-known syntax, so any Markdown editor shows it sensibly.
+
+```markdown
+---
+learning_unit_id: 910101
+title: Toldi: az indulás
+estimated_minutes: 4
+sort_order: 10
+is_published: true
+source_type: OWN
+---
+## Ki az a Toldi Miklós?
+
+Text of the first page, with **bold** and *italic*.
+
+:::example
+A box with an example.
+:::
+
+## A testvérek
+
+Text of the second page.
+
+:::tip
+A box with the thing to remember.
+:::
+```
+
+* **`## Title` starts a page.** The title appears in the table of contents of the lesson. Text before the first `##` is a page without a title; a file without any `##` is one page. Only level 2 headings are allowed.
+* **Boxes** are written `:::type` … `:::`, alone on their lines. Types: `example`, `tip`, `note`, `warning`. The keyword is the same in every language; the label ("Példa", "Príklad") is an app string in both languages. An unknown type, a box that is not closed, or a box inside a box is an error.
+* **Inside a page and a box** only `**bold**`, `*italic*` and paragraphs are allowed, like everywhere else (no lists, links, code or HTML).
+* **A short page** fits one phone screen without scrolling (about 60 to 90 words); a longer text, such as the plot of a work, is split into several pages.
+* **Several parts of one topic** are several files in its folder; the number in the file name and the `sort_order` give the order, with tests between them. For example `10-intro.md`, `20-mini.json`, `30-part2.md`, `40-mini.json`, `50-test.json`.
+
+## Tests (practice units)
+
+A practice unit (`*.json`) has a `practice_kind`:
+
+| Kind | Where | Meaning |
+| :--- | :--- | :--- |
+| `MINI` | leaf topic | a short test after one part of a lesson |
+| `TOPIC` | leaf topic | the test of the whole topic (for example all of one work) |
+| `FINAL` | parent topic | a test of everything below it (for example all of one author); its tasks come from the topics below |
+
+A test round shows `round_size` tasks: every **required** task (`"is_core": true`, the default) and random ones of the other tasks (`"is_core": false`) to fill the round, in random order. `round_size` is at least the number of required tasks and at most the number of all tasks. For example 20 tasks with `round_size` 10 and no required task: every round shows a random half.
+
+Only `FINAL` units may sit on a parent topic (a `FINAL` test on a leaf topic is an error); every other unit sits on a leaf topic. The tasks of a unit are listed by id; the tasks of a `FINAL` test must all lie in topics below its own. The exporter writes the pages into the `unit_page` and `page_block` tables, the kind into `learning_unit.practice_kind`.
+
+## Explanations
+
+* `explanation` (task, required): why the correct answer is correct. It works for every format.
+* `why` (option, optional): why this option is wrong. The app shows it only to a student who picked that option. Write it where two answers are easy to mix up.
 
 ## What an import does (PostgreSQL)
 

@@ -200,4 +200,65 @@
     <!-- Errors of saving an answer -->
     <string name="error_storage_full">Úložisko je plné.</string>
     <string name="error_io">Uloženie sa nepodarilo. Skús to znova.</string>
+
+    <!-- Learning: subjects, parts, topics and the path (docs/learning/prototype.html) -->
+    <string name="learning_subjects_title">Predmety</string>
+    <string name="learning_subjects_intro">Tvoje maturitné predmety. Vyber si jeden a uč sa po témach.</string>
+    <string name="learning_subjects_empty">Zatiaľ nemáš vybraté žiadne predmety. Pridaj ich vo svojom profile.</string>
+    <string name="learning_subject_parts">Časti: %1$d</string>
+    <string name="learning_parts_title">Čo sa chceš učiť?</string>
+    <string name="learning_topics_hint">Vyber si tému. V každej nájdeš lekcie, mini testy a záverečný test.</string>
+    <string name="learning_steps_done">Hotové: %1$d z %2$d</string>
+    <string name="learning_step_lesson_meta">Lekcia · %1$d min</string>
+    <string name="learning_step_tasks_meta">Úlohy: %1$d</string>
+    <string name="learning_step_done">Hotovo</string>
+    <string name="learning_step_next">Ďalší krok</string>
+    <string name="learning_load_error">Obsah sa nepodarilo načítať.</string>
+    <string name="learning_retry">Skúsiť znova</string>
+    <string name="learning_save_error">Lekciu sa nepodarilo uložiť. Skús to znova.</string>
+
+    <!-- Lesson screen -->
+    <string name="lesson_box_example">Príklad</string>
+    <string name="lesson_box_tip">Tip</string>
+    <string name="lesson_box_note">Poznámka</string>
+    <string name="lesson_box_warning">Pozor</string>
+    <string name="lesson_close">Zavrieť</string>
+    <string name="lesson_contents">Obsah</string>
+    <string name="lesson_finish">Dokončiť</string>
+    <string name="lesson_previous">Predchádzajúca strana</string>
+    <string name="lesson_minutes">asi %1$d min</string>
+    <string name="lesson_page_position">%1$d / %2$d</string>
+    <string name="lesson_page_description">Strana %1$d z %2$d</string>
+    <string name="lesson_page_n">Strana %1$d</string>
+
+    <!-- Test screen: the tasks of a test -->
+    <string name="test_check">Skontrolovať</string>
+    <string name="test_correct">Správne!</string>
+    <string name="test_wrong">Nie celkom.</string>
+    <string name="test_right_answer">Správna odpoveď:</string>
+    <string name="test_why_not">Prečo nie toto?</string>
+    <string name="test_your_answer">Tvoja odpoveď</string>
+    <string name="test_hint_request">Požiadať o nápovedu</string>
+    <string name="test_hint">Prvé písmeno: %1$s · počet písmen: %2$d</string>
+    <string name="test_empty">Pre tento test zatiaľ nie sú dostupné úlohy.</string>
+    <string name="test_finish">Dokončiť</string>
+    <string name="test_match_hint">Ťukni na príklad a potom na odpoveď, ktorá k nemu patrí.</string>
+    <string name="test_order_hint">Ťukaj na kroky v správnom poradí. Ťuknutím na vybraný krok ho vrátiš späť.</string>
+    <string name="test_gap_choice_hint">Ťukaj na slová, aby sa vložili do medzier. Ťuknutím na vyplnenú medzeru ju vyprázdniš.</string>
+    <string name="test_gap_fill_hint">Doplň chýbajúce slová do medzier.</string>
+    <string name="test_pick_placeholder">vyber…</string>
+    <string name="test_gap_description">Medzera %1$d</string>
+    <string name="test_result_good">Pekná práca!</string>
+    <string name="test_result_failed">Zatiaľ sa nepodarilo</string>
+    <string name="test_pass_needed">Ďalší krok sa otvorí, až keď vyriešiš všetky úlohy správne.</string>
+    <string name="test_again">Znova</string>
+    <string name="test_back_to_path">Späť na cestu</string>
+    <string name="test_locked">Najprv dokonči predchádzajúci krok.</string>
+    <string name="lesson_next_test">Ďalej na test</string>
+    <string name="learning_steps_fraction">%1$d / %2$d</string>
+    <string name="learning_part_meta">Témy: %1$d · Kroky: %2$d</string>
+    <string name="learning_topic_meta">Lekcie: %1$d · Testy: %2$d</string>
+    <string name="test_answer_here">Napíš sem…</string>
+    <string name="test_one_word">1 slovo</string>
+    <string name="test_correct_value">Správne: %1$s</string>
 </resources>

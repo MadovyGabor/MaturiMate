@@ -42,7 +42,7 @@ fun MainFrame(
 
         if (isDesktop) {
             // Desktop navigation side bar
-            Row(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxSize().systemBottomPadding()) {
                 NavigationRail(
                     modifier = Modifier.width(100.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,

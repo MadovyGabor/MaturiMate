@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.core.database
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.madovygabor.maturimate.database.user.Attempt_answer
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
@@ -62,6 +63,32 @@ class LocalUserProviderTest {
         assertNull(database.profileQueries.selectProfile("guest-1").executeAsOneOrNull())
         // the profile follows the new id
         assertEquals(UserRole.STUDENT, withTimeout(5_000) { profiles.profile.first { it?.role != null } }?.role)
+    }
+
+    @Test
+    fun adoptingAnAccountMovesTheAnswersOfTheGuestsRounds() = runBlocking {
+        val provider = LocalUserProvider(database) { "guest-1" }
+        database.progressQueries.insertAttempt("guest-1", "UNIT_ROUND", null, 51, 1_000)
+        val attemptId = database.progressQueries.lastInsertedId().executeAsOne()
+        database.progressQueries.upsertAttemptAnswer(Attempt_answer(attemptId, 100, "guest-1", true, 2, 2, 2_000, "1=B"))
+
+        provider.adoptAccount("account-1")
+
+        assertEquals("account-1", database.progressQueries.selectAnswersOfAttempt(attemptId).executeAsOne().user_id)
+        assertEquals(1, database.progressQueries.selectAttempts("account-1").executeAsList().size)
+    }
+
+    @Test
+    fun anotherAccountDoesNotGetThePreviousAccountsAnswers() = runBlocking {
+        val provider = LocalUserProvider(database) { "guest-1" }
+        database.progressQueries.insertAttempt("guest-1", "UNIT_ROUND", null, 51, 1_000)
+        val attemptId = database.progressQueries.lastInsertedId().executeAsOne()
+        database.progressQueries.upsertAttemptAnswer(Attempt_answer(attemptId, 100, "guest-1", true, 2, 2, 2_000, null))
+        provider.adoptAccount("account-a")
+
+        provider.adoptAccount("account-b")
+
+        assertEquals(0, database.progressQueries.selectAnswersOfAttempt(attemptId).executeAsList().size)
     }
 
     // Signing in with a second account on the account step used to hand it the first account's rows.

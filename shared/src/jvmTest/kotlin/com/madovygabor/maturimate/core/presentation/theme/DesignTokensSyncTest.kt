@@ -178,6 +178,17 @@ class DesignTokensSyncTest {
             "border-thick" to layout.borderThick.value,
             "logo-large" to layout.logoLarge.value,
             "logo-small" to layout.logoSmall.value,
+            "path-line" to layout.pathLine.value,
+            "path-node" to layout.pathNode.value,
+            "path-node-small" to layout.pathNodeSmall.value,
+            "progress-ring" to layout.progressRing.value,
+            "progress-ring-stroke" to layout.progressRingStroke.value,
+            "accent-bar" to layout.accentBar.value,
+            "answer-option-min-height" to layout.answerOptionMinHeight.value,
+            "true-false-card-min-height" to layout.trueFalseCardMinHeight.value,
+            "gap-slot-min-width" to layout.gapSlotMinWidth.value,
+            "gap-field-width" to layout.gapFieldWidth.value,
+            "gap-slot-height" to layout.gapSlotHeight.value,
         )
 
         val values = tokenList("layout")

@@ -26,6 +26,24 @@ CREATE TABLE attempt (
         earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
 );
 
+-- One answer of a test round: which task, right or wrong, the points and what the student answered.
+-- Same table as in supabase/migrations/20261103130000_attempt_answer.sql, without the foreign key to the task.
+CREATE TABLE attempt_answer (
+    attempt_id     INTEGER NOT NULL,
+    task_id        INTEGER NOT NULL,
+    user_id        TEXT    NOT NULL,
+    is_correct     INTEGER AS kotlin.Boolean NOT NULL CHECK (is_correct IN (0, 1)),
+    earned_points  INTEGER NOT NULL,
+    max_points     INTEGER NOT NULL,
+    answered_at    INTEGER NOT NULL,
+    given_answer   TEXT,
+    CONSTRAINT pk_attempt_answer PRIMARY KEY (attempt_id, task_id),
+    CONSTRAINT fk_attempt_answer_attempt FOREIGN KEY (attempt_id)
+        REFERENCES attempt (attempt_id) ON DELETE CASCADE,
+    CONSTRAINT ck_attempt_answer_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
 CREATE TABLE user_unit_progress (
     user_id           TEXT    NOT NULL,
     learning_unit_id  INTEGER NOT NULL,
@@ -54,6 +72,7 @@ CREATE TABLE user_task_progress (
 );
 
 CREATE INDEX ix_attempt_user_started    ON attempt (user_id, started_at);
+CREATE INDEX ix_attempt_answer_user_task ON attempt_answer (user_id, task_id);
 CREATE INDEX ix_attempt_unit            ON attempt (learning_unit_id);
 CREATE INDEX ix_user_unit_progress_unit ON user_unit_progress (learning_unit_id);
 CREATE INDEX ix_user_task_progress_due  ON user_task_progress (user_id, next_review_at);
@@ -79,6 +98,13 @@ selectAttemptsByUnit:
 SELECT * FROM attempt
 WHERE user_id = :userId AND learning_unit_id = :learningUnitId
 ORDER BY started_at DESC;
+
+-- an answer is written once per task of a round (a task is asked once in a round)
+upsertAttemptAnswer:
+INSERT OR REPLACE INTO attempt_answer VALUES ?;
+
+selectAnswersOfAttempt:
+SELECT * FROM attempt_answer WHERE attempt_id = :attemptId ORDER BY answered_at, task_id;
 
 selectUnitProgress:
 SELECT * FROM user_unit_progress WHERE user_id = :userId;

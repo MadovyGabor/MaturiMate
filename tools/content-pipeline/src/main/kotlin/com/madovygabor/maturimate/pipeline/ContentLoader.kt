@@ -17,7 +17,7 @@ data class SummaryUnit(
     val learningUnitId: Long,
     val topicId: Long,
     val title: String,
-    val bodyText: String,
+    val pages: List<LessonPageData>,
     val estimatedMinutes: Int,
     val xpReward: Int,
     val sortOrder: Int,
@@ -52,7 +52,7 @@ data class ContentSet(
  * <root>/<subject>/<topic>/topic.json         (any depth)
  * <leaf topic>/tasks.json                     tasks of the leaf topic
  * <leaf topic>/<name>.md                      SUMMARY units (front matter + text)
- * <leaf topic>/<name>.json                    PRACTICE units
+ * <topic>/<name>.json                         PRACTICE units (a FINAL test sits in a parent topic folder)
  * ```
  *
  * Files named `*_private.json` are never read.
@@ -146,11 +146,14 @@ class ContentLoader(private val root: File) {
         val sortOrder = int("sort_order")
         if (id == null || title == null || minutes == null || sortOrder == null) return null
 
+        val lesson = LessonParser.parse(text.substring(match.range.last + 1))
+        lesson.errors.forEach { readErrors += "${relative(file)}: $it" }
+
         return SummaryUnit(
             learningUnitId = id,
             topicId = topicId,
             title = title,
-            bodyText = text.substring(match.range.last + 1).trim(),
+            pages = lesson.pages,
             estimatedMinutes = minutes,
             xpReward = fields["xp_reward"]?.toIntOrNull() ?: 10,
             sortOrder = sortOrder,

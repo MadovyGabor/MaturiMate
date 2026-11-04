@@ -3,6 +3,8 @@ package com.madovygabor.maturimate.features.learning.data
 import com.madovygabor.maturimate.core.database.ContentDatabaseSource
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.content.ContentDatabase
+import com.madovygabor.maturimate.database.content.Learning_unit
+import com.madovygabor.maturimate.features.learning.data.mapper.lessonPages
 import com.madovygabor.maturimate.features.learning.data.mapper.toDomain
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningError
@@ -31,6 +33,10 @@ class ContentRepositoryImpl(
         db.topicQueries.selectRootsBySubject(subjectId).executeAsList().map { it.toDomain() }
     }
 
+    override suspend fun topic(topicId: Long): OperationResult<Topic, LearningError> = read { db ->
+        db.topicQueries.selectById(topicId).executeAsOneOrNull()?.toDomain()
+    }
+
     override suspend fun childTopics(topicId: Long): OperationResult<List<Topic>, LearningError> = read { db ->
         db.topicQueries.selectChildren(topicId).executeAsList().map { it.toDomain() }
     }
@@ -40,11 +46,11 @@ class ContentRepositoryImpl(
     }
 
     override suspend fun units(topicId: Long): OperationResult<List<LearningUnit>, LearningError> = read { db ->
-        db.learningUnitQueries.selectPublishedByTopic(topicId).executeAsList().map { it.toDomain() }
+        db.learningUnitQueries.selectPublishedByTopic(topicId).executeAsList().map { it.toDomain(db) }
     }
 
     override suspend fun unit(learningUnitId: Long): OperationResult<LearningUnit, LearningError> = read { db ->
-        db.learningUnitQueries.selectById(learningUnitId).executeAsOneOrNull()?.toDomain()
+        db.learningUnitQueries.selectById(learningUnitId).executeAsOneOrNull()?.toDomain(db)
     }
 
     override suspend fun unitTasks(learningUnitId: Long): OperationResult<List<UnitTask>, LearningError> = read { db ->
@@ -59,6 +65,13 @@ class ContentRepositoryImpl(
             acceptedAnswers = q.selectAcceptedAnswers(taskId).executeAsList(),
             attachments = q.selectAttachments(taskId).executeAsList(),
         )
+    }
+
+    /** A lesson also reads its pages and their blocks. */
+    private fun Learning_unit.toDomain(db: ContentDatabase): LearningUnit {
+        if (unit_type != "SUMMARY") return toDomain()
+        val q = db.learningUnitQueries
+        return toDomain(lessonPages(q.selectPages(learning_unit_id).executeAsList(), q.selectBlocks(learning_unit_id).executeAsList()))
     }
 
     /** Runs a read on the IO dispatcher; a null result means the row does not exist. */

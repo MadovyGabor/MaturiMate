@@ -191,4 +191,65 @@
     <!-- Errors of saving an answer -->
     <string name="error_storage_full">Megtelt a tárhely.</string>
     <string name="error_io">Nem sikerült menteni. Próbáld újra.</string>
+
+    <!-- Learning: subjects, parts, topics and the path (docs/learning/prototype.html) -->
+    <string name="learning_subjects_title">Tantárgyak</string>
+    <string name="learning_subjects_intro">Az érettségi tantárgyaid. Válassz egyet, és tanulj témánként.</string>
+    <string name="learning_subjects_empty">Még nincs kiválasztott tantárgyad. A profilodban felveheted őket.</string>
+    <string name="learning_subject_parts">%1$d nagy rész</string>
+    <string name="learning_parts_title">Mit szeretnél tanulni?</string>
+    <string name="learning_topics_hint">Válassz egy témát. Mindegyikben leckék, mini tesztek és egy témazáró vár.</string>
+    <string name="learning_steps_done">%1$d / %2$d lépés kész</string>
+    <string name="learning_step_lesson_meta">Lecke · %1$d perc</string>
+    <string name="learning_step_tasks_meta">%1$d feladat</string>
+    <string name="learning_step_done">Kész</string>
+    <string name="learning_step_next">Következő</string>
+    <string name="learning_load_error">A tartalmat nem sikerült betölteni.</string>
+    <string name="learning_retry">Újra</string>
+    <string name="learning_save_error">A leckét nem sikerült elmenteni. Próbáld újra.</string>
+
+    <!-- Lesson screen -->
+    <string name="lesson_box_example">Példa</string>
+    <string name="lesson_box_tip">Tipp</string>
+    <string name="lesson_box_note">Jegyzet</string>
+    <string name="lesson_box_warning">Figyelem</string>
+    <string name="lesson_close">Kilépés</string>
+    <string name="lesson_contents">Tartalom</string>
+    <string name="lesson_finish">Befejezés</string>
+    <string name="lesson_previous">Előző oldal</string>
+    <string name="lesson_minutes">kb. %1$d perc</string>
+    <string name="lesson_page_position">%1$d / %2$d</string>
+    <string name="lesson_page_description">%1$d. oldal / %2$d</string>
+    <string name="lesson_page_n">%1$d. oldal</string>
+
+    <!-- Test screen: the tasks of a test -->
+    <string name="test_check">Ellenőrzés</string>
+    <string name="test_correct">Helyes!</string>
+    <string name="test_wrong">Nem egészen.</string>
+    <string name="test_right_answer">Jó válasz:</string>
+    <string name="test_why_not">Miért nem ez?</string>
+    <string name="test_your_answer">A válaszod</string>
+    <string name="test_hint_request">Tipp kérése</string>
+    <string name="test_hint">Első betű: %1$s · %2$d betű</string>
+    <string name="test_empty">Ehhez a teszthez még nincsenek megjeleníthető feladatok.</string>
+    <string name="test_finish">Befejezés</string>
+    <string name="test_match_hint">Koppints egy példára, aztán a hozzá illő válaszra.</string>
+    <string name="test_order_hint">Koppints a lépésekre a helyes sorrendben. Egy kiválasztottra újra koppintva visszateheted.</string>
+    <string name="test_gap_choice_hint">Koppints a szavakra, hogy a hézagokba kerüljenek. Egy kitöltött hézagra koppintva kiürül.</string>
+    <string name="test_gap_fill_hint">Írd be a hiányzó szavakat a hézagokba.</string>
+    <string name="test_pick_placeholder">válassz…</string>
+    <string name="test_gap_description">%1$d. hézag</string>
+    <string name="test_result_good">Szép munka!</string>
+    <string name="test_result_failed">Még nem sikerült</string>
+    <string name="test_pass_needed">A következő lépés csak akkor nyílik meg, ha az összes feladatot jól oldod meg.</string>
+    <string name="test_again">Újra</string>
+    <string name="test_back_to_path">Vissza az útvonalra</string>
+    <string name="test_locked">Előbb fejezd be az előző lépést.</string>
+    <string name="lesson_next_test">Mehet a teszt</string>
+    <string name="learning_steps_fraction">%1$d / %2$d</string>
+    <string name="learning_part_meta">%1$d téma · %2$d lépés</string>
+    <string name="learning_topic_meta">%1$d lecke · %2$d teszt</string>
+    <string name="test_answer_here">Írd ide…</string>
+    <string name="test_one_word">1 szó</string>
+    <string name="test_correct_value">Helyes: %1$s</string>
 </resources>

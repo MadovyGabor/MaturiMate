@@ -6,6 +6,7 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.learning.domain.LearningError
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.DailyActivity
@@ -59,6 +60,39 @@ class ProgressRepositoryImplTest {
             OperationResult.Error(LearningError.DATABASE_ERROR),
             repository.startAttempt(AttemptType.UNIT_ROUND, null, null, at(1_000)),
         )
+    }
+
+    private fun answer(attemptId: Long, taskId: Long, correct: Boolean, at: Long = 1_000) =
+        AttemptAnswer(attemptId, taskId, correct, if (correct) 2 else 0, 2, at(at), "1=B")
+
+    @Test
+    fun answersOfARoundAreRecordedAndListedInTheOrderTheyWereGiven() = runBlocking {
+        val id = repository.startAttempt(AttemptType.UNIT_ROUND, null, 51, at(1_000)).data()
+        repository.recordAnswer(answer(id, 101, correct = false, at = 3_000)).data()
+        repository.recordAnswer(answer(id, 100, correct = true, at = 2_000)).data()
+
+        val answers = repository.answersOfAttempt(id).data()
+        assertEquals(listOf(100L, 101L), answers.map { it.taskId })
+        assertEquals(listOf(true, false), answers.map { it.isCorrect })
+        assertEquals(AttemptAnswer(id, 100, true, 2, 2, at(2_000), "1=B"), answers.first())
+    }
+
+    @Test
+    fun aSecondAnswerToTheSameTaskReplacesTheFirst() = runBlocking {
+        val id = repository.startAttempt(AttemptType.UNIT_ROUND, null, 51, at(1_000)).data()
+        repository.recordAnswer(answer(id, 100, correct = false)).data()
+        repository.recordAnswer(answer(id, 100, correct = true)).data()
+
+        assertEquals(listOf(true), repository.answersOfAttempt(id).data().map { it.isCorrect })
+    }
+
+    @Test
+    fun anAnswerNeedsItsAttemptAndSaneAnswers() = runBlocking {
+        // no attempt 999 (the foreign key), and more points than possible (ck_attempt_answer_points)
+        assertIs<OperationResult.Error<*, *>>(repository.recordAnswer(answer(999, 100, correct = true)))
+        val id = repository.startAttempt(AttemptType.UNIT_ROUND, null, 51, at(1_000)).data()
+        assertIs<OperationResult.Error<*, *>>(repository.recordAnswer(answer(id, 100, correct = true).copy(earnedPoints = 5)))
+        Unit
     }
 
     @Test

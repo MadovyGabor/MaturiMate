@@ -15,14 +15,18 @@ import androidx.navigation3.ui.NavDisplay
 import com.madovygabor.maturimate.core.presentation.MainFrame
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileScreen
-import com.madovygabor.maturimate.features.subjects.presentation.SubjectNavigation
+import com.madovygabor.maturimate.features.learning.presentation.LearningNavigation
 import org.koin.compose.viewmodel.koinViewModel
 
 // MainFrameNavigation composable that sets up the main navigation structure of the app.
 @Composable
 fun MainFrameNavigation(
     mainTab: MutableState<NavKey>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Opens a lesson over the whole screen. */
+    onOpenLesson: (Long) -> Unit = {},
+    /** Opens a test over the whole screen. */
+    onOpenTest: (Long) -> Unit = {},
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
@@ -57,7 +61,7 @@ fun MainFrameNavigation(
                         //Entries for the main bottom navigation destinations per feature
                         // Subject feature navigation
                         entry<Route.Main.Subject> {
-                            SubjectNavigation()
+                            LearningNavigation(onOpenLesson = onOpenLesson, onOpenTest = onOpenTest)
                         }
                         // History screen placeholder
                         entry<Route.Main.History> {

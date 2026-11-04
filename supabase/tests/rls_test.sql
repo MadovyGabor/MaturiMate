@@ -209,6 +209,62 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ---- The answers of a round: each user's own -------------------------
+RESET ROLE;
+INSERT INTO learning_unit (topic_id, unit_type, title, practice_kind, estimated_minutes, sort_order, is_published)
+    SELECT topic_id, 'PRACTICE', 'T', 'MINI', 1, 1, true FROM topic WHERE title = 'T';
+CREATE TEMP TABLE t_unit AS SELECT learning_unit_id FROM learning_unit WHERE title = 'T';
+GRANT SELECT ON t_unit TO authenticated;
+CREATE TEMP TABLE t_task AS SELECT task_id FROM task WHERE question_text = 'Q?';
+GRANT SELECT ON t_task TO authenticated;
+
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+INSERT INTO attempt (user_id, attempt_type, learning_unit_id, earned_points, max_points)
+    SELECT '00000000-0000-0000-0000-00000000000a', 'UNIT_ROUND', learning_unit_id, 1, 1 FROM t_unit;
+INSERT INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points)
+    SELECT a.attempt_id, t.task_id, '00000000-0000-0000-0000-00000000000a', true, 1, 1 FROM attempt a, t_task t;
+
+-- a points value above the maximum is refused
+DO $$ BEGIN
+    UPDATE attempt_answer SET earned_points = 5;
+    RAISE EXCEPTION 'FAIL: more points than possible were accepted';
+EXCEPTION WHEN check_violation THEN NULL;
+END $$;
+-- A can change their own answer
+UPDATE attempt_answer SET is_correct = false;
+DO $$ BEGIN
+    IF (SELECT is_correct FROM attempt_answer) THEN RAISE EXCEPTION 'FAIL: A could not update their answer'; END IF;
+END $$;
+
+RESET ROLE;
+CREATE TEMP TABLE t_attempt AS SELECT attempt_id FROM attempt;
+GRANT SELECT ON t_attempt TO authenticated;
+
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
+DO $$ BEGIN
+    IF (SELECT count(*) FROM attempt_answer) <> 0 THEN RAISE EXCEPTION 'FAIL: B reads the answers of A'; END IF;
+END $$;
+-- B cannot write an answer in the name of A ...
+DO $$ BEGIN
+    INSERT INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points)
+        SELECT a.attempt_id, t.task_id, '00000000-0000-0000-0000-00000000000a', true, 1, 1 FROM t_attempt a, t_task t;
+    RAISE EXCEPTION 'FAIL: B wrote an answer for A';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+-- (the answer of A is removed first: with it in place the primary key refuses the next insert before the foreign key is checked)
+RESET ROLE;
+DELETE FROM attempt_answer;
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
+-- ... nor under the attempt of A in their own name (the foreign key ties an answer to the attempt's user)
+DO $$ BEGIN
+    INSERT INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points)
+        SELECT a.attempt_id, t.task_id, '00000000-0000-0000-0000-00000000000b', true, 1, 1 FROM t_attempt a, t_task t;
+    RAISE EXCEPTION 'FAIL: B wrote an answer under the attempt of A';
+EXCEPTION WHEN foreign_key_violation THEN NULL;
+END $$;
+
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+
 -- ---- Not signed in: nothing ------------------------------------------
 RESET ROLE;
 SET LOCAL ROLE anon;

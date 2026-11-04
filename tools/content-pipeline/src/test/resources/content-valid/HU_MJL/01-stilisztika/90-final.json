@@ -1,0 +1,15 @@
+{
+  "learning_unit_id": 102,
+  "title": "Összefoglaló: stilisztika",
+  "practice_kind": "FINAL",
+  "estimated_minutes": 5,
+  "round_size": 3,
+  "sort_order": 1,
+  "is_published": true,
+  "source_type": "OWN",
+  "tasks": [
+    { "task_id": 1001 },
+    { "task_id": 1002 },
+    { "task_id": 1003 }
+  ]
+}

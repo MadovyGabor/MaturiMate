@@ -24,8 +24,8 @@ data class ImportReport(
  * Writes a validated [ContentSet] into PostgreSQL in one transaction.
  *
  * * Rows are upserted by the ids written in the content files, so running the import twice changes nothing.
- * * Rows owned by a task (options, keys, accepted answers, attachments, tags) and the task list of a
- *   practice unit are replaced. The user database never references them.
+ * * Rows owned by a task (options, keys, accepted answers, attachments, tags), the task list of a
+ *   practice unit and the pages of a lesson are replaced. The user database never references them.
  * * Tasks, learning units and topics that disappeared from the files are deactivated, never deleted,
  *   because the user database may still reference them.
  */
@@ -52,6 +52,8 @@ class PostgresWriter(private val connection: Connection) {
 
         // Owned rows go first, so a task can change its format and a unit its type (both are checked by triggers)
         deleteWhereIn("unit_task", "learning_unit_id", unitIds)
+        deleteWhereIn("page_block", "learning_unit_id", unitIds)
+        deleteWhereIn("unit_page", "learning_unit_id", unitIds)
         listOf("task_tag", "task_key", "task_option", "task_accepted_answer", "task_attachment")
             .forEach { deleteWhereIn(it, "task_id", taskIds) }
 
@@ -74,16 +76,26 @@ class PostgresWriter(private val connection: Connection) {
         }
         content.summaries.forEach {
             upsert("learning_unit", "learning_unit_id", it.learningUnitId, "topic_id" to it.topicId,
-                "unit_type" to "SUMMARY", "title" to it.title, "body_text" to it.bodyText,
+                "unit_type" to "SUMMARY", "title" to it.title, "practice_kind" to null,
                 "estimated_minutes" to it.estimatedMinutes, "round_size" to 5, "xp_reward" to it.xpReward,
                 "sort_order" to it.sortOrder, "is_published" to it.isPublished)
         }
         content.practices.forEach { p ->
             val u = p.file
             upsert("learning_unit", "learning_unit_id", u.learningUnitId, "topic_id" to p.topicId,
-                "unit_type" to "PRACTICE", "title" to u.title, "body_text" to null,
+                "unit_type" to "PRACTICE", "title" to u.title, "practice_kind" to u.practiceKind,
                 "estimated_minutes" to u.estimatedMinutes, "round_size" to u.roundSize, "xp_reward" to u.xpReward,
                 "sort_order" to u.sortOrder, "is_published" to u.isPublished)
+        }
+
+        content.summaries.forEach { unit ->
+            unit.pages.forEachIndexed { pageIndex, page ->
+                insert("unit_page", "learning_unit_id" to unit.learningUnitId, "page_no" to pageIndex + 1, "title" to page.title)
+                page.blocks.forEachIndexed { blockIndex, block ->
+                    insert("page_block", "learning_unit_id" to unit.learningUnitId, "page_no" to pageIndex + 1,
+                        "block_no" to blockIndex + 1, "block_type" to block.type, "body_text" to block.text)
+                }
+            }
         }
 
         val formatIds = content.taskFormats.associate { it.code to it.taskFormatId }
@@ -119,7 +131,7 @@ class PostgresWriter(private val connection: Connection) {
             val id = childId(t.taskId, index)
             optionIds[o.role to o.label] = id
             insert("task_option", "option_id" to id, "task_id" to t.taskId, "option_role" to o.role,
-                "option_label" to o.label, "option_text" to o.text)
+                "option_label" to o.label, "option_text" to o.text, "why" to o.why)
         }
         t.key.forEach { k ->
             insert("task_key", "task_id" to t.taskId, "answer_slot" to k.slot,

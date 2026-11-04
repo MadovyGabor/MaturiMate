@@ -1,0 +1,20 @@
+-- Version 2 to 3: the answers of a test round
+-- (supabase/migrations/20261103130000_attempt_answer.sql).
+
+CREATE TABLE attempt_answer (
+    attempt_id     INTEGER NOT NULL,
+    task_id        INTEGER NOT NULL,
+    user_id        TEXT    NOT NULL,
+    is_correct     INTEGER NOT NULL CHECK (is_correct IN (0, 1)),
+    earned_points  INTEGER NOT NULL,
+    max_points     INTEGER NOT NULL,
+    answered_at    INTEGER NOT NULL,
+    given_answer   TEXT,
+    CONSTRAINT pk_attempt_answer PRIMARY KEY (attempt_id, task_id),
+    CONSTRAINT fk_attempt_answer_attempt FOREIGN KEY (attempt_id)
+        REFERENCES attempt (attempt_id) ON DELETE CASCADE,
+    CONSTRAINT ck_attempt_answer_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
+CREATE INDEX ix_attempt_answer_user_task ON attempt_answer (user_id, task_id);

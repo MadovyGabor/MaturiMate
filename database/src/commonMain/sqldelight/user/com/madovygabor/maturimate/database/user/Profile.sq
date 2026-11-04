@@ -83,6 +83,7 @@ UPDATE OR REPLACE user_settings SET user_id = :accountId WHERE user_id = :guestI
 UPDATE OR REPLACE user_role SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_subject SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE attempt_answer SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_unit_progress SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_task_progress SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_streak SET user_id = :accountId WHERE user_id = :guestId;
@@ -97,6 +98,7 @@ DELETE FROM user_profile WHERE user_id = :previousId;
 DELETE FROM user_settings WHERE user_id = :previousId;
 DELETE FROM user_role WHERE user_id = :previousId;
 DELETE FROM user_subject WHERE user_id = :previousId;
+DELETE FROM attempt_answer WHERE user_id = :previousId;
 DELETE FROM attempt WHERE user_id = :previousId;
 DELETE FROM user_unit_progress WHERE user_id = :previousId;
 DELETE FROM user_task_progress WHERE user_id = :previousId;
