@@ -184,7 +184,7 @@ Reordered on 2026-11-03: the app around the lessons (home, streak, profile, sett
 
 ---
 
-## Milestone 9: Navigation, profile and settings
+## Milestone 9: Navigation, profile and settings *(done on 2026-11-04)*
 
 The four tabs are built here; the practice tab is only a "Hamarosan" screen until Milestone 9a.
 
@@ -194,7 +194,7 @@ The four tabs are built here; the practice tab is only a "Hamarosan" screen unti
 * [x] **9.4a. Settings, the screen:** *Done on 2026-11-04 from the approved prototype ([docs/settings/prototype.html](settings/prototype.html)): `SettingsScreen` (it replaces the list of answers behind the gear), the groups Fiók, Tanulás, Értesítések, App, Adatok and the red rows; the school language and the app language are set apart (`saveSchoolLanguage`, `saveUiLanguage`; a new school language asks for the subjects again); the reminder switch; a guest's account rows. The rows of later steps show "Hamarosan": the password change, the reset and the sign-out (9.4b), the sync (11.2), the content update (11.3), the account deletion (11.6). New components `AppSettingsGroup` and `AppSettingsRow`.*
 * [x] **9.4b. Settings, the actions:** the password change (not for a Google account), the sign-out (a warning, then the local data go and the welcome screen comes), the reset of the progress (the finished lessons and tests, the answers and the mistakes; the streak, the study time and the settings stay), and editing the name (it needs a call to the server). *Done on 2026-11-04: `AccountSettings` (the name on the server first, then on the phone; the old password checked by a sign-in with it; the sign-out removes every local row and a new guest starts, `removeUser`), `ProgressRepository.resetProgress`, and the dialogs of the settings (`SettingsDialogs.kt`). A Google account is recognised by its identities (`AccountUser.hasPassword`). The family name is now part of the local profile. No migration: only queries changed.*
 * *9.4 as first planned (split on 2026-11-04 into 9.4a and 9.4b):* a separate screen opened from the profile (not a tab): the name and the account, "Fiók létrehozása" for guests, the language, the reminder, the daily goal, the exam date, change and delete of the password, sign out, and a reset that starts over. Account deletion itself is 10.6. *Was 10.5.*
-* [ ] **9.5. Navigation:** the four tabs built with the labels in both languages; the practice tab shows "Hamarosan" until 9a.
+* [x] **9.5. Navigation:** the four tabs built with the labels in both languages; the practice tab shows "Hamarosan" until 9a. *Done on 2026-11-04: the labels are app strings (Kezdőlap, Tantárgyak, Gyakorlás, Profil; Domov, Predmety, Cvičenie, Profil), the practice tab has a light bulb and `PracticeSoonScreen`, the "Előzmények" tab and its route are gone (its content is the profile's history), and the rail starts at the top from 840 dp and stays centred below.*
 
 ---
 

@@ -64,6 +64,7 @@ import maturimate.shared.generated.resources.subjects_title_learner
 import maturimate.shared.generated.resources.subjects_title_student
 import maturimate.shared.generated.resources.account_title
 import maturimate.shared.generated.resources.common_save
+import maturimate.shared.generated.resources.practice_soon_text
 import maturimate.shared.generated.resources.profile_settings
 import maturimate.shared.generated.resources.language_sk
 import maturimate.shared.generated.resources.settings_app_language
@@ -235,8 +236,8 @@ class OnboardingFlowTest {
         setContent { App() }
         goThroughAsStudent()
         // the tabs keep working after the first switch
-        onAllNodes(androidx.compose.ui.test.hasText("Előzmények")).onFirst().performClick()
-        waitUntil(timeoutMillis = 5_000) { onAllNodes(androidx.compose.ui.test.hasText("History Screen")).fetchSemanticsNodes().isNotEmpty() }
+        onAllNodes(androidx.compose.ui.test.hasText("Gyakorlás")).onFirst().performClick()
+        waitFor(Res.string.practice_soon_text)
         openAnswers()
 
         // the goal opens its onboarding question, saved with "Mentés"

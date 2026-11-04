@@ -25,6 +25,8 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.TOP_LEVEL_NAVBAR_DESTINATIONS
 import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
+import com.madovygabor.maturimate.core.presentation.theme.layout
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 
 
@@ -40,6 +42,8 @@ fun MainFrame(
     BoxWithConstraints {
         // Determine if the device is considered a desktop based on maxWidth
         val isDesktop = maxWidth > LayoutConstants.DesktopThreshold
+        // a tablet keeps the tabs in the middle of the rail; a wide window starts them at the top
+        val railAtTop = maxWidth >= MaterialTheme.layout.breakpointExpanded
 
 
         if (isDesktop) {
@@ -51,8 +55,8 @@ fun MainFrame(
                     header = { /* Application logo */ }
                 ) {
 
-                    //For item centering
-                    Spacer(Modifier.weight(1f))
+                    // centered on a tablet, from the top on a wide window
+                    if (!railAtTop) Spacer(Modifier.weight(1f))
 
                     // Dynamically create navigation items from the TOP_LEVEL_NAV_ITEMS map
                     TOP_LEVEL_NAVBAR_DESTINATIONS.forEach { (topLevelDestination, data) ->
@@ -64,8 +68,8 @@ fun MainFrame(
                         NavigationRailItem(
                             selected = selectedKey == topLevelDestination,
                             onClick = { onSelectedKey(topLevelDestination) },
-                            icon = { Icon(iconToShow, data.title) },
-                            label = { Text(data.title) },
+                            icon = { Icon(iconToShow, contentDescription = null) },
+                            label = { Text(stringResource(data.title)) },
                             colors = NavigationRailItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 selectedTextColor = MaterialTheme.colorScheme.onBackground,
@@ -76,8 +80,7 @@ fun MainFrame(
                         )
 
                     }
-                    //For item centering
-                    Spacer(Modifier.weight(1f))
+                    if (!railAtTop) Spacer(Modifier.weight(1f))
                 }
 
                 // The main content area
@@ -102,8 +105,8 @@ fun MainFrame(
                             NavigationBarItem(
                                 selected = selectedKey == topLevelDestination,
                                 onClick = { onSelectedKey(topLevelDestination) },
-                                icon = { Icon(iconToShow, data.title,) },
-                                label = { Text(data.title) },
+                                icon = { Icon(iconToShow, contentDescription = null) },
+                                label = { Text(stringResource(data.title)) },
                                 // the gold pill of the design system, not the brown of the Material default
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
