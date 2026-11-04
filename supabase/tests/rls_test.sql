@@ -251,6 +251,10 @@ DO $$ BEGIN
     RAISE EXCEPTION 'FAIL: B wrote an answer for A';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
+-- (the answer of A is removed first: with it in place the primary key refuses the next insert before the foreign key is checked)
+RESET ROLE;
+DELETE FROM attempt_answer;
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
 -- ... nor under the attempt of A in their own name (the foreign key ties an answer to the attempt's user)
 DO $$ BEGIN
     INSERT INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points)
