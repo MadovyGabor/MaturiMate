@@ -150,6 +150,7 @@ class UserProfileRepositoryImpl(
     )
 
     private fun SelectUserProfile.toDomain(role: UserRole?, subjects: List<UserSubject>) = UserProfile(
+        firstName = first_name?.takeIf { it.isNotBlank() },
         teachingLanguage = teaching_language?.let { TeachingLanguage.valueOf(it) },
         role = role,
         graduationDate = graduation_date?.let { LocalDate.parse(it) },

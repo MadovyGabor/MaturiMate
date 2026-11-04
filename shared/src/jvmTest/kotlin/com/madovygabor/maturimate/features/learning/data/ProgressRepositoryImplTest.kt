@@ -128,8 +128,8 @@ class ProgressRepositoryImplTest {
     @Test
     fun activityOfADayIsAddedUp() = runBlocking {
         val day = LocalDate(2026, 10, 28)
-        repository.addActivity(DailyActivity(day, xpEarned = 10, minutesStudied = 3, tasksAnswered = 5)).data()
-        repository.addActivity(DailyActivity(day, xpEarned = 10, minutesStudied = 2, tasksAnswered = 5)).data()
+        repository.addActivity(DailyActivity(day, xpEarned = 10, secondsStudied = 3, tasksAnswered = 5)).data()
+        repository.addActivity(DailyActivity(day, xpEarned = 10, secondsStudied = 2, tasksAnswered = 5)).data()
 
         val total = repository.activity(day, day).data().single()
         assertEquals(DailyActivity(day, 20, 5, 10), total)

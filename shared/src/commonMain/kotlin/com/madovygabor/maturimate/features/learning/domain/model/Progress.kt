@@ -72,6 +72,6 @@ data class Streak(
 data class DailyActivity(
     val date: LocalDate,
     val xpEarned: Int,
-    val minutesStudied: Int,
+    val secondsStudied: Int,
     val tasksAnswered: Int,
 )

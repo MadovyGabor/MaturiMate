@@ -44,6 +44,10 @@ sealed interface Route : NavKey {
     @Serializable
     data object Main : Route {
 
+        // Home Feature
+        @Serializable
+        data object Home : Route // What to do today: goal, streak, the next step
+
         // Subject Feature
         @Serializable
         data object Subject : Route {

@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">Maturimate</string>
+    <string name="reminder_channel_name">Napi emlékeztető</string>
+
+    <!-- no streak yet -->
+    <string name="reminder_plain_1">Ideje tanulni! Néhány perc is elég a mai célhoz.</string>
+    <string name="reminder_plain_2">Egy kis lecke most többet ér, mint egy nagy holnap.</string>
+    <string name="reminder_plain_3">Ma még nem volt tanulás. 5 perc is jó kezdet.</string>
+
+    <!-- the streak was broken -->
+    <string name="reminder_comeback_1">Hiányoztál! Egy rövid lecke és újra benne vagy.</string>
+    <string name="reminder_comeback_2">Nem baj, ha kimaradt pár nap. Ma újra kezdhetjük.</string>
+
+    <!-- a streak of 1 to 6 days (%d is the streak) -->
+    <string name="reminder_streak_short_1">A %d napos sorozatod megvan, ne hagyd abba!</string>
+    <string name="reminder_streak_short_2">%d nap egymás után. Még ma is belefér egy gyors kör.</string>
+    <string name="reminder_streak_short_3">Szép sorozat, %d nap. Ma is hozzáteszel egyet?</string>
+
+    <!-- a streak of 7 days or more -->
+    <string name="reminder_streak_long_1">%d nap! Ez már szokás. Ne szakítsd meg ma.</string>
+    <string name="reminder_streak_long_2">Az érettségi felé vezető úton a %d. napod ma vár.</string>
+    <string name="reminder_streak_long_3">%d napos sorozat, büszke lehetsz. Egy rövid lecke megőrzi.</string>
+
+    <!-- days until the exam -->
+    <plurals name="reminder_exam_1">
+        <item quantity="one">%d nap az érettségiig. Minden nap számít.</item>
+        <item quantity="other">%d nap az érettségiig. Minden nap számít.</item>
+    </plurals>
+    <plurals name="reminder_exam_2">
+        <item quantity="one">Még %d nap. A mai tanulás sokat számít.</item>
+        <item quantity="other">Még %d nap. A mai tanulás sokat számít.</item>
+    </plurals>
+</resources>

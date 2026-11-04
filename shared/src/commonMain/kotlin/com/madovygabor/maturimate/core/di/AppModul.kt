@@ -27,7 +27,13 @@ import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningCourse
+import com.madovygabor.maturimate.features.learning.domain.HomeOverview
+import com.madovygabor.maturimate.features.learning.domain.RecentActivities
+import com.madovygabor.maturimate.features.reminder.domain.ReminderSync
+import com.madovygabor.maturimate.features.learning.domain.StudySettings
+import com.madovygabor.maturimate.features.learning.domain.StudyTracker
 import com.madovygabor.maturimate.features.learning.domain.TestRecorder
+import com.madovygabor.maturimate.features.learning.presentation.HomeViewModel
 import com.madovygabor.maturimate.features.learning.presentation.LessonViewModel
 import com.madovygabor.maturimate.features.learning.presentation.SubjectListViewModel
 import com.madovygabor.maturimate.features.learning.presentation.TestSessionViewModel
@@ -41,6 +47,8 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import org.koin.core.module.dsl.bind
+import kotlinx.coroutines.flow.first
+import kotlinx.datetime.TimeZone
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -81,8 +89,23 @@ val sharedModule = module {
 
     // The learning path: subjects, parts, topics, steps and their progress
     single { LearningCourse(get(), get()) }
+    // Study time per day, the daily goal and the streak; the goal and the time zone come from the profile
+    single {
+        val profile = get<UserProfileRepository>()
+        StudyTracker(get(), settings = {
+            val current = profile.profile.first()
+            StudySettings(current?.dailyGoalMinutes, current?.timezone?.let { runCatching { TimeZone.of(it) }.getOrNull() } ?: TimeZone.currentSystemDefault())
+        })
+    }
+    // The last finished lessons and tests, for the home screen
+    single { RecentActivities(get(), get()) }
+    // Everything the home screen shows
+    single { HomeOverview(get(), get(), get(), get()) }
     // What a test round leaves in the user database: the attempt, the answers, the progress
-    single { TestRecorder(get()) }
+    single { TestRecorder(get(), get()) }
+
+    // Keeps the planned daily reminder in line with the profile (started by the app)
+    single { ReminderSync(get(), get()) }
 
     // Profile and settings of the local user
     single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }
@@ -113,7 +136,8 @@ val sharedModule = module {
     viewModel { ProfileViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }
     viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
-    viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get()) }
+    viewModel { HomeViewModel(get()) }
+    viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get(), get()) }
     viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
 }
 

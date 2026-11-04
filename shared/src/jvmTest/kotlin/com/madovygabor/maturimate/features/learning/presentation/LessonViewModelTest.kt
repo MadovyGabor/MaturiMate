@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
@@ -9,6 +10,10 @@ import com.madovygabor.maturimate.database.content.Learning_unit
 import com.madovygabor.maturimate.database.content.Page_block
 import com.madovygabor.maturimate.database.content.Subject
 import com.madovygabor.maturimate.database.content.Topic
+import com.madovygabor.maturimate.database.user.UserDatabase
+import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
+import com.madovygabor.maturimate.features.learning.domain.StudySettings
+import com.madovygabor.maturimate.features.learning.domain.StudyTracker
 import com.madovygabor.maturimate.database.content.Unit_page
 import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.LearningError
@@ -18,6 +23,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressSta
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -100,6 +106,29 @@ class LessonViewModelTest {
         assertEquals(1, (viewModel.state.value as LessonUiState.Ready).index)
         viewModel.goTo(7)
         assertEquals(1, (viewModel.state.value as LessonUiState.Ready).index)
+    }
+
+    @Test
+    fun pageTurnsAndTheEndGoToTheDailyGoal() = runBlocking<Unit> {
+        val userDatabase = UserDatabase(
+            JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
+        )
+        val real = ProgressRepositoryImpl(userDatabase, LocalUserProvider(userDatabase), Dispatchers.Unconfined)
+        var millis = 0L
+        val time = { Instant.fromEpochMilliseconds(millis) }
+        val tracker = StudyTracker(real, { StudySettings(1, TimeZone.UTC) }, time)
+        val viewModel = LessonViewModel(50, content, real, SnackbarController(), tracker, time)
+        viewModel.ready()
+
+        millis += 20_000
+        viewModel.next()
+        millis += 400_000 // a phone put down: counts as two minutes only
+        viewModel.next()
+        millis += 10_000
+        viewModel.finish()
+        withTimeout(5_000) { viewModel.finished.first() }
+
+        assertEquals(150, (tracker.today() as OperationResult.Success).data.secondsStudied)
     }
 
     @Test

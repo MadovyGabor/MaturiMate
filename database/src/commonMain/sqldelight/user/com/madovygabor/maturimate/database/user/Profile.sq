@@ -118,7 +118,7 @@ INSERT OR REPLACE INTO user_profile VALUES ?;
 
 -- profile and settings of one user; empty until the first save creates both rows
 selectUserProfile:
-SELECT p.teaching_language, p.graduation_date, p.onboarding_completed_at,
+SELECT p.first_name, p.teaching_language, p.graduation_date, p.onboarding_completed_at,
        s.ui_language, s.daily_goal_minutes, s.timezone, s.reminder_enabled, s.reminder_time
 FROM user_profile p
 JOIN user_settings s ON s.user_id = p.user_id

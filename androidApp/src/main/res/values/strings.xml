@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">Maturimate</string>
+    <string name="reminder_channel_name">Denná pripomienka</string>
+
+    <!-- no streak yet -->
+    <string name="reminder_plain_1">Čas na učenie! Aj pár minút stačí na dnešný cieľ.</string>
+    <string name="reminder_plain_2">Malá lekcia dnes je lepšia ako veľká zajtra.</string>
+    <string name="reminder_plain_3">Dnes ešte nebolo učenie. Aj 5 minút je dobrý začiatok.</string>
+
+    <!-- the streak was broken -->
+    <string name="reminder_comeback_1">Dlho sme sa nevideli! Krátka lekcia ťa vráti do tempa.</string>
+    <string name="reminder_comeback_2">Nevadí, že pár dní vypadlo. Dnes môžeš začať znova.</string>
+
+    <!-- a streak of 1 to 6 days (%d is the streak) -->
+    <string name="reminder_streak_short_1">Tvoja %d-dňová séria čaká. Pokračuj!</string>
+    <string name="reminder_streak_short_2">Máš %d-dňovú sériu. Aj dnes sa zmestí rýchle kolo.</string>
+    <string name="reminder_streak_short_3">Pekná %d-dňová séria. Pridáš dnes ďalší deň?</string>
+
+    <!-- a streak of 7 days or more -->
+    <string name="reminder_streak_long_1">%d-dňová séria! To je už zvyk. Dnes ju neprerušuj.</string>
+    <string name="reminder_streak_long_2">Na ceste k maturite ťa dnes čaká %d. deň.</string>
+    <string name="reminder_streak_long_3">%d-dňová séria je skvelá. Krátka lekcia ju zachová.</string>
+
+    <!-- days until the exam -->
+    <plurals name="reminder_exam_1">
+        <item quantity="one">Do maturity zostáva %d deň. Každý deň sa počíta.</item>
+        <item quantity="few">Do maturity zostávajú %d dni. Každý deň sa počíta.</item>
+        <item quantity="other">Do maturity zostáva %d dní. Každý deň sa počíta.</item>
+    </plurals>
+    <plurals name="reminder_exam_2">
+        <item quantity="one">Ešte %d deň. Dnešné učenie veľa znamená.</item>
+        <item quantity="few">Ešte %d dni. Dnešné učenie veľa znamená.</item>
+        <item quantity="other">Ešte %d dní. Dnešné učenie veľa znamená.</item>
+    </plurals>
 </resources>

@@ -12,8 +12,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -45,7 +47,7 @@ fun MainFrame(
             Row(Modifier.fillMaxSize().systemBottomPadding()) {
                 NavigationRail(
                     modifier = Modifier.width(100.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     header = { /* Application logo */ }
                 ) {
 
@@ -63,7 +65,14 @@ fun MainFrame(
                             selected = selectedKey == topLevelDestination,
                             onClick = { onSelectedKey(topLevelDestination) },
                             icon = { Icon(iconToShow, data.title) },
-                            label = { Text(data.title) }
+                            label = { Text(data.title) },
+                            colors = NavigationRailItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.onBackground,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                         )
 
                     }
@@ -82,7 +91,7 @@ fun MainFrame(
             Scaffold(
                 bottomBar = {
                     NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ) {
                         // Dynamically create navigation items from the TOP_LEVEL_NAVBAR_DESTINATIONS map
                         TOP_LEVEL_NAVBAR_DESTINATIONS.forEach { (topLevelDestination, data) ->
@@ -95,6 +104,14 @@ fun MainFrame(
                                 onClick = { onSelectedKey(topLevelDestination) },
                                 icon = { Icon(iconToShow, data.title,) },
                                 label = { Text(data.title) },
+                                // the gold pill of the design system, not the brown of the Material default
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
                             )
 
                         }
