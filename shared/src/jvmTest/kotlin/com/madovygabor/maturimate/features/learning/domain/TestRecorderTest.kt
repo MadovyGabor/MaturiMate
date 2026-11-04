@@ -18,6 +18,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -33,7 +34,8 @@ class TestRecorderTest {
     )
     private val progress = ProgressRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
     private var clock = 1_000L
-    private val recorder = TestRecorder(progress) { Instant.fromEpochMilliseconds(clock) }
+    private val tracker = StudyTracker(progress, { StudySettings(1, TimeZone.UTC) }) { Instant.fromEpochMilliseconds(clock) }
+    private val recorder = TestRecorder(progress, tracker) { Instant.fromEpochMilliseconds(clock) }
 
     private fun <T> OperationResult<T, LearningError>.data(): T = when (this) {
         is OperationResult.Success -> data
@@ -56,6 +58,20 @@ class TestRecorderTest {
 
     private suspend fun answer(attemptId: Long, task: Task, answer: Answer) =
         recorder.answer(attemptId, task, answer, AnswerChecker.check(task, answer))
+
+    @Test
+    fun answersCountTheirTimeAndTasksTowardsTheDailyGoal() = runBlocking {
+        val id = recorder.start(7).data()
+        clock += 40_000
+        answer(id, multipleChoice, Answer.Choice(mapOf(1 to "B")))
+        clock += 30_000
+        answer(id, typed, Answer.Typed(mapOf(1 to "x")))
+
+        val today = tracker.today().data()
+        assertEquals(70, today.secondsStudied)
+        assertEquals(60, today.goalSeconds)
+        assertEquals(1, tracker.currentStreak().data())
+    }
 
     @Test
     fun startingARoundCreatesAnAttemptOfTheUnit() = runBlocking {

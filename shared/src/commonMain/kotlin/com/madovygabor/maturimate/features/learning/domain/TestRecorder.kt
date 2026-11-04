@@ -40,17 +40,23 @@ data class RoundEntry(
 @OptIn(ExperimentalTime::class)
 class TestRecorder(
     private val progress: ProgressRepository,
+    private val tracker: StudyTracker? = null,
     private val now: () -> Instant = { Clock.System.now() },
 ) {
 
+    private var clock = StudyClock(now = now)
+
     /** Starts a round of the test unit; returns the id of the attempt. */
-    suspend fun start(unitId: Long): OperationResult<Long, LearningError> =
-        progress.startAttempt(AttemptType.UNIT_ROUND, topicId = null, learningUnitId = unitId, startedAt = now())
+    suspend fun start(unitId: Long): OperationResult<Long, LearningError> {
+        clock = StudyClock(now = now)
+        return progress.startAttempt(AttemptType.UNIT_ROUND, topicId = null, learningUnitId = unitId, startedAt = now())
+    }
 
     /** Records the answer to [task] and counts it in the progress of the task. */
     suspend fun answer(attemptId: Long, task: Task, answer: Answer, result: AnswerResult): RoundEntry {
         val entry = RoundEntry(task, answer, result, earnedPoints(task, result), task.maxPoints)
         val time = now()
+        tracker?.record(clock.lap(), tasks = 1)
         progress.recordAnswer(AttemptAnswer(attemptId, task.id, entry.correct, entry.earnedPoints, entry.maxPoints, time, answer.describe()))
         val earlier = (progress.taskProgress(task.id) as? OperationResult.Success)?.data
         val streak = if (entry.correct) (earlier?.correctStreak ?: 0) + 1 else 0

@@ -8,6 +8,8 @@ import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarContr
 import com.madovygabor.maturimate.core.presentation.utils.wordCount
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
+import com.madovygabor.maturimate.features.learning.domain.StudyClock
+import com.madovygabor.maturimate.features.learning.domain.StudyTracker
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
 import com.madovygabor.maturimate.features.learning.domain.model.LessonPage
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
@@ -63,11 +65,14 @@ class LessonViewModel(
     private val content: ContentRepository,
     private val progress: ProgressRepository,
     private val snackbarController: SnackbarController,
+    private val tracker: StudyTracker? = null,
     private val now: () -> Instant = { Clock.System.now() },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LessonUiState>(LessonUiState.Loading)
     val state: StateFlow<LessonUiState> = _state.asStateFlow()
+
+    private val clock = StudyClock(now = now)
 
     private val _finished = Channel<Long?>(Channel.BUFFERED)
 
@@ -110,13 +115,25 @@ class LessonViewModel(
     private fun move(target: (LessonUiState.Ready) -> Int) {
         val current = _state.value as? LessonUiState.Ready ?: return
         val index = target(current)
-        if (index in current.pages.indices) _state.value = current.copy(index = index)
+        if (index in current.pages.indices) {
+            _state.value = current.copy(index = index)
+            recordTime()
+        }
+    }
+
+    /** The time since the last move goes to the daily goal. */
+    private fun recordTime() {
+        val seconds = clock.lap()
+        val tracker = tracker ?: return
+        viewModelScope.launch { tracker.record(seconds) }
     }
 
     /** Saves the lesson as done; the screen closes when [finished] emits. */
     fun finish() {
         if (_state.value !is LessonUiState.Ready) return
+        val seconds = clock.lap()
         viewModelScope.launch {
+            tracker?.record(seconds)
             val time = now()
             val earlier = (progress.unitProgress() as? OperationResult.Success)?.data?.firstOrNull { it.learningUnitId == unitId }
             val saved = progress.saveUnitProgress(
