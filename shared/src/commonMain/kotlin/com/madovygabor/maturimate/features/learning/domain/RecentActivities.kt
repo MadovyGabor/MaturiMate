@@ -20,14 +20,20 @@ data class RecentActivity(
     val isTest: Boolean,
     val at: Instant,
     val passed: Boolean?,
+    /** The points of a test round (for "5 / 5"); empty for a lesson. */
+    val earnedPoints: Int? = null,
+    val maxPoints: Int? = null,
 )
 
-/** The latest finished lessons and test rounds, newest first. Units that are no longer published are left out. */
+/** The finished lessons and test rounds, newest first. Units that are no longer published are left out. */
 @OptIn(ExperimentalTime::class)
 class RecentActivities(
     private val progress: ProgressRepository,
     private val content: ContentRepository,
 ) {
+
+    /** Every finished lesson and test round, for the full history of the profile. */
+    suspend fun all(): OperationResult<List<RecentActivity>, LearningError> = latest(limit = Int.MAX_VALUE)
 
     suspend fun latest(limit: Int = 3): OperationResult<List<RecentActivity>, LearningError> {
         val attempts = when (val result = progress.attempts()) {
@@ -51,7 +57,10 @@ class RecentActivities(
             val finished = attempt.finishedAt ?: continue
             if (attempt.status != AttemptStatus.FINISHED) continue
             val unit = unit(id) ?: continue
-            found += RecentActivity(id, unit.title, topic(unit), isTest = true, at = finished, passed = attempt.earnedPoints == attempt.maxPoints)
+            found += RecentActivity(
+                id, unit.title, topic(unit), isTest = true, at = finished, passed = attempt.earnedPoints == attempt.maxPoints,
+                earnedPoints = attempt.earnedPoints, maxPoints = attempt.maxPoints,
+            )
         }
         for (done in units) {
             val completed = done.completedAt ?: continue

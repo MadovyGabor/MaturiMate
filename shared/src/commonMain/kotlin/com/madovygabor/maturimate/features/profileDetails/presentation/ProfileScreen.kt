@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,6 +55,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maturimate.shared.generated.resources.Res
+import maturimate.shared.generated.resources.common_back
 import maturimate.shared.generated.resources.goal_minutes
 import maturimate.shared.generated.resources.language_hu
 import maturimate.shared.generated.resources.language_sk
@@ -78,15 +81,15 @@ private sealed interface ProfilePage {
 }
 
 /**
- * The profile tab: every onboarding answer, each opening its onboarding question to change it.
- * A new role asks for the subjects again, then for an exam date or a daily goal when the new
- * role needs one that is missing.
+ * Every onboarding answer, each opening its onboarding question to change it, opened by the gear of the
+ * profile until the settings screen (9.4) replaces it. A new role asks for the subjects again, then for an
+ * exam date or a daily goal when the new role needs one that is missing. [onBack] goes back to the profile.
  */
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
+fun ProfileScreen(onBack: () -> Unit = {}, viewModel: ProfileViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsState()
     val backStack = remember { mutableStateListOf<ProfilePage>(ProfilePage.Answers) }
-    val done: () -> Unit = { if (backStack.size > 1) backStack.removeLast() }
+    val done: () -> Unit = { if (backStack.size > 1) backStack.removeLast() else onBack() }
     // the first of the questions still missing replaces the one just answered, so Back returns
     // to the answers; each question then asks for what is still missing after it
     val continueWith: (List<OnboardingStep>) -> Unit = { missing ->
@@ -104,7 +107,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
         ),
         entryProvider = entryProvider {
             entry<ProfilePage.Answers> {
-                ProfileContent(state, onEdit = { backStack.add(ProfilePage.Edit(it)) })
+                ProfileContent(state, onEdit = { backStack.add(ProfilePage.Edit(it)) }, onBack = onBack)
             }
             entry<ProfilePage.Edit> { page ->
                 val role = state?.profile?.role
@@ -126,7 +129,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
 }
 
 @Composable
-fun ProfileContent(state: ProfileUiState?, onEdit: (OnboardingStep) -> Unit) {
+fun ProfileContent(state: ProfileUiState?, onEdit: (OnboardingStep) -> Unit, onBack: (() -> Unit)? = null) {
     val spacing = MaterialTheme.spacing
     Box(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -140,7 +143,14 @@ fun ProfileContent(state: ProfileUiState?, onEdit: (OnboardingStep) -> Unit) {
                 .padding(horizontal = spacing.space4, vertical = spacing.space6),
             verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
-            Text(stringResource(Res.string.profile_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onBack != null) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(Res.string.common_back))
+                    }
+                }
+                Text(stringResource(Res.string.profile_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            }
             if (state == null) return@Column
             state.daysLeft?.let { days ->
                 Countdown(stringResource(Res.string.plan_until_exam), pluralStringResource(Res.plurals.plan_days, days, days))

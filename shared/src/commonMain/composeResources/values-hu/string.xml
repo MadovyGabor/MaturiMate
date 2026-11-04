@@ -307,4 +307,63 @@
     <string name="home_day_missed">%1$s: kimaradt</string>
     <string name="home_day_today">%1$s: ma</string>
     <string name="home_day_later">%1$s: még hátra van</string>
+
+    <!-- Profile tab (9.3) -->
+    <string name="profile_tab_title">Profil</string>
+    <string name="profile_guest">Vendég</string>
+    <string name="profile_settings">Beállítások</string>
+    <plurals name="profile_stat_days">
+        <item quantity="one">nap</item>
+        <item quantity="other">nap</item>
+    </plurals>
+    <string name="profile_stat_streak">sorozat</string>
+    <string name="profile_stat_hours">ó</string>
+    <string name="profile_stat_minutes">p</string>
+    <string name="profile_stat_time">tanulás</string>
+    <string name="profile_stat_tasks">feladat</string>
+    <plurals name="profile_stat_streak_description">
+        <item quantity="one">%1$d napos sorozat</item>
+        <item quantity="other">%1$d napos sorozat</item>
+    </plurals>
+    <string name="profile_stat_time_description">%1$d óra %2$d perc tanulás</string>
+    <plurals name="profile_stat_tasks_description">
+        <item quantity="one">%1$d megoldott feladat</item>
+        <item quantity="other">%1$d megoldott feladat</item>
+    </plurals>
+    <string name="profile_progress_title">Haladás</string>
+    <string name="profile_lessons_count">Leckék %1$d / %2$d</string>
+    <string name="profile_tests_count">Tesztek %1$d / %2$d</string>
+    <string name="profile_parts_open">Részek megnyitása</string>
+    <string name="profile_parts_close">Részek bezárása</string>
+    <string name="profile_history_title">Előzmények</string>
+    <string name="profile_history_all">Összes megtekintése</string>
+    <string name="profile_history_empty">Itt jelennek meg a befejezett leckéid és teszteid. Kezdj egy leckével!</string>
+    <string name="profile_kind_test">Teszt</string>
+    <string name="profile_result_passed">Átment · %1$d / %2$d</string>
+    <string name="profile_result_retry">Újra · %1$d / %2$d</string>
+    <string name="history_filter_all">Mind</string>
+    <string name="history_filter_lessons">Leckék</string>
+    <string name="history_filter_tests">Tesztek</string>
+    <string name="history_filter_empty">Ebben a szűrőben még nincs semmi.</string>
+    <plurals name="history_days_ago">
+        <item quantity="one">%1$d napja</item>
+        <item quantity="other">%1$d napja</item>
+    </plurals>
+    <plurals name="history_weeks_ago">
+        <item quantity="one">%1$d hete</item>
+        <item quantity="other">%1$d hete</item>
+    </plurals>
+    <string name="history_month_year">%2$d. %1$s</string>
+    <string name="month_1">Január</string>
+    <string name="month_2">Február</string>
+    <string name="month_3">Március</string>
+    <string name="month_4">Április</string>
+    <string name="month_5">Május</string>
+    <string name="month_6">Június</string>
+    <string name="month_7">Július</string>
+    <string name="month_8">Augusztus</string>
+    <string name="month_9">Szeptember</string>
+    <string name="month_10">Október</string>
+    <string name="month_11">November</string>
+    <string name="month_12">December</string>
 </resources>

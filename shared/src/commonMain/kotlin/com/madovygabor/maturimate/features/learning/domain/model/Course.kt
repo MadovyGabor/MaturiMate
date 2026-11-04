@@ -46,6 +46,24 @@ data class SubjectProgress(
     val steps: StepCount,
 )
 
+/** The lessons and the tests of a subject or a part, counted apart (a test is a mini, topic or final test). */
+data class LessonTestCount(val lessons: StepCount, val tests: StepCount) {
+    /** Lessons and tests together. */
+    val steps: StepCount get() = lessons + tests
+
+    operator fun plus(other: LessonTestCount) = LessonTestCount(lessons + other.lessons, tests + other.tests)
+
+    companion object {
+        val ZERO = LessonTestCount(StepCount.ZERO, StepCount.ZERO)
+    }
+}
+
+/** A big part of a subject (a root topic, for example Nyelvtan) with its lessons and tests. */
+data class PartProgress(val topic: Topic, val count: LessonTestCount)
+
+/** A subject of the installed content, its lessons and tests, and the same for each of its big parts. */
+data class SubjectBreakdown(val subjectId: Long, val count: LessonTestCount, val parts: List<PartProgress>)
+
 /** A topic in a list, with its progress. */
 data class TopicSummary(
     val topic: Topic,

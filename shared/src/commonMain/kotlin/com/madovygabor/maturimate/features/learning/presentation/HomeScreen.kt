@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -19,9 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Quiz
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,10 +31,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.madovygabor.maturimate.core.presentation.theme.extendedTypography
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppActivityCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppGoalRing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppInfoChip
@@ -363,42 +360,21 @@ private fun RecentActivities(summary: HomeSummary) {
 @OptIn(ExperimentalTime::class)
 @Composable
 private fun ActivityRow(activity: RecentActivity, today: kotlinx.datetime.LocalDate) {
-    val spacing = MaterialTheme.spacing
-    val colors = MaterialTheme.colorScheme
     val day = activity.at.toLocalDateTime(TimeZone.currentSystemDefault()).date
     val whenText = when (day) {
         today -> stringResource(Res.string.home_when_today)
         today.minus(DatePeriod(days = 1)) -> stringResource(Res.string.home_when_yesterday)
         else -> "${day.day}. ${day.month.ordinal + 1}."
     }
-    Surface(
-        Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = colors.surfaceContainerLow,
-        border = BorderStroke(MaterialTheme.layout.borderThin, colors.outlineVariant),
-    ) {
-        Row(
-            Modifier.heightIn(min = MaterialTheme.layout.choiceCardMinHeight).padding(horizontal = spacing.space3, vertical = spacing.space2),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        ) {
-            val icon: ImageVector = if (activity.isTest) Icons.Rounded.Quiz else Icons.Rounded.MenuBook
-            Surface(shape = if (activity.isTest) MaterialTheme.shapes.small else MaterialTheme.shapes.extraLarge, color = colors.surfaceContainerHighest) {
-                Icon(icon, contentDescription = null, modifier = Modifier.padding(spacing.space2).size(MaterialTheme.layout.iconSmall))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(activity.title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(Res.string.home_activity_meta, activity.topicTitle, whenText),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onSurfaceVariant,
-                )
-            }
-            when {
-                !activity.isTest -> AppTag(stringResource(Res.string.home_recent_lesson_done), style = TagStyle.SUCCESS)
-                activity.passed == true -> AppTag(stringResource(Res.string.home_recent_test_passed), style = TagStyle.SUCCESS)
-                else -> AppTag(stringResource(Res.string.home_recent_test_retry))
-            }
-        }
-    }
+    AppActivityCard(
+        title = activity.title,
+        meta = stringResource(Res.string.home_activity_meta, activity.topicTitle, whenText),
+        isTest = activity.isTest,
+        result = when {
+            !activity.isTest -> stringResource(Res.string.home_recent_lesson_done)
+            activity.passed == true -> stringResource(Res.string.home_recent_test_passed)
+            else -> stringResource(Res.string.home_recent_test_retry)
+        },
+        resultStyle = if (!activity.isTest || activity.passed == true) TagStyle.SUCCESS else TagStyle.NEUTRAL,
+    )
 }

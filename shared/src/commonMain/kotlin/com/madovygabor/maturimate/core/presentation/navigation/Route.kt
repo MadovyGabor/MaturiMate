@@ -70,6 +70,13 @@ sealed interface Route : NavKey {
 
         // Profile Feature
         @Serializable
-        data object Profile : Route // User profile and settings
+        data object Profile : Route {
+            @Serializable
+            data object Overview : Route // Where the student stands: numbers, progress, the last activities
+            @Serializable
+            data object History : Route // Every finished lesson and test, under day headings
+            @Serializable
+            data object Answers : Route // The onboarding answers, until the settings screen (9.4)
+        }
     }
 }

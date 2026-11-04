@@ -63,6 +63,7 @@ import maturimate.shared.generated.resources.subjects_title_learner
 import maturimate.shared.generated.resources.subjects_title_student
 import maturimate.shared.generated.resources.account_title
 import maturimate.shared.generated.resources.common_save
+import maturimate.shared.generated.resources.profile_settings
 import maturimate.shared.generated.resources.profile_title
 import maturimate.shared.generated.resources.onboarding_step_goal
 import maturimate.shared.generated.resources.onboarding_step_language
@@ -196,6 +197,16 @@ class OnboardingFlowTest {
 
     private fun profile() = runBlocking { KoinPlatform.getKoin().get<UserProfileRepository>().profile.first() }!!
 
+    /** The profile tab, then its gear: the onboarding answers (the settings screen from 9.4 on). */
+    private fun ComposeUiTest.openAnswers() {
+        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
+        waitUntil(timeoutMillis = 5_000) {
+            onAllNodes(androidx.compose.ui.test.hasContentDescription(text(Res.string.profile_settings))).fetchSemanticsNodes().isNotEmpty()
+        }
+        onNode(androidx.compose.ui.test.hasContentDescription(text(Res.string.profile_settings))).performClick()
+        waitFor(Res.string.profile_title)
+    }
+
     @Test
     fun studentGoesThroughEveryStepAndLooksAroundAsAGuest() = runDesktopComposeUiTest(412, 915) {
         setContent { App() }
@@ -216,8 +227,7 @@ class OnboardingFlowTest {
         // the tabs keep working after the first switch
         onAllNodes(androidx.compose.ui.test.hasText("Előzmények")).onFirst().performClick()
         waitUntil(timeoutMillis = 5_000) { onAllNodes(androidx.compose.ui.test.hasText("History Screen")).fetchSemanticsNodes().isNotEmpty() }
-        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
-        waitFor(Res.string.profile_title)
+        openAnswers()
 
         // the goal opens its onboarding question, saved with "Mentés"
         click(Res.string.onboarding_step_goal)
@@ -243,8 +253,7 @@ class OnboardingFlowTest {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         setContent { App() }
         goThroughAsStudent()
-        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
-        waitFor(Res.string.profile_title)
+        openAnswers()
 
         click(Res.string.onboarding_step_role)
         waitFor(Res.string.role_title)

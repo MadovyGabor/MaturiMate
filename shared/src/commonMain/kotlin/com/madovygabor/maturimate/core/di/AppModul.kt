@@ -40,6 +40,10 @@ import com.madovygabor.maturimate.features.learning.presentation.TestSessionView
 import com.madovygabor.maturimate.features.learning.presentation.TopicTarget
 import com.madovygabor.maturimate.features.learning.presentation.TopicViewModel
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
+import com.madovygabor.maturimate.features.profileDetails.domain.ActivityHistory
+import com.madovygabor.maturimate.features.profileDetails.domain.ProfileOverview
+import com.madovygabor.maturimate.features.profileDetails.presentation.HistoryViewModel
+import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileOverviewViewModel
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
@@ -101,6 +105,9 @@ val sharedModule = module {
     single { RecentActivities(get(), get()) }
     // Everything the home screen shows
     single { HomeOverview(get(), get(), get(), get()) }
+    // Everything the profile tab shows, and its full history
+    single { ProfileOverview(get(), get(), get(), get()) }
+    single { ActivityHistory(get(), get()) }
     // What a test round leaves in the user database: the attempt, the answers, the progress
     single { TestRecorder(get(), get()) }
 
@@ -134,6 +141,8 @@ val sharedModule = module {
     viewModelOf(::AccountViewModel)
     viewModelOf(::SignInViewModel)
     viewModel { ProfileViewModel(get()) }
+    viewModel { ProfileOverviewViewModel(get()) }
+    viewModel { HistoryViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }
     viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
     viewModel { HomeViewModel(get()) }

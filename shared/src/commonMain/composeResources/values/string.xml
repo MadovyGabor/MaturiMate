@@ -317,4 +317,68 @@
     <string name="home_day_missed">%1$s: vynechané</string>
     <string name="home_day_today">%1$s: dnes</string>
     <string name="home_day_later">%1$s: ešte pred nami</string>
+
+    <!-- Profile tab (9.3) -->
+    <string name="profile_tab_title">Profil</string>
+    <string name="profile_guest">Hosť</string>
+    <string name="profile_settings">Nastavenia</string>
+    <plurals name="profile_stat_days">
+        <item quantity="one">deň</item>
+        <item quantity="few">dni</item>
+        <item quantity="other">dní</item>
+    </plurals>
+    <string name="profile_stat_streak">séria</string>
+    <string name="profile_stat_hours">h</string>
+    <string name="profile_stat_minutes">min</string>
+    <string name="profile_stat_time">učenie</string>
+    <string name="profile_stat_tasks">úlohy</string>
+    <plurals name="profile_stat_streak_description">
+        <item quantity="one">%1$d-dňová séria</item>
+        <item quantity="few">%1$d-dňová séria</item>
+        <item quantity="other">%1$d-dňová séria</item>
+    </plurals>
+    <string name="profile_stat_time_description">%1$d h %2$d min učenia</string>
+    <plurals name="profile_stat_tasks_description">
+        <item quantity="one">%1$d vyriešená úloha</item>
+        <item quantity="few">%1$d vyriešené úlohy</item>
+        <item quantity="other">%1$d vyriešených úloh</item>
+    </plurals>
+    <string name="profile_progress_title">Pokrok</string>
+    <string name="profile_lessons_count">Lekcie %1$d / %2$d</string>
+    <string name="profile_tests_count">Testy %1$d / %2$d</string>
+    <string name="profile_parts_open">Zobraziť časti</string>
+    <string name="profile_parts_close">Skryť časti</string>
+    <string name="profile_history_title">História</string>
+    <string name="profile_history_all">Zobraziť všetko</string>
+    <string name="profile_history_empty">Tu uvidíš svoje dokončené lekcie a testy. Začni lekciou!</string>
+    <string name="profile_kind_test">Test</string>
+    <string name="profile_result_passed">Prešiel · %1$d / %2$d</string>
+    <string name="profile_result_retry">Znova · %1$d / %2$d</string>
+    <string name="history_filter_all">Všetko</string>
+    <string name="history_filter_lessons">Lekcie</string>
+    <string name="history_filter_tests">Testy</string>
+    <string name="history_filter_empty">V tomto filtri zatiaľ nič nie je.</string>
+    <plurals name="history_days_ago">
+        <item quantity="one">Pred %1$d dňom</item>
+        <item quantity="few">Pred %1$d dňami</item>
+        <item quantity="other">Pred %1$d dňami</item>
+    </plurals>
+    <plurals name="history_weeks_ago">
+        <item quantity="one">Pred týždňom</item>
+        <item quantity="few">Pred %1$d týždňami</item>
+        <item quantity="other">Pred %1$d týždňami</item>
+    </plurals>
+    <string name="history_month_year">%1$s %2$d</string>
+    <string name="month_1">Január</string>
+    <string name="month_2">Február</string>
+    <string name="month_3">Marec</string>
+    <string name="month_4">Apríl</string>
+    <string name="month_5">Máj</string>
+    <string name="month_6">Jún</string>
+    <string name="month_7">Júl</string>
+    <string name="month_8">August</string>
+    <string name="month_9">September</string>
+    <string name="month_10">Október</string>
+    <string name="month_11">November</string>
+    <string name="month_12">December</string>
 </resources>
