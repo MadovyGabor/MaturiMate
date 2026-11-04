@@ -45,6 +45,8 @@ data class UserProfile(
     /** The daily reminder; [reminderTime] is kept when it is off, to offer it again. */
     val reminderEnabled: Boolean = false,
     val reminderTime: LocalTime? = null,
+    /** Empty for a guest, who has no name until sign-up. */
+    val firstName: String? = null,
 ) {
     val isOnboardingCompleted: Boolean get() = onboardingCompletedAt != null
 }

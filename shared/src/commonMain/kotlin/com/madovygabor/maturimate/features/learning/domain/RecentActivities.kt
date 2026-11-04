@@ -15,6 +15,8 @@ import kotlin.time.Instant
 data class RecentActivity(
     val unitId: Long,
     val title: String,
+    /** The topic the lesson or test belongs to. */
+    val topicTitle: String,
     val isTest: Boolean,
     val at: Instant,
     val passed: Boolean?,
@@ -39,19 +41,23 @@ class RecentActivities(
         val found = mutableListOf<RecentActivity>()
         val titles = mutableMapOf<Long, LearningUnit?>()
         suspend fun unit(id: Long) = titles.getOrPut(id) { (content.unit(id) as? OperationResult.Success)?.data }
+        val topics = mutableMapOf<Long, String>()
+        suspend fun topic(unit: LearningUnit) = topics.getOrPut(unit.topicId) {
+            (content.topic(unit.topicId) as? OperationResult.Success)?.data?.title.orEmpty()
+        }
 
         for (attempt in attempts) {
             val id = attempt.learningUnitId ?: continue
             val finished = attempt.finishedAt ?: continue
             if (attempt.status != AttemptStatus.FINISHED) continue
             val unit = unit(id) ?: continue
-            found += RecentActivity(id, unit.title, isTest = true, at = finished, passed = attempt.earnedPoints == attempt.maxPoints)
+            found += RecentActivity(id, unit.title, topic(unit), isTest = true, at = finished, passed = attempt.earnedPoints == attempt.maxPoints)
         }
         for (done in units) {
             val completed = done.completedAt ?: continue
             if (done.status != UnitProgressStatus.COMPLETED) continue
             val unit = unit(done.learningUnitId) as? LearningUnit.Summary ?: continue
-            found += RecentActivity(unit.id, unit.title, isTest = false, at = completed, passed = null)
+            found += RecentActivity(unit.id, unit.title, topic(unit), isTest = false, at = completed, passed = null)
         }
         return OperationResult.Success(found.sortedByDescending { it.at }.take(limit))
     }

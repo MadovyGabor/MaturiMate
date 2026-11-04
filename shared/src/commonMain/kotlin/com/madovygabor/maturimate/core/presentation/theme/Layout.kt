@@ -54,6 +54,12 @@ data class Layout(
     val progressRing: Dp = 40.dp,
     /** Thickness of the progress ring. */
     val progressRingStroke: Dp = 4.dp,
+    /** Size of the daily goal ring on the home screen. */
+    val goalRing: Dp = 88.dp,
+    /** Thickness of the daily goal ring. */
+    val goalRingStroke: Dp = 10.dp,
+    /** Circle of a day in the week strip of the home screen. */
+    val weekDot: Dp = 30.dp,
     /** Width of the gold bar at the side of a tip box in a lesson. */
     val accentBar: Dp = 4.dp,
     /** Smallest height of an answer option of a multiple-choice task. */

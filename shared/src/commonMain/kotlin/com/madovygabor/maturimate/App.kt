@@ -52,7 +52,7 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                     return@Box
                 }
                 // the open tab outlives the rebuild, so a language changed in the profile stays there
-                val mainTab = remember { mutableStateOf<NavKey>(Route.Main.Subject) }
+                val mainTab = remember { mutableStateOf<NavKey>(Route.Main.Home) }
                 CompositionLocalProvider(LocalAppLocale provides appState.language?.name?.lowercase()) {
                     key(appState.language, appState.onboardingCompleted) {
                         // Main navigation host that handles transitions between routes

@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -75,6 +76,43 @@ class LearningCourseTest {
     private fun <T> OperationResult<T, LearningError>.data(): T = when (this) {
         is OperationResult.Success -> data
         is OperationResult.Error -> fail("expected success, got $error")
+    }
+
+    @Test
+    fun nextStepIsTheFirstOpenStepWithTheWayToIt() = runBlocking {
+        val target = course(50).nextStep().data()!!
+        assertEquals(51L, target.unit.id)
+        assertEquals(StepKind.MINI_TEST, target.kind)
+        assertEquals(1L, target.subjectId)
+        // the part, then the topic that holds the step
+        assertEquals(listOf(10L, 11L), target.topicIds)
+        assertEquals("Szóképek", target.topicTitle)
+    }
+
+    @Test
+    fun nextStepMovesOnToTheNextTopicAndThenToTheFinalTestOfThePart() = runBlocking {
+        assertEquals(60L, course(50, 51, 52).nextStep().data()!!.unit.id)
+        val final = course(50, 51, 52, 60).nextStep().data()!!
+        assertEquals(70L, final.unit.id)
+        assertEquals(StepKind.FINAL_TEST, final.kind)
+        assertEquals(listOf(10L), final.topicIds)
+    }
+
+    @Test
+    fun nextStepContinuesWhereTheStudentWorkedLast() = runBlocking {
+        // the student did the lesson of the second topic first: the next step follows it, not the first topic
+        assertEquals(70L, course(60).nextStep(afterUnitId = 60).data()!!.unit.id)
+        // a unit that is not done (a test that was not passed) comes up again
+        assertEquals(51L, course(50).nextStep(afterUnitId = 51).data()!!.unit.id)
+        // at the end the search goes on from the beginning
+        assertEquals(51L, course(50, 60, 70).nextStep(afterUnitId = 60).data()!!.unit.id)
+        // an unknown unit means the first open step
+        assertEquals(50L, course().nextStep(afterUnitId = 999).data()!!.unit.id)
+    }
+
+    @Test
+    fun nextStepIsEmptyWhenEverythingIsDone() = runBlocking {
+        assertNull(course(50, 51, 52, 60, 70).nextStep().data())
     }
 
     @Test

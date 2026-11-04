@@ -6,7 +6,9 @@ import com.madovygabor.maturimate.features.learning.domain.model.Streak
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -60,6 +62,30 @@ class StudyTracker(
                 OperationResult.Success(DailyGoalProgress(today, result.data.sumOf { it.secondsStudied }, goalSeconds(config)))
             is OperationResult.Error -> OperationResult.Error(result.error)
         }
+    }
+
+    /** The days of the current week, Monday first, with whether each day's goal was reached. */
+    suspend fun week(): OperationResult<List<WeekDay>, LearningError> {
+        val config = settings()
+        val today = now().toLocalDateTime(config.timeZone).date
+        val monday = today.minus(DatePeriod(days = today.dayOfWeek.isoDayNumber - 1))
+        val sunday = monday.plus(DatePeriod(days = 6))
+        val days = when (val result = progress.activity(monday, sunday)) {
+            is OperationResult.Success -> result.data.associateBy { it.date }
+            is OperationResult.Error -> return OperationResult.Error(result.error)
+        }
+        val goal = goalSeconds(config)
+        return OperationResult.Success((0..6).map { offset ->
+            val date = monday.plus(DatePeriod(days = offset))
+            val reached = (days[date]?.secondsStudied ?: 0) >= goal
+            val state = when {
+                reached -> WeekDayState.DONE
+                date == today -> WeekDayState.TODAY
+                date < today -> WeekDayState.MISSED
+                else -> WeekDayState.LATER
+            }
+            WeekDay(date, state)
+        })
     }
 
     /** The streak as the home screen shows it: zero when a whole day was missed. */

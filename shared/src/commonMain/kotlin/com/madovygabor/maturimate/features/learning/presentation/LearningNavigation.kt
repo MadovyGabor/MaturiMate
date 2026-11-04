@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -15,11 +16,22 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
 /**
+ * Where to open the subjects tab: the subject and the topics from the big part down to the one that holds the
+ * step, so the back stack is built as if the student had walked there.
+ */
+data class LearningDeepLink(val subjectId: Long, val topicIds: List<Long>)
+
+/**
  * The navigation of the subjects tab: the subjects, the parts of a subject, and then the topics level by
  * level down to the path of a topic. Its own back stack lives inside the tab.
  */
 @Composable
-fun LearningNavigation(onOpenLesson: (Long) -> Unit, onOpenTest: (Long) -> Unit) {
+fun LearningNavigation(
+    onOpenLesson: (Long) -> Unit,
+    onOpenTest: (Long) -> Unit,
+    deepLink: LearningDeepLink? = null,
+    onDeepLinkHandled: () -> Unit = {},
+) {
     val backStack = rememberNavBackStack(
         configuration = SavedStateConfiguration {
             serializersModule = SerializersModule {
@@ -34,6 +46,17 @@ fun LearningNavigation(onOpenLesson: (Long) -> Unit, onOpenTest: (Long) -> Unit)
     )
     // the subject the user opened: its name is the label above the parts and topics
     val opened = remember { arrayOfNulls<CatalogSubject>(1) }
+
+    // opened from the home screen: replace the stack with the way to the step, and open nothing
+    LaunchedEffect(deepLink) {
+        if (deepLink == null) return@LaunchedEffect
+        opened[0] = CatalogSubject.byId(deepLink.subjectId)
+        backStack.clear()
+        backStack.add(Route.Main.Subject.Selection)
+        backStack.add(Route.Main.Subject.Parts(deepLink.subjectId))
+        deepLink.topicIds.forEach { backStack.add(Route.Main.Subject.Topic(it)) }
+        onDeepLinkHandled()
+    }
 
     NavDisplay(
         backStack = backStack,

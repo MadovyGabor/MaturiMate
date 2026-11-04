@@ -27,11 +27,13 @@ import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.learning.domain.LearningCourse
+import com.madovygabor.maturimate.features.learning.domain.HomeOverview
 import com.madovygabor.maturimate.features.learning.domain.RecentActivities
 import com.madovygabor.maturimate.features.reminder.domain.ReminderSync
 import com.madovygabor.maturimate.features.learning.domain.StudySettings
 import com.madovygabor.maturimate.features.learning.domain.StudyTracker
 import com.madovygabor.maturimate.features.learning.domain.TestRecorder
+import com.madovygabor.maturimate.features.learning.presentation.HomeViewModel
 import com.madovygabor.maturimate.features.learning.presentation.LessonViewModel
 import com.madovygabor.maturimate.features.learning.presentation.SubjectListViewModel
 import com.madovygabor.maturimate.features.learning.presentation.TestSessionViewModel
@@ -97,6 +99,8 @@ val sharedModule = module {
     }
     // The last finished lessons and tests, for the home screen
     single { RecentActivities(get(), get()) }
+    // Everything the home screen shows
+    single { HomeOverview(get(), get(), get(), get()) }
     // What a test round leaves in the user database: the attempt, the answers, the progress
     single { TestRecorder(get(), get()) }
 
@@ -132,6 +136,7 @@ val sharedModule = module {
     viewModel { ProfileViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }
     viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
+    viewModel { HomeViewModel(get()) }
     viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get(), get()) }
     viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
 }

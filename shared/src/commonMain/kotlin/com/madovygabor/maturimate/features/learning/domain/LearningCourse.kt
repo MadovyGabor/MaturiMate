@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.learning.domain
 
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.features.learning.domain.model.ContinueTarget
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
 import com.madovygabor.maturimate.features.learning.domain.model.PathStep
 import com.madovygabor.maturimate.features.learning.domain.model.PracticeKind
@@ -36,6 +37,36 @@ class LearningCourse(
             val steps = parts.fold(StepCount.ZERO) { sum, part -> sum + count(part, done) }
             SubjectProgress(subject.id, subject.code, parts.size, steps)
         }
+    }
+
+    /**
+     * The step to go on with. Every step of the installed content is put in the order of the path (subject by
+     * subject, part by part, topic by topic; the final test of a parent topic after the topics below it).
+     * Without [afterUnitId] the answer is the first step that is not done. With it (the unit the student worked
+     * on last) the search starts at that unit: a lesson that is done moves on to what follows it, a test that was
+     * not passed comes up again, and when the end is reached the search goes on from the beginning. Empty when
+     * everything is done.
+     */
+    suspend fun nextStep(afterUnitId: Long? = null): OperationResult<ContinueTarget?, LearningError> = guarded {
+        val done = completedUnits()
+        val steps = mutableListOf<ContinueTarget>()
+        for (subject in content.subjects().orThrow()) {
+            for (part in content.rootTopics(subject.id).orThrow()) collectSteps(subject.id, part, listOf(part.id), steps)
+        }
+        val start = steps.indexOfFirst { it.unit.id == afterUnitId }.coerceAtLeast(0)
+        (steps.drop(start) + steps.take(start)).firstOrNull { it.unit.id !in done }
+    }
+
+    private suspend fun collectSteps(subjectId: Long, topic: Topic, chain: List<Long>, into: MutableList<ContinueTarget>) {
+        val children = content.childTopics(topic.id).orThrow()
+        val units = content.units(topic.id).orThrow().sortedBy { it.sortOrder }
+        if (children.isEmpty()) {
+            units.forEach { into += ContinueTarget(subjectId, chain, topic.title, it, kindOf(it)) }
+            return
+        }
+        children.forEach { collectSteps(subjectId, it, chain + it.id, into) }
+        units.filterIsInstance<LearningUnit.Practice>().filter { it.kind == PracticeKind.FINAL }
+            .forEach { into += ContinueTarget(subjectId, chain, topic.title, it, StepKind.FINAL_TEST) }
     }
 
     /** The big parts of a subject. */

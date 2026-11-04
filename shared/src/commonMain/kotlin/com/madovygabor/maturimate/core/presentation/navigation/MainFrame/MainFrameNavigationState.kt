@@ -80,6 +80,7 @@ fun rememberNavigationState(
 val serializersConfig = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
+            subclass(Route.Main.Home::class, Route.Main.Home.serializer())
             subclass(Route.Main.Subject::class, Route.Main.Subject.serializer())
             subclass(Route.Main.History::class, Route.Main.History.serializer())
             subclass(Route.Main.Profile::class, Route.Main.Profile.serializer())

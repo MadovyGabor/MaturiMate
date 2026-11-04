@@ -24,6 +24,19 @@ enum class StepState { DONE, CURRENT, TODO }
 /** One step of a path: a lesson or a test, with its state for the user. */
 data class PathStep(val unit: LearningUnit, val kind: StepKind, val state: StepState)
 
+/**
+ * The next step the student has not done, and where it lies: [topicIds] is the way from the big part down to the
+ * topic that holds the step (the path of a topic, or a parent topic for its final test), so a screen can open
+ * the subject, the part and every topic on the way, as if the student had walked there.
+ */
+data class ContinueTarget(
+    val subjectId: Long,
+    val topicIds: List<Long>,
+    val topicTitle: String,
+    val unit: LearningUnit,
+    val kind: StepKind,
+)
+
 /** A subject of the installed content with the user's progress in it. */
 data class SubjectProgress(
     val subjectId: Long,

@@ -96,4 +96,28 @@ class StudyTrackerTest {
         goal = null
         assertEquals(StudyTracker.DEFAULT_GOAL_MINUTES * 60, tracker.today().data().goalSeconds)
     }
+
+    @Test
+    fun theWeekStartsOnMondayAndMarksReachedMissedTodayAndLaterDays() = runBlocking {
+        // the 4th of November 2026 is a Wednesday
+        day("2026-11-02"); tracker.record(600).data()
+        day("2026-11-04"); tracker.record(60).data()
+
+        val week = tracker.week().data()
+        assertEquals(LocalDate(2026, 11, 2), week.first().date)
+        assertEquals(LocalDate(2026, 11, 8), week.last().date)
+        assertEquals(
+            listOf(WeekDayState.DONE, WeekDayState.MISSED, WeekDayState.TODAY, WeekDayState.LATER, WeekDayState.LATER, WeekDayState.LATER, WeekDayState.LATER),
+            week.map { it.state },
+        )
+        tracker.record(600).data()
+        assertEquals(WeekDayState.DONE, tracker.week().data()[2].state)
+    }
+
+    @Test
+    fun hadStreakIsTrueOnceAStreakHasStarted() = runBlocking {
+        assertFalse(tracker.hadStreak())
+        tracker.record(600).data()
+        assertTrue(tracker.hadStreak())
+    }
 }
