@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Schedule
@@ -38,6 +39,8 @@ import androidx.compose.ui.semantics.semantics
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppActivityCard
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppStatCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppSubjectProgressCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.ProgressLine
@@ -56,6 +59,10 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import maturimate.shared.generated.resources.Res
+import maturimate.shared.generated.resources.account_create
+import maturimate.shared.generated.resources.profile_guest_text
+import maturimate.shared.generated.resources.profile_guest_title
+import maturimate.shared.generated.resources.welcome_have_account
 import maturimate.shared.generated.resources.home_activity_meta
 import maturimate.shared.generated.resources.home_kind_lesson
 import maturimate.shared.generated.resources.home_recent_lesson_done
@@ -96,18 +103,23 @@ import kotlin.time.ExperimentalTime
 fun ProfileOverviewScreen(
     onSettings: () -> Unit,
     onHistory: () -> Unit,
+    onSignUp: () -> Unit,
+    onSignIn: () -> Unit,
     viewModel: ProfileOverviewViewModel = koinViewModel(),
 ) {
     // read again whenever the screen comes back, so what was done on another tab shows here
     LaunchedEffect(Unit) { viewModel.refresh() }
     val state by viewModel.state.collectAsState()
-    ProfileOverviewContent(state, ProfileActions(onSettings, onHistory, viewModel::toggle, viewModel::refresh))
+    ProfileOverviewContent(state, ProfileActions(onSettings, onHistory, onSignUp, onSignIn, viewModel::toggle, viewModel::refresh))
 }
 
 /** What the profile can do; one object keeps the parameters short. */
 data class ProfileActions(
     val onSettings: () -> Unit = {},
     val onHistory: () -> Unit = {},
+    /** A guest's "Fiók létrehozása" and "Már van fiókom". */
+    val onSignUp: () -> Unit = {},
+    val onSignIn: () -> Unit = {},
     val onToggle: (Long) -> Unit = {},
     val onRetry: () -> Unit = {},
 )
@@ -142,6 +154,7 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing.space6)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
                         Header(summary.firstName, actions.onSettings)
+                        if (summary.firstName == null) GuestCard(actions)
                         Stats(summary.streak, summary.totals)
                         Progress(summary.subjects, state.open, actions.onToggle)
                     }
@@ -149,6 +162,8 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
                 }
             } else {
                 Header(summary.firstName, actions.onSettings)
+                // a guest sees the call to sign up first, right under the name
+                if (summary.firstName == null) GuestCard(actions)
                 Stats(summary.streak, summary.totals)
                 Progress(summary.subjects, state.open, actions.onToggle)
                 Recent(summary.recent, summary.today, actions.onHistory)
@@ -187,6 +202,34 @@ private fun Header(firstName: String?, onSettings: () -> Unit) {
         }
         IconButton(onClick = onSettings) {
             Icon(Icons.Rounded.Settings, contentDescription = stringResource(Res.string.profile_settings), tint = colors.onSurfaceVariant)
+        }
+    }
+}
+
+/** The call to a guest: create an account (or sign in to one), so the progress is kept. */
+@Composable
+private fun GuestCard(actions: ProfileActions) {
+    val spacing = MaterialTheme.spacing
+    val colors = MaterialTheme.colorScheme
+    // compact: an icon and two short lines, the two buttons side by side
+    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = colors.primaryContainer, contentColor = colors.onPrimaryContainer) {
+        Column(Modifier.padding(horizontal = spacing.space4, vertical = spacing.space3), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space3)) {
+                Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(MaterialTheme.layout.icon))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(Res.string.profile_guest_title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.profile_guest_text), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            // the buttons only as wide as their text, under the text and after the icon
+            Row(
+                Modifier.padding(start = MaterialTheme.layout.icon + spacing.space3),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AppButton(text = stringResource(Res.string.account_create), onClick = actions.onSignUp, compact = true)
+                AppButton(text = stringResource(Res.string.welcome_have_account), onClick = actions.onSignIn, variant = AppButtonVariant.TEXT, compact = true)
+            }
         }
     }
 }

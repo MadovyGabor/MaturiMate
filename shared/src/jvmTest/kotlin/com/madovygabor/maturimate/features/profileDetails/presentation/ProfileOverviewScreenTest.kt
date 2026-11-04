@@ -117,6 +117,29 @@ class ProfileOverviewScreenTest {
     }
 
     @Test
+    fun aGuestIsAskedToCreateAnAccountOrSignIn() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var signUp = false
+        var signIn = false
+        setContent {
+            AppTheme { ProfileOverviewContent(ProfileOverviewUiState.Ready(summary(firstName = null)), ProfileActions(onSignUp = { signUp = true }, onSignIn = { signIn = true })) }
+        }
+
+        onNodeWithText("Hozz létre fiókot").assertIsDisplayed()
+        onNodeWithText("Fiók létrehozása").performClick()
+        onNodeWithText("Már van fiókom").performClick()
+        assertTrue(signUp && signIn)
+    }
+
+    @Test
+    fun withAnAccountThereIsNoCallToSignUp() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { ProfileOverviewContent(ProfileOverviewUiState.Ready(summary()), ProfileActions()) } }
+
+        onAllNodesWithText("Hozz létre fiókot").assertCountEquals(0)
+    }
+
+    @Test
     fun theGearOpensTheSettings() = runDesktopComposeUiTest {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         var settings = false

@@ -77,6 +77,10 @@ sealed interface Route : NavKey {
             data object History : Route // Every finished lesson and test, under day headings
             @Serializable
             data object Answers : Route // The onboarding answers, until the settings screen (9.4)
+            @Serializable
+            data object SignUp : Route // A guest creates an account, from the profile
+            @Serializable
+            data object SignIn : Route // A guest signs in to an existing account, from the profile
         }
     }
 }

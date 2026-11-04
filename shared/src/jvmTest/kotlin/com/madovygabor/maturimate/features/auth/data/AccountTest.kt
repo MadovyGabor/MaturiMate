@@ -227,6 +227,25 @@ class AccountTest {
     }
 
     @Test
+    fun aGuestWhoSignsUpFromTheProfileKeepsTheDayTheOnboardingEnded() = runBlocking {
+        val (provider, profiles) = local()
+        profiles.saveRole(UserRole.STUDENT)
+        // looked around as a guest days ago
+        profiles.completeOnboarding(Instant.fromEpochMilliseconds(5_000))
+        val account = FakeAccount()
+
+        val result = AccountSetupImpl(FakeAuth(), account, profiles, provider, Dispatchers.Unconfined)
+            .completeSignUp("Anna", "Kovács", marketing = false, finishedAt = Instant.fromEpochMilliseconds(9_000))
+
+        assertEquals(OperationResult.Success(Unit), result)
+        assertEquals(Instant.fromEpochMilliseconds(5_000), account.completedAt)
+        assertEquals(Instant.fromEpochMilliseconds(5_000), profiles.profile.first()!!.onboardingCompletedAt)
+        // the guest's rows are the account's now
+        assertEquals(USER_ID, provider.userId())
+        assertEquals("Anna", profiles.profile.first()!!.firstName)
+    }
+
+    @Test
     fun signInReplacesTheLocalAnswersWithTheAccounts() = runBlocking {
         val (provider, profiles) = local()
         profiles.saveTeachingLanguage(TeachingLanguage.HU)

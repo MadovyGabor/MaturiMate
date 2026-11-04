@@ -321,6 +321,8 @@
     <!-- Profile tab (9.3) -->
     <string name="profile_tab_title">Profil</string>
     <string name="profile_guest">Hosť</string>
+    <string name="profile_guest_title">Vytvor si účet</string>
+    <string name="profile_guest_text">Tak tvoj pokrok zostane, aj keď prejdeš na iný telefón, a môžeš zadať aj svoje meno.</string>
     <string name="profile_settings">Nastavenia</string>
     <plurals name="profile_stat_days">
         <item quantity="one">deň</item>

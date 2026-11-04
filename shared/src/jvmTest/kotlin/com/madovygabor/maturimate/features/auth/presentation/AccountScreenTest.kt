@@ -1,5 +1,11 @@
 package com.madovygabor.maturimate.features.auth.presentation
 
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
+import maturimate.shared.generated.resources.account_browse
+import maturimate.shared.generated.resources.common_back
 import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -222,6 +228,22 @@ class AccountScreenTest {
         onNodeWithText(text(Res.string.account_create)).assertIsEnabled()
         onNodeWithText(text(Res.string.account_google)).assertIsEnabled()
         onNodeWithText(text(Res.string.account_consent_required)).assertExists()
+    }
+
+    @Test
+    fun fromTheProfileThereIsNoLookAroundButtonButABackArrow() = runComposeUiTest {
+        var back = false
+        setContent { AppTheme(darkTheme = false) { AccountContent(AccountUiState(), null, AccountActions(onBack = { back = true }), inApp = true) } }
+        onNodeWithText(text(Res.string.account_create)).assertExists()
+        onAllNodesWithText(text(Res.string.account_browse)).assertCountEquals(0)
+        onNodeWithContentDescription(text(Res.string.common_back)).performClick()
+        assertTrue(back)
+    }
+
+    @Test
+    fun inTheOnboardingTheLookAroundButtonStays() = runComposeUiTest {
+        setContent { AppTheme(darkTheme = false) { AccountContent(AccountUiState(), UserRole.STUDENT, AccountActions()) } }
+        onNodeWithText(text(Res.string.account_browse)).assertExists()
     }
 
     /** Pictures of the form and the code step, both themes and languages, into build/screenshots/account. */

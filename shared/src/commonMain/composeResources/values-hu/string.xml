@@ -311,6 +311,8 @@
     <!-- Profile tab (9.3) -->
     <string name="profile_tab_title">Profil</string>
     <string name="profile_guest">Vendég</string>
+    <string name="profile_guest_title">Hozz létre fiókot</string>
+    <string name="profile_guest_text">Így a haladásod megmarad, ha másik telefonra váltasz, és a nevedet is megadhatod.</string>
     <string name="profile_settings">Beállítások</string>
     <plurals name="profile_stat_days">
         <item quantity="one">nap</item>

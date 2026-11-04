@@ -171,6 +171,7 @@ class DesignTokensSyncTest {
             "icon-small" to layout.iconSmall.value,
             "badge" to layout.badge.value,
             "choice-card-min-height" to layout.choiceCardMinHeight.value,
+            "button-compact-height" to layout.buttonCompactHeight.value,
             "button-min-width" to layout.buttonMinWidth.value,
             "progress-bar-height" to layout.progressBarHeight.value,
             "step-dot" to layout.stepDot.value,

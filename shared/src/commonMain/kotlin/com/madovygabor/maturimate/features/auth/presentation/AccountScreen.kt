@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -52,9 +53,13 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AccountScreen(
     role: UserRole?,
     onBack: () -> Unit,
+    /** Opened from the profile by a guest: no steps and no "Körülnézek"; [onDone] runs once the account is set up. */
+    inApp: Boolean = false,
+    onDone: () -> Unit = {},
     viewModel: AccountViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    LaunchedEffect(state.done) { if (state.done) onDone() }
     val google = rememberGoogleSignIn(onSignedIn = viewModel::onGoogleSignedIn, onError = viewModel::onGoogleFailed)
     AccountContent(
         state = state,
@@ -72,6 +77,7 @@ fun AccountScreen(
             onBackToForm = viewModel::onBackToForm,
             onBack = onBack,
         ),
+        inApp = inApp,
     )
 }
 
@@ -91,20 +97,21 @@ data class AccountActions(
 )
 
 @Composable
-fun AccountContent(state: AccountUiState, role: UserRole?, actions: AccountActions) {
+fun AccountContent(state: AccountUiState, role: UserRole?, actions: AccountActions, inApp: Boolean = false) {
     val email = state.codeSentTo
-    if (email != null) CodeStep(state, email, role, actions) else FormStep(state, role, actions)
+    if (email != null) CodeStep(state, email, role, actions, inApp) else FormStep(state, role, actions, inApp)
 }
 
 @Composable
-private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountActions) {
+private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountActions, inApp: Boolean) {
+    val create = OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = !state.busy)
     OnboardingScaffold(
-        actions = listOf(
-            OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = !state.busy),
-            OnboardingAction(stringResource(Res.string.account_browse), actions.onBrowse, AppButtonVariant.TEXT, enabled = !state.busy),
-        ),
+        // in the app the guest has looked around already: no "Körülnézek", and a plain back arrow instead of the steps
+        actions = if (inApp) listOf(create)
+        else listOf(create, OnboardingAction(stringResource(Res.string.account_browse), actions.onBrowse, AppButtonVariant.TEXT, enabled = !state.busy)),
         stackedActions = true,
-        progress = OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBack),
+        progress = if (inApp) null else OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBack),
+        onBack = if (inApp) actions.onBack else null,
     ) {
         Text(stringResource(Res.string.account_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
         Text(stringResource(Res.string.account_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -160,14 +167,15 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
 
 /** The 6-digit code from the sign-up e-mail. */
 @Composable
-private fun CodeStep(state: AccountUiState, email: String, role: UserRole?, actions: AccountActions) {
+private fun CodeStep(state: AccountUiState, email: String, role: UserRole?, actions: AccountActions, inApp: Boolean) {
     OnboardingScaffold(
         actions = listOf(
             OnboardingAction(stringResource(Res.string.code_confirm), actions.onConfirmCode, enabled = !state.busy),
             OnboardingAction(stringResource(Res.string.code_resend), actions.onResendCode, AppButtonVariant.TEXT, enabled = !state.busy),
         ),
         stackedActions = true,
-        progress = OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBackToForm),
+        progress = if (inApp) null else OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBackToForm),
+        onBack = if (inApp) actions.onBackToForm else null,
     ) {
         Text(stringResource(Res.string.code_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
         Text(stringResource(Res.string.code_sent, email), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
