@@ -402,4 +402,17 @@
     <string name="settings_delete">A fiók törlése</string>
     <string name="settings_delete_hint">Minden adatod törlődik</string>
     <string name="settings_exam_value">%1$s · %2$s</string>
+    <string name="settings_reset_title">Újrakezded a haladást?</string>
+    <string name="settings_reset_text">Törlődnek a kész leckék és tesztek, a válaszaid és a hibáid. A sorozatod, a tanulási időd és a beállításaid megmaradnak.</string>
+    <string name="settings_reset_confirm">Újrakezdés</string>
+    <string name="settings_reset_done">A haladásod újraindult.</string>
+    <string name="settings_sign_out_title">Kijelentkezel?</string>
+    <string name="settings_sign_out_text">A haladásod még csak ezen a telefonon van, ezért kijelentkezéskor innen törlődik. Utána a kezdő képernyő jön.</string>
+    <string name="settings_name_title">A neved</string>
+    <string name="settings_password_old">Régi jelszó</string>
+    <string name="settings_password_new">Új jelszó</string>
+    <string name="settings_password_wrong">A régi jelszó nem jó.</string>
+    <string name="settings_password_done">A jelszavad megváltozott.</string>
+    <string name="settings_password_repeat">Új jelszó újra</string>
+    <string name="settings_password_mismatch">A két új jelszó nem egyezik.</string>
 </resources>

@@ -47,6 +47,7 @@ data class UserProfile(
     val reminderTime: LocalTime? = null,
     /** Empty for a guest, who has no name until sign-up. */
     val firstName: String? = null,
+    val lastName: String? = null,
 ) {
     val isOnboardingCompleted: Boolean get() = onboardingCompletedAt != null
 }

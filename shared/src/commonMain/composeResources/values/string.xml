@@ -417,4 +417,17 @@
     <string name="settings_delete">Zmazanie účtu</string>
     <string name="settings_delete_hint">Všetky tvoje údaje sa zmažú</string>
     <string name="settings_exam_value">%1$s · %2$s</string>
+    <string name="settings_reset_title">Začneš pokrok odznova?</string>
+    <string name="settings_reset_text">Zmažú sa hotové lekcie a testy, tvoje odpovede a chyby. Tvoja séria, čas učenia a nastavenia zostanú.</string>
+    <string name="settings_reset_confirm">Začať odznova</string>
+    <string name="settings_reset_done">Tvoj pokrok začal odznova.</string>
+    <string name="settings_sign_out_title">Odhlásiš sa?</string>
+    <string name="settings_sign_out_text">Tvoj pokrok je zatiaľ len v tomto telefóne, preto sa pri odhlásení odtiaľto zmaže. Potom príde úvodná obrazovka.</string>
+    <string name="settings_name_title">Tvoje meno</string>
+    <string name="settings_password_old">Staré heslo</string>
+    <string name="settings_password_new">Nové heslo</string>
+    <string name="settings_password_wrong">Staré heslo nie je správne.</string>
+    <string name="settings_password_done">Tvoje heslo sa zmenilo.</string>
+    <string name="settings_password_repeat">Nové heslo znova</string>
+    <string name="settings_password_mismatch">Dve nové heslá sa nezhodujú.</string>
 </resources>

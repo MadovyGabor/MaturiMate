@@ -122,3 +122,12 @@ ORDER BY times_wrong DESC, next_review_at;
 
 upsertTaskProgress:
 INSERT OR REPLACE INTO user_task_progress VALUES ?;
+
+-- "Haladás újrakezdése": what was done goes (the rounds, the answers, the finished lessons and tests, the
+-- repetition of the tasks); the streak, the study time and the settings stay (DECISIONS 2026-11-04).
+resetProgress {
+DELETE FROM attempt_answer WHERE user_id = :userId;
+DELETE FROM attempt WHERE user_id = :userId;
+DELETE FROM user_unit_progress WHERE user_id = :userId;
+DELETE FROM user_task_progress WHERE user_id = :userId;
+}

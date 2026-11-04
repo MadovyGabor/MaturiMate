@@ -197,6 +197,7 @@ class AccountTest {
             return OperationResult.Success(Unit)
         }
         override suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError> = OperationResult.Success(remote)
+        override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
     }
 
     private fun local(): Pair<LocalUserProvider, UserProfileRepositoryImpl> {

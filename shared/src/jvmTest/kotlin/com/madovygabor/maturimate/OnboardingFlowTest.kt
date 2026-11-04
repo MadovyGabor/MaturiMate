@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.di.sharedModule
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.user.UserDatabase
+import com.madovygabor.maturimate.features.auth.domain.AccountSettings
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AccountUser
 import com.madovygabor.maturimate.features.auth.domain.AuthError
@@ -104,6 +105,13 @@ class OnboardingFlowTest {
         override suspend fun setNewPassword(newPassword: String) = ok
     }
 
+    /** The settings' account changes; the flow does not use them. */
+    private object NoSettings : AccountSettings {
+        override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun changePassword(oldPassword: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun signOut(): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+    }
+
     private object NoSetup : AccountSetup {
         override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> =
             OperationResult.Success(Unit)
@@ -131,6 +139,7 @@ class OnboardingFlowTest {
                     single<ContentRepository> { StarterContent }
                     single<AuthRepository> { NoAuth }
                     single<AccountSetup> { NoSetup }
+                    single<AccountSettings> { NoSettings }
                     single<SupabaseClient> {
                         createSupabaseClient("https://test.supabase.co", "test-key") {
                             httpEngine = MockEngine { respondError(HttpStatusCode.ServiceUnavailable) }

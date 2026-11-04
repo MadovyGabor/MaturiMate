@@ -65,6 +65,12 @@ class SupabaseAccountRepository(
         Unit
     }
 
+    override suspend fun saveNames(firstName: String, lastName: String) = call {
+        val userId = userId()
+        postgrest.from("user_profile").update(NamesRow(firstName, lastName)) { filter { eq("user_id", userId) } }
+        Unit
+    }
+
     override suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError> = call {
         val userId = userId()
         val profile = postgrest.from("user_profile").select { filter { eq("user_id", userId) } }
@@ -180,4 +186,11 @@ private data class SubjectParam(
     @SerialName("subject_id") val subjectId: Long,
     val source: String,
     val level: String?,
+)
+
+/** The names of `user_profile`, for a change from the settings. */
+@Serializable
+private data class NamesRow(
+    @SerialName("first_name") val firstName: String,
+    @SerialName("last_name") val lastName: String,
 )

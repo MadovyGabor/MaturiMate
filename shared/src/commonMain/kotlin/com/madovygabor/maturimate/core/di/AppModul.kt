@@ -15,7 +15,9 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.R
 import com.madovygabor.maturimate.features.appOnboarding.presentation.language.LanguageViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsViewModel
+import com.madovygabor.maturimate.features.auth.data.AccountSettingsImpl
 import com.madovygabor.maturimate.features.auth.data.AccountSetupImpl
+import com.madovygabor.maturimate.features.auth.domain.AccountSettings
 import com.madovygabor.maturimate.features.auth.data.AuthRepositoryImpl
 import com.madovygabor.maturimate.features.auth.data.SupabaseAccountRepository
 import com.madovygabor.maturimate.features.auth.domain.AccountRepository
@@ -122,6 +124,7 @@ val sharedModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get<SupabaseClient>().auth) }
     single<AccountRepository> { SupabaseAccountRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
     single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE)) }
+    single<AccountSettings> { AccountSettingsImpl(get(), get(), get(), get(), get(USER_DATABASE)) }
 
     // UI Controllers
 
@@ -140,7 +143,7 @@ val sharedModule = module {
     viewModel { PlanViewModel(get()) }
     viewModelOf(::AccountViewModel)
     viewModelOf(::SignInViewModel)
-    viewModel { SettingsViewModel(get(), auth = get()) }
+    viewModel { SettingsViewModel(get(), auth = get(), accountSettings = get(), progress = get()) }
     viewModel { ProfileOverviewViewModel(get()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }

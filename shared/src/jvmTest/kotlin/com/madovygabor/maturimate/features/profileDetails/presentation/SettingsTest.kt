@@ -3,7 +3,14 @@ package com.madovygabor.maturimate.features.profileDetails.presentation
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -15,6 +22,7 @@ import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
+import com.madovygabor.maturimate.features.auth.domain.AccountUser
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
@@ -145,6 +153,47 @@ class SettingsTest {
         onNodeWithText("Az app nyelve").assertExists()
         // sign-out and deletion only with an account
         onAllNodesWithText("Kijelentkezés").assertCountEquals(0)
+    }
+
+    @Test
+    fun anAccountGetsTheRedRowsAndAGoogleAccountHasNoPassword() = runDesktopComposeUiTest(412, 2400) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val loaded = runBlocking { SettingsViewModel(student(repository()), today).loaded() }
+        var account by mutableStateOf(AccountUser("id", "anna@example.com", "Anna", "Kovács"))
+        var reset = false
+        setContent {
+            AppTheme { SettingsContent(loaded.copy(account = account), SettingsActions(onReset = { done -> reset = true; done(true) })) }
+        }
+
+        onNodeWithText("Jelszó megváltoztatása").assertExists()
+        onNodeWithText("Kijelentkezés").assertExists()
+        // the reset asks first, then runs
+        onNodeWithText("Haladás újrakezdése").performClick()
+        onNodeWithText("Újrakezded a haladást?").assertExists()
+        onNodeWithText("Újrakezdés").performClick()
+        assertTrue(reset)
+
+        account = account.copy(hasPassword = false)
+        onAllNodesWithText("Jelszó megváltoztatása").assertCountEquals(0)
+    }
+
+    @Test
+    fun theNewPasswordIsTypedTwiceAndSavedOnlyWhenBothAgree() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var saved: Pair<String, String>? = null
+        setContent { AppTheme { PasswordDialog(busy = false, error = null, onSave = { old, new -> saved = old to new }, onDismiss = {}) } }
+
+        onNodeWithText("Régi jelszó").performTextInput("Old12345")
+        onNodeWithText("Új jelszó").performTextInput("New12345")
+        onNodeWithText("Új jelszó újra").performTextInput("New12399")
+        onNodeWithText("A két új jelszó nem egyezik.").assertExists()
+        onNodeWithText("Mentés").assertIsNotEnabled()
+
+        onNodeWithText("A két új jelszó nem egyezik.").assertExists()
+        onNodeWithText("New12399").performTextClearance()
+        onNodeWithText("Új jelszó újra").performTextInput("New12345")
+        onNodeWithText("Mentés").assertIsEnabled().performClick()
+        assertEquals("Old12345" to "New12345", saved)
     }
 
     /** Pictures of the settings, both themes and languages, into build/screenshots/settings. */

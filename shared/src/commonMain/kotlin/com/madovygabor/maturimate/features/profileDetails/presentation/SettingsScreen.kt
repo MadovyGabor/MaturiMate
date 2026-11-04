@@ -76,6 +76,12 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.shared.generated.resources.Res
+import com.madovygabor.maturimate.features.auth.domain.AuthError
+import maturimate.shared.generated.resources.settings_reset_confirm
+import maturimate.shared.generated.resources.settings_reset_text
+import maturimate.shared.generated.resources.settings_reset_title
+import maturimate.shared.generated.resources.settings_sign_out_text
+import maturimate.shared.generated.resources.settings_sign_out_title
 import maturimate.shared.generated.resources.common_back
 import maturimate.shared.generated.resources.common_cancel
 import maturimate.shared.generated.resources.goal_minutes
@@ -149,6 +155,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val busy by viewModel.busy.collectAsState()
     val backStack = remember { mutableStateListOf<SettingsPage>(SettingsPage.List) }
     val done: () -> Unit = { if (backStack.size > 1) backStack.removeLast() else onBack() }
     // the first of the questions still missing replaces the one just answered, so Back returns
@@ -179,6 +186,11 @@ fun SettingsScreen(
                         onReminder = { enabled -> if (!viewModel.setReminder(enabled)) open(OnboardingStep.REMINDER) },
                         onSignUp = onSignUp,
                         onSignIn = onSignIn,
+                        onSaveNames = viewModel::saveNames,
+                        onChangePassword = viewModel::changePassword,
+                        onReset = viewModel::resetProgress,
+                        onSignOut = viewModel::signOut,
+                        busy = busy,
                     ),
                 )
             }
@@ -209,13 +221,25 @@ data class SettingsActions(
     val onReminder: (Boolean) -> Unit = {},
     val onSignUp: () -> Unit = {},
     val onSignIn: () -> Unit = {},
+    /** The name, the password, the reset and the sign-out; each gets back the error, if any. */
+    val onSaveNames: (String, String, (AuthError?) -> Unit) -> Unit = { _, _, _ -> },
+    val onChangePassword: (String, String, (AuthError?) -> Unit) -> Unit = { _, _, _ -> },
+    val onReset: ((Boolean) -> Unit) -> Unit = {},
+    val onSignOut: ((AuthError?) -> Unit) -> Unit = {},
+    val busy: Boolean = false,
 )
+
+/** The dialog open over the list. */
+private enum class SettingsDialog { NAME, PASSWORD, RESET, SIGN_OUT }
 
 @Composable
 fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
     val spacing = MaterialTheme.spacing
     val layout = MaterialTheme.layout
     var choosing by remember { mutableStateOf<LanguageKind?>(null) }
+    var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
+    var error by remember { mutableStateOf<AuthError?>(null) }
+    val openDialog: (SettingsDialog) -> Unit = { error = null; dialog = it }
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         // tablet and desktop: the groups in two columns
         val wide = maxWidth >= layout.breakpointMedium
@@ -236,14 +260,14 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
             if (state == null) return@Column
             Who(state)
             val left: @Composable () -> Unit = {
-                Account(state, actions)
+                Account(state, actions, onName = { openDialog(SettingsDialog.NAME) }, onPassword = { openDialog(SettingsDialog.PASSWORD) })
                 Learning(state, actions, onSchoolLanguage = { choosing = LanguageKind.SCHOOL })
                 Notifications(state.profile, actions)
             }
             val right: @Composable () -> Unit = {
                 App(state.profile, onAppLanguage = { choosing = LanguageKind.APP })
                 Data()
-                Danger(state)
+                Danger(state, onReset = { openDialog(SettingsDialog.RESET) }, onSignOut = { openDialog(SettingsDialog.SIGN_OUT) })
             }
             if (wide) {
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing.space6)) {
@@ -254,6 +278,34 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
                 left()
                 right()
             }
+        }
+    }
+    if (state != null) {
+        val close = { dialog = null }
+        // a dialog closes on success and shows the error otherwise
+        val after: (AuthError?) -> Unit = { failed -> if (failed == null) dialog = null else error = failed }
+        when (dialog) {
+            SettingsDialog.NAME -> NameDialog(
+                lastName = state.profile.lastName ?: state.account?.lastName.orEmpty(),
+                firstName = state.profile.firstName ?: state.account?.firstName.orEmpty(),
+                busy = actions.busy, error = error,
+                onSave = { first, last -> actions.onSaveNames(first, last, after) }, onDismiss = close,
+            )
+            SettingsDialog.PASSWORD -> PasswordDialog(
+                busy = actions.busy, error = error,
+                onSave = { old, new -> actions.onChangePassword(old, new, after) }, onDismiss = close,
+            )
+            SettingsDialog.RESET -> ConfirmDialog(
+                stringResource(Res.string.settings_reset_title), stringResource(Res.string.settings_reset_text),
+                stringResource(Res.string.settings_reset_confirm), actions.busy,
+                onConfirm = { actions.onReset { dialog = null } }, onDismiss = close,
+            )
+            SettingsDialog.SIGN_OUT -> ConfirmDialog(
+                stringResource(Res.string.settings_sign_out_title), stringResource(Res.string.settings_sign_out_text),
+                stringResource(Res.string.settings_sign_out), actions.busy,
+                onConfirm = { actions.onSignOut(after) }, onDismiss = close,
+            )
+            null -> Unit
         }
     }
     val kind = choosing
@@ -303,21 +355,28 @@ private fun fullName(state: SettingsUiState): String? {
     val account = state.account
     val parts = if (state.profile.uiLanguage == TeachingLanguage.HU) listOf(account?.lastName, account?.firstName) else listOf(account?.firstName, account?.lastName)
     val full = parts.filterNot { it.isNullOrBlank() }.joinToString(" ").ifBlank { null }
-    return full ?: state.profile.firstName
+    // the names saved on this phone (sign-up, the settings) come first, then the account's from Google
+    val profile = state.profile
+    val local = (if (profile.uiLanguage == TeachingLanguage.HU) listOf(profile.lastName, profile.firstName) else listOf(profile.firstName, profile.lastName))
+        .filterNot { it.isNullOrBlank() }.joinToString(" ").ifBlank { null }
+    return local ?: full
 }
 
 @Composable
-private fun Account(state: SettingsUiState, actions: SettingsActions) {
-    val soon = SettingsTrailing.Soon(stringResource(Res.string.subjects_coming_soon))
+private fun Account(state: SettingsUiState, actions: SettingsActions, onName: () -> Unit, onPassword: () -> Unit) {
     AppSettingsGroup(stringResource(Res.string.settings_group_account), Icons.Rounded.Person) {
         if (state.isGuest) {
             AppSettingsRow(Icons.Rounded.PersonAdd, stringResource(Res.string.account_create), stringResource(Res.string.settings_create_hint), actions.onSignUp, divider = false)
             AppSettingsRow(Icons.AutoMirrored.Rounded.Login, stringResource(Res.string.welcome_have_account), stringResource(Res.string.settings_sign_in_hint), actions.onSignIn)
         } else {
-            AppSettingsRow(Icons.Rounded.Person, stringResource(Res.string.settings_name), fullName(state), onClick = null, divider = false)
+            // the name and the password need the account on the server; without a session they only show
+            val signedIn = state.account != null
+            AppSettingsRow(Icons.Rounded.Person, stringResource(Res.string.settings_name), fullName(state), onClick = onName.takeIf { signedIn }, divider = false)
             state.account?.email?.let { AppSettingsRow(Icons.Rounded.Email, stringResource(Res.string.settings_email), it, onClick = null) }
-            // 9.4b
-            AppSettingsRow(Icons.Rounded.Key, stringResource(Res.string.settings_password), stringResource(Res.string.settings_password_hint), onClick = {}, trailing = soon)
+            // an account made with Google has no password
+            if (state.account?.hasPassword == true) {
+                AppSettingsRow(Icons.Rounded.Key, stringResource(Res.string.settings_password), stringResource(Res.string.settings_password_hint), onClick = onPassword)
+            }
         }
     }
 }
@@ -376,14 +435,14 @@ private fun Data() {
     }
 }
 
-/** The red rows: reset and sign-out come with 9.4b, the account deletion with 11.6. */
+/** The red rows: the reset, the sign-out, and the account deletion (11.6). */
 @Composable
-private fun Danger(state: SettingsUiState) {
+private fun Danger(state: SettingsUiState, onReset: () -> Unit, onSignOut: () -> Unit) {
     val soon = SettingsTrailing.Soon(stringResource(Res.string.subjects_coming_soon))
     AppSettingsGroup(stringResource(Res.string.settings_group_danger), Icons.Rounded.RestartAlt) {
-        AppSettingsRow(Icons.Rounded.RestartAlt, stringResource(Res.string.settings_reset), stringResource(Res.string.settings_reset_hint), onClick = {}, trailing = soon, danger = true, divider = false)
+        AppSettingsRow(Icons.Rounded.RestartAlt, stringResource(Res.string.settings_reset), stringResource(Res.string.settings_reset_hint), onClick = onReset, trailing = SettingsTrailing.None, danger = true, divider = false)
         if (!state.isGuest) {
-            AppSettingsRow(Icons.AutoMirrored.Rounded.Logout, stringResource(Res.string.settings_sign_out), null, onClick = {}, trailing = soon, danger = true)
+            AppSettingsRow(Icons.AutoMirrored.Rounded.Logout, stringResource(Res.string.settings_sign_out), null, onClick = onSignOut, trailing = SettingsTrailing.None, danger = true)
             AppSettingsRow(Icons.Rounded.Delete, stringResource(Res.string.settings_delete), stringResource(Res.string.settings_delete_hint), onClick = {}, trailing = soon, danger = true)
         }
     }
