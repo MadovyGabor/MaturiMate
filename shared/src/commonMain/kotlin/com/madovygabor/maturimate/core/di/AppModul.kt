@@ -44,7 +44,7 @@ import com.madovygabor.maturimate.features.profileDetails.domain.ActivityHistory
 import com.madovygabor.maturimate.features.profileDetails.domain.ProfileOverview
 import com.madovygabor.maturimate.features.profileDetails.presentation.HistoryViewModel
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileOverviewViewModel
-import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileViewModel
+import com.madovygabor.maturimate.features.profileDetails.presentation.SettingsViewModel
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import io.github.jan.supabase.SupabaseClient
@@ -140,7 +140,7 @@ val sharedModule = module {
     viewModel { PlanViewModel(get()) }
     viewModelOf(::AccountViewModel)
     viewModelOf(::SignInViewModel)
-    viewModel { ProfileViewModel(get()) }
+    viewModel { SettingsViewModel(get(), auth = get()) }
     viewModel { ProfileOverviewViewModel(get()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }

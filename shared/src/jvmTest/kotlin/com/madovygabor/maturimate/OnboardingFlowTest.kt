@@ -64,7 +64,8 @@ import maturimate.shared.generated.resources.subjects_title_student
 import maturimate.shared.generated.resources.account_title
 import maturimate.shared.generated.resources.common_save
 import maturimate.shared.generated.resources.profile_settings
-import maturimate.shared.generated.resources.profile_title
+import maturimate.shared.generated.resources.language_sk
+import maturimate.shared.generated.resources.settings_app_language
 import maturimate.shared.generated.resources.onboarding_step_goal
 import maturimate.shared.generated.resources.onboarding_step_language
 import maturimate.shared.generated.resources.onboarding_step_role
@@ -204,7 +205,7 @@ class OnboardingFlowTest {
             onAllNodes(androidx.compose.ui.test.hasContentDescription(text(Res.string.profile_settings))).fetchSemanticsNodes().isNotEmpty()
         }
         onNode(androidx.compose.ui.test.hasContentDescription(text(Res.string.profile_settings))).performClick()
-        waitFor(Res.string.profile_title)
+        waitFor(Res.string.settings_app_language)
     }
 
     @Test
@@ -234,18 +235,17 @@ class OnboardingFlowTest {
         waitFor(Res.string.goal_title)
         onNodeWithText("20 perc").performClick()
         click(Res.string.common_save)
-        waitFor(Res.string.profile_title)
+        waitFor(Res.string.settings_app_language)
         assertEquals(20, profile().dailyGoalMinutes)
         onNodeWithText("20 perc").assertExists()
 
-        // a new language rebuilds the app in it, still on the profile
-        click(Res.string.onboarding_step_language)
-        waitFor(Res.string.language_title)
-        click(Res.string.language_sk_desc)
-        click(Res.string.common_save)
+        // a new app language rebuilds the app in it, still on the settings; the school's language stays
+        click(Res.string.settings_app_language)
+        click(Res.string.language_sk)
         Locale.setDefault(Locale.forLanguageTag("sk"))
-        waitFor(Res.string.profile_title)
-        assertEquals(TeachingLanguage.SK, profile().teachingLanguage)
+        waitFor(Res.string.settings_app_language)
+        assertEquals(TeachingLanguage.SK, profile().uiLanguage)
+        assertEquals(TeachingLanguage.HU, profile().teachingLanguage)
     }
 
     @Test
@@ -264,7 +264,7 @@ class OnboardingFlowTest {
         click(Res.string.common_save)
 
         // a learner has everything else already: back to the answers, without an exam date
-        waitFor(Res.string.profile_title)
+        waitFor(Res.string.settings_app_language)
         assertEquals(UserRole.LEARNER, profile().role)
         assertEquals(0, onAllNodes(androidx.compose.ui.test.hasText(text(Res.string.onboarding_step_date))).fetchSemanticsNodes().size)
     }

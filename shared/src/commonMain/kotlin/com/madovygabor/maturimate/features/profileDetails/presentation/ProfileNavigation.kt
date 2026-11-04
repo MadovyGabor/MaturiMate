@@ -65,7 +65,9 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
                 )
             }
             entry<Route.Main.Profile.History> { HistoryScreen(onBack = back) }
-            entry<Route.Main.Profile.Answers> { ProfileScreen(onBack = back) }
+            entry<Route.Main.Profile.Answers> {
+                SettingsScreen(onBack = back, onSignUp = { backStack.add(Route.Main.Profile.SignUp) }, onSignIn = { backStack.add(Route.Main.Profile.SignIn) })
+            }
             // the account screens of the onboarding, without its steps and "Körülnézek"; the guest's rows move
             // to the account (LocalUserProvider.adoptAccount), and the profile then shows the name
             entry<Route.Main.Profile.SignUp> { AccountScreen(role = null, onBack = back, inApp = true, onDone = back) }

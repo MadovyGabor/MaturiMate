@@ -19,6 +19,12 @@ interface UserProfileRepository {
 
     /** Also sets the language of the app. */
     suspend fun saveTeachingLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
+
+    /** The school's language only, from the settings; the app language stays (DECISIONS 2026-11-04). */
+    suspend fun saveSchoolLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
+
+    /** The language of the app's labels only, from the settings. */
+    suspend fun saveUiLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
     /** Replaces the role chosen before. */
     suspend fun saveRole(role: UserRole): OperationResult<Unit, DataError>
     /** Replaces the subjects chosen before. */

@@ -73,6 +73,14 @@ class UserProfileRepositoryImpl(
         queries.updateUiLanguage(language.name, userId)
     }
 
+    override suspend fun saveSchoolLanguage(language: TeachingLanguage) = save { userId ->
+        queries.updateTeachingLanguage(language.name, userId)
+    }
+
+    override suspend fun saveUiLanguage(language: TeachingLanguage) = save { userId ->
+        queries.updateUiLanguage(language.name, userId)
+    }
+
     override suspend fun saveRole(role: UserRole) = save { userId ->
         queries.deleteOnboardingRoles(userId)
         queries.insertRole(User_role(userId, role.id, now().toEpochMilliseconds()))

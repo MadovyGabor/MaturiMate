@@ -368,4 +368,38 @@
     <string name="month_10">Október</string>
     <string name="month_11">November</string>
     <string name="month_12">December</string>
+
+
+    <!-- Settings (9.4) -->
+    <string name="settings_group_account">Fiók</string>
+    <string name="settings_group_learning">Tanulás</string>
+    <string name="settings_group_notifications">Értesítések</string>
+    <string name="settings_group_app">App</string>
+    <string name="settings_group_data">Adatok</string>
+    <string name="settings_group_danger">Haladás és fiók</string>
+    <string name="settings_name">Név</string>
+    <string name="settings_email">E-mail</string>
+    <string name="settings_password">Jelszó megváltoztatása</string>
+    <string name="settings_password_hint">A régi és az új jelszóval</string>
+    <string name="settings_no_account">Még nincs fiókod</string>
+    <string name="settings_create_hint">Hogy a haladásod megmaradjon</string>
+    <string name="settings_sign_in_hint">Bejelentkezés</string>
+    <string name="settings_school_language">Az iskolád tanítási nyelve</string>
+    <string name="settings_school_language_value">%1$s · ehhez igazodnak a tantárgyak</string>
+    <string name="settings_app_language">Az app nyelve</string>
+    <string name="settings_choose_language">Válassz nyelvet</string>
+    <string name="settings_reminder">Napi emlékeztető</string>
+    <string name="settings_on">Bekapcsolva</string>
+    <string name="settings_off">Kikapcsolva</string>
+    <string name="settings_reminder_time">Időpont</string>
+    <string name="settings_sync">Szinkronizálás</string>
+    <string name="settings_sync_hint">A haladásod a fiókodban</string>
+    <string name="settings_content">Tartalom frissítése</string>
+    <string name="settings_content_hint">Új leckék letöltése</string>
+    <string name="settings_reset">Haladás újrakezdése</string>
+    <string name="settings_reset_hint">A sorozat és a tanulási idő megmarad</string>
+    <string name="settings_sign_out">Kijelentkezés</string>
+    <string name="settings_delete">A fiók törlése</string>
+    <string name="settings_delete_hint">Minden adatod törlődik</string>
+    <string name="settings_exam_value">%1$s · %2$s</string>
 </resources>

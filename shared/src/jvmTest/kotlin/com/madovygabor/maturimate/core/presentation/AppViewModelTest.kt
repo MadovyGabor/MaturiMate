@@ -116,6 +116,8 @@ class AppViewModelTest {
         }
         private val ok: OperationResult<Unit, DataError> = OperationResult.Success(Unit)
         override suspend fun saveTeachingLanguage(language: TeachingLanguage) = ok
+        override suspend fun saveSchoolLanguage(language: TeachingLanguage) = ok
+        override suspend fun saveUiLanguage(language: TeachingLanguage) = ok
         override suspend fun saveRole(role: UserRole) = ok
         override suspend fun saveSubjects(subjects: List<UserSubject>) = ok
         override suspend fun saveGraduationDate(date: LocalDate) = ok

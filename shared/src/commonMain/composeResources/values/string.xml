@@ -383,4 +383,38 @@
     <string name="month_10">Október</string>
     <string name="month_11">November</string>
     <string name="month_12">December</string>
+
+
+    <!-- Settings (9.4) -->
+    <string name="settings_group_account">Účet</string>
+    <string name="settings_group_learning">Učenie</string>
+    <string name="settings_group_notifications">Upozornenia</string>
+    <string name="settings_group_app">Aplikácia</string>
+    <string name="settings_group_data">Údaje</string>
+    <string name="settings_group_danger">Pokrok a účet</string>
+    <string name="settings_name">Meno</string>
+    <string name="settings_email">E-mail</string>
+    <string name="settings_password">Zmena hesla</string>
+    <string name="settings_password_hint">Starým a novým heslom</string>
+    <string name="settings_no_account">Zatiaľ nemáš účet</string>
+    <string name="settings_create_hint">Aby tvoj pokrok zostal</string>
+    <string name="settings_sign_in_hint">Prihlásenie</string>
+    <string name="settings_school_language">Vyučovací jazyk tvojej školy</string>
+    <string name="settings_school_language_value">%1$s · podľa neho sú predmety</string>
+    <string name="settings_app_language">Jazyk aplikácie</string>
+    <string name="settings_choose_language">Vyber jazyk</string>
+    <string name="settings_reminder">Denná pripomienka</string>
+    <string name="settings_on">Zapnutá</string>
+    <string name="settings_off">Vypnutá</string>
+    <string name="settings_reminder_time">Čas</string>
+    <string name="settings_sync">Synchronizácia</string>
+    <string name="settings_sync_hint">Tvoj pokrok v tvojom účte</string>
+    <string name="settings_content">Aktualizácia obsahu</string>
+    <string name="settings_content_hint">Stiahnutie nových lekcií</string>
+    <string name="settings_reset">Začať pokrok odznova</string>
+    <string name="settings_reset_hint">Séria a čas učenia zostanú</string>
+    <string name="settings_sign_out">Odhlásiť sa</string>
+    <string name="settings_delete">Zmazanie účtu</string>
+    <string name="settings_delete_hint">Všetky tvoje údaje sa zmažú</string>
+    <string name="settings_exam_value">%1$s · %2$s</string>
 </resources>
