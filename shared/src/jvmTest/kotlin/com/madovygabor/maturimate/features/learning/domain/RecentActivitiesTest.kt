@@ -126,6 +126,15 @@ class RecentActivitiesTest {
     }
 
     @Test
+    fun aUnitHiddenLaterIsLeftOutOfTheHistory() = runBlocking {
+        contentDatabase.learningUnitQueries.insert(Learning_unit(53, 10, "SUMMARY", "Rejtett", null, 3, 5, 10, 3, false, 0))
+        progress.saveUnitProgress(UnitProgress(50, UnitProgressStatus.COMPLETED, at(1_000), at(2_000)))
+        progress.saveUnitProgress(UnitProgress(53, UnitProgressStatus.COMPLETED, at(3_000), at(4_000)))
+
+        assertEquals(listOf(50L), (recent.latest() as OperationResult.Success).data.map { it.unitId })
+    }
+
+    @Test
     fun abandonedRoundsAreLeftOutAndTheListIsLimited() = runBlocking {
         round(1_000, 2_000, earned = 0, status = AttemptStatus.ABANDONED)
         round(3_000, 4_000, earned = 5)

@@ -87,6 +87,16 @@ class ContentRepositoryImplTest {
     }
 
     @Test
+    fun aHiddenTopicOrUnitIsNotFoundByItsId() = runBlocking {
+        database.learningUnitQueries.insert(Learning_unit(52, 11, "SUMMARY", "Rejtett lecke", null, 3, 5, 10, 3, false, 0))
+
+        assertEquals(OperationResult.Error(LearningError.NOT_FOUND), repository.topic(12))
+        assertEquals(OperationResult.Error(LearningError.NOT_FOUND), repository.unit(52))
+        assertEquals("Szóképek", repository.topic(11).data().title)
+        assertEquals("Mi a szókép?", repository.unit(50).data().title)
+    }
+
+    @Test
     fun unitsAreMappedByType() = runBlocking {
         val (summary, practice) = repository.units(11).data()
         assertIs<LearningUnit.Summary>(summary)
