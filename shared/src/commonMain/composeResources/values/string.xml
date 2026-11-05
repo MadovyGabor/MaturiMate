@@ -436,11 +436,45 @@
     <string name="nav_subjects">Predmety</string>
     <string name="nav_practice">Cvičenie</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_title">Cvičenie</string>
     <string name="practice_soon_text">Tu si budeš precvičovať svoje chyby a slabé témy a zopakuješ si, čo si dlho nevidel.</string>
     <!-- Practice round (9a.2) -->
     <string name="practice_free_title">Voľné cvičenie</string>
     <string name="practice_result_title">Kolo je hotové!</string>
     <string name="practice_again">Ešte jedno kolo</string>
     <string name="practice_back">Späť na cvičenie</string>
+    <!-- Practice tab and picker (9a.2) -->
+    <string name="practice_tab_subtitle">Precvičuj si to, čo si už prebral.</string>
+    <string name="practice_free_text">Vyber si z dokončenej látky, čo chceš precvičiť: jednu tému, väčšiu časť alebo celý predmet.</string>
+    <string name="practice_free_none">Tu si precvičíš to, čo si už dokončil. Dokonči tému na karte Predmety a objaví sa tu.</string>
+    <string name="practice_free_start">Začať cvičenie</string>
+    <string name="picker_title">Čo si precvičíme?</string>
+    <string name="picker_lead">Vyberať môžeš len z dokončených tém.</string>
+    <string name="picker_not_finished">Ešte nie je hotové</string>
+    <string name="picker_no_tasks">Bez úloh</string>
+    <string name="picker_selected">Vybrané: %1$d</string>
+    <string name="picker_topics_done">Hotové témy: %1$d / %2$d</string>
+    <string name="picker_summary">%1$s · %2$s</string>
+    <string name="picker_pick_hint">Označ aspoň jednu tému.</string>
+    <string name="picker_length_label">Počet otázok</string>
+    <string name="picker_custom">Vlastné</string>
+    <string name="picker_custom_label">Koľko otázok?</string>
+    <string name="picker_custom_invalid">Zadaj číslo od 1 do 999.</string>
+    <string name="picker_select">Vybrať: %1$s</string>
+    <string name="picker_expand">Rozbaliť</string>
+    <string name="picker_collapse">Zbaliť</string>
+    <plurals name="picker_tasks">
+        <item quantity="one">%1$d úloha</item>
+        <item quantity="few">%1$d úlohy</item>
+        <item quantity="other">%1$d úloh</item>
+    </plurals>
+    <plurals name="picker_topics">
+        <item quantity="one">%1$d téma</item>
+        <item quantity="few">%1$d témy</item>
+        <item quantity="other">%1$d tém</item>
+    </plurals>
+    <plurals name="picker_start">
+        <item quantity="one">Začať · %1$d otázka</item>
+        <item quantity="few">Začať · %1$d otázky</item>
+        <item quantity="other">Začať · %1$d otázok</item>
+    </plurals>
 </resources>

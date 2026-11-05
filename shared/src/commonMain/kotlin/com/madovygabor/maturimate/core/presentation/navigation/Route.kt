@@ -40,6 +40,8 @@ sealed interface Route : NavKey {
     @Serializable
     data class Test(val unitId: Long) : Route // Fullscreen test, one task at a time
     @Serializable
+    data object PracticePicker : Route // Fullscreen picker of the finished topics and the length of a practice round
+    @Serializable
     data class PracticeRound(val topicIds: List<Long>, val count: Int) : Route // Fullscreen free practice round of the chosen topics
 
     // --- App Main UI with navbar---
@@ -61,7 +63,7 @@ sealed interface Route : NavKey {
             data class Topic(val topicId: Long) : Route // The topics below a topic, or the path of a topic
         }
 
-        // Practice Feature: mistake practice, weak topics, review (Milestone 9a); "Hamarosan" until then
+        // Practice Feature: the free practice (9a.2); mistake practice, weak topics and review follow (9a.3 to 9a.5)
         @Serializable
         data object Practice : Route
 

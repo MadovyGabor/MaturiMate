@@ -21,6 +21,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboard
 import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
 import com.madovygabor.maturimate.features.learning.presentation.LessonScreen
 import com.madovygabor.maturimate.features.learning.presentation.TestScreen
+import com.madovygabor.maturimate.features.practice.presentation.PracticePickerScreen
 import com.madovygabor.maturimate.features.practice.presentation.PracticeRoundScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -49,6 +50,7 @@ fun NavigationRoute(
                     subclass(Route.Lesson::class, Route.Lesson.serializer())
                     subclass(Route.Test::class, Route.Test.serializer())
                     subclass(Route.PracticeRound::class, Route.PracticeRound.serializer())
+                    subclass(Route.PracticePicker::class, Route.PracticePicker.serializer())
                 }
             }
         },
@@ -68,6 +70,7 @@ fun NavigationRoute(
             entry<Route.Main> {
                 MainFrameNavigation(mainTab = mainTab, profilePage = profilePage, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
                     onOpenTest = { rootBackStack.add(Route.Test(it)) },
+                    onOpenPracticePicker = { rootBackStack.add(Route.PracticePicker) },
                 )
             }
 
@@ -79,6 +82,18 @@ fun NavigationRoute(
             // A test, one task at a time, without the navigation bar
             entry<Route.Test> { route ->
                 BottomInsetBox { TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() }) }
+            }
+            // The practice picker; the round takes its place, so the end of the round goes back to the practice tab
+            entry<Route.PracticePicker> {
+                BottomInsetBox {
+                    PracticePickerScreen(
+                        onBack = { rootBackStack.removeLastOrNull() },
+                        onStart = { start ->
+                            rootBackStack.removeLastOrNull()
+                            rootBackStack.add(Route.PracticeRound(start.topicIds, start.count))
+                        },
+                    )
+                }
             }
             // A free practice round of the chosen topics, without the navigation bar
             entry<Route.PracticeRound> { route ->

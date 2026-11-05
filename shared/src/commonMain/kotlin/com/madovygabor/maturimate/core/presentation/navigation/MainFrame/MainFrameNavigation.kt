@@ -15,7 +15,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.madovygabor.maturimate.core.presentation.MainFrame
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.practice.presentation.PracticeSoonScreen
+import com.madovygabor.maturimate.features.practice.presentation.PracticeScreen
 import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileNavigation
 import com.madovygabor.maturimate.features.learning.presentation.HomeScreen
 import com.madovygabor.maturimate.features.learning.presentation.LearningDeepLink
@@ -33,6 +33,8 @@ fun MainFrameNavigation(
     onOpenLesson: (Long) -> Unit = {},
     /** Opens a test over the whole screen. */
     onOpenTest: (Long) -> Unit = {},
+    /** Opens the practice picker, full screen. */
+    onOpenPracticePicker: () -> Unit = {},
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
@@ -85,9 +87,9 @@ fun MainFrameNavigation(
                                 onDeepLinkHandled = { deepLink.value = null },
                             )
                         }
-                        // Practice: "Hamarosan" until Milestone 9a
+                        // Practice: the free practice, and what comes next (Milestone 9a)
                         entry<Route.Main.Practice> {
-                            PracticeSoonScreen()
+                            PracticeScreen(onOpenPicker = onOpenPracticePicker)
                         }
                         // Profile feature navigation: the profile, the full history, the settings
                         entry<Route.Main.Profile> {
