@@ -42,6 +42,7 @@ import com.madovygabor.maturimate.features.learning.presentation.TestSessionView
 import com.madovygabor.maturimate.features.learning.presentation.TopicTarget
 import com.madovygabor.maturimate.features.learning.presentation.TopicViewModel
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
+import com.madovygabor.maturimate.features.practice.domain.PracticeCatalog
 import com.madovygabor.maturimate.features.profileDetails.domain.ActivityHistory
 import com.madovygabor.maturimate.features.profileDetails.domain.ProfileOverview
 import com.madovygabor.maturimate.features.profileDetails.presentation.HistoryViewModel
@@ -112,6 +113,8 @@ val sharedModule = module {
     single { ActivityHistory(get(), get()) }
     // What a test round leaves in the user database: the attempt, the answers, the progress
     single { TestRecorder(get(), get()) }
+    // The finished topics the student may practice freely, and their tasks
+    single { PracticeCatalog(get(), get()) }
 
     // Keeps the planned daily reminder in line with the profile (started by the app)
     single { ReminderSync(get(), get()) }
