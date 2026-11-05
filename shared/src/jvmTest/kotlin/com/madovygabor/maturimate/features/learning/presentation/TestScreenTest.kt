@@ -417,6 +417,17 @@ class TestScreenTest {
     }
 
     @Test
+    fun withNoMistakeLeftTheRoundPraisesAndLeadsBack() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var back = 0
+        setContent { AppTheme { TestContent(TestUiState.NoMistakes, TestActions(onClose = { back++ })) } }
+
+        onNodeWithText("Nincs több hibád. Szép munka!").assertIsDisplayed()
+        onNodeWithText("Vissza a Gyakorláshoz").performClick()
+        assertEquals(1, back)
+    }
+
+    @Test
     fun shortAnswerHasItsPlaceholderAndTheLengthOfTheAnswer() = runDesktopComposeUiTest(412, 915) {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         show(ready(2))

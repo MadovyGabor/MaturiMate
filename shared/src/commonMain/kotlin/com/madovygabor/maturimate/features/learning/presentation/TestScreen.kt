@@ -1,5 +1,7 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
+import androidx.compose.ui.text.style.TextAlign
+import maturimate.shared.generated.resources.mistakes_none_left
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -180,6 +182,18 @@ fun TestContent(state: TestUiState, actions: TestActions) {
                         Text(stringResource(Res.string.learning_load_error), style = MaterialTheme.typography.bodyLarge)
                         AppButton(stringResource(Res.string.learning_retry), actions.onRetry)
                     }
+                }
+            }
+            // every mistake was answered right: praise, and the way back
+            TestUiState.NoMistakes -> Column(Modifier.fillMaxSize().padding(spacing.space4)) {
+                IconButton(onClick = actions.onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(Res.string.lesson_close)) }
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = spacing.space6),
+                    verticalArrangement = Arrangement.spacedBy(spacing.space3),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(stringResource(Res.string.mistakes_none_left), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    AppButton(stringResource(Res.string.practice_back), actions.onClose)
                 }
             }
             is TestUiState.Result -> ResultContent(state, actions)

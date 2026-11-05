@@ -244,6 +244,46 @@ class PracticePickerViewModelTest {
         assertEquals(RoundLength.FIFTY, viewModel.ready.length)
     }
 
+    /** A wrong answer to each of [tasks] (a mistake each), as a practice round. */
+    private fun answerWrong(vararg tasks: Long) = runBlocking {
+        val recorder = com.madovygabor.maturimate.features.learning.domain.TestRecorder(progress)
+        val attempt = recorder.startPractice(com.madovygabor.maturimate.features.learning.domain.model.AttemptType.FREE_PRACTICE).data()
+        for (id in tasks) progress.recordAnswer(
+            com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer(attempt, id, false, 0, 1, Instant.fromEpochMilliseconds(5), "1=B")
+        ).data()
+        for (id in tasks) progress.saveTaskProgress(
+            com.madovygabor.maturimate.features.learning.domain.model.TaskProgress(
+                id, 0, 1, 0, Instant.fromEpochMilliseconds(5), null, com.madovygabor.maturimate.features.learning.domain.model.TaskProgressStatus.LEARNING,
+            )
+        ).data()
+    }
+
+    @Test
+    fun inMistakeModeTheTopicsWithMistakesCanBeChosenFinishedOrNot() = runBlocking<Unit> {
+        // "Alakzatok" is not finished; its mistake counts all the same
+        answerWrong(100, 101, 110)
+        val viewModel = PracticePickerViewModel(catalog, com.madovygabor.maturimate.features.practice.domain.PracticeMode.MISTAKES)
+        withTimeout(5_000) { viewModel.state.first { it is PickerUiState.Ready } }
+
+        val state = viewModel.ready
+        assertTrue(state.mistakes)
+        val grammar = state.subjects.single().parts.first()
+        assertEquals(listOf(11L, 12L), grammar.leafIds)
+        assertEquals(listOf(2, 1), grammar.children.map { it.taskCount })
+
+        viewModel.toggle(listOf(11))
+        viewModel.counted(2)
+        assertEquals(PracticeStart(listOf(11), 2), viewModel.ready.start())
+    }
+
+    @Test
+    fun theTabCountsTheMistakes() = runBlocking<Unit> {
+        answerWrong(100, 110)
+        val tab = PracticeViewModel(catalog)
+        tab.refresh()
+        assertEquals(2, (withTimeout(5_000) { tab.state.first { it is PracticeUiState.Ready } } as PracticeUiState.Ready).mistakes)
+    }
+
     @Test
     fun theTabOffersPracticeOnlyAfterAFinishedTopicWithTasks() = runBlocking<Unit> {
         val tab = PracticeViewModel(catalog)

@@ -64,6 +64,12 @@ import maturimate.shared.generated.resources.practice_free_start
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
+import org.koin.core.parameter.parametersOf
+import maturimate.shared.generated.resources.mistakes_picker_title
+import maturimate.shared.generated.resources.mistakes_picker_lead
+import maturimate.shared.generated.resources.mistakes_count
+import maturimate.shared.generated.resources.mistakes_none
 
 /** What the picker screen can ask of its view-model. */
 class PickerActions(
@@ -82,7 +88,14 @@ class PickerActions(
  * the round, and the start. [onStart] gets the chosen topics and the number of questions.
  */
 @Composable
-fun PracticePickerScreen(onBack: () -> Unit, onStart: (PracticeStart) -> Unit, viewModel: PracticePickerViewModel = koinViewModel()) {
+fun PracticePickerScreen(
+    onBack: () -> Unit,
+    onStart: (PracticeStart) -> Unit,
+    mistakes: Boolean = false,
+    viewModel: PracticePickerViewModel = koinViewModel(key = "picker$mistakes") {
+        parametersOf(if (mistakes) PracticeMode.MISTAKES else PracticeMode.FREE)
+    },
+) {
     val state by viewModel.state.collectAsState()
     PickerContent(
         state,
@@ -112,13 +125,22 @@ fun PickerContent(state: PickerUiState, actions: PickerActions) {
                     IconButton(onClick = actions.onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(Res.string.common_back))
                     }
-                    Text(stringResource(Res.string.picker_title), modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
+                    val mistakeMode = (state as? PickerUiState.Ready)?.mistakes == true
+                    Text(
+                        stringResource(if (mistakeMode) Res.string.mistakes_picker_title else Res.string.picker_title),
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
                 }
                 when (state) {
                     PickerUiState.Loading -> Unit
                     PickerUiState.Failed -> LoadError(actions.onRetry)
                     is PickerUiState.Ready -> {
-                        Text(stringResource(Res.string.picker_lead), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            stringResource(if (state.mistakes) Res.string.mistakes_picker_lead else Res.string.picker_lead),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         state.subjects.forEach { SubjectCard(it, state, actions) }
                     }
                 }
@@ -150,7 +172,12 @@ private fun SubjectCard(subject: PracticeSubject, state: PickerUiState.Ready, ac
                 onToggle = { actions.onToggle(leafIds) },
                 checkLabel = stringResource(Res.string.picker_select, name),
                 style = CheckRowStyle.SUBJECT,
-                subtitle = stringResource(Res.string.picker_topics_done, leaves.count { it.finished }, leaves.size),
+                subtitle = if (state.mistakes) {
+                    val count = subject.parts.sumOf { it.taskCount }
+                    if (count > 0) pluralStringResource(Res.plurals.mistakes_count, count, count) else stringResource(Res.string.mistakes_none)
+                } else {
+                    stringResource(Res.string.picker_topics_done, leaves.count { it.finished }, leaves.size)
+                },
                 tag = selectedTag(state.chosen(leafIds)),
                 enabled = leafIds.isNotEmpty(),
                 expanded = open,
@@ -179,6 +206,8 @@ private fun Node(node: PracticeNode, state: PickerUiState.Ready, actions: Picker
             onToggle = { actions.onToggle(node.leafIds) },
             checkLabel = stringResource(Res.string.picker_select, title),
             subtitle = when {
+                state.mistakes && node.taskCount == 0 -> stringResource(Res.string.mistakes_none)
+                state.mistakes -> pluralStringResource(Res.plurals.mistakes_count, node.taskCount, node.taskCount)
                 !node.finished -> stringResource(Res.string.picker_not_finished)
                 node.taskCount == 0 -> stringResource(Res.string.picker_no_tasks)
                 else -> pluralStringResource(Res.plurals.picker_tasks, node.taskCount, node.taskCount)
@@ -224,7 +253,8 @@ private fun Footer(state: PickerUiState.Ready, actions: PickerActions) {
                 else stringResource(
                     Res.string.picker_summary,
                     pluralStringResource(Res.plurals.picker_topics, state.selected.size, state.selected.size),
-                    pluralStringResource(Res.plurals.picker_tasks, state.poolSize, state.poolSize),
+                    if (state.mistakes) pluralStringResource(Res.plurals.mistakes_count, state.poolSize, state.poolSize)
+                    else pluralStringResource(Res.plurals.picker_tasks, state.poolSize, state.poolSize),
                 ),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,

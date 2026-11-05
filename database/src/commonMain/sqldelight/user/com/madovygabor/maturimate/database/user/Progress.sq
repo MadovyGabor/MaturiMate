@@ -122,6 +122,13 @@ SELECT * FROM user_task_progress
 WHERE user_id = :userId AND next_review_at IS NOT NULL AND next_review_at <= :now
 ORDER BY times_wrong DESC, next_review_at;
 
+-- The mistakes: the tasks whose latest answer is wrong (DECISIONS 2026-11-05). A wrong answer sets the right
+-- answers in a row to 0 and a right one raises it, so a task answered wrong last has a streak of 0.
+selectMistakeTaskIds:
+SELECT task_id FROM user_task_progress
+WHERE user_id = :userId AND times_wrong > 0 AND correct_streak = 0
+ORDER BY task_id;
+
 upsertTaskProgress:
 INSERT OR REPLACE INTO user_task_progress VALUES ?;
 

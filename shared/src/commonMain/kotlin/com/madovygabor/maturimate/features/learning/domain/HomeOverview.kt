@@ -45,6 +45,8 @@ data class HomeSummary(
     val next: ContinueTarget?,
     val recent: List<RecentActivity>,
     val motto: MottoKind,
+    /** How many tasks were answered wrong last; the card of the mistake practice shows it. */
+    val mistakes: Int = 0,
 )
 
 /**
@@ -57,6 +59,8 @@ class HomeOverview(
     private val course: LearningCourse,
     private val recent: RecentActivities,
     private val profile: UserProfileRepository,
+    /** The number of mistakes (the mistake practice lives in the practice feature). */
+    private val mistakeCount: suspend () -> Int = { 0 },
 ) {
 
     suspend fun load(): OperationResult<HomeSummary, LearningError> {
@@ -93,6 +97,7 @@ class HomeOverview(
                 next = next,
                 recent = latest,
                 motto = mottoOf(goal.reached, streak, hadStreak, studiedBefore = latest.isNotEmpty() || goal.secondsStudied > 0),
+                mistakes = mistakeCount(),
             )
         )
     }

@@ -196,6 +196,14 @@ class PracticeCatalogTest {
     }
 
     @Test
+    fun aHiddenTopicAddsNothingEvenWhenFinished() = runBlocking {
+        // the test 81 of the hidden topic 13 is done, so the topic would be finished if it were shown
+        val catalog = catalog(50, 51, 52, 60, 61, 81)
+        assertEquals(emptyList(), catalog.pool(listOf(13)).data())
+        assertEquals(setOf(100L, 101L, 102L, 110L), catalog.pool(listOf(10)).data().toSet())
+    }
+
+    @Test
     fun aFailedReadOfTheProgressIsAnError() = runBlocking {
         assertEquals(OperationResult.Error(LearningError.DATABASE_ERROR), catalog(progressFails = true).subjects())
         assertEquals(OperationResult.Error(LearningError.DATABASE_ERROR), catalog(progressFails = true).pool(listOf(11)))

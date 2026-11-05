@@ -40,9 +40,9 @@ sealed interface Route : NavKey {
     @Serializable
     data class Test(val unitId: Long) : Route // Fullscreen test, one task at a time
     @Serializable
-    data object PracticePicker : Route // Fullscreen picker of the finished topics and the length of a practice round
+    data class PracticePicker(val mistakes: Boolean = false) : Route // Fullscreen picker of the topics (finished ones, or those with mistakes) and the length of a practice round
     @Serializable
-    data class PracticeRound(val topicIds: List<Long>, val count: Int) : Route // Fullscreen free practice round of the chosen topics
+    data class PracticeRound(val topicIds: List<Long>, val count: Int, val mistakes: Boolean = false) : Route // Fullscreen practice round of the chosen topics; with mistakes and no topic, of every mistake
 
     // --- App Main UI with navbar---
     @Serializable

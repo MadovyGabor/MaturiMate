@@ -95,6 +95,10 @@ class ProgressRepositoryImpl(
         progress.selectDueTasks(userId(), now.toEpochMilliseconds()).executeAsList().map { it.toDomain() }
     }
 
+    override suspend fun mistakeTaskIds(): OperationResult<List<Long>, LearningError> = run {
+        progress.selectMistakeTaskIds(userId()).executeAsList()
+    }
+
     override suspend fun saveTaskProgress(progress: TaskProgress): OperationResult<Unit, LearningError> = run {
         this.progress.upsertTaskProgress(progress.toRow(userId()))
     }

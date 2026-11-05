@@ -70,7 +70,8 @@ fun NavigationRoute(
             entry<Route.Main> {
                 MainFrameNavigation(mainTab = mainTab, profilePage = profilePage, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
                     onOpenTest = { rootBackStack.add(Route.Test(it)) },
-                    onOpenPracticePicker = { rootBackStack.add(Route.PracticePicker) },
+                    onOpenPracticePicker = { mistakes -> rootBackStack.add(Route.PracticePicker(mistakes)) },
+                    onStartMistakes = { count -> rootBackStack.add(Route.PracticeRound(emptyList(), count, mistakes = true)) },
                 )
             }
 
@@ -84,13 +85,14 @@ fun NavigationRoute(
                 BottomInsetBox { TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() }) }
             }
             // The practice picker; the round takes its place, so the end of the round goes back to the practice tab
-            entry<Route.PracticePicker> {
+            entry<Route.PracticePicker> { route ->
                 BottomInsetBox {
                     PracticePickerScreen(
+                        mistakes = route.mistakes,
                         onBack = { rootBackStack.removeLastOrNull() },
                         onStart = { start ->
                             rootBackStack.removeLastOrNull()
-                            rootBackStack.add(Route.PracticeRound(start.topicIds, start.count))
+                            rootBackStack.add(Route.PracticeRound(start.topicIds, start.count, route.mistakes))
                         },
                     )
                 }
@@ -98,7 +100,7 @@ fun NavigationRoute(
             // A free practice round of the chosen topics, without the navigation bar
             entry<Route.PracticeRound> { route ->
                 BottomInsetBox {
-                    PracticeRoundScreen(topicIds = route.topicIds, count = route.count, onClose = { rootBackStack.removeLastOrNull() })
+                    PracticeRoundScreen(topicIds = route.topicIds, count = route.count, mistakes = route.mistakes, onClose = { rootBackStack.removeLastOrNull() })
                 }
             }
             // A lesson, one page at a time, without the navigation bar

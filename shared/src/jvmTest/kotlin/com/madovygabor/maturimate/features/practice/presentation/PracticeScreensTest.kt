@@ -7,6 +7,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -92,6 +94,62 @@ class PracticeScreensTest {
         onNodeWithText(text(Res.string.practice_soon_text)).assertIsDisplayed()
         onNodeWithText(text(Res.string.practice_free_start)).assertIsEnabled().performClick()
         assertEquals(1, opened)
+    }
+
+    @Test
+    fun theMistakeCardStartsARoundOrOpensThePicker() = runDesktopComposeUiTest(412, 1200) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var all = 0
+        var picker = 0
+        setContent {
+            AppTheme {
+                PracticeContent(
+                    PracticeUiState.Ready(canPractice = true, mistakes = 14), onOpenPicker = {}, onRetry = {},
+                    onOpenMistakePicker = { picker++ }, onStartAllMistakes = { all++ },
+                )
+            }
+        }
+
+        onNodeWithText("Összesen 14 feladatot rontottál el. Gyakorold át őket.").assertIsDisplayed()
+        onNodeWithText("Összes hiba (14)").assertIsEnabled().performClick()
+        onNodeWithText("Tantárgy vagy téma").performClick()
+        assertEquals(1, all)
+        assertEquals(1, picker)
+    }
+
+    @Test
+    fun withoutMistakesTheMistakeCardIsOff() = runDesktopComposeUiTest(412, 1200) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(canPractice = true, mistakes = 0), onOpenPicker = {}, onRetry = {}) } }
+
+        onNodeWithText("Itt jelennek meg a feladatok, amiket elrontottál. Egyelőre egy sincs.").assertIsDisplayed()
+        onNodeWithText("Összes hiba (0)").assertIsNotEnabled()
+        onNodeWithText("Tantárgy vagy téma").assertIsNotEnabled()
+    }
+
+    @Test
+    fun thePickerInMistakeModeCountsMistakes() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        // "Szóképek" with 3 mistakes, "Mondattan" with none
+        val mistakeGrammar = grammar.copy(children = listOf(
+            PracticeNode(topic(11, "Szóképek", 10), emptyList(), true, 3, listOf(11)),
+            PracticeNode(topic(12, "Mondattan", 10), emptyList(), true, 0, emptyList()),
+        ))
+        val tree = listOf(subjects.single().copy(parts = listOf(mistakeGrammar)))
+        showPicker(PickerUiState.Ready(tree, mistakes = true, openSubjects = setOf(1)))
+
+        onNodeWithText("Mit gyakoroljunk a hibákból?").assertIsDisplayed()
+        // the subject (all its mistakes) and the topic both say it
+        onAllNodesWithText("3 hibás feladat").assertCountEquals(2)
+        onNodeWithText("Nincs hiba").assertIsDisplayed()
+    }
+
+    @Test
+    fun slovakMistakesUseTheirPluralForms() = runDesktopComposeUiTest(412, 1200) {
+        Locale.setDefault(Locale.forLanguageTag("sk"))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(canPractice = true, mistakes = 3), onOpenPicker = {}, onRetry = {}) } }
+
+        onNodeWithText("Spolu si pokazil 3 úlohy. Precvič si ich.").assertIsDisplayed()
     }
 
     @Test

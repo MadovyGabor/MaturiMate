@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
@@ -17,10 +18,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.theme.layout
 
-/** The variants of [AppButton] built so far; tonal comes when a screen needs it. */
+/** The variants of [AppButton]. */
 enum class AppButtonVariant {
     /** The screen's one main action. */
     FILLED,
+
+    /** A secondary action next to the main one, for example "Összes hiba" on the practice tab. */
+    TONAL,
 
     /** A third-level action, for example "Folytatás Google-lel". */
     OUTLINED,
@@ -57,6 +61,20 @@ fun AppButton(
             enabled = enabled,
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+            contentPadding = padding,
+            content = { label() },
+        )
+        AppButtonVariant.TONAL -> FilledTonalButton(
+            onClick = onClick,
+            modifier = sizedModifier,
+            enabled = enabled,
+            shape = CircleShape,
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),

@@ -34,6 +34,9 @@ sealed interface TestUiState {
     /** The test has no task. */
     data object Empty : TestUiState
 
+    /** A mistake practice with no mistake left (every one was answered right since). */
+    data object NoMistakes : TestUiState
+
     /**
      * One task of the round. The answer is kept per slot (a gap, a pair, a position): [choices] holds the chosen
      * option label of each slot, [texts] the written text. A multiple-choice or true-or-false task and a short
@@ -133,6 +136,7 @@ class TestSessionViewModel(
     private suspend fun read(): TestUiState = when (val start = source.start(random)) {
         RoundStart.Failed -> TestUiState.Failed
         RoundStart.Empty -> TestUiState.Empty
+        RoundStart.NoMistakes -> TestUiState.NoMistakes
         is RoundStart.Ready -> {
             attemptId = start.attemptId
             saving = null

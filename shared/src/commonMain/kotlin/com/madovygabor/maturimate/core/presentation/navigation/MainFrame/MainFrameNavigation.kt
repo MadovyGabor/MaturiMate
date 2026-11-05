@@ -33,8 +33,10 @@ fun MainFrameNavigation(
     onOpenLesson: (Long) -> Unit = {},
     /** Opens a test over the whole screen. */
     onOpenTest: (Long) -> Unit = {},
-    /** Opens the practice picker, full screen. */
-    onOpenPracticePicker: () -> Unit = {},
+    /** Opens the practice picker, full screen: of the finished topics, or with `true` of the mistakes. */
+    onOpenPracticePicker: (mistakes: Boolean) -> Unit = {},
+    /** Starts a round of every mistake (at most the given number of tasks), full screen. */
+    onStartMistakes: (count: Int) -> Unit = {},
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
@@ -73,10 +75,13 @@ fun MainFrameNavigation(
                         //Entries for the main bottom navigation destinations per feature
                         // Home: what to do today
                         entry<Route.Main.Home> {
-                            HomeScreen(onContinue = { target ->
-                                deepLink.value = LearningDeepLink(target.subjectId, target.topicIds)
-                                navigator.navigate(Route.Main.Subject)
-                            })
+                            HomeScreen(
+                                onContinue = { target ->
+                                    deepLink.value = LearningDeepLink(target.subjectId, target.topicIds)
+                                    navigator.navigate(Route.Main.Subject)
+                                },
+                                onOpenPractice = { navigator.navigate(Route.Main.Practice) },
+                            )
                         }
                         // Subject feature navigation
                         entry<Route.Main.Subject> {
@@ -89,7 +94,11 @@ fun MainFrameNavigation(
                         }
                         // Practice: the free practice, and what comes next (Milestone 9a)
                         entry<Route.Main.Practice> {
-                            PracticeScreen(onOpenPicker = onOpenPracticePicker)
+                            PracticeScreen(
+                                onOpenPicker = { onOpenPracticePicker(false) },
+                                onOpenMistakePicker = { onOpenPracticePicker(true) },
+                                onStartAllMistakes = onStartMistakes,
+                            )
                         }
                         // Profile feature navigation: the profile, the full history, the settings
                         entry<Route.Main.Profile> {

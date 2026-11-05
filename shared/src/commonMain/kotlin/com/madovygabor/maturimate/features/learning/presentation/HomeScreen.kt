@@ -38,7 +38,6 @@ import com.madovygabor.maturimate.core.presentation.uiComponents.AppActivityCard
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppGoalRing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppInfoChip
-import com.madovygabor.maturimate.core.presentation.uiComponents.AppTag
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppWeekStrip
 import com.madovygabor.maturimate.core.presentation.uiComponents.TagStyle
 import com.madovygabor.maturimate.core.presentation.uiComponents.WeekDotState
@@ -99,43 +98,45 @@ import maturimate.shared.generated.resources.home_start
 import maturimate.shared.generated.resources.home_streak
 import maturimate.shared.generated.resources.home_streak_none
 import maturimate.shared.generated.resources.home_streak_risk
-import maturimate.shared.generated.resources.home_suggestion_meta
 import maturimate.shared.generated.resources.home_suggestion_title
 import maturimate.shared.generated.resources.home_when_today
 import maturimate.shared.generated.resources.home_when_yesterday
 import maturimate.shared.generated.resources.home_minutes
 import maturimate.shared.generated.resources.learning_step_tasks_meta
-import maturimate.shared.generated.resources.subjects_coming_soon
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.ExperimentalTime
+import maturimate.shared.generated.resources.mistakes_count
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 
 /** The home tab: what to do today. [onContinue] takes the student to the step in the subjects tab. */
 @Composable
 fun HomeScreen(
     onContinue: (ContinueTarget) -> Unit,
+    /** Opens the practice tab (the card of the mistake practice). */
+    onOpenPractice: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     // read again whenever the screen comes back, so what was done on another screen shows here
     LaunchedEffect(Unit) { viewModel.refresh() }
     val state by viewModel.state.collectAsState()
-    HomeContent(state, onContinue, onRetry = viewModel::refresh)
+    HomeContent(state, onContinue, onRetry = viewModel::refresh, onOpenPractice = onOpenPractice)
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun HomeContent(state: HomeUiState, onContinue: (ContinueTarget) -> Unit, onRetry: () -> Unit) {
+fun HomeContent(state: HomeUiState, onContinue: (ContinueTarget) -> Unit, onRetry: () -> Unit, onOpenPractice: () -> Unit = {}) {
     when (state) {
         HomeUiState.Loading -> Unit
         HomeUiState.Failed -> Column(Modifier.fillMaxSize().padding(MaterialTheme.spacing.space4)) { LoadError(onRetry) }
-        is HomeUiState.Ready -> HomeReady(state.summary, onContinue)
+        is HomeUiState.Ready -> HomeReady(state.summary, onContinue, onOpenPractice)
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun HomeReady(summary: HomeSummary, onContinue: (ContinueTarget) -> Unit) {
+private fun HomeReady(summary: HomeSummary, onContinue: (ContinueTarget) -> Unit, onOpenPractice: () -> Unit) {
     val spacing = MaterialTheme.spacing
     val layout = MaterialTheme.layout
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -158,8 +159,8 @@ private fun HomeReady(summary: HomeSummary, onContinue: (ContinueTarget) -> Unit
                 GoalCard(summary, showWeek = false, Modifier.fillMaxWidth())
                 ContinueCard(summary, onContinue, Modifier.fillMaxWidth())
             }
-            // nothing to repeat for a student who has not done anything yet
-            if (summary.recent.isNotEmpty()) SuggestionCard()
+            // the mistake practice, only when there is a mistake to practice
+            if (summary.mistakes > 0) SuggestionCard(summary.mistakes, onOpenPractice)
             RecentActivities(summary)
         }
     }
@@ -304,12 +305,18 @@ private fun stepKindLabel(kind: StepKind): String = when (kind) {
     StepKind.FINAL_TEST -> stringResource(Res.string.home_kind_final_test)
 }
 
-/** The mistake practice comes with the practice tab (milestone 9a); until then the card is there but greyed. */
+/** The mistake practice: how many tasks were answered wrong last; a tap opens the practice tab, where the student chooses. */
 @Composable
-private fun SuggestionCard() {
+private fun SuggestionCard(mistakes: Int, onOpenPractice: () -> Unit) {
     val spacing = MaterialTheme.spacing
     val colors = MaterialTheme.colorScheme
-    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = colors.tertiaryContainer, contentColor = colors.onTertiaryContainer) {
+    Surface(
+        onClick = onOpenPractice,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = colors.tertiaryContainer,
+        contentColor = colors.onTertiaryContainer,
+    ) {
         Row(
             Modifier.padding(horizontal = spacing.space4, vertical = spacing.space3),
             verticalAlignment = Alignment.CenterVertically,
@@ -320,9 +327,9 @@ private fun SuggestionCard() {
             }
             Column(Modifier.weight(1f)) {
                 Text(stringResource(Res.string.home_suggestion_title), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(Res.string.home_suggestion_meta), style = MaterialTheme.typography.bodyMedium)
+                Text(pluralStringResource(Res.plurals.mistakes_count, mistakes, mistakes), style = MaterialTheme.typography.bodyMedium)
             }
-            AppTag(stringResource(Res.string.subjects_coming_soon))
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
         }
     }
 }

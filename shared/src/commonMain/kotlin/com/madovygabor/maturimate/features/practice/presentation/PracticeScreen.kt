@@ -38,20 +38,44 @@ import maturimate.shared.generated.resources.practice_tab_subtitle
 import maturimate.shared.generated.resources.subjects_coming_soon
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
+import maturimate.shared.generated.resources.practice_mistakes_title
+import maturimate.shared.generated.resources.mistakes_card_text
+import maturimate.shared.generated.resources.mistakes_card_none
+import maturimate.shared.generated.resources.mistakes_all
+import maturimate.shared.generated.resources.mistakes_by_topic
+import org.jetbrains.compose.resources.pluralStringResource
 
 /**
  * The practice tab (docs/practice/prototype.html): the free practice card, which opens the picker, and a card
  * naming what comes next (the mistake practice, weak topics, old material; Milestone 9a.3 to 9a.5).
  */
 @Composable
-fun PracticeScreen(onOpenPicker: () -> Unit, viewModel: PracticeViewModel = koinViewModel()) {
+fun PracticeScreen(
+    onOpenPicker: () -> Unit,
+    onOpenMistakePicker: () -> Unit = {},
+    onStartAllMistakes: (count: Int) -> Unit = {},
+    viewModel: PracticeViewModel = koinViewModel(),
+) {
     LaunchedEffect(Unit) { viewModel.refresh() }
     val state by viewModel.state.collectAsState()
-    PracticeContent(state, onOpenPicker, onRetry = viewModel::refresh)
+    PracticeContent(
+        state,
+        onOpenPicker,
+        onRetry = viewModel::refresh,
+        onOpenMistakePicker = onOpenMistakePicker,
+        onStartAllMistakes = { onStartAllMistakes(PickerUiState.ALL_MISTAKES_ROUND) },
+    )
 }
 
 @Composable
-fun PracticeContent(state: PracticeUiState, onOpenPicker: () -> Unit, onRetry: () -> Unit) {
+fun PracticeContent(
+    state: PracticeUiState,
+    onOpenPicker: () -> Unit,
+    onRetry: () -> Unit,
+    onOpenMistakePicker: () -> Unit = {},
+    onStartAllMistakes: () -> Unit = {},
+) {
     val spacing = MaterialTheme.spacing
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
@@ -71,6 +95,7 @@ fun PracticeContent(state: PracticeUiState, onOpenPicker: () -> Unit, onRetry: (
                 PracticeUiState.Failed -> LoadError(onRetry)
                 is PracticeUiState.Ready -> {
                     FreePracticeCard(state.canPractice, onOpenPicker)
+                    MistakeCard(state.mistakes, onStartAllMistakes, onOpenMistakePicker)
                     ComingSoonCard()
                 }
             }
@@ -95,7 +120,48 @@ private fun FreePracticeCard(canPractice: Boolean, onOpenPicker: () -> Unit) {
     }
 }
 
-/** What the tab will hold next; 9a.3 to 9a.5 replace it with their own cards. */
+/**
+ * The mistake practice: how many tasks were answered wrong last, a round of them ("Összes hiba", at most
+ * [PickerUiState.ALL_MISTAKES_ROUND]) or the picker of the topics with mistakes. With no mistake both are off.
+ */
+@Composable
+private fun MistakeCard(mistakes: Int, onAll: () -> Unit, onPick: () -> Unit) {
+    val spacing = MaterialTheme.spacing
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = colors.surfaceContainerLow,
+        border = BorderStroke(MaterialTheme.layout.borderThin, colors.outlineVariant),
+    ) {
+        Column(Modifier.padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+            Text(stringResource(Res.string.practice_mistakes_title), modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (mistakes > 0) pluralStringResource(Res.plurals.mistakes_card_text, mistakes, mistakes)
+                else stringResource(Res.string.mistakes_card_none),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant,
+            )
+            AppButton(
+                stringResource(Res.string.mistakes_all, mistakes),
+                onAll,
+                modifier = Modifier.fillMaxWidth(),
+                // the free practice has the one main button of the tab; this is the secondary one
+                variant = AppButtonVariant.TONAL,
+                enabled = mistakes > 0,
+            )
+            AppButton(
+                stringResource(Res.string.mistakes_by_topic),
+                onPick,
+                modifier = Modifier.fillMaxWidth(),
+                variant = AppButtonVariant.OUTLINED,
+                enabled = mistakes > 0,
+            )
+        }
+    }
+}
+
+/** What the tab will hold next; 9a.4 and 9a.5 replace it with their own cards. */
 @Composable
 private fun ComingSoonCard() {
     val spacing = MaterialTheme.spacing

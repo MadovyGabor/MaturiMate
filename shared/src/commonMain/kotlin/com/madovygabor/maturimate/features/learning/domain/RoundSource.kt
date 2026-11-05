@@ -15,6 +15,9 @@ sealed interface RoundStart {
     /** There is no task to ask. */
     data object Empty : RoundStart
 
+    /** A mistake practice with no mistake left: every one was answered right. */
+    data object NoMistakes : RoundStart
+
     /** The content or the progress could not be read or written. */
     data object Failed : RoundStart
 }

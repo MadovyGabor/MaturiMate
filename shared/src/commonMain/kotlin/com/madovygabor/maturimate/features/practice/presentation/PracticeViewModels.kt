@@ -13,13 +13,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 
 sealed interface PracticeUiState {
     data object Loading : PracticeUiState
     data object Failed : PracticeUiState
 
-    /** [canPractice]: at least one finished topic has tasks, so the free practice can start. */
-    data class Ready(val canPractice: Boolean) : PracticeUiState
+    /**
+     * [canPractice]: at least one finished topic has tasks, so the free practice can start. [mistakes]: how many
+     * tasks were answered wrong last (the mistake practice).
+     */
+    data class Ready(val canPractice: Boolean, val mistakes: Int = 0) : PracticeUiState
 }
 
 /** The practice tab. It reads again whenever the tab is shown, so a topic finished a minute ago counts. */
@@ -31,8 +35,9 @@ class PracticeViewModel(private val catalog: PracticeCatalog) : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             val shown = _state.value
+            val mistakes = (catalog.allMistakes() as? OperationResult.Success)?.data?.size ?: 0
             _state.value = when (val result = catalog.subjects()) {
-                is OperationResult.Success -> PracticeUiState.Ready(result.data.any { subject -> subject.parts.any { it.leafIds.isNotEmpty() } })
+                is OperationResult.Success -> PracticeUiState.Ready(result.data.any { subject -> subject.parts.any { it.leafIds.isNotEmpty() } }, mistakes)
                 // keep what is shown when a later read fails
                 is OperationResult.Error -> if (shown is PracticeUiState.Ready) shown else PracticeUiState.Failed
             }
@@ -57,6 +62,8 @@ sealed interface PickerUiState {
      */
     data class Ready(
         val subjects: List<PracticeSubject>,
+        /** The picker of the mistake practice: the topics with mistakes, counted in mistakes. */
+        val mistakes: Boolean = false,
         val selected: Set<Long> = emptySet(),
         val openSubjects: Set<Long> = emptySet(),
         val closedGroups: Set<Long> = emptySet(),
@@ -97,15 +104,21 @@ sealed interface PickerUiState {
     companion object {
         /** The longest round that can be typed in. */
         const val MAX_CUSTOM = 999
+
+        /** The most tasks "Összes hiba" asks at once; the picker allows other lengths (decided 2026-11-05). */
+        const val ALL_MISTAKES_ROUND = 20
     }
 }
 
 /**
- * The practice picker: the subjects with their big parts and topics, the topics the student has finished can be
- * ticked one by one or a whole part or subject at once; then the length of the round. Every rule is here; the
- * screen only draws.
+ * The practice picker: the subjects with their big parts and topics; the topics that can be practiced can be ticked
+ * one by one or a whole part or subject at once; then the length of the round. In [PracticeMode.FREE] those are the
+ * finished topics, in [PracticeMode.MISTAKES] the topics with a mistake. Every rule is here; the screen only draws.
  */
-class PracticePickerViewModel(private val catalog: PracticeCatalog) : ViewModel() {
+class PracticePickerViewModel(
+    private val catalog: PracticeCatalog,
+    private val mode: PracticeMode = PracticeMode.FREE,
+) : ViewModel() {
 
     private val _state = MutableStateFlow<PickerUiState>(PickerUiState.Loading)
     val state: StateFlow<PickerUiState> = _state.asStateFlow()
@@ -120,12 +133,12 @@ class PracticePickerViewModel(private val catalog: PracticeCatalog) : ViewModel(
     fun refresh() {
         viewModelScope.launch {
             val shown = _state.value as? PickerUiState.Ready
-            when (val result = catalog.subjects()) {
+            when (val result = if (mode == PracticeMode.MISTAKES) catalog.mistakes() else catalog.subjects()) {
                 is OperationResult.Success -> {
                     // a chosen topic that can no longer be chosen falls out; folds and length stay
                     val choosable = result.data.flatMap { subject -> subject.parts.flatMap { it.leafIds } }.toSet()
                     val ready = shown?.copy(subjects = result.data, selected = shown.selected intersect choosable)
-                        ?: PickerUiState.Ready(result.data)
+                        ?: PickerUiState.Ready(result.data, mistakes = mode == PracticeMode.MISTAKES)
                     _state.value = ready
                     count(ready.selected)
                 }
@@ -167,7 +180,8 @@ class PracticePickerViewModel(private val catalog: PracticeCatalog) : ViewModel(
             return
         }
         counting = viewModelScope.launch {
-            val size = (catalog.pool(selected) as? OperationResult.Success)?.data?.size ?: return@launch
+            val pool = if (mode == PracticeMode.MISTAKES) catalog.mistakePool(selected) else catalog.pool(selected)
+            val size = (pool as? OperationResult.Success)?.data?.size ?: return@launch
             update { if (it.selected == selected) it.copy(poolSize = size) else it }
         }
     }

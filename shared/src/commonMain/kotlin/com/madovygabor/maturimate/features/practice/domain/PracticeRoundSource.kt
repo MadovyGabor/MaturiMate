@@ -13,9 +13,17 @@ import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import kotlin.random.Random
 
+/** What a practice round draws from: the finished topics, or the mistakes. */
+enum class PracticeMode { FREE, MISTAKES }
+
 /**
- * A free practice round: [count] random tasks of the finished topics in [topicIds] ([PracticeCatalog.pool],
- * [PracticePlanner]), recorded as a `FREE_PRACTICE` attempt. No unit is ever marked as done by it.
+ * A practice round of [count] random tasks ([PracticePlanner]), recorded as an attempt that belongs to no unit. No
+ * unit is ever marked as done by it.
+ *
+ * * [PracticeMode.FREE]: the tasks of the finished topics in [topicIds] ([PracticeCatalog.pool]), a `FREE_PRACTICE` attempt.
+ * * [PracticeMode.MISTAKES]: the mistakes of the topics in [topicIds], or every mistake when [topicIds] is empty
+ *   ([PracticeCatalog.mistakePool], [PracticeCatalog.allMistakes]), a `MISTAKE_PRACTICE` attempt. The mistakes are
+ *   read at every start, so "Még egy kör" no longer asks the ones answered right; with none left the round says so.
  *
  * [title] is the text the round shows on top (an app string, given by the screen so it is in the app's language).
  */
@@ -26,17 +34,23 @@ class PracticeRoundSource(
     private val catalog: PracticeCatalog,
     private val content: ContentRepository,
     private val recorder: TestRecorder,
+    private val mode: PracticeMode = PracticeMode.FREE,
 ) : RoundSource {
 
     override val kind = RoundKind.PRACTICE
 
     override suspend fun start(random: Random): RoundStart {
-        val pool = (catalog.pool(topicIds) as? OperationResult.Success)?.data ?: return RoundStart.Failed
-        val ids = PracticePlanner.plan(pool, count, random)
-        if (ids.isEmpty()) return RoundStart.Empty
+        val pool = when {
+            mode == PracticeMode.FREE -> catalog.pool(topicIds)
+            topicIds.isEmpty() -> catalog.allMistakes()
+            else -> catalog.mistakePool(topicIds)
+        }
+        val ids = PracticePlanner.plan((pool as? OperationResult.Success)?.data ?: return RoundStart.Failed, count, random)
+        if (ids.isEmpty()) return if (mode == PracticeMode.MISTAKES) RoundStart.NoMistakes else RoundStart.Empty
         val tasks = mutableListOf<Task>()
         for (id in ids) tasks += (content.task(id) as? OperationResult.Success)?.data ?: return RoundStart.Failed
-        val attemptId = (recorder.startPractice(AttemptType.FREE_PRACTICE) as? OperationResult.Success)?.data ?: return RoundStart.Failed
+        val type = if (mode == PracticeMode.MISTAKES) AttemptType.MISTAKE_PRACTICE else AttemptType.FREE_PRACTICE
+        val attemptId = (recorder.startPractice(type) as? OperationResult.Success)?.data ?: return RoundStart.Failed
         return RoundStart.Ready(title, tasks, attemptId)
     }
 

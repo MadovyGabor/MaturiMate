@@ -68,6 +68,8 @@ interface ProgressRepository {
 
     suspend fun taskProgress(taskId: Long): OperationResult<TaskProgress?, LearningError>
     suspend fun dueTasks(now: Instant): OperationResult<List<TaskProgress>, LearningError>
+    /** The tasks whose latest answer is wrong: the mistakes of the mistake practice. */
+    suspend fun mistakeTaskIds(): OperationResult<List<Long>, LearningError>
     suspend fun saveTaskProgress(progress: TaskProgress): OperationResult<Unit, LearningError>
 
     /** "Haladás újrakezdése": the rounds, answers, finished units and task repetition go; streak and study time stay. */

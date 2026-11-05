@@ -51,6 +51,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 
 /**
  * A free practice round on the real round view-model. The part "Nyelvtan" (10) has the finished topic "Szóképek"
@@ -226,6 +227,53 @@ class PracticeRoundViewModelTest {
         assertNotEquals(first, second)
     }
 
+    private fun mistakes(topics: List<Long> = emptyList(), count: Int = 20, seed: Int = 1) =
+        TestSessionViewModel(PracticeRoundSource(topics, count, "Hibagyakorlás", catalog, content, recorder, PracticeMode.MISTAKES), Random(seed))
+
+    /** A test round of unit 51 with the given labels for the tasks 200 to 205 (A is right). */
+    private suspend fun testRound(vararg answers: Pair<Long, String>) {
+        val attempt = recorder.start(51).data()
+        for ((id, label) in answers) {
+            val task = content.task(id).data()
+            val answer = com.madovygabor.maturimate.features.learning.domain.Answer.Choice(mapOf(1 to label))
+            recorder.answer(attempt, task, answer, com.madovygabor.maturimate.features.learning.domain.AnswerChecker.check(task, answer))
+        }
+    }
+
+    @Test
+    fun aMistakeRoundAsksOnlyTheMistakesAndIsAMistakePracticeAttempt() = runBlocking<Unit> {
+        testRound(200L to "B", 201L to "A", 202L to "B")
+
+        val state = mistakes().ready()
+        assertIs<TestUiState.Ready>(state)
+        assertEquals(setOf(200L, 202L), state.tasks.map { it.id }.toSet())
+        assertEquals("Hibagyakorlás", state.title)
+        settled { attempts().any { it.type == AttemptType.MISTAKE_PRACTICE } }
+    }
+
+    @Test
+    fun aMistakeAnsweredRightIsNotAskedInTheNextRound() = runBlocking<Unit> {
+        testRound(200L to "B", 202L to "B")
+        val viewModel = mistakes()
+        viewModel.ready()
+        // answer every mistake right
+        repeat(2) { viewModel.answerRight(); viewModel.next() }
+        assertIs<TestUiState.Result>(viewModel.state.value)
+        settled { attempts().single { it.type == AttemptType.MISTAKE_PRACTICE }.status == AttemptStatus.FINISHED }
+
+        viewModel.load()
+        withTimeout(5_000) { viewModel.state.first { it is TestUiState.NoMistakes } }
+    }
+
+    @Test
+    fun aMistakeRoundOfTheChosenTopicsAndNoMistakesAtAll() = runBlocking<Unit> {
+        assertIs<TestUiState.NoMistakes>(mistakes().ready())
+        testRound(200L to "B")
+        assertEquals(listOf(200L), (mistakes(topics = listOf(11)).ready() as TestUiState.Ready).tasks.map { it.id })
+        // the unfinished topic 12 has no mistake
+        assertIs<TestUiState.NoMistakes>(mistakes(topics = listOf(12)).ready())
+    }
+
     // The app's own module builds the practice view-model from the parameters the screen passes.
     @Test
     fun theAppModuleBuildsThePracticeRound() = runBlocking<Unit> {
@@ -237,7 +285,7 @@ class PracticeRoundViewModelTest {
             })
         }.koin
         try {
-            val viewModel = koin.get<TestSessionViewModel>(named(PRACTICE_ROUND)) { parametersOf(listOf(10L), 2, "Szabad gyakorlás") }
+            val viewModel = koin.get<TestSessionViewModel>(named(PRACTICE_ROUND)) { parametersOf(listOf(10L), 2, "Szabad gyakorlás", PracticeMode.FREE) }
             val state = viewModel.ready()
             assertIs<TestUiState.Ready>(state)
             assertEquals(2, state.tasks.size)

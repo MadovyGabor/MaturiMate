@@ -87,14 +87,14 @@ class HomeScreenTest {
     }
 
     @Test
-    fun aReachedGoalSaysSoAndTheSuggestionIsComingSoon() = runDesktopComposeUiTest {
+    fun aReachedGoalSaysSo() = runDesktopComposeUiTest {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         val recent = listOf(RecentActivity(50, "Mi a szókép?", "Szóképek", kind = ActivityKind.LESSON, at = Instant.parse("2026-11-04T08:00:00Z"), passed = null))
         setContent { AppTheme { HomeContent(HomeUiState.Ready(summary(seconds = 720, motto = MottoKind.REACHED, recent = recent)), onContinue = {}, onRetry = {}) } }
 
         onNodeWithText("A mai cél megvan").assertIsDisplayed()
-        onNodeWithText("Ismételd át a hibáidat").assertIsDisplayed()
-        onNodeWithText("Hamarosan").assertIsDisplayed()
+        // the mistake card is no longer "Hamarosan": it shows only with mistakes (see the mistake card tests)
+        onAllNodesWithText("Hamarosan").assertCountEquals(0)
     }
 
     @Test
@@ -124,6 +124,25 @@ class HomeScreenTest {
 
         onNodeWithText("Mini teszt").assertIsDisplayed()
         onNodeWithText("Átment").assertIsDisplayed()
+    }
+
+    @Test
+    fun theMistakeCardShowsTheMistakesAndOpensThePracticeTab() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var opened = 0
+        setContent { AppTheme { HomeContent(HomeUiState.Ready(summary().copy(mistakes = 4)), onContinue = {}, onRetry = {}, onOpenPractice = { opened++ }) } }
+
+        onNodeWithText("4 hibás feladat").assertIsDisplayed()
+        onNodeWithText("Ismételd át a hibáidat").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test
+    fun withoutMistakesThereIsNoMistakeCard() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { HomeContent(HomeUiState.Ready(summary().copy(mistakes = 0)), onContinue = {}, onRetry = {}) } }
+
+        onAllNodesWithText("Ismételd át a hibáidat").assertCountEquals(0)
     }
 
     @Test

@@ -286,7 +286,6 @@
     <string name="home_all_done_title">Mindent befejeztél</string>
     <string name="home_all_done_text">Az összes jelenlegi leckét és tesztet elvégezted. Új tartalom hamarosan érkezik.</string>
     <string name="home_suggestion_title">Ismételd át a hibáidat</string>
-    <string name="home_suggestion_meta">A hibás feladataid újra</string>
     <string name="home_recent_title">Utolsó tevékenységek</string>
     <string name="home_recent_empty">Itt jelennek meg az utolsó leckéid és teszteid. Kezdj egy leckével!</string>
     <string name="home_recent_lesson_done">Kész</string>
@@ -421,7 +420,7 @@
     <string name="nav_subjects">Tantárgyak</string>
     <string name="nav_practice">Gyakorlás</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_text">Itt gyakorolhatod majd a hibáidat, a gyenge témáidat, és átismételheted, amit régen láttál.</string>
+    <string name="practice_soon_text">Hamarosan itt lesznek a gyenge és erős témáid, és átismételheted, amit régen láttál.</string>
     <!-- Practice round (9a.2) -->
     <string name="practice_free_title">Szabad gyakorlás</string>
     <string name="practice_result_title">Kész a kör!</string>
@@ -466,5 +465,21 @@
     <plurals name="activity_subjects">
         <item quantity="one">%1$d tantárgy</item>
         <item quantity="other">%1$d tantárgy</item>
+    </plurals>
+    <!-- Mistake practice (9a.3) -->
+    <string name="mistakes_card_none">Itt jelennek meg a feladatok, amiket elrontottál. Egyelőre egy sincs.</string>
+    <string name="mistakes_all">Összes hiba (%1$d)</string>
+    <string name="mistakes_by_topic">Tantárgy vagy téma</string>
+    <string name="mistakes_picker_title">Mit gyakoroljunk a hibákból?</string>
+    <string name="mistakes_picker_lead">Csak azok a témák választhatók, amelyekben van hibád.</string>
+    <string name="mistakes_none">Nincs hiba</string>
+    <string name="mistakes_none_left">Nincs több hibád. Szép munka!</string>
+    <plurals name="mistakes_card_text">
+        <item quantity="one">Összesen %1$d feladatot rontottál el. Gyakorold át őket.</item>
+        <item quantity="other">Összesen %1$d feladatot rontottál el. Gyakorold át őket.</item>
+    </plurals>
+    <plurals name="mistakes_count">
+        <item quantity="one">%1$d hibás feladat</item>
+        <item quantity="other">%1$d hibás feladat</item>
     </plurals>
 </resources>
