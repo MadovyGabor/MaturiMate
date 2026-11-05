@@ -21,6 +21,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboard
 import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
 import com.madovygabor.maturimate.features.learning.presentation.LessonScreen
 import com.madovygabor.maturimate.features.learning.presentation.TestScreen
+import com.madovygabor.maturimate.features.practice.presentation.PracticeRoundScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
@@ -47,6 +48,7 @@ fun NavigationRoute(
                     subclass(Route.ExamWrite::class, Route.ExamWrite.serializer())
                     subclass(Route.Lesson::class, Route.Lesson.serializer())
                     subclass(Route.Test::class, Route.Test.serializer())
+                    subclass(Route.PracticeRound::class, Route.PracticeRound.serializer())
                 }
             }
         },
@@ -77,6 +79,12 @@ fun NavigationRoute(
             // A test, one task at a time, without the navigation bar
             entry<Route.Test> { route ->
                 BottomInsetBox { TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() }) }
+            }
+            // A free practice round of the chosen topics, without the navigation bar
+            entry<Route.PracticeRound> { route ->
+                BottomInsetBox {
+                    PracticeRoundScreen(topicIds = route.topicIds, count = route.count, onClose = { rootBackStack.removeLastOrNull() })
+                }
             }
             // A lesson, one page at a time, without the navigation bar
             entry<Route.Lesson> { route ->

@@ -423,4 +423,9 @@
     <string name="nav_profile">Profil</string>
     <string name="practice_soon_title">Gyakorlás</string>
     <string name="practice_soon_text">Itt gyakorolhatod majd a hibáidat, a gyenge témáidat, és átismételheted, amit régen láttál.</string>
+    <!-- Practice round (9a.2) -->
+    <string name="practice_free_title">Szabad gyakorlás</string>
+    <string name="practice_result_title">Kész a kör!</string>
+    <string name="practice_again">Még egy kör</string>
+    <string name="practice_back">Vissza a Gyakorláshoz</string>
 </resources>

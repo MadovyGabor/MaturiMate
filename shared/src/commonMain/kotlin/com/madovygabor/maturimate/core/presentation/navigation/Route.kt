@@ -39,6 +39,8 @@ sealed interface Route : NavKey {
     data class Lesson(val unitId: Long) : Route // Fullscreen lesson, one page at a time
     @Serializable
     data class Test(val unitId: Long) : Route // Fullscreen test, one task at a time
+    @Serializable
+    data class PracticeRound(val topicIds: List<Long>, val count: Int) : Route // Fullscreen free practice round of the chosen topics
 
     // --- App Main UI with navbar---
     @Serializable

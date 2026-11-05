@@ -43,6 +43,8 @@ import com.madovygabor.maturimate.features.learning.presentation.TopicTarget
 import com.madovygabor.maturimate.features.learning.presentation.TopicViewModel
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
 import com.madovygabor.maturimate.features.practice.domain.PracticeCatalog
+import com.madovygabor.maturimate.features.practice.domain.PracticeRoundSource
+import com.madovygabor.maturimate.features.practice.presentation.PRACTICE_ROUND
 import com.madovygabor.maturimate.features.profileDetails.domain.ActivityHistory
 import com.madovygabor.maturimate.features.profileDetails.domain.ProfileOverview
 import com.madovygabor.maturimate.features.profileDetails.presentation.HistoryViewModel
@@ -154,5 +156,9 @@ val sharedModule = module {
     viewModel { HomeViewModel(get()) }
     viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get(), get()) }
     viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
+    // A free practice round: the same round view-model with the tasks of the chosen finished topics
+    viewModel(named(PRACTICE_ROUND)) { (topicIds: List<Long>, count: Int, title: String) ->
+        TestSessionViewModel(PracticeRoundSource(topicIds, count, title, get(), get(), get()))
+    }
 }
 

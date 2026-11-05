@@ -16,6 +16,7 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.features.learning.domain.Answer
 import com.madovygabor.maturimate.features.learning.domain.AnswerChecker
 import com.madovygabor.maturimate.features.learning.domain.RoundEntry
+import com.madovygabor.maturimate.features.learning.domain.RoundKind
 import com.madovygabor.maturimate.features.learning.domain.TestRecorder
 import com.madovygabor.maturimate.features.learning.domain.model.AcceptedAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.KeySlot
@@ -28,6 +29,9 @@ import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_next
 import maturimate.shared.generated.resources.test_check
 import maturimate.shared.generated.resources.test_again
+import maturimate.shared.generated.resources.practice_again
+import maturimate.shared.generated.resources.practice_back
+import maturimate.shared.generated.resources.practice_result_title
 import maturimate.shared.generated.resources.test_back_to_path
 import maturimate.shared.generated.resources.test_correct
 import maturimate.shared.generated.resources.test_result_good
@@ -378,6 +382,38 @@ class TestScreenTest {
         onNodeWithText(text(Res.string.test_back_to_path)).performClick()
         assertEquals(1, again)
         assertEquals(1, back)
+    }
+
+    // Practice has no passing: no praise or "not passed", no "the next step opens", and the way back is to the practice tab.
+    @Test
+    fun aPracticeResultOffersAnotherRoundAndSpeaksOfNoPassing() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        var again = 0
+        var back = 0
+        val practice = twoRightOneWrong.copy(kind = RoundKind.PRACTICE)
+        setContent {
+            AppTheme { TestContent(practice, TestActions(onAgain = { again++ }, onClose = { back++ })) }
+        }
+
+        onNodeWithText(text(Res.string.practice_result_title)).assertIsDisplayed()
+        onNodeWithText("2 / 3").assertIsDisplayed()
+        onNodeWithText(text(Res.string.test_result_failed)).assertDoesNotExist()
+        onNodeWithText(text(Res.string.test_pass_needed)).assertDoesNotExist()
+        onNodeWithText(text(Res.string.test_back_to_path)).assertDoesNotExist()
+        onNodeWithText(text(Res.string.practice_again)).performClick()
+        onNodeWithText(text(Res.string.practice_back)).performClick()
+        assertEquals(1, again)
+        assertEquals(1, back)
+    }
+
+    @Test
+    fun aPracticeRoundWithEveryAnswerRightIsNotPraisedAsAPassedTest() = runDesktopComposeUiTest(412, 915) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        show(result(entry(trueFalse, Answer.Choice(mapOf(1 to "I")))).copy(kind = RoundKind.PRACTICE))
+
+        onNodeWithText(text(Res.string.practice_result_title)).assertIsDisplayed()
+        onNodeWithText(text(Res.string.test_result_good)).assertDoesNotExist()
+        onNodeWithText(text(Res.string.practice_again)).assertIsDisplayed()
     }
 
     @Test

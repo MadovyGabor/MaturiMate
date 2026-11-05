@@ -438,4 +438,9 @@
     <string name="nav_profile">Profil</string>
     <string name="practice_soon_title">Cvičenie</string>
     <string name="practice_soon_text">Tu si budeš precvičovať svoje chyby a slabé témy a zopakuješ si, čo si dlho nevidel.</string>
+    <!-- Practice round (9a.2) -->
+    <string name="practice_free_title">Voľné cvičenie</string>
+    <string name="practice_result_title">Kolo je hotové!</string>
+    <string name="practice_again">Ešte jedno kolo</string>
+    <string name="practice_back">Späť na cvičenie</string>
 </resources>
