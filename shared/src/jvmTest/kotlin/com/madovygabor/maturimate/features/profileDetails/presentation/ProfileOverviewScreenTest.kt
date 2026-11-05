@@ -1,5 +1,9 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import com.madovygabor.maturimate.features.learning.domain.ActivityKind
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -49,8 +53,12 @@ class ProfileOverviewScreenTest {
             PartProgress(Topic(20, 1, null, "Irodalom", null, 2), LessonTestCount(StepCount(1, 4), StepCount(0, 1))),
         ),
     )
-    private val test = RecentActivity(51, "Mini teszt", "Szóképek", isTest = true, at = Instant.parse("2026-11-04T08:00:00Z"), passed = false, earnedPoints = 3, maxPoints = 5)
-    private val lesson = RecentActivity(50, "Mi a szókép?", "Szóképek", isTest = false, at = Instant.parse("2026-11-03T08:00:00Z"), passed = null)
+    private val test = RecentActivity(51, "Mini teszt", "Szóképek", kind = ActivityKind.TEST, at = Instant.parse("2026-11-04T08:00:00Z"), passed = false, earnedPoints = 3, maxPoints = 5)
+    private val lesson = RecentActivity(50, "Mi a szókép?", "Szóképek", kind = ActivityKind.LESSON, at = Instant.parse("2026-11-03T08:00:00Z"), passed = null)
+    private val practice = RecentActivity(
+        null, "", "", kind = ActivityKind.PRACTICE, at = Instant.parse("2026-11-04T09:00:00Z"), passed = null,
+        earnedPoints = 8, maxPoints = 10, subjectIds = listOf(1),
+    )
 
     private fun summary(firstName: String? = "Gábor", recent: List<RecentActivity> = listOf(test, lesson)) = ProfileSummary(
         firstName = firstName,
@@ -172,6 +180,45 @@ class ProfileOverviewScreenTest {
         onNodeWithText("2025. december").assertExists()
         onNodeWithText("Tesztek").performClick()
         assertEquals(HistoryFilter.TESTS, filter)
+    }
+
+    @Test
+    fun aPracticeRoundShowsItsNameSubjectKindAndResult() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val history = History(listOf(HistorySection(HistoryGroup.Today, listOf(practice, test))), today)
+        setContent { AppTheme { HistoryContent(HistoryUiState.Ready(history), onBack = {}, onFilter = {}, onRetry = {}) } }
+
+        onNodeWithText("Szabad gyakorlás").assertIsDisplayed()
+        onNodeWithText("Magyar nyelv és irodalom").assertIsDisplayed()
+        // the kind tag of the card and the filter chip
+        onAllNodesWithText("Gyakorlás").assertCountEquals(2)
+        onNodeWithText("8 / 10").assertIsDisplayed()
+    }
+
+    @Test
+    fun thePracticeFilterLeavesOnlyPracticeAndTheTestsFilterNone() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val history = History(listOf(HistorySection(HistoryGroup.Today, listOf(practice, test, lesson))), today)
+        var filter by mutableStateOf(HistoryFilter.PRACTICE)
+        setContent { AppTheme { HistoryContent(HistoryUiState.Ready(history, filter), onBack = {}, onFilter = { filter = it }, onRetry = {}) } }
+
+        onNodeWithText("Szabad gyakorlás").assertIsDisplayed()
+        onAllNodesWithText("Mini teszt").assertCountEquals(0)
+        onAllNodesWithText("Mi a szókép?").assertCountEquals(0)
+
+        filter = HistoryFilter.TESTS
+        waitForIdle()
+        onAllNodesWithText("Szabad gyakorlás").assertCountEquals(0)
+        onNodeWithText("Mini teszt").assertIsDisplayed()
+    }
+
+    @Test
+    fun aPracticeRoundOnTheProfileHasItsSubjectAndDay() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { ProfileOverviewContent(ProfileOverviewUiState.Ready(summary(recent = listOf(practice))), ProfileActions()) } }
+
+        onNodeWithText("Szabad gyakorlás").assertIsDisplayed()
+        onNodeWithText("Magyar nyelv és irodalom · Ma").assertIsDisplayed()
     }
 
     @Test

@@ -2,30 +2,46 @@ package com.madovygabor.maturimate.features.learning.domain
 
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
+/** What a finished activity was: a lesson, a test round of the path, or a practice round. */
+enum class ActivityKind {
+    LESSON, TEST, PRACTICE, MISTAKE_PRACTICE;
+
+    val isPractice: Boolean get() = this == PRACTICE || this == MISTAKE_PRACTICE
+}
+
 /**
- * A finished lesson or test round, for the "last activities" of the home screen.
- * [passed] is empty for a lesson; for a test it says whether the round was passed (every task right).
+ * A finished lesson, test round or practice round, for the "last activities" of the home screen and the profile and
+ * for the full history. [passed] is empty for a lesson and for practice (practice has no passing); for a test it says
+ * whether the round was passed (every task right). A practice round belongs to no unit ([unitId] is empty) and has no
+ * title of its own (the screen names it by its [kind]); [subjectIds] are the subjects of the tasks it asked.
  */
 @OptIn(ExperimentalTime::class)
 data class RecentActivity(
-    val unitId: Long,
+    val unitId: Long?,
     val title: String,
-    /** The topic the lesson or test belongs to. */
+    /** The topic the lesson or test belongs to; empty for practice. */
     val topicTitle: String,
-    val isTest: Boolean,
+    val kind: ActivityKind,
     val at: Instant,
     val passed: Boolean?,
-    /** The points of a test round (for "5 / 5"); empty for a lesson. */
+    /** The points of a round (for "5 / 5"); empty for a lesson. */
     val earnedPoints: Int? = null,
     val maxPoints: Int? = null,
-)
+    val subjectIds: List<Long> = emptyList(),
+) {
+    val isTest: Boolean get() = kind == ActivityKind.TEST
+}
 
-/** The finished lessons and test rounds, newest first. Units that are no longer published are left out. */
+/**
+ * The finished lessons, test rounds and practice rounds, newest first. Units and topics that are no longer published
+ * are left out; a round that was left in the middle (`ABANDONED`) is never listed.
+ */
 @OptIn(ExperimentalTime::class)
 class RecentActivities(
     private val progress: ProgressRepository,
@@ -52,13 +68,36 @@ class RecentActivities(
             (content.topic(unit.topicId) as? OperationResult.Success)?.data?.title.orEmpty()
         }
 
+        val subjects = mutableMapOf<Long, Long?>()
+        suspend fun subjectOf(topicId: Long): Long? = subjects.getOrPut(topicId) {
+            val topic = (content.topic(topicId) as? OperationResult.Success)?.data ?: return@getOrPut null
+            topic.subjectId ?: topic.parentTopicId?.let { subjectOf(it) }
+        }
+
         for (attempt in attempts) {
-            val id = attempt.learningUnitId ?: continue
             val finished = attempt.finishedAt ?: continue
             if (attempt.status != AttemptStatus.FINISHED) continue
+            val practice = when (attempt.type) {
+                AttemptType.FREE_PRACTICE -> ActivityKind.PRACTICE
+                AttemptType.MISTAKE_PRACTICE -> ActivityKind.MISTAKE_PRACTICE
+                else -> null
+            }
+            if (practice != null) {
+                // what a practice round covered is known from its answers: the subjects of the tasks asked
+                val answers = (progress.answersOfAttempt(attempt.id) as? OperationResult.Success)?.data.orEmpty()
+                val subjectIds = answers.mapNotNull { answer ->
+                    (content.task(answer.taskId) as? OperationResult.Success)?.data?.let { subjectOf(it.topicId) }
+                }.distinct()
+                found += RecentActivity(
+                    null, "", "", practice, at = finished, passed = null,
+                    earnedPoints = attempt.earnedPoints, maxPoints = attempt.maxPoints, subjectIds = subjectIds,
+                )
+                continue
+            }
+            val id = attempt.learningUnitId ?: continue
             val unit = unit(id) ?: continue
             found += RecentActivity(
-                id, unit.title, topic(unit), isTest = true, at = finished, passed = attempt.earnedPoints == attempt.maxPoints,
+                id, unit.title, topic(unit), ActivityKind.TEST, at = finished, passed = attempt.earnedPoints == attempt.maxPoints,
                 earnedPoints = attempt.earnedPoints, maxPoints = attempt.maxPoints,
             )
         }
@@ -66,7 +105,7 @@ class RecentActivities(
             val completed = done.completedAt ?: continue
             if (done.status != UnitProgressStatus.COMPLETED) continue
             val unit = unit(done.learningUnitId) as? LearningUnit.Summary ?: continue
-            found += RecentActivity(unit.id, unit.title, topic(unit), isTest = false, at = completed, passed = null)
+            found += RecentActivity(unit.id, unit.title, topic(unit), ActivityKind.LESSON, at = completed, passed = null)
         }
         return OperationResult.Success(found.sortedByDescending { it.at }.take(limit))
     }

@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
+import com.madovygabor.maturimate.features.learning.domain.ActivityKind
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -88,7 +89,7 @@ class HomeScreenTest {
     @Test
     fun aReachedGoalSaysSoAndTheSuggestionIsComingSoon() = runDesktopComposeUiTest {
         Locale.setDefault(Locale.forLanguageTag("hu"))
-        val recent = listOf(RecentActivity(50, "Mi a szókép?", "Szóképek", isTest = false, at = Instant.parse("2026-11-04T08:00:00Z"), passed = null))
+        val recent = listOf(RecentActivity(50, "Mi a szókép?", "Szóképek", kind = ActivityKind.LESSON, at = Instant.parse("2026-11-04T08:00:00Z"), passed = null))
         setContent { AppTheme { HomeContent(HomeUiState.Ready(summary(seconds = 720, motto = MottoKind.REACHED, recent = recent)), onContinue = {}, onRetry = {}) } }
 
         onNodeWithText("A mai cél megvan").assertIsDisplayed()
@@ -117,11 +118,28 @@ class HomeScreenTest {
     fun lastActivitiesShowTheirTopicAndResult() = runDesktopComposeUiTest {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         val recent = listOf(
-            RecentActivity(51, "Mini teszt", "Szóképek", isTest = true, at = Instant.parse("2026-11-04T08:00:00Z"), passed = true),
+            RecentActivity(51, "Mini teszt", "Szóképek", kind = ActivityKind.TEST, at = Instant.parse("2026-11-04T08:00:00Z"), passed = true),
         )
         setContent { AppTheme { HomeContent(HomeUiState.Ready(summary(recent = recent)), onContinue = {}, onRetry = {}) } }
 
         onNodeWithText("Mini teszt").assertIsDisplayed()
         onNodeWithText("Átment").assertIsDisplayed()
+    }
+
+    @Test
+    fun aPracticeRoundAmongTheLastActivitiesHasNoPassing() = runDesktopComposeUiTest {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val recent = listOf(
+            RecentActivity(
+                null, "", "", kind = ActivityKind.PRACTICE, at = Instant.parse("2026-11-04T08:00:00Z"), passed = null,
+                earnedPoints = 4, maxPoints = 5, subjectIds = listOf(1, 4),
+            ),
+        )
+        setContent { AppTheme { HomeContent(HomeUiState.Ready(summary(recent = recent)), onContinue = {}, onRetry = {}) } }
+
+        onNodeWithText("Szabad gyakorlás").assertIsDisplayed()
+        onNodeWithText("2 tantárgy", substring = true).assertIsDisplayed()
+        onNodeWithText("4 / 5").assertIsDisplayed()
+        onAllNodesWithText("Átment").assertCountEquals(0)
     }
 }

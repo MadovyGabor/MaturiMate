@@ -477,4 +477,13 @@
         <item quantity="few">Začať · %1$d otázky</item>
         <item quantity="other">Začať · %1$d otázok</item>
     </plurals>
+    <!-- Practice in the history (9a.2) -->
+    <string name="practice_mistakes_title">Precvičovanie chýb</string>
+    <string name="activity_result_points">%1$d / %2$d</string>
+    <string name="history_filter_practice">Cvičenie</string>
+    <plurals name="activity_subjects">
+        <item quantity="one">%1$d predmet</item>
+        <item quantity="few">%1$d predmety</item>
+        <item quantity="other">%1$d predmetov</item>
+    </plurals>
 </resources>

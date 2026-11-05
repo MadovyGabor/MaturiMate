@@ -48,8 +48,8 @@ class ProfileOverviewViewModel(private val overview: ProfileOverview) : ViewMode
     }
 }
 
-/** Which activities the full history shows. */
-enum class HistoryFilter { ALL, LESSONS, TESTS }
+/** Which activities the full history shows; [PRACTICE] holds the free practice and the mistake practice. */
+enum class HistoryFilter { ALL, LESSONS, TESTS, PRACTICE }
 
 sealed interface HistoryUiState {
     data object Loading : HistoryUiState
@@ -59,7 +59,7 @@ sealed interface HistoryUiState {
     data class Ready(val history: History, val filter: HistoryFilter = HistoryFilter.ALL) : HistoryUiState
 }
 
-/** The full history of the profile, under day headings, with a filter for lessons and tests. */
+/** The full history of the profile, under day headings, with a filter for lessons, tests and practice. */
 class HistoryViewModel(private val history: ActivityHistory) : ViewModel() {
 
     private val _state = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)

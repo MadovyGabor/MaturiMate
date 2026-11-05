@@ -1,5 +1,11 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
+import maturimate.shared.generated.resources.nav_practice
+import com.madovygabor.maturimate.features.learning.presentation.practiceResult
+import com.madovygabor.maturimate.features.learning.presentation.placeAndDay
+import com.madovygabor.maturimate.features.learning.presentation.icon
+import com.madovygabor.maturimate.features.learning.presentation.activityTitle
+import com.madovygabor.maturimate.features.learning.presentation.activityPlace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -320,7 +326,7 @@ private fun Recent(recent: List<RecentActivity>, today: LocalDate, onHistory: ()
             EmptyNote(stringResource(Res.string.profile_history_empty))
         } else {
             recent.forEach { activity ->
-                ActivityItem(activity, meta = stringResource(Res.string.home_activity_meta, activity.topicTitle, dayText(activity, today)))
+                ActivityItem(activity, meta = placeAndDay(activityPlace(activity), dayText(activity, today)))
             }
         }
     }
@@ -338,23 +344,32 @@ private fun dayText(activity: RecentActivity, today: LocalDate): String {
     }
 }
 
-/** A finished lesson or test round, with a tag for the kind and one for the result (with the points of a test). */
+/**
+ * A finished lesson, test round or practice round, with a tag for the kind and one for the result (with the points
+ * of a round; practice has no passing, only "8 / 10").
+ */
 @OptIn(ExperimentalTime::class)
 @Composable
 internal fun ActivityItem(activity: RecentActivity, meta: String) {
     val earned = activity.earnedPoints ?: 0
     val max = activity.maxPoints ?: 0
+    val (result, resultStyle) = when {
+        activity.kind.isPractice -> practiceResult(activity)
+        !activity.isTest -> stringResource(Res.string.home_recent_lesson_done) to TagStyle.SUCCESS
+        activity.passed == true -> stringResource(Res.string.profile_result_passed, earned, max) to TagStyle.SUCCESS
+        else -> stringResource(Res.string.profile_result_retry, earned, max) to TagStyle.NEUTRAL
+    }
     AppActivityCard(
-        title = activity.title,
+        title = activityTitle(activity),
         meta = meta,
-        isTest = activity.isTest,
-        kind = if (activity.isTest) stringResource(Res.string.profile_kind_test) else stringResource(Res.string.home_kind_lesson),
-        result = when {
-            !activity.isTest -> stringResource(Res.string.home_recent_lesson_done)
-            activity.passed == true -> stringResource(Res.string.profile_result_passed, earned, max)
-            else -> stringResource(Res.string.profile_result_retry, earned, max)
+        icon = activity.icon,
+        kind = when {
+            activity.kind.isPractice -> stringResource(Res.string.nav_practice)
+            activity.isTest -> stringResource(Res.string.profile_kind_test)
+            else -> stringResource(Res.string.home_kind_lesson)
         },
-        resultStyle = if (!activity.isTest || activity.passed == true) TagStyle.SUCCESS else TagStyle.NEUTRAL,
+        result = result,
+        resultStyle = resultStyle,
     )
 }
 

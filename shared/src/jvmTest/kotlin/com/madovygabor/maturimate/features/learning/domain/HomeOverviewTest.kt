@@ -1,5 +1,7 @@
 package com.madovygabor.maturimate.features.learning.domain
 
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
+import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
@@ -86,6 +88,35 @@ class HomeOverviewTest {
         assertEquals(listOf("Szóképek"), home.recent.map { it.title })
         assertEquals(300, home.goal.secondsStudied)
         assertEquals(MottoKind.GENERAL, home.motto)
+    }
+
+    @Test
+    fun aPracticeRoundDoesNotMoveTheStepToGoOnWith() = runBlocking {
+        // the student tried the test 51 last (not passed, so it comes up again; the lesson 50 before it is still open),
+        // then did a practice round: "Folytatás" stays on the test, it does not go back to the start of the path
+        val round = (progress.startAttempt(AttemptType.UNIT_ROUND, null, 51, clock) as OperationResult.Success).data
+        progress.finishAttempt(round, AttemptStatus.FINISHED, clock, 0, 1)
+        val practice = (progress.startAttempt(AttemptType.FREE_PRACTICE, null, null, clock) as OperationResult.Success).data
+        progress.finishAttempt(practice, AttemptStatus.FINISHED, Instant.parse("2026-11-04T10:05:00Z"), 1, 1)
+
+        val home = overview.load().data()
+        assertEquals(ActivityKind.PRACTICE, home.recent.first().kind)
+        assertEquals(51L, home.next!!.unit.id)
+    }
+
+    @Test
+    fun practiceRoundsFillingTheLastThreeStillLeaveTheStepOfTheLastUnit() = runBlocking {
+        // the test 51 tried (the lesson 50 still open), then three practice rounds: the last three activities have no unit
+        val round = (progress.startAttempt(AttemptType.UNIT_ROUND, null, 51, clock) as OperationResult.Success).data
+        progress.finishAttempt(round, AttemptStatus.FINISHED, clock, 0, 1)
+        repeat(3) { minute ->
+            val practice = (progress.startAttempt(AttemptType.FREE_PRACTICE, null, null, clock) as OperationResult.Success).data
+            progress.finishAttempt(practice, AttemptStatus.FINISHED, Instant.parse("2026-11-04T10:0${minute + 1}:00Z"), 1, 1)
+        }
+
+        val home = overview.load().data()
+        assertEquals(listOf(ActivityKind.PRACTICE, ActivityKind.PRACTICE, ActivityKind.PRACTICE), home.recent.map { it.kind })
+        assertEquals(51L, home.next!!.unit.id)
     }
 
     @Test

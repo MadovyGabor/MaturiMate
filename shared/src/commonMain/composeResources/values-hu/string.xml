@@ -459,4 +459,12 @@
         <item quantity="one">Indítás · %1$d kérdés</item>
         <item quantity="other">Indítás · %1$d kérdés</item>
     </plurals>
+    <!-- Practice in the history (9a.2) -->
+    <string name="practice_mistakes_title">Hibagyakorlás</string>
+    <string name="activity_result_points">%1$d / %2$d</string>
+    <string name="history_filter_practice">Gyakorlás</string>
+    <plurals name="activity_subjects">
+        <item quantity="one">%1$d tantárgy</item>
+        <item quantity="other">%1$d tantárgy</item>
+    </plurals>
 </resources>

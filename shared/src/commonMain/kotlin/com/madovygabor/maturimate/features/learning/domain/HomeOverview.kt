@@ -73,7 +73,10 @@ class HomeOverview(
             is OperationResult.Success -> result.data
             is OperationResult.Error -> return OperationResult.Error(result.error)
         }
-        val next = when (val result = course.nextStep(latest.firstOrNull()?.unitId)) {
+        // "Folytatás" goes on after the lesson or test worked on last; a practice round has no unit and does not move it
+        val lastUnit = latest.firstOrNull { it.unitId != null }?.unitId
+            ?: (recent.all() as? OperationResult.Success)?.data?.firstOrNull { it.unitId != null }?.unitId
+        val next = when (val result = course.nextStep(lastUnit)) {
             is OperationResult.Success -> result.data
             is OperationResult.Error -> return OperationResult.Error(result.error)
         }

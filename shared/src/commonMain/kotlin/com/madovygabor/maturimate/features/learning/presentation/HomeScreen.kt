@@ -366,15 +366,17 @@ private fun ActivityRow(activity: RecentActivity, today: kotlinx.datetime.LocalD
         today.minus(DatePeriod(days = 1)) -> stringResource(Res.string.home_when_yesterday)
         else -> "${day.day}. ${day.month.ordinal + 1}."
     }
+    val (result, resultStyle) = when {
+        activity.kind.isPractice -> practiceResult(activity)
+        !activity.isTest -> stringResource(Res.string.home_recent_lesson_done) to TagStyle.SUCCESS
+        activity.passed == true -> stringResource(Res.string.home_recent_test_passed) to TagStyle.SUCCESS
+        else -> stringResource(Res.string.home_recent_test_retry) to TagStyle.NEUTRAL
+    }
     AppActivityCard(
-        title = activity.title,
-        meta = stringResource(Res.string.home_activity_meta, activity.topicTitle, whenText),
-        isTest = activity.isTest,
-        result = when {
-            !activity.isTest -> stringResource(Res.string.home_recent_lesson_done)
-            activity.passed == true -> stringResource(Res.string.home_recent_test_passed)
-            else -> stringResource(Res.string.home_recent_test_retry)
-        },
-        resultStyle = if (!activity.isTest || activity.passed == true) TagStyle.SUCCESS else TagStyle.NEUTRAL,
+        title = activityTitle(activity),
+        meta = placeAndDay(activityPlace(activity), whenText),
+        icon = activity.icon,
+        result = result,
+        resultStyle = resultStyle,
     )
 }
