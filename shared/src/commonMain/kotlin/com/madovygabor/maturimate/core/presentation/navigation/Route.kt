@@ -59,17 +59,23 @@ sealed interface Route : NavKey {
             data class Topic(val topicId: Long) : Route // The topics below a topic, or the path of a topic
         }
 
-        // History Feature
+        // Practice Feature: mistake practice, weak topics, review (Milestone 9a); "Hamarosan" until then
         @Serializable
-        data object History : Route {
-            @Serializable
-            data object List : Route //List of previous taken exams
-            @Serializable
-            data class Detail(val historyId: String) : Route // Detail of a specific exam from history
-        }
+        data object Practice : Route
 
         // Profile Feature
         @Serializable
-        data object Profile : Route // User profile and settings
+        data object Profile : Route {
+            @Serializable
+            data object Overview : Route // Where the student stands: numbers, progress, the last activities
+            @Serializable
+            data object History : Route // Every finished lesson and test, under day headings
+            @Serializable
+            data object Answers : Route // The onboarding answers, until the settings screen (9.4)
+            @Serializable
+            data object SignUp : Route // A guest creates an account, from the profile
+            @Serializable
+            data object SignIn : Route // A guest signs in to an existing account, from the profile
+        }
     }
 }

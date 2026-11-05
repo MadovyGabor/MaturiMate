@@ -73,6 +73,14 @@ class UserProfileRepositoryImpl(
         queries.updateUiLanguage(language.name, userId)
     }
 
+    override suspend fun saveSchoolLanguage(language: TeachingLanguage) = save { userId ->
+        queries.updateTeachingLanguage(language.name, userId)
+    }
+
+    override suspend fun saveUiLanguage(language: TeachingLanguage) = save { userId ->
+        queries.updateUiLanguage(language.name, userId)
+    }
+
     override suspend fun saveRole(role: UserRole) = save { userId ->
         queries.deleteOnboardingRoles(userId)
         queries.insertRole(User_role(userId, role.id, now().toEpochMilliseconds()))
@@ -151,6 +159,7 @@ class UserProfileRepositoryImpl(
 
     private fun SelectUserProfile.toDomain(role: UserRole?, subjects: List<UserSubject>) = UserProfile(
         firstName = first_name?.takeIf { it.isNotBlank() },
+        lastName = last_name?.takeIf { it.isNotBlank() },
         teachingLanguage = teaching_language?.let { TeachingLanguage.valueOf(it) },
         role = role,
         graduationDate = graduation_date?.let { LocalDate.parse(it) },

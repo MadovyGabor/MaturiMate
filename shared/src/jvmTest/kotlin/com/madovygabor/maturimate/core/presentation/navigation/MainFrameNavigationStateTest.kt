@@ -29,8 +29,8 @@ class MainFrameNavigationStateTest {
     fun switchingTabsChangesTheStacks() {
         val state = state(Route.Main.Subject)
 
-        state.topLevelRoute = Route.Main.History
+        state.topLevelRoute = Route.Main.Practice
 
-        assertEquals(listOf<NavKey>(Route.Main.Subject, Route.Main.History), state.stacksInUse)
+        assertEquals(listOf<NavKey>(Route.Main.Subject, Route.Main.Practice), state.stacksInUse)
     }
 }

@@ -45,6 +45,8 @@ class AuthRepositoryImpl(private val auth: Auth) : AuthRepository {
             email = user.email,
             firstName = meta("given_name") ?: full?.substringBefore(' '),
             lastName = meta("family_name") ?: full?.substringAfter(' ', missingDelimiterValue = "")?.takeIf { it.isNotBlank() },
+            // an account made with Google has only the google identity, and no password
+            hasPassword = user.identities?.any { it.provider == "email" } ?: true,
         )
     }
 

@@ -103,6 +103,10 @@ class ProgressRepositoryImpl(
         activity.selectStreak(userId()).executeAsOneOrNull()?.toDomain()
     }
 
+    override suspend fun resetProgress(): OperationResult<Unit, LearningError> = run {
+        progress.resetProgress(userId())
+    }
+
     override suspend fun saveStreak(streak: Streak): OperationResult<Unit, LearningError> = run {
         activity.upsertStreak(streak.toRow(userId()))
     }

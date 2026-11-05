@@ -31,6 +31,8 @@ fun NavigationRoute(
     startRoute: Route,
     /** The tab the main screen opens on; it follows the user's choice. */
     mainTab: MutableState<NavKey>,
+    /** The page the profile tab opens on; it follows the user too. */
+    profilePage: MutableState<NavKey>,
     /** The language the app is built with (`AppState.language`). */
     appLanguage: TeachingLanguage?,
 ){
@@ -62,7 +64,7 @@ fun NavigationRoute(
         entryProvider = entryProvider {
             //The main application content with bottom navigation
             entry<Route.Main> {
-                MainFrameNavigation(mainTab = mainTab, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
+                MainFrameNavigation(mainTab = mainTab, profilePage = profilePage, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
                     onOpenTest = { rootBackStack.add(Route.Test(it)) },
                 )
             }

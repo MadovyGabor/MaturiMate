@@ -80,11 +80,14 @@ fun AppChoiceCard(
                 verticalArrangement = Arrangement.spacedBy(spacing.space1),
             ) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                )
+                // an empty description leaves only the title (the language choice of the settings)
+                if (description.isNotEmpty()) {
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                    )
+                }
             }
             // the mark shows the choice by shape as well as by color
             Surface(

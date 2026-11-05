@@ -307,4 +307,120 @@
     <string name="home_day_missed">%1$s: kimaradt</string>
     <string name="home_day_today">%1$s: ma</string>
     <string name="home_day_later">%1$s: még hátra van</string>
+
+    <!-- Profile tab (9.3) -->
+    <string name="profile_tab_title">Profil</string>
+    <string name="profile_guest">Vendég</string>
+    <string name="profile_guest_title">Hozz létre fiókot</string>
+    <string name="profile_guest_text">Így a haladásod megmarad, ha másik telefonra váltasz, és a nevedet is megadhatod.</string>
+    <string name="profile_settings">Beállítások</string>
+    <plurals name="profile_stat_days">
+        <item quantity="one">nap</item>
+        <item quantity="other">nap</item>
+    </plurals>
+    <string name="profile_stat_streak">sorozat</string>
+    <string name="profile_stat_hours">ó</string>
+    <string name="profile_stat_minutes">p</string>
+    <string name="profile_stat_time">tanulás</string>
+    <string name="profile_stat_tasks">feladat</string>
+    <plurals name="profile_stat_streak_description">
+        <item quantity="one">%1$d napos sorozat</item>
+        <item quantity="other">%1$d napos sorozat</item>
+    </plurals>
+    <string name="profile_stat_time_description">%1$d óra %2$d perc tanulás</string>
+    <plurals name="profile_stat_tasks_description">
+        <item quantity="one">%1$d megoldott feladat</item>
+        <item quantity="other">%1$d megoldott feladat</item>
+    </plurals>
+    <string name="profile_progress_title">Haladás</string>
+    <string name="profile_lessons_count">Leckék %1$d / %2$d</string>
+    <string name="profile_tests_count">Tesztek %1$d / %2$d</string>
+    <string name="profile_parts_open">Részek megnyitása</string>
+    <string name="profile_parts_close">Részek bezárása</string>
+    <string name="profile_history_title">Előzmények</string>
+    <string name="profile_history_all">Összes megtekintése</string>
+    <string name="profile_history_empty">Itt jelennek meg a befejezett leckéid és teszteid. Kezdj egy leckével!</string>
+    <string name="profile_kind_test">Teszt</string>
+    <string name="profile_result_passed">Átment · %1$d / %2$d</string>
+    <string name="profile_result_retry">Újra · %1$d / %2$d</string>
+    <string name="history_filter_all">Mind</string>
+    <string name="history_filter_lessons">Leckék</string>
+    <string name="history_filter_tests">Tesztek</string>
+    <string name="history_filter_empty">Ebben a szűrőben még nincs semmi.</string>
+    <plurals name="history_days_ago">
+        <item quantity="one">%1$d napja</item>
+        <item quantity="other">%1$d napja</item>
+    </plurals>
+    <plurals name="history_weeks_ago">
+        <item quantity="one">%1$d hete</item>
+        <item quantity="other">%1$d hete</item>
+    </plurals>
+    <string name="history_month_year">%2$d. %1$s</string>
+    <string name="month_1">Január</string>
+    <string name="month_2">Február</string>
+    <string name="month_3">Március</string>
+    <string name="month_4">Április</string>
+    <string name="month_5">Május</string>
+    <string name="month_6">Június</string>
+    <string name="month_7">Július</string>
+    <string name="month_8">Augusztus</string>
+    <string name="month_9">Szeptember</string>
+    <string name="month_10">Október</string>
+    <string name="month_11">November</string>
+    <string name="month_12">December</string>
+
+
+    <!-- Settings (9.4) -->
+    <string name="settings_group_account">Fiók</string>
+    <string name="settings_group_learning">Tanulás</string>
+    <string name="settings_group_notifications">Értesítések</string>
+    <string name="settings_group_app">App</string>
+    <string name="settings_group_data">Adatok</string>
+    <string name="settings_group_danger">Haladás és fiók</string>
+    <string name="settings_name">Név</string>
+    <string name="settings_email">E-mail</string>
+    <string name="settings_password">Jelszó megváltoztatása</string>
+    <string name="settings_password_hint">A régi és az új jelszóval</string>
+    <string name="settings_no_account">Még nincs fiókod</string>
+    <string name="settings_create_hint">Hogy a haladásod megmaradjon</string>
+    <string name="settings_sign_in_hint">Bejelentkezés</string>
+    <string name="settings_school_language">Az iskolád tanítási nyelve</string>
+    <string name="settings_school_language_value">%1$s · ehhez igazodnak a tantárgyak</string>
+    <string name="settings_app_language">Az app nyelve</string>
+    <string name="settings_choose_language">Válassz nyelvet</string>
+    <string name="settings_reminder">Napi emlékeztető</string>
+    <string name="settings_on">Bekapcsolva</string>
+    <string name="settings_off">Kikapcsolva</string>
+    <string name="settings_reminder_time">Időpont</string>
+    <string name="settings_sync">Szinkronizálás</string>
+    <string name="settings_sync_hint">A haladásod a fiókodban</string>
+    <string name="settings_content">Tartalom frissítése</string>
+    <string name="settings_content_hint">Új leckék letöltése</string>
+    <string name="settings_reset">Haladás újrakezdése</string>
+    <string name="settings_reset_hint">A sorozat és a tanulási idő megmarad</string>
+    <string name="settings_sign_out">Kijelentkezés</string>
+    <string name="settings_delete">A fiók törlése</string>
+    <string name="settings_delete_hint">Minden adatod törlődik</string>
+    <string name="settings_exam_value">%1$s · %2$s</string>
+    <string name="settings_reset_title">Újrakezded a haladást?</string>
+    <string name="settings_reset_text">Törlődnek a kész leckék és tesztek, a válaszaid és a hibáid. A sorozatod, a tanulási időd és a beállításaid megmaradnak.</string>
+    <string name="settings_reset_confirm">Újrakezdés</string>
+    <string name="settings_reset_done">A haladásod újraindult.</string>
+    <string name="settings_sign_out_title">Kijelentkezel?</string>
+    <string name="settings_sign_out_text">A haladásod még csak ezen a telefonon van, ezért kijelentkezéskor innen törlődik. Utána a kezdő képernyő jön.</string>
+    <string name="settings_name_title">A neved</string>
+    <string name="settings_password_old">Régi jelszó</string>
+    <string name="settings_password_new">Új jelszó</string>
+    <string name="settings_password_wrong">A régi jelszó nem jó.</string>
+    <string name="settings_password_done">A jelszavad megváltozott.</string>
+    <string name="settings_password_repeat">Új jelszó újra</string>
+    <string name="settings_password_mismatch">A két új jelszó nem egyezik.</string>
+
+    <!-- Tabs (9.5) -->
+    <string name="nav_home">Kezdőlap</string>
+    <string name="nav_subjects">Tantárgyak</string>
+    <string name="nav_practice">Gyakorlás</string>
+    <string name="nav_profile">Profil</string>
+    <string name="practice_soon_title">Gyakorlás</string>
+    <string name="practice_soon_text">Itt gyakorolhatod majd a hibáidat, a gyenge témáidat, és átismételheted, amit régen láttál.</string>
 </resources>

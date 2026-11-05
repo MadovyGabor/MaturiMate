@@ -70,6 +70,9 @@ interface ProgressRepository {
     suspend fun dueTasks(now: Instant): OperationResult<List<TaskProgress>, LearningError>
     suspend fun saveTaskProgress(progress: TaskProgress): OperationResult<Unit, LearningError>
 
+    /** "Haladás újrakezdése": the rounds, answers, finished units and task repetition go; streak and study time stay. */
+    suspend fun resetProgress(): OperationResult<Unit, LearningError>
+
     suspend fun streak(): OperationResult<Streak?, LearningError>
     suspend fun saveStreak(streak: Streak): OperationResult<Unit, LearningError>
     /** Adds to the day's totals. */

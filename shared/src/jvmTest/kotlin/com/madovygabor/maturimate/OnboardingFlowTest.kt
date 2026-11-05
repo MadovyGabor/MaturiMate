@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.core.database.foreignKeysOn
 import com.madovygabor.maturimate.core.di.sharedModule
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.database.user.UserDatabase
+import com.madovygabor.maturimate.features.auth.domain.AccountSettings
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AccountUser
 import com.madovygabor.maturimate.features.auth.domain.AuthError
@@ -63,7 +64,10 @@ import maturimate.shared.generated.resources.subjects_title_learner
 import maturimate.shared.generated.resources.subjects_title_student
 import maturimate.shared.generated.resources.account_title
 import maturimate.shared.generated.resources.common_save
-import maturimate.shared.generated.resources.profile_title
+import maturimate.shared.generated.resources.practice_soon_text
+import maturimate.shared.generated.resources.profile_settings
+import maturimate.shared.generated.resources.language_sk
+import maturimate.shared.generated.resources.settings_app_language
 import maturimate.shared.generated.resources.onboarding_step_goal
 import maturimate.shared.generated.resources.onboarding_step_language
 import maturimate.shared.generated.resources.onboarding_step_role
@@ -102,6 +106,13 @@ class OnboardingFlowTest {
         override suspend fun setNewPassword(newPassword: String) = ok
     }
 
+    /** The settings' account changes; the flow does not use them. */
+    private object NoSettings : AccountSettings {
+        override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun changePassword(oldPassword: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun signOut(): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+    }
+
     private object NoSetup : AccountSetup {
         override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> =
             OperationResult.Success(Unit)
@@ -129,6 +140,7 @@ class OnboardingFlowTest {
                     single<ContentRepository> { StarterContent }
                     single<AuthRepository> { NoAuth }
                     single<AccountSetup> { NoSetup }
+                    single<AccountSettings> { NoSettings }
                     single<SupabaseClient> {
                         createSupabaseClient("https://test.supabase.co", "test-key") {
                             httpEngine = MockEngine { respondError(HttpStatusCode.ServiceUnavailable) }
@@ -196,6 +208,16 @@ class OnboardingFlowTest {
 
     private fun profile() = runBlocking { KoinPlatform.getKoin().get<UserProfileRepository>().profile.first() }!!
 
+    /** The profile tab, then its gear: the onboarding answers (the settings screen from 9.4 on). */
+    private fun ComposeUiTest.openAnswers() {
+        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
+        waitUntil(timeoutMillis = 5_000) {
+            onAllNodes(androidx.compose.ui.test.hasContentDescription(text(Res.string.profile_settings))).fetchSemanticsNodes().isNotEmpty()
+        }
+        onNode(androidx.compose.ui.test.hasContentDescription(text(Res.string.profile_settings))).performClick()
+        waitFor(Res.string.settings_app_language)
+    }
+
     @Test
     fun studentGoesThroughEveryStepAndLooksAroundAsAGuest() = runDesktopComposeUiTest(412, 915) {
         setContent { App() }
@@ -214,28 +236,26 @@ class OnboardingFlowTest {
         setContent { App() }
         goThroughAsStudent()
         // the tabs keep working after the first switch
-        onAllNodes(androidx.compose.ui.test.hasText("Előzmények")).onFirst().performClick()
-        waitUntil(timeoutMillis = 5_000) { onAllNodes(androidx.compose.ui.test.hasText("History Screen")).fetchSemanticsNodes().isNotEmpty() }
-        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
-        waitFor(Res.string.profile_title)
+        onAllNodes(androidx.compose.ui.test.hasText("Gyakorlás")).onFirst().performClick()
+        waitFor(Res.string.practice_soon_text)
+        openAnswers()
 
         // the goal opens its onboarding question, saved with "Mentés"
         click(Res.string.onboarding_step_goal)
         waitFor(Res.string.goal_title)
         onNodeWithText("20 perc").performClick()
         click(Res.string.common_save)
-        waitFor(Res.string.profile_title)
+        waitFor(Res.string.settings_app_language)
         assertEquals(20, profile().dailyGoalMinutes)
         onNodeWithText("20 perc").assertExists()
 
-        // a new language rebuilds the app in it, still on the profile
-        click(Res.string.onboarding_step_language)
-        waitFor(Res.string.language_title)
-        click(Res.string.language_sk_desc)
-        click(Res.string.common_save)
+        // a new app language rebuilds the app in it, still on the settings; the school's language stays
+        click(Res.string.settings_app_language)
+        click(Res.string.language_sk)
         Locale.setDefault(Locale.forLanguageTag("sk"))
-        waitFor(Res.string.profile_title)
-        assertEquals(TeachingLanguage.SK, profile().teachingLanguage)
+        waitFor(Res.string.settings_app_language)
+        assertEquals(TeachingLanguage.SK, profile().uiLanguage)
+        assertEquals(TeachingLanguage.HU, profile().teachingLanguage)
     }
 
     @Test
@@ -243,8 +263,7 @@ class OnboardingFlowTest {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         setContent { App() }
         goThroughAsStudent()
-        onAllNodes(androidx.compose.ui.test.hasText("Profil")).onFirst().performClick()
-        waitFor(Res.string.profile_title)
+        openAnswers()
 
         click(Res.string.onboarding_step_role)
         waitFor(Res.string.role_title)
@@ -255,7 +274,7 @@ class OnboardingFlowTest {
         click(Res.string.common_save)
 
         // a learner has everything else already: back to the answers, without an exam date
-        waitFor(Res.string.profile_title)
+        waitFor(Res.string.settings_app_language)
         assertEquals(UserRole.LEARNER, profile().role)
         assertEquals(0, onAllNodes(androidx.compose.ui.test.hasText(text(Res.string.onboarding_step_date))).fetchSemanticsNodes().size)
     }

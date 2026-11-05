@@ -47,11 +47,15 @@ class AccountSetupImpl(
         val profile = profiles.profile.first() ?: return OperationResult.Error(AuthError.UNKNOWN)
         val consents = setOf(ConsentType.TERMS, ConsentType.PRIVACY, ConsentType.AGE_16) +
             if (marketing) setOf(ConsentType.MARKETING) else emptySet()
+        // a guest who signs up later, from the profile, finished the onboarding long ago: that day stays
+        val onboardingEnd = profile.onboardingCompletedAt ?: finishedAt
         // one transaction on the server: all of it is saved, or nothing
-        val saved = account.saveSignUp(profile, firstName, lastName, consents, finishedAt)
+        val saved = account.saveSignUp(profile, firstName, lastName, consents, onboardingEnd)
         if (saved is OperationResult.Error) return saved
         // last: finishing the onboarding takes the app to the home screen
-        if (profiles.completeOnboarding(finishedAt) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
+        if (profile.onboardingCompletedAt == null && profiles.completeOnboarding(finishedAt) is OperationResult.Error) {
+            return OperationResult.Error(AuthError.UNKNOWN)
+        }
         return OperationResult.Success(Unit)
     }
 
@@ -75,7 +79,11 @@ class AccountSetupImpl(
     /** The account's answers from the server replace the ones on this phone; false when a save fails. */
     private suspend fun write(profile: UserProfile): Boolean {
         val saves = buildList {
-            profile.teachingLanguage?.let { add(profiles.saveTeachingLanguage(it)) }
+            profile.teachingLanguage?.let {
+                add(profiles.saveTeachingLanguage(it))
+                // the app language may differ from the school's (set apart in the settings)
+                add(profiles.saveUiLanguage(profile.uiLanguage))
+            }
             profile.role?.let { add(profiles.saveRole(it)) }
             // a server profile without subjects never replaces the ones chosen on this phone
             if (profile.subjects.isNotEmpty()) add(profiles.saveSubjects(profile.subjects))

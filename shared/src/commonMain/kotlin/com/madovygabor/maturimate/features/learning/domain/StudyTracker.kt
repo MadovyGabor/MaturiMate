@@ -25,6 +25,9 @@ data class DailyGoalProgress(val date: LocalDate, val secondsStudied: Int, val g
     val fraction: Float get() = (secondsStudied.toFloat() / goalSeconds).coerceIn(0f, 1f)
 }
 
+/** All study so far: the seconds of every day and the answered tasks. */
+data class StudyTotals(val secondsStudied: Long, val tasksAnswered: Int)
+
 /**
  * Counts the study time of each day and keeps the streak. It holds the rules; the lesson and test screens only
  * tell it how long the student studied.
@@ -60,6 +63,17 @@ class StudyTracker(
         return when (val result = progress.activity(today, today)) {
             is OperationResult.Success ->
                 OperationResult.Success(DailyGoalProgress(today, result.data.sumOf { it.secondsStudied }, goalSeconds(config)))
+            is OperationResult.Error -> OperationResult.Error(result.error)
+        }
+    }
+
+    /** Everything studied so far: the study time of every day and the answered tasks, added up. */
+    suspend fun totals(): OperationResult<StudyTotals, LearningError> {
+        val today = now().toLocalDateTime(settings().timeZone).date
+        return when (val result = progress.activity(FIRST_DAY, today)) {
+            is OperationResult.Success -> OperationResult.Success(
+                StudyTotals(result.data.sumOf { it.secondsStudied.toLong() }, result.data.sumOf { it.tasksAnswered })
+            )
             is OperationResult.Error -> OperationResult.Error(result.error)
         }
     }
@@ -113,6 +127,9 @@ class StudyTracker(
     companion object {
         /** The goal of a student who has not chosen one. */
         const val DEFAULT_GOAL_MINUTES = 10
+
+        /** Before any day the app can have recorded. */
+        private val FIRST_DAY = LocalDate(2000, 1, 1)
 
         /** The streak to show on [today]: it still counts after yesterday's done day, and is zero after a missed day. */
         fun shownStreak(streak: Streak?, today: LocalDate): Int {

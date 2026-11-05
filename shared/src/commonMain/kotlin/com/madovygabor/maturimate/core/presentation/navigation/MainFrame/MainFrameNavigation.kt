@@ -15,7 +15,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.madovygabor.maturimate.core.presentation.MainFrame
 import com.madovygabor.maturimate.core.presentation.navigation.Route
-import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileScreen
+import com.madovygabor.maturimate.features.practice.presentation.PracticeSoonScreen
+import com.madovygabor.maturimate.features.profileDetails.presentation.ProfileNavigation
 import com.madovygabor.maturimate.features.learning.presentation.HomeScreen
 import com.madovygabor.maturimate.features.learning.presentation.LearningDeepLink
 import com.madovygabor.maturimate.features.learning.presentation.LearningNavigation
@@ -25,6 +26,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun MainFrameNavigation(
     mainTab: MutableState<NavKey>,
+    /** The page the profile tab opens on, kept over a rebuild like [mainTab]. */
+    profilePage: MutableState<NavKey>,
     modifier: Modifier = Modifier,
     /** Opens a lesson over the whole screen. */
     onOpenLesson: (Long) -> Unit = {},
@@ -82,19 +85,13 @@ fun MainFrameNavigation(
                                 onDeepLinkHandled = { deepLink.value = null },
                             )
                         }
-                        // History screen placeholder
-                        entry<Route.Main.History> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "History Screen")
-                            }
+                        // Practice: "Hamarosan" until Milestone 9a
+                        entry<Route.Main.Practice> {
+                            PracticeSoonScreen()
                         }
-                        // Profile feature navigation
+                        // Profile feature navigation: the profile, the full history, the settings
                         entry<Route.Main.Profile> {
-                            ProfileScreen()
+                            ProfileNavigation(openPage = profilePage)
                         }
                     }
                 )

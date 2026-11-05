@@ -30,6 +30,8 @@ data class Layout(
     val badge: Dp = 44.dp,
     /** Smallest height of a choice card. */
     val choiceCardMinHeight: Dp = 64.dp,
+    /** Visible height of a compact button inside a card; its tap area stays [touchTarget]. */
+    val buttonCompactHeight: Dp = 36.dp,
     /** Smallest width of a button that does not fill the row. */
     val buttonMinWidth: Dp = 160.dp,
     /** Height of a progress bar. */

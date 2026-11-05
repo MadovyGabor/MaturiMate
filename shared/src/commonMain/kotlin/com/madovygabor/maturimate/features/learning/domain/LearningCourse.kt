@@ -3,11 +3,14 @@ package com.madovygabor.maturimate.features.learning.domain
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.features.learning.domain.model.ContinueTarget
 import com.madovygabor.maturimate.features.learning.domain.model.LearningUnit
+import com.madovygabor.maturimate.features.learning.domain.model.LessonTestCount
+import com.madovygabor.maturimate.features.learning.domain.model.PartProgress
 import com.madovygabor.maturimate.features.learning.domain.model.PathStep
 import com.madovygabor.maturimate.features.learning.domain.model.PracticeKind
 import com.madovygabor.maturimate.features.learning.domain.model.StepCount
 import com.madovygabor.maturimate.features.learning.domain.model.StepKind
 import com.madovygabor.maturimate.features.learning.domain.model.StepState
+import com.madovygabor.maturimate.features.learning.domain.model.SubjectBreakdown
 import com.madovygabor.maturimate.features.learning.domain.model.SubjectProgress
 import com.madovygabor.maturimate.features.learning.domain.model.Topic
 import com.madovygabor.maturimate.features.learning.domain.model.TopicLevel
@@ -37,6 +40,23 @@ class LearningCourse(
             val steps = parts.fold(StepCount.ZERO) { sum, part -> sum + count(part, done) }
             SubjectProgress(subject.id, subject.code, parts.size, steps)
         }
+    }
+
+    /** Every subject of the installed content with its done lessons and tests, in total and per big part. */
+    suspend fun breakdown(): OperationResult<List<SubjectBreakdown>, LearningError> = guarded {
+        val done = completedUnits()
+        content.subjects().orThrow().map { subject ->
+            val parts = content.rootTopics(subject.id).orThrow().map { part -> PartProgress(part, lessonsAndTests(unitsBelow(part), done)) }
+            SubjectBreakdown(subject.id, parts.fold(LessonTestCount.ZERO) { sum, part -> sum + part.count }, parts)
+        }
+    }
+
+    private fun lessonsAndTests(units: List<LearningUnit>, done: Set<Long>): LessonTestCount {
+        val (lessons, tests) = units.partition { it is LearningUnit.Summary }
+        return LessonTestCount(
+            StepCount(lessons.count { it.id in done }, lessons.size),
+            StepCount(tests.count { it.id in done }, tests.size),
+        )
     }
 
     /**

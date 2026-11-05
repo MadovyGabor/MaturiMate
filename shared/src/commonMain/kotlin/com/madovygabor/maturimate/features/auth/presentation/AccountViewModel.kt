@@ -44,6 +44,8 @@ data class AccountUiState(
     /** Signed in with Google already: only the name and the consents are left. */
     val googleEmail: String? = null,
     val busy: Boolean = false,
+    /** The account is set up (or an existing one signed in); a screen opened from the profile then goes back. */
+    val done: Boolean = false,
 )
 
 /**
@@ -169,6 +171,9 @@ class AccountViewModel(
                         )
                     }
                     if (_state.value.consent && _state.value.firstName.isNotBlank() && _state.value.lastName.isNotBlank()) setUp()
+                } else {
+                    // an existing account: signed in, nothing more to fill in
+                    _state.update { it.copy(done = true) }
                 }
                 is OperationResult.Error -> showError(result.error)
             }
@@ -189,7 +194,7 @@ class AccountViewModel(
     private suspend fun setUp() {
         val current = _state.value
         val result = accountSetup.completeSignUp(current.firstName.trim(), current.lastName.trim(), current.news, Clock.System.now())
-        if (result is OperationResult.Error) showError(result.error)
+        if (result is OperationResult.Error) showError(result.error) else _state.update { it.copy(done = true) }
     }
 
     private fun busy(block: suspend () -> Unit) {

@@ -14,6 +14,8 @@ data class AccountUser(
     val email: String?,
     val firstName: String?,
     val lastName: String?,
+    /** False for an account made with Google only: it has no password to change. */
+    val hasPassword: Boolean = true,
 )
 
 /** The account's profile on the server, for a sign-in on a new phone. */
@@ -42,6 +44,9 @@ interface AccountRepository {
         consents: Set<ConsentType>,
         finishedAt: Instant,
     ): OperationResult<Unit, AuthError>
+
+    /** A new name of the signed-in account, on the server. */
+    suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError>
 
     /** The signed-in account's profile; null when it has none on the server yet. */
     suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError>

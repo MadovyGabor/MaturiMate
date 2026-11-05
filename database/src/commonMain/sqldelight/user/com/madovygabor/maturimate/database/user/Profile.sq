@@ -107,6 +107,22 @@ DELETE FROM activity_log WHERE user_id = :previousId;
 INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
 }
 
+-- Sign-out: every row of the user goes, and so does the local user, so the next start is a new guest.
+-- Until the sync (11.2) nothing of it is kept anywhere else; the settings say so before.
+removeUser {
+DELETE FROM user_profile WHERE user_id = :userId;
+DELETE FROM user_settings WHERE user_id = :userId;
+DELETE FROM user_role WHERE user_id = :userId;
+DELETE FROM user_subject WHERE user_id = :userId;
+DELETE FROM attempt_answer WHERE user_id = :userId;
+DELETE FROM attempt WHERE user_id = :userId;
+DELETE FROM user_unit_progress WHERE user_id = :userId;
+DELETE FROM user_task_progress WHERE user_id = :userId;
+DELETE FROM user_streak WHERE user_id = :userId;
+DELETE FROM activity_log WHERE user_id = :userId;
+DELETE FROM local_user;
+}
+
 updateNames:
 UPDATE user_profile SET first_name = :firstName, last_name = :lastName WHERE user_id = :userId;
 
@@ -118,7 +134,7 @@ INSERT OR REPLACE INTO user_profile VALUES ?;
 
 -- profile and settings of one user; empty until the first save creates both rows
 selectUserProfile:
-SELECT p.first_name, p.teaching_language, p.graduation_date, p.onboarding_completed_at,
+SELECT p.first_name, p.last_name, p.teaching_language, p.graduation_date, p.onboarding_completed_at,
        s.ui_language, s.daily_goal_minutes, s.timezone, s.reminder_enabled, s.reminder_time
 FROM user_profile p
 JOIN user_settings s ON s.user_id = p.user_id
