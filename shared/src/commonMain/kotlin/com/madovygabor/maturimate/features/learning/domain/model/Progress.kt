@@ -59,6 +59,9 @@ data class UnitProgress(
 
 enum class TaskProgressStatus { LEARNING, MASTERED }
 
+/** A task the student has answered, and whether the latest answer is right. */
+data class AnsweredTask(val taskId: Long, val rightNow: Boolean)
+
 /** Summary of how the user does on one task; drives repetition and weak spots. */
 @OptIn(ExperimentalTime::class)
 data class TaskProgress(

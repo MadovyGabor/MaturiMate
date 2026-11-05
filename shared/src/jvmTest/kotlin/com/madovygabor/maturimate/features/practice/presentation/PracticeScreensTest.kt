@@ -9,6 +9,8 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -36,6 +38,7 @@ import java.util.Locale
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import maturimate.shared.generated.resources.scores_practice
 
 /** The practice tab, the picker and its tick-box rows, drawn from hand-built states. */
 @OptIn(ExperimentalTestApi::class)
@@ -150,6 +153,43 @@ class PracticeScreensTest {
         setContent { AppTheme { PracticeContent(PracticeUiState.Ready(canPractice = true, mistakes = 3), onOpenPicker = {}, onRetry = {}) } }
 
         onNodeWithText("Spolu si pokazil 3 úlohy. Precvič si ich.").assertIsDisplayed()
+    }
+
+    private fun score(id: Long, title: String, seen: Int, right: Int) =
+        com.madovygabor.maturimate.features.practice.domain.TopicScore(topic(id, title, 10), subjects.single().subject, seen, right)
+
+    @Test
+    fun theWeakAndStrongTopicsShowTheirSubjectScoreAndPractice() = runDesktopComposeUiTest(412, 1600) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val practiced = mutableListOf<Long>()
+        val scores = com.madovygabor.maturimate.features.practice.domain.ScoreSummary(
+            weak = listOf(score(12, "Szóképek", seen = 5, right = 3)),
+            strong = listOf(score(11, "Szófajok", seen = 5, right = 5)),
+        )
+        setContent {
+            AppTheme { PracticeContent(PracticeUiState.Ready(true, 0, scores), onOpenPicker = {}, onRetry = {}, onPracticeTopic = { practiced += it }) }
+        }
+
+        onNodeWithText("GYENGE TÉMÁK").assertIsDisplayed()
+        onNodeWithText("ERŐS TÉMÁK").assertIsDisplayed()
+        onNodeWithText("60%").assertIsDisplayed()
+        onNodeWithText("100%").assertIsDisplayed()
+        onNodeWithText("3 / 5 feladat jó most").assertIsDisplayed()
+        // both cards name the subject
+        onAllNodesWithText("Magyar nyelv és irodalom").assertCountEquals(2)
+        // only the weak topic can be practiced (the tab's title says "Gyakorlás" too, so only buttons are counted)
+        val practiceButton = hasText(text(Res.string.scores_practice)) and hasClickAction()
+        onAllNodes(practiceButton).assertCountEquals(1)
+        onNode(practiceButton).performClick()
+        assertEquals(listOf(12L), practiced)
+    }
+
+    @Test
+    fun withoutEnoughAnswersTheScoresSayWhatIsNeeded() = runDesktopComposeUiTest(412, 1600) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(true), onOpenPicker = {}, onRetry = {}) } }
+
+        onNodeWithText("Ha egy témából legalább 5 feladatot megoldottál, itt látod, mi megy jól és min érdemes még dolgozni.").assertIsDisplayed()
     }
 
     @Test

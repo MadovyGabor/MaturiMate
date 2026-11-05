@@ -420,7 +420,7 @@
     <string name="nav_subjects">Tantárgyak</string>
     <string name="nav_practice">Gyakorlás</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_text">Hamarosan itt lesznek a gyenge és erős témáid, és átismételheted, amit régen láttál.</string>
+    <string name="practice_soon_text">Hamarosan itt átismételheted, amit régen láttál.</string>
     <!-- Practice round (9a.2) -->
     <string name="practice_free_title">Szabad gyakorlás</string>
     <string name="practice_result_title">Kész a kör!</string>
@@ -482,4 +482,11 @@
         <item quantity="one">%1$d hibás feladat</item>
         <item quantity="other">%1$d hibás feladat</item>
     </plurals>
+    <!-- Weak and strong topics (9a.4) -->
+    <string name="scores_title">Erős és gyenge témák</string>
+    <string name="scores_weak">Gyenge témák</string>
+    <string name="scores_strong">Erős témák</string>
+    <string name="scores_right_now">%1$d / %2$d feladat jó most</string>
+    <string name="scores_practice">Gyakorlás</string>
+    <string name="scores_empty">Ha egy témából legalább %1$d feladatot megoldottál, itt látod, mi megy jól és min érdemes még dolgozni.</string>
 </resources>

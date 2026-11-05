@@ -69,6 +69,7 @@ import org.koin.dsl.module
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.features.practice.domain.TopicScores
 
 /**
  * Platform-specific module declaration.
@@ -124,6 +125,8 @@ val sharedModule = module {
     single { TestRecorder(get(), get()) }
     // The finished topics the student may practice freely, and their tasks
     single { PracticeCatalog(get(), get()) }
+    // The weak and strong topics of the practice tab
+    single { TopicScores(get(), get()) }
 
     // Keeps the planned daily reminder in line with the profile (started by the app)
     single { ReminderSync(get(), get()) }
@@ -164,7 +167,7 @@ val sharedModule = module {
     viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get(), get()) }
     viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
     // The practice tab and its picker
-    viewModelOf(::PracticeViewModel)
+    viewModel { PracticeViewModel(get(), get()) }
     viewModel { (mode: PracticeMode) -> PracticePickerViewModel(get(), mode) }
     // A free practice round: the same round view-model with the tasks of the chosen finished topics
     viewModel(named(PRACTICE_ROUND)) { (topicIds: List<Long>, count: Int, title: String, mode: PracticeMode) ->

@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.core.presentation.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 
 // Defines the navigation routes used in the application.
 @Serializable
@@ -42,7 +43,7 @@ sealed interface Route : NavKey {
     @Serializable
     data class PracticePicker(val mistakes: Boolean = false) : Route // Fullscreen picker of the topics (finished ones, or those with mistakes) and the length of a practice round
     @Serializable
-    data class PracticeRound(val topicIds: List<Long>, val count: Int, val mistakes: Boolean = false) : Route // Fullscreen practice round of the chosen topics; with mistakes and no topic, of every mistake
+    data class PracticeRound(val topicIds: List<Long>, val count: Int, val mode: PracticeMode = PracticeMode.FREE) : Route // Fullscreen practice round: free, of the mistakes (no topic: every mistake), or of one weak topic
 
     // --- App Main UI with navbar---
     @Serializable

@@ -53,6 +53,29 @@ class PracticePlannerTest {
     }
 
     @Test
+    fun theRequiredTasksAreAlwaysThereAndTheRestFillsTheRound() {
+        repeat(20) { seed ->
+            val round = PracticePlanner.plan(required = listOf(3L, 7L), pool = pool, count = 5, random = Random(seed))
+            assertEquals(5, round.size)
+            assertEquals(round.size, round.toSet().size)
+            assertTrue(3L in round && 7L in round, "required missing in $round")
+        }
+    }
+
+    @Test
+    fun moreRequiredThanTheRoundTakesSomeOfThem() {
+        val round = PracticePlanner.plan(required = listOf(1L, 2L, 3L, 4L), pool = pool, count = 2, random = Random(1))
+        assertEquals(2, round.size)
+        assertTrue(round.all { it in 1L..4L })
+    }
+
+    @Test
+    fun aSmallTopicGivesAllItsTasks() {
+        assertEquals(setOf(1L, 2L, 3L), PracticePlanner.plan(required = listOf(2L), pool = listOf(1L, 2L, 3L), count = 30, random = Random(1)).toSet())
+        assertEquals(emptyList(), PracticePlanner.plan(required = listOf(2L), pool = listOf(1L), count = 0))
+    }
+
+    @Test
     fun theOrderIsRandomToo() {
         // the whole pool asked: the order differs from the order of the pool
         assertNotEquals(pool, PracticePlanner.plan(pool, pool.size, Random(9)))

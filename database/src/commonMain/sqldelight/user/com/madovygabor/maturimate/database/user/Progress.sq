@@ -129,6 +129,13 @@ SELECT task_id FROM user_task_progress
 WHERE user_id = :userId AND times_wrong > 0 AND correct_streak = 0
 ORDER BY task_id;
 
+-- Every answered task and its right answers in a row: more than 0 means the latest answer is right (the scores of
+-- the weak and strong topics, DECISIONS 2026-11-05).
+selectAnsweredTasks:
+SELECT task_id, correct_streak FROM user_task_progress
+WHERE user_id = :userId
+ORDER BY task_id;
+
 upsertTaskProgress:
 INSERT OR REPLACE INTO user_task_progress VALUES ?;
 

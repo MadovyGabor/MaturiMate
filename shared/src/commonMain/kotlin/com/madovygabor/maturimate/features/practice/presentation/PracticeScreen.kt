@@ -45,6 +45,20 @@ import maturimate.shared.generated.resources.mistakes_card_none
 import maturimate.shared.generated.resources.mistakes_all
 import maturimate.shared.generated.resources.mistakes_by_topic
 import org.jetbrains.compose.resources.pluralStringResource
+import androidx.compose.foundation.layout.Row
+import com.madovygabor.maturimate.core.presentation.theme.extendedColors
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppProgressBar
+import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.label
+import com.madovygabor.maturimate.features.practice.domain.ScoreSummary
+import com.madovygabor.maturimate.features.practice.domain.TopicScore
+import com.madovygabor.maturimate.features.practice.domain.TopicScores
+import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
+import maturimate.shared.generated.resources.scores_title
+import maturimate.shared.generated.resources.scores_empty
+import maturimate.shared.generated.resources.scores_weak
+import maturimate.shared.generated.resources.scores_strong
+import maturimate.shared.generated.resources.scores_right_now
+import maturimate.shared.generated.resources.scores_practice
 
 /**
  * The practice tab (docs/practice/prototype.html): the free practice card, which opens the picker, and a card
@@ -55,6 +69,7 @@ fun PracticeScreen(
     onOpenPicker: () -> Unit,
     onOpenMistakePicker: () -> Unit = {},
     onStartAllMistakes: (count: Int) -> Unit = {},
+    onPracticeTopic: (topicId: Long, count: Int) -> Unit = { _, _ -> },
     viewModel: PracticeViewModel = koinViewModel(),
 ) {
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -65,6 +80,7 @@ fun PracticeScreen(
         onRetry = viewModel::refresh,
         onOpenMistakePicker = onOpenMistakePicker,
         onStartAllMistakes = { onStartAllMistakes(PickerUiState.ALL_MISTAKES_ROUND) },
+        onPracticeTopic = { onPracticeTopic(it, PickerUiState.TOPIC_ROUND) },
     )
 }
 
@@ -75,6 +91,7 @@ fun PracticeContent(
     onRetry: () -> Unit,
     onOpenMistakePicker: () -> Unit = {},
     onStartAllMistakes: () -> Unit = {},
+    onPracticeTopic: (topicId: Long) -> Unit = {},
 ) {
     val spacing = MaterialTheme.spacing
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -96,6 +113,7 @@ fun PracticeContent(
                 is PracticeUiState.Ready -> {
                     FreePracticeCard(state.canPractice, onOpenPicker)
                     MistakeCard(state.mistakes, onStartAllMistakes, onOpenMistakePicker)
+                    ScoresCard(state.scores, onPracticeTopic)
                     ComingSoonCard()
                 }
             }
@@ -161,7 +179,77 @@ private fun MistakeCard(mistakes: Int, onAll: () -> Unit, onPick: () -> Unit) {
     }
 }
 
-/** What the tab will hold next; 9a.4 and 9a.5 replace it with their own cards. */
+/**
+ * The weak and the strong topics (9a.4): each with its subject, a bar with the percent (the number is always written,
+ * the colour only supports it) and how many of the tasks seen are right now; a weak topic has "Gyakorlás", which asks
+ * all its mistakes and fills the round with its other tasks.
+ */
+@Composable
+private fun ScoresCard(scores: ScoreSummary, onPracticeTopic: (Long) -> Unit) {
+    val spacing = MaterialTheme.spacing
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = colors.surfaceContainerLow,
+        border = BorderStroke(MaterialTheme.layout.borderThin, colors.outlineVariant),
+    ) {
+        Column(Modifier.padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+            Text(stringResource(Res.string.scores_title), modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge)
+            if (scores.isEmpty) {
+                Text(
+                    stringResource(Res.string.scores_empty, TopicScores.MIN_SEEN),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
+                )
+                return@Column
+            }
+            if (scores.weak.isNotEmpty()) {
+                GroupTitle(stringResource(Res.string.scores_weak))
+                scores.weak.forEach { ScoreRow(it, weak = true, onPractice = { onPracticeTopic(it.topic.id) }) }
+            }
+            if (scores.strong.isNotEmpty()) {
+                GroupTitle(stringResource(Res.string.scores_strong))
+                scores.strong.forEach { ScoreRow(it, weak = false, onPractice = {}) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroupTitle(text: String) {
+    Text(text.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+@Composable
+private fun ScoreRow(score: TopicScore, weak: Boolean, onPractice: () -> Unit) {
+    val spacing = MaterialTheme.spacing
+    val colors = MaterialTheme.colorScheme
+    val subject = CatalogSubject.byId(score.subject.id)?.let { stringResource(it.label) } ?: score.subject.nameHu
+    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = colors.surfaceContainerHigh) {
+        Column(Modifier.padding(horizontal = spacing.space4, vertical = spacing.space3), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(score.topic.title, style = MaterialTheme.typography.titleSmall)
+                    Text(subject, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                }
+                Text("${score.percent}%", style = MaterialTheme.typography.titleMedium)
+            }
+            AppProgressBar(score.percent / 100f, color = if (weak) colors.error else MaterialTheme.extendedColors.success)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(Res.string.scores_right_now, score.right, score.seen),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                )
+                if (weak) AppButton(stringResource(Res.string.scores_practice), onPractice, variant = AppButtonVariant.TONAL, compact = true)
+            }
+        }
+    }
+}
+
+/** What the tab will hold next; 9a.5 replaces it with its own card. */
 @Composable
 private fun ComingSoonCard() {
     val spacing = MaterialTheme.spacing

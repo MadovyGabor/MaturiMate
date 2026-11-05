@@ -12,9 +12,14 @@ import com.madovygabor.maturimate.features.learning.domain.TestRecorder
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import kotlin.random.Random
+import kotlinx.serialization.Serializable
 
-/** What a practice round draws from: the finished topics, or the mistakes. */
-enum class PracticeMode { FREE, MISTAKES }
+/**
+ * What a practice round draws from: the finished topics, the mistakes, or one topic (the practice of a weak
+ * topic: every mistake of it, filled up with its other tasks, finished or not).
+ */
+@Serializable
+enum class PracticeMode { FREE, MISTAKES, TOPIC }
 
 /**
  * A practice round of [count] random tasks ([PracticePlanner]), recorded as an attempt that belongs to no unit. No
@@ -40,12 +45,19 @@ class PracticeRoundSource(
     override val kind = RoundKind.PRACTICE
 
     override suspend fun start(random: Random): RoundStart {
-        val pool = when {
-            mode == PracticeMode.FREE -> catalog.pool(topicIds)
-            topicIds.isEmpty() -> catalog.allMistakes()
-            else -> catalog.mistakePool(topicIds)
+        val ids = when (mode) {
+            PracticeMode.FREE -> PracticePlanner.plan(catalog.pool(topicIds).dataOr { return RoundStart.Failed }, count, random)
+            PracticeMode.MISTAKES -> {
+                val pool = if (topicIds.isEmpty()) catalog.allMistakes() else catalog.mistakePool(topicIds)
+                PracticePlanner.plan(pool.dataOr { return RoundStart.Failed }, count, random)
+            }
+            PracticeMode.TOPIC -> PracticePlanner.plan(
+                required = catalog.mistakePool(topicIds).dataOr { return RoundStart.Failed },
+                pool = catalog.topicPool(topicIds).dataOr { return RoundStart.Failed },
+                count = count,
+                random = random,
+            )
         }
-        val ids = PracticePlanner.plan((pool as? OperationResult.Success)?.data ?: return RoundStart.Failed, count, random)
         if (ids.isEmpty()) return if (mode == PracticeMode.MISTAKES) RoundStart.NoMistakes else RoundStart.Empty
         val tasks = mutableListOf<Task>()
         for (id in ids) tasks += (content.task(id) as? OperationResult.Success)?.data ?: return RoundStart.Failed
@@ -53,6 +65,9 @@ class PracticeRoundSource(
         val attemptId = (recorder.startPractice(type) as? OperationResult.Success)?.data ?: return RoundStart.Failed
         return RoundStart.Ready(title, tasks, attemptId)
     }
+
+    private inline fun <T> OperationResult<T, *>.dataOr(failed: () -> Nothing): T =
+        (this as? OperationResult.Success)?.data ?: failed()
 
     override suspend fun answer(attemptId: Long, task: Task, answer: Answer, result: AnswerResult) {
         recorder.answer(attemptId, task, answer, result)

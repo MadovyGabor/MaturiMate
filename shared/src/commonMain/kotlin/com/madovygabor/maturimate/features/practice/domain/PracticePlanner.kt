@@ -19,4 +19,16 @@ object PracticePlanner {
         if (count <= 0) return emptyList()
         return pool.distinct().shuffled(random).take(count)
     }
+
+    /**
+     * Up to [count] different ids: every one of [required] first (at random when there are more than [count]), then
+     * random ones of [pool] to fill the round; the whole round in random order. The practice of a weak topic asks all
+     * its mistakes and fills up with its other tasks.
+     */
+    fun plan(required: List<Long>, pool: List<Long>, count: Int, random: Random = Random.Default): List<Long> {
+        if (count <= 0) return emptyList()
+        val must = required.distinct().shuffled(random).take(count)
+        val rest = pool.distinct().filterNot { it in must }.shuffled(random).take(count - must.size)
+        return (must + rest).shuffled(random)
+    }
 }

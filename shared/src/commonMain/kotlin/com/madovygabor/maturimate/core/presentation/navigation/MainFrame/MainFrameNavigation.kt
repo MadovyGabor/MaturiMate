@@ -37,6 +37,8 @@ fun MainFrameNavigation(
     onOpenPracticePicker: (mistakes: Boolean) -> Unit = {},
     /** Starts a round of every mistake (at most the given number of tasks), full screen. */
     onStartMistakes: (count: Int) -> Unit = {},
+    /** Starts the practice of a weak topic (its mistakes and its other tasks, at most the given number), full screen. */
+    onPracticeTopic: (topicId: Long, count: Int) -> Unit = { _, _ -> },
 ) {
 
     // Remember the navigation state with the starting route and top-level routes
@@ -98,6 +100,7 @@ fun MainFrameNavigation(
                                 onOpenPicker = { onOpenPracticePicker(false) },
                                 onOpenMistakePicker = { onOpenPracticePicker(true) },
                                 onStartAllMistakes = onStartMistakes,
+                                onPracticeTopic = onPracticeTopic,
                             )
                         }
                         // Profile feature navigation: the profile, the full history, the settings

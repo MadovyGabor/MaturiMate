@@ -274,6 +274,27 @@ class PracticeRoundViewModelTest {
         assertIs<TestUiState.NoMistakes>(mistakes(topics = listOf(12)).ready())
     }
 
+    private fun weakTopic(topic: Long, count: Int = 30, seed: Int = 1) =
+        TestSessionViewModel(PracticeRoundSource(listOf(topic), count, "Szabad gyakorlás", catalog, content, recorder, PracticeMode.TOPIC), Random(seed))
+
+    @Test
+    fun theRoundOfAWeakTopicAsksAllItsMistakesAndFillsUpWithItsOtherTasks() = runBlocking<Unit> {
+        testRound(200L to "B", 201L to "A", 202L to "B")
+
+        repeat(10) { seed ->
+            val ids = (weakTopic(11, count = 3, seed = seed).ready() as TestUiState.Ready).tasks.map { it.id }
+            assertEquals(3, ids.size)
+            assertTrue(200L in ids && 202L in ids, "a mistake is missing in $ids")
+        }
+        settled { attempts().count { it.type == AttemptType.FREE_PRACTICE } >= 1 }
+    }
+
+    @Test
+    fun theRoundOfATopicNotFinishedStillAsksItsTasks() = runBlocking<Unit> {
+        // topic 12 is not finished; its practice asks both of its tasks
+        assertEquals(setOf(210L, 211L), (weakTopic(12).ready() as TestUiState.Ready).tasks.map { it.id }.toSet())
+    }
+
     // The app's own module builds the practice view-model from the parameters the screen passes.
     @Test
     fun theAppModuleBuildsThePracticeRound() = runBlocking<Unit> {

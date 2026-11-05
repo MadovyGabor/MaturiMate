@@ -435,7 +435,7 @@
     <string name="nav_subjects">Predmety</string>
     <string name="nav_practice">Cvičenie</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_text">Čoskoro tu budú tvoje slabé a silné témy a zopakuješ si, čo si dlho nevidel.</string>
+    <string name="practice_soon_text">Čoskoro si tu zopakuješ, čo si dlho nevidel.</string>
     <!-- Practice round (9a.2) -->
     <string name="practice_free_title">Voľné cvičenie</string>
     <string name="practice_result_title">Kolo je hotové!</string>
@@ -503,4 +503,11 @@
         <item quantity="few">%1$d chybné úlohy</item>
         <item quantity="other">%1$d chybných úloh</item>
     </plurals>
+    <!-- Weak and strong topics (9a.4) -->
+    <string name="scores_title">Silné a slabé témy</string>
+    <string name="scores_weak">Slabé témy</string>
+    <string name="scores_strong">Silné témy</string>
+    <string name="scores_right_now">Teraz správne: %1$d / %2$d</string>
+    <string name="scores_practice">Precvičiť</string>
+    <string name="scores_empty">Keď v téme vyriešiš aspoň %1$d úloh, uvidíš tu, čo ti ide dobre a na čom ešte popracovať.</string>
 </resources>

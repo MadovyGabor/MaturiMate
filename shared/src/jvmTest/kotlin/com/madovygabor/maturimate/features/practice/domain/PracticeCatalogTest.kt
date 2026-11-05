@@ -196,6 +196,14 @@ class PracticeCatalogTest {
     }
 
     @Test
+    fun theTasksOfOneTopicCountFinishedOrNot() = runBlocking {
+        // nothing finished: the pool of a topic still gives its tasks (once, without the switched-off 103)
+        assertEquals(setOf(100L, 101L, 102L), catalog().topicPool(listOf(11)).data().toSet())
+        assertEquals(setOf(100L, 101L, 102L, 110L), catalog().topicPool(listOf(10)).data().toSet())
+        assertEquals(emptyList(), catalog().topicPool(listOf(13)).data())
+    }
+
+    @Test
     fun aHiddenTopicAddsNothingEvenWhenFinished() = runBlocking {
         // the test 81 of the hidden topic 13 is done, so the topic would be finished if it were shown
         val catalog = catalog(50, 51, 52, 60, 61, 81)

@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import com.madovygabor.maturimate.features.learning.domain.model.AnsweredTask
 
 /**
  * SQLDelight implementation of [ProgressRepository] over the user database.
@@ -93,6 +94,10 @@ class ProgressRepositoryImpl(
 
     override suspend fun dueTasks(now: Instant): OperationResult<List<TaskProgress>, LearningError> = run {
         progress.selectDueTasks(userId(), now.toEpochMilliseconds()).executeAsList().map { it.toDomain() }
+    }
+
+    override suspend fun answeredTasks(): OperationResult<List<AnsweredTask>, LearningError> = run {
+        progress.selectAnsweredTasks(userId()).executeAsList().map { AnsweredTask(it.task_id, it.correct_streak > 0) }
     }
 
     override suspend fun mistakeTaskIds(): OperationResult<List<Long>, LearningError> = run {

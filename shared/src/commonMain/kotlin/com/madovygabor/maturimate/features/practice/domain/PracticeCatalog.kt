@@ -77,6 +77,17 @@ class PracticeCatalog(
         tasks.toList()
     }
 
+    /**
+     * The active tasks of the tests of the topics in [topicIds] (a parent stands for the topics below it), **finished
+     * or not**, each once: what the practice of a weak topic draws from besides its mistakes.
+     */
+    suspend fun topicPool(topicIds: Collection<Long>): OperationResult<List<Long>, LearningError> = guarded {
+        val published = publishedTopics()
+        val tasks = LinkedHashSet<Long>()
+        topicIds.flatMap { leavesOf(it, published) }.distinct().forEach { tasks += poolOf(content.units(it).orThrow()) }
+        tasks.toList()
+    }
+
     /** Every mistake of the published content, each once (for "Összes hiba" and the counts). */
     suspend fun allMistakes(): OperationResult<List<Long>, LearningError> = guarded {
         mistakesByTopic(publishedTopics()).values.flatten().distinct()
@@ -101,19 +112,8 @@ class PracticeCatalog(
         return byTopic
     }
 
-    /**
-     * Every published topic, found by walking the tree from the subjects. (`ContentRepository.topic(id)` also
-     * returns a topic that is not published, so it cannot tell.)
-     */
-    private suspend fun publishedTopics(): Set<Long> {
-        val found = HashSet<Long>()
-        suspend fun walk(topic: Topic) {
-            found += topic.id
-            content.childTopics(topic.id).orThrow().forEach { walk(it) }
-        }
-        for (subject in content.subjects().orThrow()) content.rootTopics(subject.id).orThrow().forEach { walk(it) }
-        return found
-    }
+    /** Every published topic (see [publishedTree]). */
+    private suspend fun publishedTopics(): Set<Long> = content.publishedTree().topics.keys
 
     /**
      * The different ids of the active tasks of the finished topics in [topicIds]. A parent id stands for the

@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.madovygabor.maturimate.features.practice.domain.PracticeMode
+import com.madovygabor.maturimate.features.practice.domain.ScoreSummary
+import com.madovygabor.maturimate.features.practice.domain.TopicScores
 
 sealed interface PracticeUiState {
     data object Loading : PracticeUiState
@@ -23,11 +25,14 @@ sealed interface PracticeUiState {
      * [canPractice]: at least one finished topic has tasks, so the free practice can start. [mistakes]: how many
      * tasks were answered wrong last (the mistake practice).
      */
-    data class Ready(val canPractice: Boolean, val mistakes: Int = 0) : PracticeUiState
+    data class Ready(val canPractice: Boolean, val mistakes: Int = 0, val scores: ScoreSummary = ScoreSummary.EMPTY) : PracticeUiState
 }
 
-/** The practice tab. It reads again whenever the tab is shown, so a topic finished a minute ago counts. */
-class PracticeViewModel(private val catalog: PracticeCatalog) : ViewModel() {
+/**
+ * The practice tab: whether the free practice can start, the number of mistakes, the weak and strong topics. It reads
+ * again whenever the tab is shown, so a topic finished a minute ago counts.
+ */
+class PracticeViewModel(private val catalog: PracticeCatalog, private val topicScores: TopicScores? = null) : ViewModel() {
 
     private val _state = MutableStateFlow<PracticeUiState>(PracticeUiState.Loading)
     val state: StateFlow<PracticeUiState> = _state.asStateFlow()
@@ -36,8 +41,9 @@ class PracticeViewModel(private val catalog: PracticeCatalog) : ViewModel() {
         viewModelScope.launch {
             val shown = _state.value
             val mistakes = (catalog.allMistakes() as? OperationResult.Success)?.data?.size ?: 0
+            val scores = (topicScores?.load() as? OperationResult.Success)?.data ?: ScoreSummary.EMPTY
             _state.value = when (val result = catalog.subjects()) {
-                is OperationResult.Success -> PracticeUiState.Ready(result.data.any { subject -> subject.parts.any { it.leafIds.isNotEmpty() } }, mistakes)
+                is OperationResult.Success -> PracticeUiState.Ready(result.data.any { subject -> subject.parts.any { it.leafIds.isNotEmpty() } }, mistakes, scores)
                 // keep what is shown when a later read fails
                 is OperationResult.Error -> if (shown is PracticeUiState.Ready) shown else PracticeUiState.Failed
             }
@@ -107,6 +113,9 @@ sealed interface PickerUiState {
 
         /** The most tasks "Összes hiba" asks at once; the picker allows other lengths (decided 2026-11-05). */
         const val ALL_MISTAKES_ROUND = 20
+
+        /** The most tasks the practice of a weak topic asks: its mistakes, filled up with its other tasks (decided 2026-11-05). */
+        const val TOPIC_ROUND = 30
     }
 }
 

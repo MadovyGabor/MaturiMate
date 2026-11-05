@@ -25,6 +25,7 @@ import com.madovygabor.maturimate.features.practice.presentation.PracticePickerS
 import com.madovygabor.maturimate.features.practice.presentation.PracticeRoundScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 
 // Root navigation composable that manages top-level navigation routes.
 @Composable
@@ -71,7 +72,8 @@ fun NavigationRoute(
                 MainFrameNavigation(mainTab = mainTab, profilePage = profilePage, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
                     onOpenTest = { rootBackStack.add(Route.Test(it)) },
                     onOpenPracticePicker = { mistakes -> rootBackStack.add(Route.PracticePicker(mistakes)) },
-                    onStartMistakes = { count -> rootBackStack.add(Route.PracticeRound(emptyList(), count, mistakes = true)) },
+                    onStartMistakes = { count -> rootBackStack.add(Route.PracticeRound(emptyList(), count, PracticeMode.MISTAKES)) },
+                    onPracticeTopic = { topicId, count -> rootBackStack.add(Route.PracticeRound(listOf(topicId), count, PracticeMode.TOPIC)) },
                 )
             }
 
@@ -92,7 +94,7 @@ fun NavigationRoute(
                         onBack = { rootBackStack.removeLastOrNull() },
                         onStart = { start ->
                             rootBackStack.removeLastOrNull()
-                            rootBackStack.add(Route.PracticeRound(start.topicIds, start.count, route.mistakes))
+                            rootBackStack.add(Route.PracticeRound(start.topicIds, start.count, if (route.mistakes) PracticeMode.MISTAKES else PracticeMode.FREE))
                         },
                     )
                 }
@@ -100,7 +102,7 @@ fun NavigationRoute(
             // A free practice round of the chosen topics, without the navigation bar
             entry<Route.PracticeRound> { route ->
                 BottomInsetBox {
-                    PracticeRoundScreen(topicIds = route.topicIds, count = route.count, mistakes = route.mistakes, onClose = { rootBackStack.removeLastOrNull() })
+                    PracticeRoundScreen(topicIds = route.topicIds, count = route.count, mode = route.mode, onClose = { rootBackStack.removeLastOrNull() })
                 }
             }
             // A lesson, one page at a time, without the navigation bar
