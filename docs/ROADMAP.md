@@ -200,13 +200,16 @@ The four tabs are built here; the practice tab is only a "Hamarosan" screen unti
 
 ## Milestone 9a: Practice
 
-Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 11), because the "last seen" column of 9a.4 must be in the user database before it is reviewed (11.1). The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
+Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 11), because the "last seen" column of 9a.5 must be in the user database before it is reviewed (11.1). The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
 
-* [ ] **9a.1. Practice tab, design:** a prototype of: the weakest and the strongest subjects and topics, the mistake practice, the review of what was not seen for a long time.
-* [ ] **9a.2. Mistake practice:** a separate feature in which the student practices the tasks they got wrong: all of them, those of one subject or those of one topic. It is built on the `attempt_answer` rows that every test round records from step 7.5 on and on the `REVIEW` attempts (a subject level may need a small addition to the attempt scope). *Replaces the earlier "error vault" line (2026-11-03).*
-* [ ] **9a.3. Weak and strong topics:** from `attempt_answer`, which subjects and topics go best and which worst, and a button that starts practice on a weak topic. *Was 9.4 (statistics).*
-* [ ] **9a.4. Review of old material:** lessons and topics that the student has not looked at for a long time, with a short review test; the oldest first, per subject. It needs a "last seen" date on the unit progress (a small migration in the user database).
-* [ ] **9a.5. Practice tab:** the screen from the approved prototype with 9a.2 to 9a.4 in it, replacing the "Hamarosan" screen.
+*Updated 2026-11-05: nothing is locked in the beta; plain practice (9a.2) is new and stays free for good, see [DECISIONS](DECISIONS.md). The old 9a.2 to 9a.5 are now 9a.3 to 9a.6.*
+
+* [x] **9a.1. Practice tab, design:** a prototype (`docs/practice/prototype.html`) of: the plain practice (pick finished units, number of questions), the weakest and the strongest subjects and topics, the mistake practice, the review of what was not seen for a long time. No lock is shown in the beta.
+* [ ] **9a.2. Plain practice:** the student picks from the **finished** units (a subject, a big part, a topic or several linked topics) and the number of questions; random tasks from them, no statistics. Answers are recorded as in every round.
+* [ ] **9a.3. Mistake practice:** a separate feature in which the student practices the tasks they got wrong: all of them, those of one subject or those of one topic. It is built on the `attempt_answer` rows that every test round records from step 7.5 on and on the `REVIEW` attempts (a subject level may need a small addition to the attempt scope). *Replaces the earlier "error vault" line (2026-11-03).*
+* [ ] **9a.4. Weak and strong topics:** from `attempt_answer`, which subjects and topics go best and which worst, and a button that starts practice on a weak topic. *Was 9.4 (statistics).*
+* [ ] **9a.5. Review of old material:** lessons and topics that the student has not looked at for a long time, with a short review test; the oldest first, per subject. It needs a "last seen" date on the unit progress (a small migration in the user database).
+* [ ] **9a.6. Practice tab:** the screen from the approved prototype with 9a.2 to 9a.5 in it, replacing the "Hamarosan" screen.
 
 ---
 
