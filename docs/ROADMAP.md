@@ -198,7 +198,7 @@ The four tabs are built here; the practice tab is only a "Hamarosan" screen unti
 
 ---
 
-## Milestone 9a: Practice
+## Milestone 9a: Practice *(done on 2026-11-05)*
 
 Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 11), because the "last seen" column of 9a.5 had to be in the user database before it is reviewed (11.1). *(9a.5 needed no column in the end: "last seen" is derived from what is already stored.)* The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
 
@@ -209,7 +209,7 @@ Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone
 * [x] **9a.3. Mistake practice:** a separate feature in which the student practices the tasks they got wrong: all of them, those of one subject or those of one topic. It is built on the `attempt_answer` rows that every test round records from step 7.5 on and on the `REVIEW` attempts (a subject level may need a small addition to the attempt scope). *Replaces the earlier "error vault" line (2026-11-03).* *Done on 2026-11-05: a mistake is a task whose latest answer is wrong (read from the task progress); the "Hibagyakorlás" card of the practice tab ("Összes hiba", at most 20 at once, and "Tantárgy vagy téma", the picker in mistake mode), mistakes of unfinished topics included, "Nincs több hibád" when none is left, and the home card, which opens the practice tab.*
 * [x] **9a.4. Weak and strong topics:** from `attempt_answer`, which subjects and topics go best and which worst, and a button that starts practice on a weak topic. *Was 9.4 (statistics).* *Done on 2026-11-05: the "Erős és gyenge témák" card of the practice tab, topics only (each card names its subject), at most three weak (below 80%) and three strong; a topic gets a score from 5 tasks seen (for now, see 12.7); "Gyakorlás" on a weak topic asks all its mistakes and fills the round with its other tasks, up to 30.*
 * [x] **9a.5. Review of old material:** lessons and topics that the student has not looked at for a long time, with a short review test; the oldest first, per subject. It needs a "last seen" date on the unit progress (a small migration in the user database). *Done on 2026-11-05 with no migration: "last seen" is the newest of what is already stored (a unit finished, a lesson read to the end again, any answer to the topic's tasks); the "Régen látott anyag" card (the oldest first, at most 5, each with its subject) and "Átismétlés", a round of 5 tasks of the topic recorded as `REVIEW`; due after 1 day for the beta (see 12.7).*
-* [ ] **9a.6. Practice tab:** the screen from the approved prototype with 9a.2 to 9a.5 in it, replacing the "Hamarosan" screen.
+* [x] **9a.6. Practice tab:** the screen from the approved prototype with 9a.2 to 9a.5 in it, replacing the "Hamarosan" screen. *Done on 2026-11-05: the four cards (free practice, mistakes, weak and strong topics, old material); on a tablet and a desktop in two columns as in the prototype (the free practice and the mistakes on the left, the scores and the old material on the right); the prototype's notes brought in line with what was decided during 9a.*
 
 ---
 

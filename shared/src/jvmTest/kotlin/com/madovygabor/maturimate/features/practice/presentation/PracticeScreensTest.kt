@@ -33,6 +33,10 @@ import maturimate.shared.generated.resources.practice_free_start
 import maturimate.shared.generated.resources.practice_free_text
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import kotlin.test.assertTrue
+import maturimate.shared.generated.resources.practice_free_title
+import maturimate.shared.generated.resources.scores_title
 import java.util.Locale
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -227,6 +231,31 @@ class PracticeScreensTest {
 
         onNodeWithText("Pred 38 dňami").assertIsDisplayed()
         onNodeWithText("Zopakovať").assertIsDisplayed()
+    }
+
+    /** The free practice card and the scores card, by their titles. */
+    private fun ComposeUiTest.cardBounds() =
+        onNodeWithText(text(Res.string.practice_free_title)).getUnclippedBoundsInRoot() to
+            onNodeWithText(text(Res.string.scores_title)).getUnclippedBoundsInRoot()
+
+    @Test
+    fun onATabletTheCardsStandInTwoColumns() = runDesktopComposeUiTest(900, 1100) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(true, 3), onOpenPicker = {}, onRetry = {}) } }
+
+        val (free, scores) = cardBounds()
+        // side by side: the scores to the right of the free practice, at the same height
+        assertTrue(scores.left > free.right, "scores at ${scores.left}, free practice ends at ${free.right}")
+        assertEquals(free.top, scores.top)
+    }
+
+    @Test
+    fun onAPhoneTheCardsStandInOneColumn() = runDesktopComposeUiTest(412, 2000) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(true, 3), onOpenPicker = {}, onRetry = {}) } }
+
+        val (free, scores) = cardBounds()
+        assertTrue(scores.top > free.bottom, "scores at ${scores.top}, free practice ends at ${free.bottom}")
     }
 
     @Test

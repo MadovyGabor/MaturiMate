@@ -2,7 +2,7 @@ package com.madovygabor.maturimate.features.practice.presentation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -100,10 +100,13 @@ fun PracticeContent(
     onReviewTopic: (topicId: Long) -> Unit = {},
 ) {
     val spacing = MaterialTheme.spacing
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    val layout = MaterialTheme.layout
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        // tablet and desktop: two columns as in the prototype (like the profile); a phone keeps one
+        val wide = maxWidth >= layout.breakpointMedium
         Column(
             Modifier
-                .widthIn(max = MaterialTheme.layout.contentMaxWidth)
+                .widthIn(max = if (wide) layout.contentMaxWidth * 2 else layout.contentMaxWidth)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(spacing.space4),
@@ -116,7 +119,19 @@ fun PracticeContent(
             when (state) {
                 PracticeUiState.Loading -> Unit
                 PracticeUiState.Failed -> LoadError(onRetry)
-                is PracticeUiState.Ready -> {
+                is PracticeUiState.Ready -> if (wide) {
+                    // the free practice and the mistakes on the left, the topic scores and the old material on the right
+                    Row(horizontalArrangement = Arrangement.spacedBy(spacing.space6)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
+                            FreePracticeCard(state.canPractice, onOpenPicker)
+                            MistakeCard(state.mistakes, onStartAllMistakes, onOpenMistakePicker)
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
+                            ScoresCard(state.scores, onPracticeTopic)
+                            ReviewCard(state.review, onReviewTopic)
+                        }
+                    }
+                } else {
                     FreePracticeCard(state.canPractice, onOpenPicker)
                     MistakeCard(state.mistakes, onStartAllMistakes, onOpenMistakePicker)
                     ScoresCard(state.scores, onPracticeTopic)
