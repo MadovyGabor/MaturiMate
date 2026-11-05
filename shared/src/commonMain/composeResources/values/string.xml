@@ -435,7 +435,6 @@
     <string name="nav_subjects">Predmety</string>
     <string name="nav_practice">Cvičenie</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_text">Čoskoro si tu zopakuješ, čo si dlho nevidel.</string>
     <!-- Practice round (9a.2) -->
     <string name="practice_free_title">Voľné cvičenie</string>
     <string name="practice_result_title">Kolo je hotové!</string>
@@ -510,4 +509,14 @@
     <string name="scores_right_now">Teraz správne: %1$d / %2$d</string>
     <string name="scores_practice">Precvičiť</string>
     <string name="scores_empty">Keď v téme vyriešiš aspoň %1$d úloh, uvidíš tu, čo ti ide dobre a na čom ešte popracovať.</string>
+    <!-- Review of old material (9a.5) -->
+    <string name="review_title">Dávno videná látka</string>
+    <string name="review_lead">Tieto hotové témy si dlho nevidel. Najstaršia je prvá.</string>
+    <string name="review_button">Zopakovať</string>
+    <string name="review_round_title">Opakovanie</string>
+    <plurals name="review_empty">
+        <item quantity="one">Keď si hotovú tému nevidel aspoň %1$d deň, ponúkneme ti ju tu na zopakovanie.</item>
+        <item quantity="few">Keď si hotovú tému nevidel aspoň %1$d dni, ponúkneme ti ju tu na zopakovanie.</item>
+        <item quantity="other">Keď si hotovú tému nevidel aspoň %1$d dní, ponúkneme ti ju tu na zopakovanie.</item>
+    </plurals>
 </resources>

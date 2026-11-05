@@ -96,6 +96,12 @@ class ProgressRepositoryImpl(
         progress.selectDueTasks(userId(), now.toEpochMilliseconds()).executeAsList().map { it.toDomain() }
     }
 
+    override suspend fun lastAnswerTimes(): OperationResult<Map<Long, Instant>, LearningError> = run {
+        progress.selectLastAnswerTimes(userId()).executeAsList()
+            .mapNotNull { row -> row.last_at?.let { row.task_id to Instant.fromEpochMilliseconds(it) } }
+            .toMap()
+    }
+
     override suspend fun answeredTasks(): OperationResult<List<AnsweredTask>, LearningError> = run {
         progress.selectAnsweredTasks(userId()).executeAsList().map { AnsweredTask(it.task_id, it.correct_streak > 0) }
     }

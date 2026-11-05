@@ -16,6 +16,8 @@ import kotlinx.coroutines.launch
 import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 import com.madovygabor.maturimate.features.practice.domain.ScoreSummary
 import com.madovygabor.maturimate.features.practice.domain.TopicScores
+import com.madovygabor.maturimate.features.practice.domain.ReviewItem
+import com.madovygabor.maturimate.features.practice.domain.ReviewList
 
 sealed interface PracticeUiState {
     data object Loading : PracticeUiState
@@ -25,14 +27,24 @@ sealed interface PracticeUiState {
      * [canPractice]: at least one finished topic has tasks, so the free practice can start. [mistakes]: how many
      * tasks were answered wrong last (the mistake practice).
      */
-    data class Ready(val canPractice: Boolean, val mistakes: Int = 0, val scores: ScoreSummary = ScoreSummary.EMPTY) : PracticeUiState
+    data class Ready(
+        val canPractice: Boolean,
+        val mistakes: Int = 0,
+        val scores: ScoreSummary = ScoreSummary.EMPTY,
+        /** The finished topics not seen for a long time, the oldest first. */
+        val review: List<ReviewItem> = emptyList(),
+    ) : PracticeUiState
 }
 
 /**
  * The practice tab: whether the free practice can start, the number of mistakes, the weak and strong topics. It reads
  * again whenever the tab is shown, so a topic finished a minute ago counts.
  */
-class PracticeViewModel(private val catalog: PracticeCatalog, private val topicScores: TopicScores? = null) : ViewModel() {
+class PracticeViewModel(
+    private val catalog: PracticeCatalog,
+    private val topicScores: TopicScores? = null,
+    private val reviewList: ReviewList? = null,
+) : ViewModel() {
 
     private val _state = MutableStateFlow<PracticeUiState>(PracticeUiState.Loading)
     val state: StateFlow<PracticeUiState> = _state.asStateFlow()
@@ -42,8 +54,9 @@ class PracticeViewModel(private val catalog: PracticeCatalog, private val topicS
             val shown = _state.value
             val mistakes = (catalog.allMistakes() as? OperationResult.Success)?.data?.size ?: 0
             val scores = (topicScores?.load() as? OperationResult.Success)?.data ?: ScoreSummary.EMPTY
+            val review = (reviewList?.load() as? OperationResult.Success)?.data.orEmpty()
             _state.value = when (val result = catalog.subjects()) {
-                is OperationResult.Success -> PracticeUiState.Ready(result.data.any { subject -> subject.parts.any { it.leafIds.isNotEmpty() } }, mistakes, scores)
+                is OperationResult.Success -> PracticeUiState.Ready(result.data.any { subject -> subject.parts.any { it.leafIds.isNotEmpty() } }, mistakes, scores, review)
                 // keep what is shown when a later read fails
                 is OperationResult.Error -> if (shown is PracticeUiState.Ready) shown else PracticeUiState.Failed
             }

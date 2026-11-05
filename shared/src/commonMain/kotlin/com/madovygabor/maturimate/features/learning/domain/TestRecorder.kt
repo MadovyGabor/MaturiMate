@@ -64,6 +64,15 @@ class TestRecorder(
         return progress.startAttempt(type, topicId = null, learningUnitId = null, startedAt = now())
     }
 
+    /**
+     * Starts a review round of the finished topic [topicId] (`REVIEW`, the attempt has the topic); returns the id of
+     * the attempt. It is closed like practice ([finishPractice], [abandon]) and never marks a unit as done.
+     */
+    suspend fun startReview(topicId: Long): OperationResult<Long, LearningError> {
+        clock = StudyClock(now = now)
+        return progress.startAttempt(AttemptType.REVIEW, topicId = topicId, learningUnitId = null, startedAt = now())
+    }
+
     /** Records the answer to [task] and counts it in the progress of the task. */
     suspend fun answer(attemptId: Long, task: Task, answer: Answer, result: AnswerResult): RoundEntry {
         val entry = RoundEntry(task, answer, result, earnedPoints(task, result), task.maxPoints)

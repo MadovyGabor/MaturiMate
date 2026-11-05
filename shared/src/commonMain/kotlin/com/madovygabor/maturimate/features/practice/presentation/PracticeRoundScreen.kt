@@ -11,6 +11,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
+import maturimate.shared.generated.resources.review_round_title
 
 /** The Koin name of the view-model of a free practice round (the same class as a test round, another source). */
 const val PRACTICE_ROUND = "practiceRound"
@@ -22,7 +23,13 @@ const val PRACTICE_ROUND = "practiceRound"
  */
 @Composable
 fun PracticeRoundScreen(topicIds: List<Long>, count: Int, mode: PracticeMode, onClose: () -> Unit) {
-    val title = stringResource(if (mode == PracticeMode.MISTAKES) Res.string.practice_mistakes_title else Res.string.practice_free_title)
+    val title = stringResource(
+        when (mode) {
+            PracticeMode.MISTAKES -> Res.string.practice_mistakes_title
+            PracticeMode.REVIEW -> Res.string.review_round_title
+            else -> Res.string.practice_free_title
+        }
+    )
     val viewModel: TestSessionViewModel = koinViewModel(
         qualifier = named(PRACTICE_ROUND),
         key = "practice$mode${topicIds.joinToString(",")}x$count",

@@ -129,6 +129,12 @@ SELECT task_id FROM user_task_progress
 WHERE user_id = :userId AND times_wrong > 0 AND correct_streak = 0
 ORDER BY task_id;
 
+-- The newest answer of every task answered, in any round: part of "last seen" of a topic (review of old material).
+selectLastAnswerTimes:
+SELECT task_id, MAX(answered_at) AS last_at FROM attempt_answer
+WHERE user_id = :userId
+GROUP BY task_id;
+
 -- Every answered task and its right answers in a row: more than 0 means the latest answer is right (the scores of
 -- the weak and strong topics, DECISIONS 2026-11-05).
 selectAnsweredTasks:

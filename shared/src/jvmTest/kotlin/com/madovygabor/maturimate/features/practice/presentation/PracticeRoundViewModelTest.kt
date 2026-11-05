@@ -295,6 +295,24 @@ class PracticeRoundViewModelTest {
         assertEquals(setOf(210L, 211L), (weakTopic(12).ready() as TestUiState.Ready).tasks.map { it.id }.toSet())
     }
 
+    @Test
+    fun aReviewIsAShortRoundOfTheTopicRecordedWithTheTopic() = runBlocking<Unit> {
+        val viewModel = TestSessionViewModel(PracticeRoundSource(listOf(11), 5, "Átismétlés", catalog, content, recorder, PracticeMode.REVIEW), Random(1))
+        val state = viewModel.ready()
+        assertIs<TestUiState.Ready>(state)
+        assertEquals(5, state.tasks.size)
+        assertTrue(state.tasks.all { it.id in 200L..205L })
+        repeat(5) { viewModel.answerRight(); viewModel.next() }
+
+        settled { attempts().singleOrNull()?.status == AttemptStatus.FINISHED }
+        val attempt = attempts().single()
+        assertEquals(AttemptType.REVIEW, attempt.type)
+        assertEquals(11L, attempt.topicId)
+        assertEquals(null, attempt.learningUnitId)
+        // no unit is touched: the two finished ones stay, nothing is added
+        assertEquals(setOf(50L, 51L), progress.unitProgress().data().map { it.learningUnitId }.toSet())
+    }
+
     // The app's own module builds the practice view-model from the parameters the screen passes.
     @Test
     fun theAppModuleBuildsThePracticeRound() = runBlocking<Unit> {

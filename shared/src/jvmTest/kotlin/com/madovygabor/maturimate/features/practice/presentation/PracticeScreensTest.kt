@@ -31,7 +31,6 @@ import maturimate.shared.generated.resources.picker_pick_hint
 import maturimate.shared.generated.resources.practice_free_none
 import maturimate.shared.generated.resources.practice_free_start
 import maturimate.shared.generated.resources.practice_free_text
-import maturimate.shared.generated.resources.practice_soon_text
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import java.util.Locale
@@ -39,6 +38,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import maturimate.shared.generated.resources.scores_practice
+import maturimate.shared.generated.resources.review_title
 
 /** The practice tab, the picker and its tick-box rows, drawn from hand-built states. */
 @OptIn(ExperimentalTestApi::class)
@@ -94,7 +94,7 @@ class PracticeScreensTest {
         setContent { AppTheme { PracticeContent(PracticeUiState.Ready(canPractice = true), onOpenPicker = { opened++ }, onRetry = {}) } }
 
         onNodeWithText(text(Res.string.practice_free_text)).assertIsDisplayed()
-        onNodeWithText(text(Res.string.practice_soon_text)).assertIsDisplayed()
+        onNodeWithText(text(Res.string.review_title)).assertIsDisplayed()
         onNodeWithText(text(Res.string.practice_free_start)).assertIsEnabled().performClick()
         assertEquals(1, opened)
     }
@@ -190,6 +190,43 @@ class PracticeScreensTest {
         setContent { AppTheme { PracticeContent(PracticeUiState.Ready(true), onOpenPicker = {}, onRetry = {}) } }
 
         onNodeWithText("Ha egy témából legalább 5 feladatot megoldottál, itt látod, mi megy jól és min érdemes még dolgozni.").assertIsDisplayed()
+    }
+
+    @Test
+    fun theReviewCardOffersTheOldTopicsWithTheirSubjectAndAge() = runDesktopComposeUiTest(412, 1800) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val reviewed = mutableListOf<Long>()
+        val items = listOf(
+            com.madovygabor.maturimate.features.practice.domain.ReviewItem(topic(12, "Szóképek", 10), subjects.single().subject, 38),
+            com.madovygabor.maturimate.features.practice.domain.ReviewItem(topic(11, "Szófajok", 10), subjects.single().subject, 1),
+        )
+        setContent {
+            AppTheme { PracticeContent(PracticeUiState.Ready(true, review = items), onOpenPicker = {}, onRetry = {}, onReviewTopic = { reviewed += it }) }
+        }
+
+        onNodeWithText("38 napja").assertIsDisplayed()
+        onNodeWithText("1 napja").assertIsDisplayed()
+        onAllNodesWithText("Magyar nyelv és irodalom").assertCountEquals(2)
+        onAllNodesWithText("Átismétlés")[0].performClick()
+        assertEquals(listOf(12L), reviewed)
+    }
+
+    @Test
+    fun withNothingOldTheReviewCardSaysWhenItComes() = runDesktopComposeUiTest(412, 1800) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(true), onOpenPicker = {}, onRetry = {}) } }
+
+        onNodeWithText("Ha egy kész témát 1 napnál régebben láttál, itt ajánljuk átismétlésre.").assertIsDisplayed()
+    }
+
+    @Test
+    fun slovakReviewAgesUseTheirPluralForms() = runDesktopComposeUiTest(412, 1800) {
+        Locale.setDefault(Locale.forLanguageTag("sk"))
+        val items = listOf(com.madovygabor.maturimate.features.practice.domain.ReviewItem(topic(12, "Szóképek", 10), subjects.single().subject, 38))
+        setContent { AppTheme { PracticeContent(PracticeUiState.Ready(true, review = items), onOpenPicker = {}, onRetry = {}) } }
+
+        onNodeWithText("Pred 38 dňami").assertIsDisplayed()
+        onNodeWithText("Zopakovať").assertIsDisplayed()
     }
 
     @Test

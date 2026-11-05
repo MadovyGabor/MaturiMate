@@ -69,6 +69,8 @@ interface ProgressRepository {
 
     suspend fun taskProgress(taskId: Long): OperationResult<TaskProgress?, LearningError>
     suspend fun dueTasks(now: Instant): OperationResult<List<TaskProgress>, LearningError>
+    /** The time of the newest answer of every task answered, in any round (the review of old material). */
+    suspend fun lastAnswerTimes(): OperationResult<Map<Long, Instant>, LearningError>
     /** Every task answered at least once, with whether its latest answer is right (the topic scores). */
     suspend fun answeredTasks(): OperationResult<List<AnsweredTask>, LearningError>
     /** The tasks whose latest answer is wrong: the mistakes of the mistake practice. */

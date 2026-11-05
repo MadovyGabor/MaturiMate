@@ -10,9 +10,10 @@ import kotlin.time.Instant
 
 /** What a finished activity was: a lesson, a test round of the path, or a practice round. */
 enum class ActivityKind {
-    LESSON, TEST, PRACTICE, MISTAKE_PRACTICE;
+    LESSON, TEST, PRACTICE, MISTAKE_PRACTICE, REVIEW;
 
-    val isPractice: Boolean get() = this == PRACTICE || this == MISTAKE_PRACTICE
+    /** Any practice round (free, mistakes, review): no passing, the "Gyakorlás" filter. */
+    val isPractice: Boolean get() = this == PRACTICE || this == MISTAKE_PRACTICE || this == REVIEW
 }
 
 /**
@@ -80,6 +81,7 @@ class RecentActivities(
             val practice = when (attempt.type) {
                 AttemptType.FREE_PRACTICE -> ActivityKind.PRACTICE
                 AttemptType.MISTAKE_PRACTICE -> ActivityKind.MISTAKE_PRACTICE
+                AttemptType.REVIEW -> ActivityKind.REVIEW
                 else -> null
             }
             if (practice != null) {
@@ -88,8 +90,10 @@ class RecentActivities(
                 val subjectIds = answers.mapNotNull { answer ->
                     (content.task(answer.taskId) as? OperationResult.Success)?.data?.let { subjectOf(it.topicId) }
                 }.distinct()
+                // a review belongs to its topic, which the list shows like the topic of a lesson or test
+                val reviewed = attempt.topicId?.let { (content.topic(it) as? OperationResult.Success)?.data?.title }.orEmpty()
                 found += RecentActivity(
-                    null, "", "", practice, at = finished, passed = null,
+                    null, "", reviewed, practice, at = finished, passed = null,
                     earnedPoints = attempt.earnedPoints, maxPoints = attempt.maxPoints, subjectIds = subjectIds,
                 )
                 continue

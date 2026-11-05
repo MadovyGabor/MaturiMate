@@ -114,6 +114,18 @@ class RecentActivitiesTest {
     }
 
     @Test
+    fun aReviewRoundIsListedWithItsTopic() = runBlocking {
+        val id = (progress.startAttempt(AttemptType.REVIEW, 11, null, at(4_000)) as OperationResult.Success).data
+        progress.recordAnswer(AttemptAnswer(id, 100, true, 1, 1, at(4_500), "1=A"))
+        progress.finishAttempt(id, AttemptStatus.FINISHED, at(5_000), 1, 1)
+
+        val review = (recent.latest() as OperationResult.Success).data.single()
+        assertEquals(ActivityKind.REVIEW, review.kind)
+        assertEquals("Szóképek", review.topicTitle)
+        assertEquals(true, review.kind.isPractice)
+    }
+
+    @Test
     fun abandonedRoundsAreLeftOutAndTheListIsLimited() = runBlocking {
         round(1_000, 2_000, earned = 0, status = AttemptStatus.ABANDONED)
         round(3_000, 4_000, earned = 5)

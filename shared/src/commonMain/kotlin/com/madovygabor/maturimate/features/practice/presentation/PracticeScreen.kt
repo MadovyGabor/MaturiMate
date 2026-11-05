@@ -24,8 +24,6 @@ import androidx.compose.ui.semantics.semantics
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
-import com.madovygabor.maturimate.core.presentation.uiComponents.AppTag
-import com.madovygabor.maturimate.core.presentation.uiComponents.TagStyle
 import com.madovygabor.maturimate.features.learning.presentation.LoadError
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.nav_practice
@@ -33,9 +31,7 @@ import maturimate.shared.generated.resources.practice_free_none
 import maturimate.shared.generated.resources.practice_free_start
 import maturimate.shared.generated.resources.practice_free_text
 import maturimate.shared.generated.resources.practice_free_title
-import maturimate.shared.generated.resources.practice_soon_text
 import maturimate.shared.generated.resources.practice_tab_subtitle
-import maturimate.shared.generated.resources.subjects_coming_soon
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
@@ -59,6 +55,13 @@ import maturimate.shared.generated.resources.scores_weak
 import maturimate.shared.generated.resources.scores_strong
 import maturimate.shared.generated.resources.scores_right_now
 import maturimate.shared.generated.resources.scores_practice
+import com.madovygabor.maturimate.features.practice.domain.ReviewItem
+import com.madovygabor.maturimate.features.practice.domain.ReviewList
+import maturimate.shared.generated.resources.review_title
+import maturimate.shared.generated.resources.review_lead
+import maturimate.shared.generated.resources.review_empty
+import maturimate.shared.generated.resources.review_button
+import maturimate.shared.generated.resources.history_days_ago
 
 /**
  * The practice tab (docs/practice/prototype.html): the free practice card, which opens the picker, and a card
@@ -70,6 +73,7 @@ fun PracticeScreen(
     onOpenMistakePicker: () -> Unit = {},
     onStartAllMistakes: (count: Int) -> Unit = {},
     onPracticeTopic: (topicId: Long, count: Int) -> Unit = { _, _ -> },
+    onReviewTopic: (topicId: Long, count: Int) -> Unit = { _, _ -> },
     viewModel: PracticeViewModel = koinViewModel(),
 ) {
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -81,6 +85,7 @@ fun PracticeScreen(
         onOpenMistakePicker = onOpenMistakePicker,
         onStartAllMistakes = { onStartAllMistakes(PickerUiState.ALL_MISTAKES_ROUND) },
         onPracticeTopic = { onPracticeTopic(it, PickerUiState.TOPIC_ROUND) },
+        onReviewTopic = { onReviewTopic(it, ReviewList.ROUND) },
     )
 }
 
@@ -92,6 +97,7 @@ fun PracticeContent(
     onOpenMistakePicker: () -> Unit = {},
     onStartAllMistakes: () -> Unit = {},
     onPracticeTopic: (topicId: Long) -> Unit = {},
+    onReviewTopic: (topicId: Long) -> Unit = {},
 ) {
     val spacing = MaterialTheme.spacing
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -114,7 +120,7 @@ fun PracticeContent(
                     FreePracticeCard(state.canPractice, onOpenPicker)
                     MistakeCard(state.mistakes, onStartAllMistakes, onOpenMistakePicker)
                     ScoresCard(state.scores, onPracticeTopic)
-                    ComingSoonCard()
+                    ReviewCard(state.review, onReviewTopic)
                 }
             }
         }
@@ -249,9 +255,12 @@ private fun ScoreRow(score: TopicScore, weak: Boolean, onPractice: () -> Unit) {
     }
 }
 
-/** What the tab will hold next; 9a.5 replaces it with its own card. */
+/**
+ * The review of old material (9a.5): the finished topics not seen for a long time, the oldest first, each with its
+ * subject, how long ago, and "Átismétlés", a short round of the topic's tasks.
+ */
 @Composable
-private fun ComingSoonCard() {
+private fun ReviewCard(items: List<ReviewItem>, onReview: (Long) -> Unit) {
     val spacing = MaterialTheme.spacing
     val colors = MaterialTheme.colorScheme
     Surface(
@@ -260,9 +269,36 @@ private fun ComingSoonCard() {
         color = colors.surfaceContainerLow,
         border = BorderStroke(MaterialTheme.layout.borderThin, colors.outlineVariant),
     ) {
-        Column(Modifier.padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
-            AppTag(stringResource(Res.string.subjects_coming_soon), style = TagStyle.HIGHLIGHT)
-            Text(stringResource(Res.string.practice_soon_text), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+        Column(Modifier.padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+            Text(stringResource(Res.string.review_title), modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge)
+            if (items.isEmpty()) {
+                Text(
+                    pluralStringResource(Res.plurals.review_empty, ReviewList.DUE_AFTER_DAYS, ReviewList.DUE_AFTER_DAYS),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
+                )
+                return@Column
+            }
+            Text(stringResource(Res.string.review_lead), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+            items.forEach { item ->
+                val subject = CatalogSubject.byId(item.subject.id)?.let { stringResource(it.label) } ?: item.subject.nameHu
+                // as in the prototype: the topic and, beside it, how long ago in bold; the subject and the button below
+                Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = colors.surfaceContainerHigh) {
+                    Column(Modifier.padding(horizontal = spacing.space4, vertical = spacing.space3), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                            Text(item.topic.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                pluralStringResource(Res.plurals.history_days_ago, item.daysAgo, item.daysAgo),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                            Text(subject, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                            AppButton(stringResource(Res.string.review_button), { onReview(item.topic.id) }, variant = AppButtonVariant.TONAL, compact = true)
+                        }
+                    }
+                }
+            }
         }
     }
 }

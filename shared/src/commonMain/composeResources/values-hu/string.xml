@@ -420,7 +420,6 @@
     <string name="nav_subjects">Tantárgyak</string>
     <string name="nav_practice">Gyakorlás</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_text">Hamarosan itt átismételheted, amit régen láttál.</string>
     <!-- Practice round (9a.2) -->
     <string name="practice_free_title">Szabad gyakorlás</string>
     <string name="practice_result_title">Kész a kör!</string>
@@ -489,4 +488,13 @@
     <string name="scores_right_now">%1$d / %2$d feladat jó most</string>
     <string name="scores_practice">Gyakorlás</string>
     <string name="scores_empty">Ha egy témából legalább %1$d feladatot megoldottál, itt látod, mi megy jól és min érdemes még dolgozni.</string>
+    <!-- Review of old material (9a.5) -->
+    <string name="review_title">Régen látott anyag</string>
+    <string name="review_lead">Ezeket a kész témákat régen láttad. A legrégebbi van elöl.</string>
+    <string name="review_button">Átismétlés</string>
+    <string name="review_round_title">Átismétlés</string>
+    <plurals name="review_empty">
+        <item quantity="one">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
+        <item quantity="other">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
+    </plurals>
 </resources>

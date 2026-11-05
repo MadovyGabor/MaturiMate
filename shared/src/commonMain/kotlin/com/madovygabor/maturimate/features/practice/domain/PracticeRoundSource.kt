@@ -19,7 +19,12 @@ import kotlinx.serialization.Serializable
  * topic: every mistake of it, filled up with its other tasks, finished or not).
  */
 @Serializable
-enum class PracticeMode { FREE, MISTAKES, TOPIC }
+enum class PracticeMode {
+    FREE, MISTAKES, TOPIC,
+
+    /** A review of one finished topic not seen for a long time: random tasks of it, a `REVIEW` attempt with the topic. */
+    REVIEW,
+}
 
 /**
  * A practice round of [count] random tasks ([PracticePlanner]), recorded as an attempt that belongs to no unit. No
@@ -51,6 +56,7 @@ class PracticeRoundSource(
                 val pool = if (topicIds.isEmpty()) catalog.allMistakes() else catalog.mistakePool(topicIds)
                 PracticePlanner.plan(pool.dataOr { return RoundStart.Failed }, count, random)
             }
+            PracticeMode.REVIEW -> PracticePlanner.plan(catalog.topicPool(topicIds).dataOr { return RoundStart.Failed }, count, random)
             PracticeMode.TOPIC -> PracticePlanner.plan(
                 required = catalog.mistakePool(topicIds).dataOr { return RoundStart.Failed },
                 pool = catalog.topicPool(topicIds).dataOr { return RoundStart.Failed },
@@ -61,8 +67,12 @@ class PracticeRoundSource(
         if (ids.isEmpty()) return if (mode == PracticeMode.MISTAKES) RoundStart.NoMistakes else RoundStart.Empty
         val tasks = mutableListOf<Task>()
         for (id in ids) tasks += (content.task(id) as? OperationResult.Success)?.data ?: return RoundStart.Failed
-        val type = if (mode == PracticeMode.MISTAKES) AttemptType.MISTAKE_PRACTICE else AttemptType.FREE_PRACTICE
-        val attemptId = (recorder.startPractice(type) as? OperationResult.Success)?.data ?: return RoundStart.Failed
+        val started = when (mode) {
+            PracticeMode.REVIEW -> recorder.startReview(topicIds.single())
+            PracticeMode.MISTAKES -> recorder.startPractice(AttemptType.MISTAKE_PRACTICE)
+            else -> recorder.startPractice(AttemptType.FREE_PRACTICE)
+        }
+        val attemptId = (started as? OperationResult.Success)?.data ?: return RoundStart.Failed
         return RoundStart.Ready(title, tasks, attemptId)
     }
 

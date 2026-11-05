@@ -16,6 +16,7 @@ import maturimate.shared.generated.resources.practice_mistakes_title
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.ExperimentalTime
+import maturimate.shared.generated.resources.review_round_title
 
 /*
  * How a finished activity is named in the lists of the home screen, the profile and the history. A lesson and a
@@ -28,7 +29,7 @@ internal val RecentActivity.icon: ActivityIcon
     get() = when (kind) {
         ActivityKind.LESSON -> ActivityIcon.LESSON
         ActivityKind.TEST -> ActivityIcon.TEST
-        ActivityKind.PRACTICE, ActivityKind.MISTAKE_PRACTICE -> ActivityIcon.PRACTICE
+        ActivityKind.PRACTICE, ActivityKind.MISTAKE_PRACTICE, ActivityKind.REVIEW -> ActivityIcon.PRACTICE
     }
 
 /** The title: the unit's, or "Szabad gyakorlás" / "Hibagyakorlás". */
@@ -37,14 +38,16 @@ internal val RecentActivity.icon: ActivityIcon
 internal fun activityTitle(activity: RecentActivity): String = when (activity.kind) {
     ActivityKind.PRACTICE -> stringResource(Res.string.practice_free_title)
     ActivityKind.MISTAKE_PRACTICE -> stringResource(Res.string.practice_mistakes_title)
+    ActivityKind.REVIEW -> stringResource(Res.string.review_round_title)
     else -> activity.title
 }
 
-/** Where the activity belongs: the topic of a lesson or test; the subject of a practice round, or "2 tantárgy". */
+/** Where the activity belongs: the topic of a lesson, test or review; the subject of a practice round, or "2 tantárgy". */
 @OptIn(ExperimentalTime::class)
 @Composable
 internal fun activityPlace(activity: RecentActivity): String {
-    if (!activity.kind.isPractice) return activity.topicTitle
+    // a lesson, a test and a review belong to one topic
+    if (!activity.kind.isPractice || activity.kind == ActivityKind.REVIEW) return activity.topicTitle
     val subjects = activity.subjectIds
     return when (subjects.size) {
         0 -> ""

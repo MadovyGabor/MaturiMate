@@ -74,6 +74,7 @@ fun NavigationRoute(
                     onOpenPracticePicker = { mistakes -> rootBackStack.add(Route.PracticePicker(mistakes)) },
                     onStartMistakes = { count -> rootBackStack.add(Route.PracticeRound(emptyList(), count, PracticeMode.MISTAKES)) },
                     onPracticeTopic = { topicId, count -> rootBackStack.add(Route.PracticeRound(listOf(topicId), count, PracticeMode.TOPIC)) },
+                    onReviewTopic = { topicId, count -> rootBackStack.add(Route.PracticeRound(listOf(topicId), count, PracticeMode.REVIEW)) },
                 )
             }
 
