@@ -6,7 +6,15 @@ import kotlin.time.Instant
 
 /** Domain models of the user's progress (user database). */
 
-enum class AttemptType { UNIT_ROUND, EXTRA_PRACTICE, REVIEW }
+enum class AttemptType {
+    UNIT_ROUND, EXTRA_PRACTICE, REVIEW,
+
+    /** A free practice round over the topics the student picked; belongs to no unit and no topic. */
+    FREE_PRACTICE,
+
+    /** A round over the tasks whose latest answer is wrong; belongs to no unit and no topic. */
+    MISTAKE_PRACTICE,
+}
 
 enum class AttemptStatus { IN_PROGRESS, FINISHED, ABANDONED }
 

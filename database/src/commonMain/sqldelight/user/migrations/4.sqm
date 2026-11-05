@@ -1,0 +1,78 @@
+-- Version 4 to 5: the free practice and the mistake practice are new kinds of round, with no unit and no topic
+-- (supabase/migrations/20261105120000_practice_attempt_types.sql). SQLite cannot change a CHECK, so the table
+-- `attempt` is rebuilt. The answers point at it, so they are kept in a copy, their table is dropped first (so
+-- nothing refers to `attempt` while it is dropped and no answer is lost by a cascade), and both come back after.
+
+CREATE TABLE attempt_old (
+    attempt_id INTEGER, user_id TEXT, attempt_type TEXT, topic_id INTEGER, learning_unit_id INTEGER,
+    status TEXT, started_at INTEGER, finished_at INTEGER, earned_points INTEGER, max_points INTEGER
+);
+INSERT INTO attempt_old (attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points)
+SELECT attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points FROM attempt;
+
+CREATE TABLE attempt_answer_old (
+    attempt_id INTEGER, task_id INTEGER, user_id TEXT, is_correct INTEGER, earned_points INTEGER,
+    max_points INTEGER, answered_at INTEGER, given_answer TEXT
+);
+INSERT INTO attempt_answer_old (attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer)
+SELECT attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer FROM attempt_answer;
+
+DROP TABLE attempt_answer;
+DROP TABLE attempt;
+
+CREATE TABLE attempt (
+    attempt_id        INTEGER CONSTRAINT pk_attempt PRIMARY KEY,
+    user_id           TEXT    NOT NULL,
+    attempt_type      TEXT    NOT NULL,
+    topic_id          INTEGER,
+    learning_unit_id  INTEGER,
+    status            TEXT    NOT NULL DEFAULT 'IN_PROGRESS',
+    started_at        INTEGER NOT NULL,
+    finished_at       INTEGER,
+    earned_points     INTEGER,
+    max_points        INTEGER,
+    CONSTRAINT ck_attempt_type
+        CHECK (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE', 'REVIEW', 'FREE_PRACTICE', 'MISTAKE_PRACTICE')),
+    CONSTRAINT ck_attempt_status
+        CHECK (status IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')),
+    -- unit rounds need the unit, a review needs the topic, a practice round has neither; never both
+    CONSTRAINT ck_attempt_scope CHECK (
+        (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE')
+            AND learning_unit_id IS NOT NULL AND topic_id IS NULL) OR
+        (attempt_type = 'REVIEW'
+            AND topic_id IS NOT NULL AND learning_unit_id IS NULL) OR
+        (attempt_type IN ('FREE_PRACTICE', 'MISTAKE_PRACTICE')
+            AND learning_unit_id IS NULL AND topic_id IS NULL)),
+    CONSTRAINT ck_attempt_finished CHECK (finished_at IS NULL OR finished_at >= started_at),
+    CONSTRAINT ck_attempt_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
+INSERT INTO attempt (attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points)
+SELECT attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points FROM attempt_old;
+
+CREATE TABLE attempt_answer (
+    attempt_id     INTEGER NOT NULL,
+    task_id        INTEGER NOT NULL,
+    user_id        TEXT    NOT NULL,
+    is_correct     INTEGER NOT NULL CHECK (is_correct IN (0, 1)),
+    earned_points  INTEGER NOT NULL,
+    max_points     INTEGER NOT NULL,
+    answered_at    INTEGER NOT NULL,
+    given_answer   TEXT,
+    CONSTRAINT pk_attempt_answer PRIMARY KEY (attempt_id, task_id),
+    CONSTRAINT fk_attempt_answer_attempt FOREIGN KEY (attempt_id)
+        REFERENCES attempt (attempt_id) ON DELETE CASCADE,
+    CONSTRAINT ck_attempt_answer_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
+INSERT INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer)
+SELECT attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer FROM attempt_answer_old;
+
+DROP TABLE attempt_answer_old;
+DROP TABLE attempt_old;
+
+CREATE INDEX ix_attempt_user_started    ON attempt (user_id, started_at);
+CREATE INDEX ix_attempt_unit            ON attempt (learning_unit_id);
+CREATE INDEX ix_attempt_answer_user_task ON attempt_answer (user_id, task_id);
