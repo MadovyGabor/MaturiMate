@@ -65,7 +65,7 @@ class TopicScores(
     companion object {
         /**
          * Tasks seen before a topic gets a score. Low for now, so the beta can be tried with the small topics of the
-         * content; it is raised before the public release (ROADMAP 12.7).
+         * content; it is raised before the public release (ROADMAP 19.1).
          */
         const val MIN_SEEN = 5
 

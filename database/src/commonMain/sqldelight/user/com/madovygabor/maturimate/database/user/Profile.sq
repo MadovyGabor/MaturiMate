@@ -108,7 +108,7 @@ INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountI
 }
 
 -- Sign-out: every row of the user goes, and so does the local user, so the next start is a new guest.
--- Until the sync (11.2) nothing of it is kept anywhere else; the settings say so before.
+-- Until the sync (12.3) nothing of it is kept anywhere else; the settings say so before.
 removeUser {
 DELETE FROM user_profile WHERE user_id = :userId;
 DELETE FROM user_settings WHERE user_id = :userId;

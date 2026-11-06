@@ -1,10 +1,12 @@
 # MaturiMate Roadmap
 
+> **Updated 2026-11-06 (staged release):** the plan from Milestone 10 on is redrawn: Hungarian content first, then the groundwork (11), the sync and download (12), code review (13) and UI refinement (14), all before the alpha (15); then the closed beta (16), the other subjects as downloadable packs (17), the open beta (18) and the release in September 2027 (19). Steps of finished milestones keep their old numbers; each new step says "Was …". Reasons in [DECISIONS](DECISIONS.md).
+>
 > **Updated 2026-11-03 (reordered):** the milestones after 7 are redrawn: 8 home screen and streak, 9 navigation, profile and settings, 9a practice, 10 Hungarian content, 11 sync and content download, 12 beta, polish and public release. The exam-style practice milestone is dropped. Old step numbers are noted in each step as "Was …". Reasons in [DECISIONS](DECISIONS.md).
 >
 > **Updated 2026-11-03 (later):** Milestone 7 is done with steps 7.0 to 7.5. The content path with the starter pack (was 7.6) and the required sign-in after the first lesson (was 7.8) moved to Milestone 11 (11.4 and 11.5), because they only matter before the release. The reading passage view (was 7.7) is dropped for now: there are no reading comprehension tasks in the first material; it comes back with an extension of the content model when such tasks are added.
 >
-> **Updated 2026-11-03:** Milestone 7 is redrawn after the prototype of the learning screens: it starts with Hungarian only, works from sample content that goes through the real importer, and has more, smaller steps (7.1 to 7.5). Slovak, English and Mathematics follow in Milestone 13. The reasons are in [DECISIONS](DECISIONS.md).
+> **Updated 2026-11-03:** Milestone 7 is redrawn after the prototype of the learning screens: it starts with Hungarian only, works from sample content that goes through the real importer, and has more, smaller steps (7.1 to 7.5). Slovak, English and Mathematics follow in Milestone 17. The reasons are in [DECISIONS](DECISIONS.md).
 >
 > **Updated 2026-11-01:** the toolchain update (AGP 9) becomes Milestone 6, before the unit engine; the milestones after it move up by one. The reasons are in [DECISIONS](DECISIONS.md).
 >
@@ -14,7 +16,7 @@
 
 Legend: `[x]` = done; `[/]` = in progress; `[ ]` = planned, not started.
 
-The order below is the working order: core first, then the design system, then onboarding with accounts, then the toolchain update, then the unit engine, then content, then release. Each milestone runs on its own branch, and each step is reviewed before the next one starts. Subjects follow one after another: Hungarian first, then Slovak, English and Mathematics.
+The order below is the working order: core first, then the design system, then onboarding with accounts, then the toolchain update, then the unit engine, the app around the lessons, the Hungarian content, the groundwork, the sync, the code review and UI refinement, and only then the staged release (alpha, closed beta, open beta, release). Each milestone runs on its own branch, and each step is reviewed before the next one starts. Subjects follow one after another: Hungarian first, then Slovak, English and Mathematics.
 
 ---
 
@@ -44,7 +46,7 @@ How it works:
 * **The content files are the source of truth.** Lessons and tasks are written as files (Markdown and JSON) in a private repository, checked by a validator, and exported into the content database file. The same files are imported into PostgreSQL, because the user tables there reference content rows.
 * **Content reaches the phone as a whole file, in two stages.** The app ships only a small starter pack (the first lesson), so the first start and the guest work without a network. After sign-up the app downloads the full content file from private Supabase Storage (served through its CDN) with a short-lived signed link, checks it by version, size and hash, and installs it in place of the starter pack. Newer files arrive the same way, without an app release.
 * **Ids never change, rows are never deleted.** All ids are written in the content files. Tasks, lessons and topics are switched off instead of removed, so old attempts never point to nothing. There is no foreign key between the two files on the phone.
-* **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 11, before the public Hungarian release.
+* **Accounts arrive with the onboarding (Milestone 5)** through Supabase Auth. Before signing up, a guest's data stays on the phone only (local guest, see [DECISIONS](DECISIONS.md) 2026-10-31). Sync of user data arrives with Milestone 12, before the alpha.
 * **One design, two dialects.** The PostgreSQL schema lives in `../supabase/migrations`; changes are new migrations. The SQLite schemas (SQLDelight `.sq` files) repeat it with the same table and column names, only with SQLite types.
 * **Passwords** are handled by Supabase Auth. The app holds only the public key; row level security decides which rows a user may read or write.
 * **Hosting:** Supabase (PostgreSQL, Auth and Storage in one; check pricing and limits before signing up), with occasional `pg_dump` backups. The connection string stays in `DATABASE_URL`, outside the repository. Media (images, later audio) is stored separately in object storage and downloaded and cached by the app.
@@ -59,7 +61,7 @@ The schema is allowed to change freely until the first tester installs the app. 
 * [x] **1.2. Local databases in the app:** SQLDelight content database (13 tables) and user database (8 tables) in a shared `:database` module, with drivers for Android and desktop.
 * [x] **1.3. Content pipeline:** validator, exporter to the content database file, and importer into PostgreSQL (`../tools/content-pipeline`). The app installs the bundled content file on first start.
 * [x] **1.4. Provenance on tasks:** every task and lesson records its source in the content files (own, teacher, AI reviewed by a human, public domain); the validator requires it.
-* [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. Deleting the branch (it contains a digitised official paper) waits for the owner's decision.
+* [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. The branch (it contained a digitised official paper) has been deleted.
 * [x] **1.6. Repositories:** domain models and repository interfaces for content and progress, with SQLDelight implementations in the data layer.
 
 ---
@@ -200,7 +202,7 @@ The four tabs are built here; the practice tab is only a "Hamarosan" screen unti
 
 ## Milestone 9a: Practice *(done on 2026-11-05)*
 
-Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 11), because the "last seen" column of 9a.5 had to be in the user database before it is reviewed (11.1). *(9a.5 needed no column in the end: "last seen" is derived from what is already stored.)* The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
+Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 12), because the "last seen" column of 9a.5 had to be in the user database before it is reviewed (11.1). *(9a.5 needed no column in the end: "last seen" is derived from what is already stored.)* The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
 
 *Updated 2026-11-05: nothing is locked in the beta; plain practice (9a.2) is new and stays free for good, see [DECISIONS](DECISIONS.md). The old 9a.2 to 9a.5 are now 9a.3 to 9a.6.*
 
@@ -215,64 +217,124 @@ Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone
 
 ## Milestone 10: Hungarian content
 
-The lessons and tests of the Hungarian subject, written in the private content repository on the finished engine. Milestones 8 to 9a add the screens around them; the sync (Milestone 11) and the beta (Milestone 12) follow.
+The lessons and tests of the Hungarian subject, written in the private content repository on the finished engine. It is written in parallel with Milestones 11 to 16. Only Hungarian first: the other subjects follow in Milestone 17, once the app is stable (see [DECISIONS](DECISIONS.md) 2026-11-06).
 
-* [ ] **10.1.** Hungarian units, written in the private content repository (it can be written in parallel with the milestones before it), as parts, topics (a work, an author, a language area), lessons and tests. If reading tasks need a passage, the passage model and its view are added here. *Open question: the planned "30 main topics". It is not decided yet whether this means 30 topics or 30 lessons. Was 9.2.*
-
----
-
-## Milestone 11: Sync and content download
-
-The Hungarian content (Milestone 10) is written before the sync and is tested with the bundled content file in the meantime; the sync and the download then carry the finished content. The user database is reviewed here, before the first testers install the app.
-
-* [ ] **11.1.** Review of the user database tables before the first testers install the app (after this, every change needs a migration). *Was 10.2.*
-* [ ] **11.2.** Sync of user data between the phone and Supabase. *Was 11.1.* With it: the reset of the progress (9.4b) removes the same rows on the server, the sign-out no longer has to remove the local data without a copy, the settings' "Szinkronizálás" row comes alive, and the name edited in the settings goes to the server.
-* [ ] **11.3.** Content download after sign-up and later updates, as described under "Data architecture": a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. Large downloads ask before using mobile data. *Was 11.2.*
-* [ ] **11.4. Content path (starter pack and full file):** the exporter builds two files from the same content, the starter pack bundled in the app (the first lesson of each subject, with the topics above it) and the full content file that 10.3 downloads. The manifest gets a `kind` (`FULL` or `STARTER`) and an explicit content schema number; a full file of the same version replaces an installed starter, never the other way round; `bundleContent -PcontentKind=full|starter` (development builds use the full file, the release the starter). *Was 11.2a; moved from step 7.6 on 2026-11-03.*
-* [ ] **11.5. Required sign-in after the first lesson:** *The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`).* no "later" button. The guest's local rows are moved to the new account id in one transaction, so no progress is lost. Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. Without an account every other lesson is locked. *Was 11.2b; moved from step 7.8 on 2026-11-03.*
-* [ ] **11.6.** Account deletion (required by GDPR and the app stores). *Was 11.3.*
-* [ ] **11.7. Exam dates:** the app computes the date of the written exams from the rule of the second Monday of March (done on 2026-11-01, `ExamDates.secondWeekWeekday`); here it takes the official date when it is published, through the same sync as the content and the settings (decided on 2026-11-04). *Was 8.5 and 10.6.*
+* [ ] **10.1.** Decide what the planned "30 main topics" means: 30 topics or 30 lessons. *Was 10.1 (open question).*
+* [ ] **10.2.** Hungarian units, written in the private content repository, as parts, topics (a work, an author, a language area), lessons and tests. If reading tasks need a passage, the passage model and its view are added here. *Was 10.1.*
+* [ ] **10.3.** Enough content for the alpha: the testers should be able to study for a few weeks. The owner decides how many topics that is.
 
 ---
 
-## Milestone 12: Beta, polish and public release
+## Milestone 11: Groundwork for the alpha
 
-Bugs, polish and the release of the Hungarian subject, once the content (Milestone 10) and the sync (Milestone 11) are done. Android is the target platform; desktop is for development.
+Everything that has to be settled before the first testers install the app. After 11.1 every change to the user database is a migration.
 
-* [ ] **12.1. Bug fixes:** the bugs found while testing on a phone since the onboarding (5.15), collected here as they are found. *Was 10.0.*
-  * After a change of the teaching language the subjects are not asked again (a Hungarian school's subjects stay when switching to Slovak).
-  * Google sign-in on desktop is not tried yet (it works on Android).
-  * Unconfirmed e-mail sign-ups stay in Supabase Auth; a cleanup belongs to 12.5.
-  * Sometimes, when the app is opened again, the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05; not every time).
-* [ ] **12.2.** Animations, reading view polish, accessibility checks. *Was 10.1. Android is the target platform; desktop is for development.*
-* [ ] **12.3.** Localization of the UI strings (Slovak and Hungarian). *Was 10.4.*
-* [ ] **12.4.** Closed beta of the Hungarian subject on Android. *Was 10.3.*
-* [ ] **12.5.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download. *Was 11.3a.*
-* [ ] **12.6. Consent documents:** the terms of use and the privacy notice written and published (`maturimate.madovygabor.com`), checked by a legal professional, linked from the consent text on the account step, with real document versions instead of "1.0". *Was 11.3b.*
-* [ ] **12.7.** Public release of the Hungarian subject. *Was 11.4.*
-  * Before the release: set the days before a finished topic is offered for review back to 14 (`ReviewList.DUE_AFTER_DAYS`, 1 for the beta so it can be tried the next day), and check the length of a review round (`ReviewList.ROUND`, 5 to start with).
-  * Before the release: raise the number of tasks seen before a topic gets a score on the practice tab (`TopicScores.MIN_SEEN`, 5 for the beta so it can be tried with the small topics; the plan was 20), to fit the real size of the topics then.
+* [ ] **11.1.** Review of the user database tables; then the schema is frozen. *Was 11.1.*
+* [ ] **11.2. Open items before testers:**
+  * Bug fixes from phone tests *(was 12.1)*: after a change of the teaching language the subjects are not asked again; Google sign-in on desktop is not tried yet (it works on Android); sometimes the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05, not every time).
+* [ ] **11.3. Release key and Play Console:** an own upload key instead of the debug key (6a.4) and Play App Signing; the SHA-1 fingerprints of both keys added to the Google OAuth client, so Google sign-in works in builds from the Play Store; find out what Google asks for the testing tracks (number of testers and days, privacy policy address, data safety form).
+* [ ] **11.4. Crash reports:** Sentry (Android and desktop) and a "report a problem" button in the settings. No personal data in the reports. No separate analytics tool: the learning data comes from the sync (12.3).
+* [ ] **11.5. Drafts of the terms of use and the privacy notice,** covering accounts, Supabase, Resend, Google sign-in and crash reports, published on `maturimate.madovygabor.com` and linked from the consent text on the account step. The legal review comes in 16.1. *Was part of 12.6.*
+* [ ] **11.6. Supabase and e-mail operations:** check the plan before the alpha (whether an inactive free project is paused, backups, `pg_dump` routine) and the e-mail limits (Resend and Supabase Auth) for the number of testers.
 
 ---
 
-## Milestone 13: More subjects and platforms
+## Milestone 12: Sync and content download
 
-* [ ] **13.1. Slovak:** new content and the grammar task types.
-* [ ] **13.2. English (B1/B2):** level filtering, cloze tasks. Listening tasks with own recordings or transcripts. B1 and B2 are two subjects (`ANJ_B1`, `ANJ_B2`, DECISIONS 2026-11-01).
-* [ ] **13.3. Mathematics:** formula rendering, numeric answers with comma and dot normalisation.
-* [ ] **13.4. Platforms:** desktop (a target already exists), then iOS, then web.
+All of it before the alpha, so the testers use the real flow: sign-up, sync, download.
+
+* [ ] **12.1. Sync design (plan first, no code before approval):** which tables travel and in which direction, conflicts when one account is used on several devices, checks on the server instead of trusting the phone, the time zone and the streak day, how a guest's progress merges with an existing account (see 12.5).
+* [ ] **12.2. Open Supabase migrations:** apply the written migrations (7.0a lesson pages, 7.5 `attempt_answer`, 8.1 activity seconds, 9a.2 attempt types) on a Supabase branch first, then on the live project.
+* [ ] **12.3.** Sync of user data between the phone and Supabase. With it: the reset of the progress (9.4b) removes the same rows on the server, the sign-out no longer has to remove the local data without a copy, the settings' "Szinkronizálás" row comes alive, and the name edited in the settings goes to the server. *Was 11.2.*
+* [ ] **12.4. Content path and download:** the exporter builds the starter pack (the first lesson of each subject, with the topics above it) bundled in the app and the full content, one pack per subject, downloaded after sign-up and for later updates: a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. The manifest gets a `kind` (`FULL` or `STARTER`) and an explicit schema number; a full file of the same version replaces a starter, never the other way round. Large downloads ask before using mobile data. `bundleContent -PcontentKind=full|starter` (development builds use the full file). *Was 11.3 and 11.4.*
+* [ ] **12.5. Required sign-in after the first lesson:** no "later" button. The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`). Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. *Was 11.5.*
+* [ ] **12.6. Account deletion** (required by GDPR and the app stores), with a web link for the stores. *Was 11.6.*
+* [ ] **12.7. Exam dates:** the app computes the date of the written exams from the rule of the second Monday of March (`ExamDates.secondWeekWeekday`); here it takes the official date when it is published, through the same sync as the content and the settings. *Was 11.7.*
 
 ---
 
-## Milestone 14 (V2): Official exam content
+## Milestone 13: Code review and optimization
+
+Before the alpha, on the finished sync code.
+
+* [ ] **13.1.** A manual and an AI review (`/code-review`) of the code module by module, with the bugs found fixed.
+* [ ] **13.2.** Optimization: database calls, recomposition, memory, start-up time.
+* [ ] **13.3. Tests:** Android device tests in CI (waiting for an emulator since 6a.5), a test that the phone database upgrades from the version of the alpha, the shared profile flow in the coverage.
+* [ ] **13.4.** Dead code and documentation check.
+
+---
+
+## Milestone 14: UI refinement and animations
+
+Before the alpha. The screens were built quickly and work; here they get polished.
+
+* [ ] **14.1. Screen checklist:** `docs/screen-checklist.md`, one row per screen: works, empty state, error state, phone and tablet and desktop, dark mode, accessibility, animation.
+* [ ] **14.2.** Refinement screen by screen against the design system: spacing, type, states.
+* [ ] **14.3.** Animations. *Was 12.2.*
+* [ ] **14.4.** Accessibility checks. *Was 12.2.*
+* [ ] **14.5.** Review of the Slovak and Hungarian texts. *Was 12.3.*
+
+---
+
+## Milestone 15: Alpha
+
+About 20 acquaintances, several devices, the Hungarian subject, with sync and download, through a Play Console testing track. Target: early spring 2027 (the content of 10.3 decides).
+
+* [ ] **15.1.** Alpha release. Test the reminder on phones of several makers (battery savers often stop alarms).
+* [ ] **15.2.** Crash reports and feedback, fixes during the alpha.
+* [ ] **15.3. Exit to the closed beta:** every row of the screen checklist done, no open severe bug, about 99% crash-free sessions, the feedback processed.
+
+---
+
+## Milestone 16: Closed beta
+
+* [ ] **16.1.** Legal review of the terms of use and the privacy notice, with real document versions instead of "1.0". *Was part of 12.6.*
+* [ ] **16.2.** Closed beta of the Hungarian subject: more people, the full flow. *Was 12.4.*
+* [ ] **16.3.** Fixes from the beta and a second manual pass.
+
+---
+
+## Milestone 17: More subjects
+
+Each subject is a downloadable pack (12.4), so adding one changes the content, not the app. The two exceptions need engine work. Runs in parallel with Milestone 18.
+
+* [ ] **17.1. Slovak:** new content and the grammar task types. *Was 13.1.*
+* [ ] **17.2. English (B1/B2):** level filtering, cloze tasks; listening tasks with own recordings or transcripts (engine work). B1 and B2 are two subjects (`ANJ_B1`, `ANJ_B2`, DECISIONS 2026-11-01). *Was 13.2.*
+* [ ] **17.3. Mathematics:** formula rendering, the bilingual text model (one id, a Hungarian and a Slovak text; DECISIONS 2026-11-03), numeric answers with comma and dot normalisation (engine work). *Was 13.3 and 12.3 of the older plan.*
+
+---
+
+## Milestone 18: Open beta
+
+* [ ] **18.1. Abuse protection for sign-up:** invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, a review of the auth rate limits, a cleanup of unconfirmed e-mail sign-ups in Supabase Auth. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download. *Was 12.5 and 11.3a.*
+* [ ] **18.2.** Gradual opening: by invitation first, then open; the finished subject packs join as they are ready.
+
+---
+
+## Milestone 19: Release
+
+Target: September 2027, for the school year of the next graduates. (The students of the school year 2026/27 are not a target: the app should not be released half-ready.)
+
+* [ ] **19.1. Pre-release checklist:** set the days before a finished topic is offered for review back to 14 (`ReviewList.DUE_AFTER_DAYS`, 1 for the beta so it can be tried the next day) and check the length of a review round (`ReviewList.ROUND`); raise the number of tasks seen before a topic gets a score (`TopicScores.MIN_SEEN`, 5 for the beta; the plan was 20) to fit the real size of the topics; decide whether the extra analytics are paid (DECISIONS 2026-11-05). The beta values move behind a build flag so they cannot be forgotten. *Was 12.7.*
+* [ ] **19.2.** Public release. *Was 12.7.*
+
+---
+
+## Milestone 20: Other platforms
+
+* [ ] **20.1. Platforms:** desktop (a target already exists), then iOS, then web. *Was 13.4.*
+
+---
+
+## Milestone 21 (V2): Official exam content
 
 Only after NIVAM gives permission. The request is planned for when the app works and there are real usage numbers to show. If it is refused, the app continues on its own content.
 
-* [ ] **14.1.** Written permission covering papers, answer keys, audio, offline caching, attribution and free or paid use.
-* [ ] **14.2.** Official papers and listening tasks with audio, loaded as new rows. The exam table returns as a database migration.
+* [ ] **21.1.** Written permission covering papers, answer keys, audio, offline caching, attribution and free or paid use. *Was 14.1.*
+* [ ] **21.2.** Official papers and listening tasks with audio, loaded as new rows. The exam table returns as a database migration. *Was 14.2.*
 
 ---
 
 ## Milestones of the earlier plan
 
-The earlier plan digitised the official papers first: database core with a JSON seeder, vertical slices per exam subject (`HU_MJL`, `SK_SJL`, `AJ_B1`, `AJ_B2`, mathematics), an exam runner with timer, grading and exam history. The work for the first step exists on the unmerged `database` branch. These milestones are not part of V1; what survives is reused above (the subject order, the exam-style practice mode, grading and history).
+The earlier plan digitised the official papers first: database core with a JSON seeder, vertical slices per exam subject (`HU_MJL`, `SK_SJL`, `AJ_B1`, `AJ_B2`, mathematics), an exam runner with timer, grading and exam history. The work for the first step was on the `database` branch, now deleted. These milestones are not part of V1; what survives is reused above (the subject order, the exam-style practice mode, grading and history).

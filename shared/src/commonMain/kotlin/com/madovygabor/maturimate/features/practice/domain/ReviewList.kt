@@ -73,7 +73,7 @@ class ReviewList(
     companion object {
         /**
          * Days since a finished topic was last seen before it is offered for review. Low for the beta, so it can be
-         * tried the next day; set back to 14 before the public release (ROADMAP 12.7).
+         * tried the next day; set back to 14 before the public release (ROADMAP 19.1).
          */
         const val DUE_AFTER_DAYS = 1
 

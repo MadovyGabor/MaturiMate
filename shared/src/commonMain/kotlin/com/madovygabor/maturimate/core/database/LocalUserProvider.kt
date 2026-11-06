@@ -63,7 +63,7 @@ class LocalUserProvider(
 
     /**
      * Sign-out: every row of the current user goes, and a new guest takes its place.
-     * Until the sync (11.2) the rows are nowhere else; the settings warn before.
+     * Until the sync (12.3) the rows are nowhere else; the settings warn before.
      */
     fun removeUser() {
         val current = userId()
