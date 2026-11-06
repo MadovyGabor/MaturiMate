@@ -172,9 +172,9 @@ body[data-dev="desktop"] .nav { align-content: start; }
       <li><b>Tanulás</b>: a szerep, a tantárgyak, az érettségi dátuma, a napi cél. Mindegyik a bevezető saját kérdését nyitja meg.</li>
       <li><b>Értesítések</b>: a napi emlékeztető kapcsolóval és az időpontja (asztali gépen nincs emlékeztető, ott a sor "Csak telefonon").</li>
       <li><b>Két külön nyelv</b>: a <b>Tanulás</b> csoportban <b>az iskola tanítási nyelve</b> (ehhez igazodnak a tantárgyak és az érettségi), az <b>App</b> csoportban <b>az app nyelve</b> (a feliratok nyelve). Eddig a tannyelv adta az app nyelvét is; ezután a bevezetőben az app nyelve a tannyelvet követi, de itt külön átállítható (például szlovák iskola, magyar feliratok). A prototípusban az app nyelve kattintásra vált.</li>
-      <li><b>Adatok</b> (Hamarosan): a szinkron állapota (11.2) és a tartalom frissítése (11.3).</li>
+      <li><b>Adatok</b> (Hamarosan): a szinkron állapota (12.3) és a tartalom frissítése (12.4).</li>
       <li><b>Haladás újrakezdése</b> (piros): a kész leckék, tesztek és válaszok törlődnek, a telefonon és később a szerveren is; a sorozat és a tanulási idő megmarad. Megerősítő ablak előtte.</li>
-      <li><b>Kijelentkezés</b>: amíg nincs szinkron, figyelmeztet, hogy a haladás ezen a telefonon törlődik; utána a kezdő képernyő jön. <b>A fiók törlése</b> (Hamarosan, 11.6) alatta.</li>
+      <li><b>Kijelentkezés</b>: amíg nincs szinkron, figyelmeztet, hogy a haladás ezen a telefonon törlődik; utána a kezdő képernyő jön. <b>A fiók törlése</b> (Hamarosan, 12.6) alatta.</li>
       <li>Tableten és asztalin a csoportok két oszlopban.</li>
     </ul>
   </div>
@@ -223,14 +223,14 @@ function screen() {
   ]);
   const app = group('lang', 'App', [row('lang', 'Az app nyelve', S.ui === 'hu' ? 'Magyar' : 'Szlovák', { act: 'uilang' })]);
   const data = group('sync', 'Adatok', [
-    row('sync', 'Szinkronizálás', 'A haladásod a fiókodban (11.2)', { cls: 'soon', soon: true }),
-    row('download', 'Tartalom frissítése', 'Új leckék letöltése (11.3)', { cls: 'soon', soon: true }),
+    row('sync', 'Szinkronizálás', 'A haladásod a fiókodban (12.3)', { cls: 'soon', soon: true }),
+    row('download', 'Tartalom frissítése', 'Új leckék letöltése (12.4)', { cls: 'soon', soon: true }),
   ]);
   const danger = group('restart', 'Haladás és fiók', [
     row('restart', 'Haladás újrakezdése', 'A sorozat és a tanulási idő megmarad', { cls: 'danger', act: 'dialog:reset' }),
     ...(d.name ? [
       row('logout', 'Kijelentkezés', null, { cls: 'danger', act: 'dialog:logout' }),
-      row('delete', 'A fiók törlése', 'Minden adatod törlődik (11.6)', { cls: 'danger soon', soon: true }),
+      row('delete', 'A fiók törlése', 'Minden adatod törlődik (12.6)', { cls: 'danger soon', soon: true }),
     ] : []),
   ]);
   const dialog = S.dialog === 'reset'

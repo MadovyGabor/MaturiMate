@@ -425,7 +425,7 @@ private fun App(profile: UserProfile, onAppLanguage: () -> Unit) {
     }
 }
 
-/** The sync and the content download: there already, so they are not forgotten (11.2, 11.3). */
+/** The sync and the content download: there already, so they are not forgotten (12.3, 12.4). */
 @Composable
 private fun Data() {
     val soon = SettingsTrailing.Soon(stringResource(Res.string.subjects_coming_soon))
@@ -435,7 +435,7 @@ private fun Data() {
     }
 }
 
-/** The red rows: the reset, the sign-out, and the account deletion (11.6). */
+/** The red rows: the reset, the sign-out, and the account deletion (12.6). */
 @Composable
 private fun Danger(state: SettingsUiState, onReset: () -> Unit, onSignOut: () -> Unit) {
     val soon = SettingsTrailing.Soon(stringResource(Res.string.subjects_coming_soon))
