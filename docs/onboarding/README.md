@@ -46,9 +46,9 @@ Not everyone prepares for the exam, so the flow asks first what the app is for. 
 | **Learner** ("Csak tanulni szeretnék") | wants to learn or practise | subjects, daily goal, reminder | exam date |
 | **Teacher** ("Tanár vagyok") | looks at or tries the content | subjects they teach | exam date, daily goal |
 
-Teachers get the same app as everyone else. There is no teacher mode (classes, assigning tasks) in V1; see [DECISIONS](../DECISIONS.md).
+Teachers get the same app as everyone else. There is no teacher mode (classes, assigning tasks) in V1.
 
-**Subjects.** The subject step is a multiple choice. The compulsory exam subjects are preselected by the teaching language and cannot be removed: for a Slovak-language school Slovak language and literature (`SK_SJL`) and English; for a Hungarian-language school Hungarian language and literature (`HU_MJL`), Slovak language and Slovak literature (`HU_SJSL`) and English. Mathematics and later subjects are optional. English always asks for the level: B1, B2 or "I don't know yet", which is saved as B1; the level decides which English subject is saved (`ANJ_B1` or `ANJ_B2`). A teacher gets every subject of both school languages, with English B1 and B2 as two cards. Stored in `user_subject` (`source` = `AUTO` for compulsory, `CHOSEN` for picked). *Changed on 2026-11-01, see DECISIONS.*
+**Subjects.** The subject step is a multiple choice. The compulsory exam subjects are preselected by the teaching language and cannot be removed: for a Slovak-language school Slovak language and literature (`SK_SJL`) and English; for a Hungarian-language school Hungarian language and literature (`HU_MJL`), Slovak language and Slovak literature (`HU_SJSL`) and English. Mathematics and later subjects are optional. English always asks for the level: B1, B2 or "I don't know yet", which is saved as B1; the level decides which English subject is saved (`ANJ_B1` or `ANJ_B2`). A teacher gets every subject of both school languages, with English B1 and B2 as two cards. Stored in `user_subject` (`source` = `AUTO` for compulsory, `CHOSEN` for picked). *Changed on 2026-11-01.*
 
 ## 4. User data
 
@@ -111,7 +111,7 @@ Then the home screen with the first lesson. Students see 9 screens, learners 8, 
 
 ## 7. Texts (3.4)
 
-The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are app strings for now (`subject_hu_mjl`, `subject_hu_sjsl`, `subject_sk_sjl`, `subject_anj`, `subject_anj_b1`, `subject_anj_b2`, `subject_mat`), because the onboarding offers subjects whose content is not installed yet; see [DECISIONS](../DECISIONS.md).
+The keys become entries in `composeResources/values-hu/string.xml` (Hungarian) and `values/string.xml` (Slovak, the default) in Milestone 5. `%1$d`, `%1$s` are placeholders. Subject names are app strings for now (`subject_hu_mjl`, `subject_hu_sjsl`, `subject_sk_sjl`, `subject_anj`, `subject_anj_b1`, `subject_anj_b2`, `subject_mat`), because the onboarding offers subjects whose content is not installed yet.
 
 **Status:** the Hungarian text is final after the owner's review. **Every Slovak line needs a check by a native speaker** before the release. ⚠ marks a line that may be tight on a button, chip or the desktop step list.
 

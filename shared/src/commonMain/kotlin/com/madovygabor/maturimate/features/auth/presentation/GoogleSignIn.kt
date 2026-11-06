@@ -13,7 +13,7 @@ import org.koin.compose.koinInject
  * (it returns to the app through the local callback server).
  *
  * This is the one place where a screen reaches the Supabase client: compose-auth's Google flow
- * is a Composable, so it cannot live in a repository (DECISIONS 2026-10-31).
+ * is a Composable, so it cannot live in a repository.
  *
  * @return A function that starts the flow.
  */

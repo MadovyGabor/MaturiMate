@@ -14,8 +14,8 @@ interface AccountSettings {
     suspend fun changePassword(oldPassword: String, newPassword: String): OperationResult<Unit, AuthError>
 
     /**
-     * Signs out and removes every local row of the user (until the sync there is no copy to keep, DECISIONS
-     * 2026-11-04). The app then starts again with the welcome screen.
+     * Signs out and removes every local row of the user (until the sync there is no copy to keep).
+     * The app then starts again with the welcome screen.
      */
     suspend fun signOut(): OperationResult<Unit, AuthError>
 }

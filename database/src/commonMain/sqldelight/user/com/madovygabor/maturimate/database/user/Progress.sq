@@ -122,7 +122,7 @@ SELECT * FROM user_task_progress
 WHERE user_id = :userId AND next_review_at IS NOT NULL AND next_review_at <= :now
 ORDER BY times_wrong DESC, next_review_at;
 
--- The mistakes: the tasks whose latest answer is wrong (DECISIONS 2026-11-05). A wrong answer sets the right
+-- The mistakes: the tasks whose latest answer is wrong. A wrong answer sets the right
 -- answers in a row to 0 and a right one raises it, so a task answered wrong last has a streak of 0.
 selectMistakeTaskIds:
 SELECT task_id FROM user_task_progress
@@ -136,7 +136,7 @@ WHERE user_id = :userId
 GROUP BY task_id;
 
 -- Every answered task and its right answers in a row: more than 0 means the latest answer is right (the scores of
--- the weak and strong topics, DECISIONS 2026-11-05).
+-- the weak and strong topics).
 selectAnsweredTasks:
 SELECT task_id, correct_streak FROM user_task_progress
 WHERE user_id = :userId
@@ -146,7 +146,7 @@ upsertTaskProgress:
 INSERT OR REPLACE INTO user_task_progress VALUES ?;
 
 -- "Haladás újrakezdése": what was done goes (the rounds, the answers, the finished lessons and tests, the
--- repetition of the tasks); the streak, the study time and the settings stay (DECISIONS 2026-11-04).
+-- repetition of the tasks); the streak, the study time and the settings stay.
 resetProgress {
 DELETE FROM attempt_answer WHERE user_id = :userId;
 DELETE FROM attempt WHERE user_id = :userId;

@@ -27,7 +27,7 @@ data class ScoreSummary(val weak: List<TopicScore>, val strong: List<TopicScore>
 }
 
 /**
- * Which topics go best and which worst (DECISIONS 2026-11-05). Of each task only the latest answer counts: a topic's
+ * Which topics go best and which worst. Of each task only the latest answer counts: a topic's
  * score is the tasks seen whose latest answer is right, divided by the tasks seen. A topic gets a score from
  * [MIN_SEEN] tasks seen on; below [WEAK_BELOW] percent it is weak. Only published topics and active tasks count.
  */
