@@ -218,8 +218,11 @@ Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone
 The lessons and tests of the Hungarian subject, written in the private content repository on the finished engine. It is written in parallel with Milestones 11 to 16. Only Hungarian first: the other subjects follow in Milestone 17, once the app is stable.
 
 * [x] **10.1.** Decide what the planned "30 main topics" means: 30 topics or 30 lessons. *Was 10.1 (open question).* *Done on 2026-11-06 (the details are in the private content repository).*
-* [ ] **10.2.** Hungarian units, written in the private content repository, as parts, topics (a work, an author, a language area), lessons and tests. If reading tasks need a passage, the passage model and its view are added here. *Was 10.1.*
-* [ ] **10.3.** Enough content for the alpha: the testers should be able to study for a few weeks. The owner decides how many topics that is.
+* [x] **10.2. Content viewer** *(done on 2026-11-06)*: a small read-only tool (Go, `tools/content-viewer`) that shows the lessons, tasks and tests of `content/` in the browser, so a written topic can be reviewed quickly. It reads the files on every page load and is not a validator (the pipeline's export is).
+  * [x] **10.2a. The viewer:** the topic tree, lessons (pages and boxes), all seven task formats with the right answers, the tests, the report (mix of formats against the target, missing explanations, long pages, tests that do not fit) and the overview of all topics.
+  * [x] **10.2b. Documentation and workflow:** the viewer's README, the link in `AGENTS.md`, and the viewer step in the content guide.
+* [ ] **10.3.** Hungarian units, written in the private content repository, as parts, topics (a work, an author, a language area), lessons and tests. If reading tasks need a passage, the passage model and its view are added here. *Was 10.2 (and 10.1 before).*
+* [ ] **10.4.** Enough content for the alpha: the testers should be able to study for a few weeks. The owner decides how many topics that is.
 
 ---
 
