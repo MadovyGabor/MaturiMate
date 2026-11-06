@@ -61,7 +61,7 @@ The schema is allowed to change freely until the first tester installs the app. 
 * [x] **1.2. Local databases in the app:** SQLDelight content database (13 tables) and user database (8 tables) in a shared `:database` module, with drivers for Android and desktop.
 * [x] **1.3. Content pipeline:** validator, exporter to the content database file, and importer into PostgreSQL (`../tools/content-pipeline`). The app installs the bundled content file on first start.
 * [x] **1.4. Provenance on tasks:** every task and lesson records its source in the content files (own, teacher, AI reviewed by a human, public domain); the validator requires it.
-* [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. Deleting the branch (it contains a digitised official paper) waits for the owner's decision.
+* [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. The branch (it contained a digitised official paper) has been deleted.
 * [x] **1.6. Repositories:** domain models and repository interfaces for content and progress, with SQLDelight implementations in the data layer.
 
 ---
@@ -231,7 +231,6 @@ Everything that has to be settled before the first testers install the app. Afte
 
 * [ ] **11.1.** Review of the user database tables; then the schema is frozen. *Was 11.1.*
 * [ ] **11.2. Open items before testers:**
-  * Decide about the unmerged `database` branch. Its history holds a digitised official paper (`HU_MJL_2025.json`) and the repository is public, so it must go before the alpha (see 1.5).
   * Bug fixes from phone tests *(was 12.1)*: after a change of the teaching language the subjects are not asked again; Google sign-in on desktop is not tried yet (it works on Android); sometimes the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05, not every time).
 * [ ] **11.3. Release key and Play Console:** an own upload key instead of the debug key (6a.4) and Play App Signing; the SHA-1 fingerprints of both keys added to the Google OAuth client, so Google sign-in works in builds from the Play Store; find out what Google asks for the testing tracks (number of testers and days, privacy policy address, data safety form).
 * [ ] **11.4. Crash reports:** Sentry (Android and desktop) and a "report a problem" button in the settings. No personal data in the reports. No separate analytics tool: the learning data comes from the sync (12.3).
@@ -338,4 +337,4 @@ Only after NIVAM gives permission. The request is planned for when the app works
 
 ## Milestones of the earlier plan
 
-The earlier plan digitised the official papers first: database core with a JSON seeder, vertical slices per exam subject (`HU_MJL`, `SK_SJL`, `AJ_B1`, `AJ_B2`, mathematics), an exam runner with timer, grading and exam history. The work for the first step exists on the unmerged `database` branch. These milestones are not part of V1; what survives is reused above (the subject order, the exam-style practice mode, grading and history).
+The earlier plan digitised the official papers first: database core with a JSON seeder, vertical slices per exam subject (`HU_MJL`, `SK_SJL`, `AJ_B1`, `AJ_B2`, mathematics), an exam runner with timer, grading and exam history. The work for the first step was on the `database` branch, now deleted. These milestones are not part of V1; what survives is reused above (the subject order, the exam-style practice mode, grading and history).
