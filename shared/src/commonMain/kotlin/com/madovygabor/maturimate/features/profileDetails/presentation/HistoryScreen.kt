@@ -1,5 +1,9 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
+import maturimate.shared.generated.resources.history_filter_practice
+import com.madovygabor.maturimate.features.learning.presentation.activityPlace
+import com.madovygabor.maturimate.features.learning.domain.ActivityKind
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,17 +109,20 @@ fun HistoryContent(state: HistoryUiState, onBack: () -> Unit, onFilter: (History
 @Composable
 private fun Ready(state: HistoryUiState.Ready, onFilter: (HistoryFilter) -> Unit) {
     val spacing = MaterialTheme.spacing
-    Row(Modifier.padding(bottom = spacing.space2), horizontalArrangement = Arrangement.spacedBy(spacing.space2)) {
+    // four chips; on a narrow phone with the longer Slovak labels the row scrolls sideways
+    Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = spacing.space2), horizontalArrangement = Arrangement.spacedBy(spacing.space2)) {
         AppChoiceChip(stringResource(Res.string.history_filter_all), selected = state.filter == HistoryFilter.ALL, onClick = { onFilter(HistoryFilter.ALL) })
         AppChoiceChip(stringResource(Res.string.history_filter_lessons), selected = state.filter == HistoryFilter.LESSONS, onClick = { onFilter(HistoryFilter.LESSONS) })
         AppChoiceChip(stringResource(Res.string.history_filter_tests), selected = state.filter == HistoryFilter.TESTS, onClick = { onFilter(HistoryFilter.TESTS) })
+        AppChoiceChip(stringResource(Res.string.history_filter_practice), selected = state.filter == HistoryFilter.PRACTICE, onClick = { onFilter(HistoryFilter.PRACTICE) })
     }
     val sections = state.history.sections.mapNotNull { section ->
         val shown = section.activities.filter {
             when (state.filter) {
                 HistoryFilter.ALL -> true
-                HistoryFilter.LESSONS -> !it.isTest
-                HistoryFilter.TESTS -> it.isTest
+                HistoryFilter.LESSONS -> it.kind == ActivityKind.LESSON
+                HistoryFilter.TESTS -> it.kind == ActivityKind.TEST
+                HistoryFilter.PRACTICE -> it.kind.isPractice
             }
         }
         if (shown.isEmpty()) null else HistorySection(section.group, shown)
@@ -131,7 +138,7 @@ private fun Ready(state: HistoryUiState.Ready, onFilter: (HistoryFilter) -> Unit
             verticalArrangement = Arrangement.spacedBy(spacing.space2),
         ) {
             SectionTitle(groupLabel(section.group, state.history.today))
-            section.activities.forEach { ActivityItem(it, meta = it.topicTitle) }
+            section.activities.forEach { ActivityItem(it, meta = activityPlace(it)) }
         }
     }
 }

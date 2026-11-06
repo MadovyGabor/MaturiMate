@@ -34,7 +34,7 @@ class ContentRepositoryImpl(
     }
 
     override suspend fun topic(topicId: Long): OperationResult<Topic, LearningError> = read { db ->
-        db.topicQueries.selectById(topicId).executeAsOneOrNull()?.toDomain()
+        db.topicQueries.selectPublishedById(topicId).executeAsOneOrNull()?.toDomain()
     }
 
     override suspend fun childTopics(topicId: Long): OperationResult<List<Topic>, LearningError> = read { db ->
@@ -50,7 +50,7 @@ class ContentRepositoryImpl(
     }
 
     override suspend fun unit(learningUnitId: Long): OperationResult<LearningUnit, LearningError> = read { db ->
-        db.learningUnitQueries.selectById(learningUnitId).executeAsOneOrNull()?.toDomain(db)
+        db.learningUnitQueries.selectPublishedById(learningUnitId).executeAsOneOrNull()?.toDomain(db)
     }
 
     override suspend fun unitTasks(learningUnitId: Long): OperationResult<List<UnitTask>, LearningError> = read { db ->

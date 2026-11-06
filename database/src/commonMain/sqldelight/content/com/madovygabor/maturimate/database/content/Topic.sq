@@ -35,6 +35,10 @@ ORDER BY order_index;
 selectById:
 SELECT * FROM topic WHERE topic_id = :topicId;
 
+-- one topic, only when it is published (what the app reads)
+selectPublishedById:
+SELECT * FROM topic WHERE topic_id = :topicId AND is_published = 1;
+
 -- the topic and every topic below it
 selectSubtreeIds:
 WITH RECURSIVE subtree(id) AS (

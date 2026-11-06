@@ -165,18 +165,3 @@ class LearningCourse(
     private suspend fun completedUnits(): Set<Long> =
         progress.unitProgress().orThrow().filter { it.status == UnitProgressStatus.COMPLETED }.map { it.learningUnitId }.toSet()
 }
-
-/** Carries the error of a failed read out of the middle of a calculation. */
-private class CourseFailure(val error: LearningError) : Exception()
-
-private fun <T> OperationResult<T, LearningError>.orThrow(): T = when (this) {
-    is OperationResult.Success -> data
-    is OperationResult.Error -> throw CourseFailure(error)
-}
-
-private suspend fun <T> guarded(block: suspend () -> T): OperationResult<T, LearningError> =
-    try {
-        OperationResult.Success(block())
-    } catch (e: CourseFailure) {
-        OperationResult.Error(e.error)
-    }

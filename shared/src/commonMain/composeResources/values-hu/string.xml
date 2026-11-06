@@ -286,7 +286,6 @@
     <string name="home_all_done_title">Mindent befejeztél</string>
     <string name="home_all_done_text">Az összes jelenlegi leckét és tesztet elvégezted. Új tartalom hamarosan érkezik.</string>
     <string name="home_suggestion_title">Ismételd át a hibáidat</string>
-    <string name="home_suggestion_meta">A hibás feladataid újra</string>
     <string name="home_recent_title">Utolsó tevékenységek</string>
     <string name="home_recent_empty">Itt jelennek meg az utolsó leckéid és teszteid. Kezdj egy leckével!</string>
     <string name="home_recent_lesson_done">Kész</string>
@@ -421,6 +420,81 @@
     <string name="nav_subjects">Tantárgyak</string>
     <string name="nav_practice">Gyakorlás</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_title">Gyakorlás</string>
-    <string name="practice_soon_text">Itt gyakorolhatod majd a hibáidat, a gyenge témáidat, és átismételheted, amit régen láttál.</string>
+    <!-- Practice round (9a.2) -->
+    <string name="practice_free_title">Szabad gyakorlás</string>
+    <string name="practice_result_title">Kész a kör!</string>
+    <string name="practice_again">Még egy kör</string>
+    <string name="practice_back">Vissza a Gyakorláshoz</string>
+    <!-- Practice tab and picker (9a.2) -->
+    <string name="practice_tab_subtitle">Gyakorolj a már átvett anyagból.</string>
+    <string name="practice_free_text">Válaszd ki a befejezett anyagból, mit gyakorolnál: egy témát, egy nagyobb részt vagy egy egész tantárgyat.</string>
+    <string name="practice_free_none">Itt azt gyakorolhatod, amit már befejeztél. Fejezz be egy témát a Tantárgyak fülön, és itt megjelenik.</string>
+    <string name="practice_free_start">Gyakorlás indítása</string>
+    <string name="picker_title">Mit gyakoroljunk?</string>
+    <string name="picker_lead">Csak a befejezett témákból választhatsz.</string>
+    <string name="picker_not_finished">Még nincs kész</string>
+    <string name="picker_no_tasks">Nincs feladat</string>
+    <string name="picker_selected">%1$d kiválasztva</string>
+    <string name="picker_topics_done">%1$d / %2$d téma kész</string>
+    <string name="picker_summary">%1$s · %2$s</string>
+    <string name="picker_pick_hint">Pipálj be legalább egy témát.</string>
+    <string name="picker_length_label">Kérdések száma</string>
+    <string name="picker_custom">Egyéni</string>
+    <string name="picker_custom_label">Hány kérdés legyen?</string>
+    <string name="picker_custom_invalid">Írj be egy számot 1 és 999 között.</string>
+    <string name="picker_select">%1$s kiválasztása</string>
+    <string name="picker_expand">Lenyitás</string>
+    <string name="picker_collapse">Összecsukás</string>
+    <plurals name="picker_tasks">
+        <item quantity="one">%1$d feladat</item>
+        <item quantity="other">%1$d feladat</item>
+    </plurals>
+    <plurals name="picker_topics">
+        <item quantity="one">%1$d téma</item>
+        <item quantity="other">%1$d téma</item>
+    </plurals>
+    <plurals name="picker_start">
+        <item quantity="one">Indítás · %1$d kérdés</item>
+        <item quantity="other">Indítás · %1$d kérdés</item>
+    </plurals>
+    <!-- Practice in the history (9a.2) -->
+    <string name="practice_mistakes_title">Hibagyakorlás</string>
+    <string name="activity_result_points">%1$d / %2$d</string>
+    <string name="history_filter_practice">Gyakorlás</string>
+    <plurals name="activity_subjects">
+        <item quantity="one">%1$d tantárgy</item>
+        <item quantity="other">%1$d tantárgy</item>
+    </plurals>
+    <!-- Mistake practice (9a.3) -->
+    <string name="mistakes_card_none">Itt jelennek meg a feladatok, amiket elrontottál. Egyelőre egy sincs.</string>
+    <string name="mistakes_all">Összes hiba (%1$d)</string>
+    <string name="mistakes_by_topic">Tantárgy vagy téma</string>
+    <string name="mistakes_picker_title">Mit gyakoroljunk a hibákból?</string>
+    <string name="mistakes_picker_lead">Csak azok a témák választhatók, amelyekben van hibád.</string>
+    <string name="mistakes_none">Nincs hiba</string>
+    <string name="mistakes_none_left">Nincs több hibád. Szép munka!</string>
+    <plurals name="mistakes_card_text">
+        <item quantity="one">Összesen %1$d feladatot rontottál el. Gyakorold át őket.</item>
+        <item quantity="other">Összesen %1$d feladatot rontottál el. Gyakorold át őket.</item>
+    </plurals>
+    <plurals name="mistakes_count">
+        <item quantity="one">%1$d hibás feladat</item>
+        <item quantity="other">%1$d hibás feladat</item>
+    </plurals>
+    <!-- Weak and strong topics (9a.4) -->
+    <string name="scores_title">Erős és gyenge témák</string>
+    <string name="scores_weak">Gyenge témák</string>
+    <string name="scores_strong">Erős témák</string>
+    <string name="scores_right_now">%1$d / %2$d feladat jó most</string>
+    <string name="scores_practice">Gyakorlás</string>
+    <string name="scores_empty">Ha egy témából legalább %1$d feladatot megoldottál, itt látod, mi megy jól és min érdemes még dolgozni.</string>
+    <!-- Review of old material (9a.5) -->
+    <string name="review_title">Régen látott anyag</string>
+    <string name="review_lead">Ezeket a kész témákat régen láttad. A legrégebbi van elöl.</string>
+    <string name="review_button">Átismétlés</string>
+    <string name="review_round_title">Átismétlés</string>
+    <plurals name="review_empty">
+        <item quantity="one">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
+        <item quantity="other">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
+    </plurals>
 </resources>

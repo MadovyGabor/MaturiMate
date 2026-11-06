@@ -1,5 +1,7 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
+import androidx.compose.ui.text.style.TextAlign
+import maturimate.shared.generated.resources.mistakes_none_left
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -65,6 +67,7 @@ import com.madovygabor.maturimate.core.presentation.utils.richText
 import com.madovygabor.maturimate.core.presentation.utils.splitGaps
 import com.madovygabor.maturimate.features.learning.domain.Answer
 import com.madovygabor.maturimate.features.learning.domain.RoundEntry
+import com.madovygabor.maturimate.features.learning.domain.RoundKind
 import com.madovygabor.maturimate.features.learning.domain.model.OptionRole
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
@@ -92,6 +95,9 @@ import maturimate.shared.generated.resources.test_pick_placeholder
 import maturimate.shared.generated.resources.test_again
 import maturimate.shared.generated.resources.test_back_to_path
 import maturimate.shared.generated.resources.test_result_good
+import maturimate.shared.generated.resources.practice_again
+import maturimate.shared.generated.resources.practice_back
+import maturimate.shared.generated.resources.practice_result_title
 import maturimate.shared.generated.resources.test_pass_needed
 import maturimate.shared.generated.resources.test_result_failed
 import maturimate.shared.generated.resources.test_right_answer
@@ -126,12 +132,21 @@ fun TestScreen(
     onClose: () -> Unit,
     viewModel: TestSessionViewModel = koinViewModel(key = "test$unitId") { parametersOf(unitId) },
 ) {
+    RoundScreen(viewModel, onClose)
+}
+
+/**
+ * A running round of any kind (a test or practice) with its view-model. Closing in the middle of a test ends its
+ * attempt as abandoned; closing a practice round after some answers shows their result first (see
+ * [TestSessionViewModel.close]); after the result it only closes.
+ */
+@Composable
+fun RoundScreen(viewModel: TestSessionViewModel, onClose: () -> Unit) {
     val state by viewModel.state.collectAsState()
     TestContent(
         state = state,
         actions = TestActions(
-            // leaving in the middle of a round ends its attempt as abandoned; after the result it changes nothing
-            onClose = { viewModel.leave(); onClose() },
+            onClose = { if (viewModel.close()) onClose() },
             onAgain = viewModel::load,
             onSelect = viewModel::select,
             onType = viewModel::type,
@@ -167,6 +182,18 @@ fun TestContent(state: TestUiState, actions: TestActions) {
                         Text(stringResource(Res.string.learning_load_error), style = MaterialTheme.typography.bodyLarge)
                         AppButton(stringResource(Res.string.learning_retry), actions.onRetry)
                     }
+                }
+            }
+            // every mistake was answered right: praise, and the way back
+            TestUiState.NoMistakes -> Column(Modifier.fillMaxSize().padding(spacing.space4)) {
+                IconButton(onClick = actions.onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(Res.string.lesson_close)) }
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = spacing.space6),
+                    verticalArrangement = Arrangement.spacedBy(spacing.space3),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(stringResource(Res.string.mistakes_none_left), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    AppButton(stringResource(Res.string.practice_back), actions.onClose)
                 }
             }
             is TestUiState.Result -> ResultContent(state, actions)
@@ -209,9 +236,13 @@ private fun TopBar(state: TestUiState.Ready, onClose: () -> Unit) {
     }
 }
 
-/** The end of a round: how it went, every task in a row, and what to do next. */
+/**
+ * The end of a round: how it went, every task in a row, and what to do next. A test speaks of passing and of the
+ * path; practice has no passing, only the result and another round.
+ */
 @Composable
 private fun ResultContent(state: TestUiState.Result, actions: TestActions) {
+    val practice = state.kind == RoundKind.PRACTICE
     val spacing = MaterialTheme.spacing
     val layout = MaterialTheme.layout
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -223,12 +254,18 @@ private fun ResultContent(state: TestUiState.Result, actions: TestActions) {
                 IconButton(onClick = actions.onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(Res.string.lesson_close)) }
                 Text(state.title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    stringResource(if (state.passed) Res.string.test_result_good else Res.string.test_result_failed),
+                    stringResource(
+                        when {
+                            practice -> Res.string.practice_result_title
+                            state.passed -> Res.string.test_result_good
+                            else -> Res.string.test_result_failed
+                        }
+                    ),
                     style = MaterialTheme.typography.headlineMedium,
                 )
                 Text(stringResource(Res.string.lesson_page_position, state.correctCount, state.total), style = MaterialTheme.typography.displayMedium)
                 AppProgressBar(state.correctCount.toFloat() / state.total.coerceAtLeast(1), color = MaterialTheme.extendedColors.brandGold)
-                if (!state.passed) {
+                if (!practice && !state.passed) {
                     // the next step of the path stays locked until a round is passed
                     Text(
                         stringResource(Res.string.test_pass_needed),
@@ -247,10 +284,10 @@ private fun ResultContent(state: TestUiState.Result, actions: TestActions) {
                 }
             }
             Column(Modifier.fillMaxWidth().padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
-                // a passed round goes back to the path; one that is not passed tries again first
-                val back = stringResource(Res.string.test_back_to_path)
-                val again = stringResource(Res.string.test_again)
-                if (state.passed) {
+                // a passed test goes back to the path; one that is not passed tries again first; practice offers another round
+                val back = stringResource(if (practice) Res.string.practice_back else Res.string.test_back_to_path)
+                val again = stringResource(if (practice) Res.string.practice_again else Res.string.test_again)
+                if (state.passed && !practice) {
                     AppButton(back, actions.onClose, modifier = Modifier.fillMaxWidth())
                     AppButton(again, actions.onAgain, modifier = Modifier.fillMaxWidth(), variant = AppButtonVariant.OUTLINED)
                 } else {

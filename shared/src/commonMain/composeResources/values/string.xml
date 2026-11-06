@@ -296,7 +296,6 @@
     <string name="home_all_done_title">Všetko máš hotové</string>
     <string name="home_all_done_text">Všetky súčasné lekcie a testy sú hotové. Nový obsah príde čoskoro.</string>
     <string name="home_suggestion_title">Zopakuj si svoje chyby</string>
-    <string name="home_suggestion_meta">Tvoje chybné úlohy znova</string>
     <string name="home_recent_title">Posledné aktivity</string>
     <string name="home_recent_empty">Tu uvidíš svoje posledné lekcie a testy. Začni lekciou!</string>
     <string name="home_recent_lesson_done">Hotovo</string>
@@ -436,6 +435,88 @@
     <string name="nav_subjects">Predmety</string>
     <string name="nav_practice">Cvičenie</string>
     <string name="nav_profile">Profil</string>
-    <string name="practice_soon_title">Cvičenie</string>
-    <string name="practice_soon_text">Tu si budeš precvičovať svoje chyby a slabé témy a zopakuješ si, čo si dlho nevidel.</string>
+    <!-- Practice round (9a.2) -->
+    <string name="practice_free_title">Voľné cvičenie</string>
+    <string name="practice_result_title">Kolo je hotové!</string>
+    <string name="practice_again">Ešte jedno kolo</string>
+    <string name="practice_back">Späť na cvičenie</string>
+    <!-- Practice tab and picker (9a.2) -->
+    <string name="practice_tab_subtitle">Precvičuj si to, čo si už prebral.</string>
+    <string name="practice_free_text">Vyber si z dokončenej látky, čo chceš precvičiť: jednu tému, väčšiu časť alebo celý predmet.</string>
+    <string name="practice_free_none">Tu si precvičíš to, čo si už dokončil. Dokonči tému na karte Predmety a objaví sa tu.</string>
+    <string name="practice_free_start">Začať cvičenie</string>
+    <string name="picker_title">Čo si precvičíme?</string>
+    <string name="picker_lead">Vyberať môžeš len z dokončených tém.</string>
+    <string name="picker_not_finished">Ešte nie je hotové</string>
+    <string name="picker_no_tasks">Bez úloh</string>
+    <string name="picker_selected">Vybrané: %1$d</string>
+    <string name="picker_topics_done">Hotové témy: %1$d / %2$d</string>
+    <string name="picker_summary">%1$s · %2$s</string>
+    <string name="picker_pick_hint">Označ aspoň jednu tému.</string>
+    <string name="picker_length_label">Počet otázok</string>
+    <string name="picker_custom">Vlastné</string>
+    <string name="picker_custom_label">Koľko otázok?</string>
+    <string name="picker_custom_invalid">Zadaj číslo od 1 do 999.</string>
+    <string name="picker_select">Vybrať: %1$s</string>
+    <string name="picker_expand">Rozbaliť</string>
+    <string name="picker_collapse">Zbaliť</string>
+    <plurals name="picker_tasks">
+        <item quantity="one">%1$d úloha</item>
+        <item quantity="few">%1$d úlohy</item>
+        <item quantity="other">%1$d úloh</item>
+    </plurals>
+    <plurals name="picker_topics">
+        <item quantity="one">%1$d téma</item>
+        <item quantity="few">%1$d témy</item>
+        <item quantity="other">%1$d tém</item>
+    </plurals>
+    <plurals name="picker_start">
+        <item quantity="one">Začať · %1$d otázka</item>
+        <item quantity="few">Začať · %1$d otázky</item>
+        <item quantity="other">Začať · %1$d otázok</item>
+    </plurals>
+    <!-- Practice in the history (9a.2) -->
+    <string name="practice_mistakes_title">Precvičovanie chýb</string>
+    <string name="activity_result_points">%1$d / %2$d</string>
+    <string name="history_filter_practice">Cvičenie</string>
+    <plurals name="activity_subjects">
+        <item quantity="one">%1$d predmet</item>
+        <item quantity="few">%1$d predmety</item>
+        <item quantity="other">%1$d predmetov</item>
+    </plurals>
+    <!-- Mistake practice (9a.3) -->
+    <string name="mistakes_card_none">Tu sa objavia úlohy, ktoré si pokazil. Zatiaľ žiadne nie sú.</string>
+    <string name="mistakes_all">Všetky chyby (%1$d)</string>
+    <string name="mistakes_by_topic">Predmet alebo téma</string>
+    <string name="mistakes_picker_title">Čo si precvičíme z chýb?</string>
+    <string name="mistakes_picker_lead">Vybrať môžeš len témy, v ktorých máš chyby.</string>
+    <string name="mistakes_none">Bez chýb</string>
+    <string name="mistakes_none_left">Už nemáš žiadne chyby. Pekná práca!</string>
+    <plurals name="mistakes_card_text">
+        <item quantity="one">Spolu si pokazil %1$d úlohu. Precvič si ju.</item>
+        <item quantity="few">Spolu si pokazil %1$d úlohy. Precvič si ich.</item>
+        <item quantity="other">Spolu si pokazil %1$d úloh. Precvič si ich.</item>
+    </plurals>
+    <plurals name="mistakes_count">
+        <item quantity="one">%1$d chybná úloha</item>
+        <item quantity="few">%1$d chybné úlohy</item>
+        <item quantity="other">%1$d chybných úloh</item>
+    </plurals>
+    <!-- Weak and strong topics (9a.4) -->
+    <string name="scores_title">Silné a slabé témy</string>
+    <string name="scores_weak">Slabé témy</string>
+    <string name="scores_strong">Silné témy</string>
+    <string name="scores_right_now">Teraz správne: %1$d / %2$d</string>
+    <string name="scores_practice">Precvičiť</string>
+    <string name="scores_empty">Keď v téme vyriešiš aspoň %1$d úloh, uvidíš tu, čo ti ide dobre a na čom ešte popracovať.</string>
+    <!-- Review of old material (9a.5) -->
+    <string name="review_title">Dávno videná látka</string>
+    <string name="review_lead">Tieto hotové témy si dlho nevidel. Najstaršia je prvá.</string>
+    <string name="review_button">Zopakovať</string>
+    <string name="review_round_title">Opakovanie</string>
+    <plurals name="review_empty">
+        <item quantity="one">Keď si hotovú tému nevidel aspoň %1$d deň, ponúkneme ti ju tu na zopakovanie.</item>
+        <item quantity="few">Keď si hotovú tému nevidel aspoň %1$d dni, ponúkneme ti ju tu na zopakovanie.</item>
+        <item quantity="other">Keď si hotovú tému nevidel aspoň %1$d dní, ponúkneme ti ju tu na zopakovanie.</item>
+    </plurals>
 </resources>

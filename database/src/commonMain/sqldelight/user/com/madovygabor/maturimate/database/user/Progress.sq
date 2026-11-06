@@ -12,15 +12,17 @@ CREATE TABLE attempt (
     earned_points     INTEGER,
     max_points        INTEGER,
     CONSTRAINT ck_attempt_type
-        CHECK (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE', 'REVIEW')),
+        CHECK (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE', 'REVIEW', 'FREE_PRACTICE', 'MISTAKE_PRACTICE')),
     CONSTRAINT ck_attempt_status
         CHECK (status IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')),
-    -- unit rounds need the unit, a review needs the topic; never both
+    -- unit rounds need the unit, a review needs the topic, a practice round has neither; never both
     CONSTRAINT ck_attempt_scope CHECK (
         (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE')
             AND learning_unit_id IS NOT NULL AND topic_id IS NULL) OR
         (attempt_type = 'REVIEW'
-            AND topic_id IS NOT NULL AND learning_unit_id IS NULL)),
+            AND topic_id IS NOT NULL AND learning_unit_id IS NULL) OR
+        (attempt_type IN ('FREE_PRACTICE', 'MISTAKE_PRACTICE')
+            AND learning_unit_id IS NULL AND topic_id IS NULL)),
     CONSTRAINT ck_attempt_finished CHECK (finished_at IS NULL OR finished_at >= started_at),
     CONSTRAINT ck_attempt_points CHECK (
         earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
@@ -119,6 +121,26 @@ selectDueTasks:
 SELECT * FROM user_task_progress
 WHERE user_id = :userId AND next_review_at IS NOT NULL AND next_review_at <= :now
 ORDER BY times_wrong DESC, next_review_at;
+
+-- The mistakes: the tasks whose latest answer is wrong (DECISIONS 2026-11-05). A wrong answer sets the right
+-- answers in a row to 0 and a right one raises it, so a task answered wrong last has a streak of 0.
+selectMistakeTaskIds:
+SELECT task_id FROM user_task_progress
+WHERE user_id = :userId AND times_wrong > 0 AND correct_streak = 0
+ORDER BY task_id;
+
+-- The newest answer of every task answered, in any round: part of "last seen" of a topic (review of old material).
+selectLastAnswerTimes:
+SELECT task_id, MAX(answered_at) AS last_at FROM attempt_answer
+WHERE user_id = :userId
+GROUP BY task_id;
+
+-- Every answered task and its right answers in a row: more than 0 means the latest answer is right (the scores of
+-- the weak and strong topics, DECISIONS 2026-11-05).
+selectAnsweredTasks:
+SELECT task_id, correct_streak FROM user_task_progress
+WHERE user_id = :userId
+ORDER BY task_id;
 
 upsertTaskProgress:
 INSERT OR REPLACE INTO user_task_progress VALUES ?;

@@ -14,7 +14,11 @@ actual class DatabaseDriverFactory(private val appDir: File) {
         appDir.mkdirs()
         return JdbcSqliteDriver(
             url = "jdbc:sqlite:${File(appDir, USER_DATABASE_NAME).absolutePath}",
-            properties = foreignKeysOn(),
+            properties = foreignKeysOn().apply {
+                // a write that meets another one waits up to 10 s instead of the driver's 3 s, so a busy machine
+                // does not turn a wait into SQLITE_BUSY; it only matters while the file is locked
+                put("busy_timeout", USER_BUSY_TIMEOUT_MS.toString())
+            },
             schema = UserDatabase.Schema
         )
     }
@@ -26,3 +30,6 @@ actual class DatabaseDriverFactory(private val appDir: File) {
 }
 
 fun foreignKeysOn() = Properties().apply { put("foreign_keys", "true") }
+
+/** How long a write of the desktop user database waits for another one to finish, in milliseconds. */
+const val USER_BUSY_TIMEOUT_MS = 10_000

@@ -64,7 +64,6 @@ import maturimate.shared.generated.resources.subjects_title_learner
 import maturimate.shared.generated.resources.subjects_title_student
 import maturimate.shared.generated.resources.account_title
 import maturimate.shared.generated.resources.common_save
-import maturimate.shared.generated.resources.practice_soon_text
 import maturimate.shared.generated.resources.profile_settings
 import maturimate.shared.generated.resources.language_sk
 import maturimate.shared.generated.resources.settings_app_language
@@ -82,6 +81,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import maturimate.shared.generated.resources.practice_free_title
 
 /**
  * The whole app from the welcome screen to the home screen, with the real navigation and
@@ -237,7 +237,7 @@ class OnboardingFlowTest {
         goThroughAsStudent()
         // the tabs keep working after the first switch
         onAllNodes(androidx.compose.ui.test.hasText("Gyakorlás")).onFirst().performClick()
-        waitFor(Res.string.practice_soon_text)
+        waitFor(Res.string.practice_free_title)
         openAnswers()
 
         // the goal opens its onboarding question, saved with "Mentés"

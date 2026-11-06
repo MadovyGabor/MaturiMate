@@ -18,6 +18,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.UnitTask
 import kotlinx.datetime.LocalDate
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import com.madovygabor.maturimate.features.learning.domain.model.AnsweredTask
 
 /** Errors of reading content or progress. */
 enum class LearningError : Error {
@@ -68,6 +69,12 @@ interface ProgressRepository {
 
     suspend fun taskProgress(taskId: Long): OperationResult<TaskProgress?, LearningError>
     suspend fun dueTasks(now: Instant): OperationResult<List<TaskProgress>, LearningError>
+    /** The time of the newest answer of every task answered, in any round (the review of old material). */
+    suspend fun lastAnswerTimes(): OperationResult<Map<Long, Instant>, LearningError>
+    /** Every task answered at least once, with whether its latest answer is right (the topic scores). */
+    suspend fun answeredTasks(): OperationResult<List<AnsweredTask>, LearningError>
+    /** The tasks whose latest answer is wrong: the mistakes of the mistake practice. */
+    suspend fun mistakeTaskIds(): OperationResult<List<Long>, LearningError>
     suspend fun saveTaskProgress(progress: TaskProgress): OperationResult<Unit, LearningError>
 
     /** "Haladás újrakezdése": the rounds, answers, finished units and task repetition go; streak and study time stay. */

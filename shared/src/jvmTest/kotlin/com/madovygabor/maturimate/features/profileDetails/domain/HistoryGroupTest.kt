@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.profileDetails.domain
 
+import com.madovygabor.maturimate.features.learning.domain.ActivityKind
 import com.madovygabor.maturimate.features.learning.domain.RecentActivity
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -46,7 +47,7 @@ class HistoryGroupTest {
 
     @Test
     fun sectionsKeepTheOrderAndPutTheSameDayTogether() {
-        fun activity(id: Long, at: String) = RecentActivity(id, "Lecke $id", "Szóképek", isTest = false, at = Instant.parse(at), passed = null)
+        fun activity(id: Long, at: String) = RecentActivity(id, "Lecke $id", "Szóképek", kind = ActivityKind.LESSON, at = Instant.parse(at), passed = null)
         val activities = listOf(
             activity(1, "2026-11-04T09:00:00Z"),
             activity(2, "2026-11-04T08:00:00Z"),

@@ -36,6 +36,8 @@ data class RoundEntry(
  * * A unit is done when a round of it is passed: every task of the round answered right. A round that is not
  *   passed is still finished and kept, but the unit stays open, so the next step of the path does not open.
  *   A unit that is done stays done.
+ * * A practice round (`startPractice`, `FREE_PRACTICE` or `MISTAKE_PRACTICE`) is recorded the same way, but belongs
+ *   to no unit and never marks one as done.
  */
 @OptIn(ExperimentalTime::class)
 class TestRecorder(
@@ -50,6 +52,25 @@ class TestRecorder(
     suspend fun start(unitId: Long): OperationResult<Long, LearningError> {
         clock = StudyClock(now = now)
         return progress.startAttempt(AttemptType.UNIT_ROUND, topicId = null, learningUnitId = unitId, startedAt = now())
+    }
+
+    /**
+     * Starts a practice round of the given [type] (`FREE_PRACTICE` or `MISTAKE_PRACTICE`), which belongs to no unit
+     * and no topic; returns the id of the attempt. Answers are recorded with [answer], like in a test round.
+     */
+    suspend fun startPractice(type: AttemptType): OperationResult<Long, LearningError> {
+        require(type == AttemptType.FREE_PRACTICE || type == AttemptType.MISTAKE_PRACTICE) { "$type is not a practice round" }
+        clock = StudyClock(now = now)
+        return progress.startAttempt(type, topicId = null, learningUnitId = null, startedAt = now())
+    }
+
+    /**
+     * Starts a review round of the finished topic [topicId] (`REVIEW`, the attempt has the topic); returns the id of
+     * the attempt. It is closed like practice ([finishPractice], [abandon]) and never marks a unit as done.
+     */
+    suspend fun startReview(topicId: Long): OperationResult<Long, LearningError> {
+        clock = StudyClock(now = now)
+        return progress.startAttempt(AttemptType.REVIEW, topicId = topicId, learningUnitId = null, startedAt = now())
     }
 
     /** Records the answer to [task] and counts it in the progress of the task. */
@@ -85,6 +106,13 @@ class TestRecorder(
         if (earlier?.status == UnitProgressStatus.COMPLETED) return OperationResult.Success(Unit)
         return progress.saveUnitProgress(UnitProgress(unitId, UnitProgressStatus.COMPLETED, earlier?.startedAt ?: time, time))
     }
+
+    /**
+     * Closes a practice round with its points. Unlike [finish] it never touches the progress of a unit: practice
+     * is not a step of the path, so no unit is done, however many answers were right.
+     */
+    suspend fun finishPractice(attemptId: Long, entries: List<RoundEntry>): OperationResult<Unit, LearningError> =
+        close(attemptId, AttemptStatus.FINISHED, entries)
 
     /** The student left the round before the end; what was answered stays recorded. */
     suspend fun abandon(attemptId: Long, entries: List<RoundEntry>): OperationResult<Unit, LearningError> =

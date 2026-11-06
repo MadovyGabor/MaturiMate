@@ -265,6 +265,23 @@ END $$;
 
 SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
 
+-- ---- Practice rounds: no unit and no topic ---------------------------
+INSERT INTO attempt (user_id, attempt_type) VALUES ('00000000-0000-0000-0000-00000000000a', 'FREE_PRACTICE');
+INSERT INTO attempt (user_id, attempt_type) VALUES ('00000000-0000-0000-0000-00000000000a', 'MISTAKE_PRACTICE');
+-- a practice round that belongs to a unit is refused
+DO $$ BEGIN
+    INSERT INTO attempt (user_id, attempt_type, learning_unit_id)
+        SELECT '00000000-0000-0000-0000-00000000000a', 'FREE_PRACTICE', learning_unit_id FROM t_unit;
+    RAISE EXCEPTION 'FAIL: a free practice round with a unit was accepted';
+EXCEPTION WHEN check_violation THEN NULL;
+END $$;
+-- and a unit round without a unit is still refused
+DO $$ BEGIN
+    INSERT INTO attempt (user_id, attempt_type) VALUES ('00000000-0000-0000-0000-00000000000a', 'UNIT_ROUND');
+    RAISE EXCEPTION 'FAIL: a unit round without a unit was accepted';
+EXCEPTION WHEN check_violation THEN NULL;
+END $$;
+
 -- ---- Not signed in: nothing ------------------------------------------
 RESET ROLE;
 SET LOCAL ROLE anon;

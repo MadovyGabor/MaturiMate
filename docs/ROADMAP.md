@@ -198,15 +198,18 @@ The four tabs are built here; the practice tab is only a "Hamarosan" screen unti
 
 ---
 
-## Milestone 9a: Practice
+## Milestone 9a: Practice *(done on 2026-11-05)*
 
-Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 11), because the "last seen" column of 9a.4 must be in the user database before it is reviewed (11.1). The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
+Added on 2026-11-03, split from Milestone 9. It comes before the sync (Milestone 11), because the "last seen" column of 9a.5 had to be in the user database before it is reviewed (11.1). *(9a.5 needed no column in the end: "last seen" is derived from what is already stored.)* The detailed analytics may become paid later; the screen is laid out so they can be locked without a redesign, and no paywall is built now.
 
-* [ ] **9a.1. Practice tab, design:** a prototype of: the weakest and the strongest subjects and topics, the mistake practice, the review of what was not seen for a long time.
-* [ ] **9a.2. Mistake practice:** a separate feature in which the student practices the tasks they got wrong: all of them, those of one subject or those of one topic. It is built on the `attempt_answer` rows that every test round records from step 7.5 on and on the `REVIEW` attempts (a subject level may need a small addition to the attempt scope). *Replaces the earlier "error vault" line (2026-11-03).*
-* [ ] **9a.3. Weak and strong topics:** from `attempt_answer`, which subjects and topics go best and which worst, and a button that starts practice on a weak topic. *Was 9.4 (statistics).*
-* [ ] **9a.4. Review of old material:** lessons and topics that the student has not looked at for a long time, with a short review test; the oldest first, per subject. It needs a "last seen" date on the unit progress (a small migration in the user database).
-* [ ] **9a.5. Practice tab:** the screen from the approved prototype with 9a.2 to 9a.4 in it, replacing the "Hamarosan" screen.
+*Updated 2026-11-05: nothing is locked in the beta; plain practice (9a.2) is new and stays free for good, see [DECISIONS](DECISIONS.md). The old 9a.2 to 9a.5 are now 9a.3 to 9a.6.*
+
+* [x] **9a.1. Practice tab, design:** a prototype (`docs/practice/prototype.html`) of: the plain practice (pick finished units, number of questions), the weakest and the strongest subjects and topics, the mistake practice, the review of what was not seen for a long time. No lock is shown in the beta.
+* [x] **9a.2. Plain practice:** the student picks from the **finished** units (a subject, a big part, a topic or several linked topics) and the number of questions; random tasks from them, no statistics. Answers are recorded as in every round. *Done on 2026-11-05: the attempt types `FREE_PRACTICE` and `MISTAKE_PRACTICE` (the phone's database migrated, the Supabase migration written for the sync), `PracticeCatalog` and `PracticePlanner`, one round engine for tests and practice (`RoundSource`), the practice tab with the free practice card, the picker (finished topics, tri-state ticks, 10 / 20 / 50 / custom length), the practice result, and the practice rounds in the history, the home screen and the profile with a "Gyakorlás" filter.*
+* [x] **9a.3. Mistake practice:** a separate feature in which the student practices the tasks they got wrong: all of them, those of one subject or those of one topic. It is built on the `attempt_answer` rows that every test round records from step 7.5 on and on the `REVIEW` attempts (a subject level may need a small addition to the attempt scope). *Replaces the earlier "error vault" line (2026-11-03).* *Done on 2026-11-05: a mistake is a task whose latest answer is wrong (read from the task progress); the "Hibagyakorlás" card of the practice tab ("Összes hiba", at most 20 at once, and "Tantárgy vagy téma", the picker in mistake mode), mistakes of unfinished topics included, "Nincs több hibád" when none is left, and the home card, which opens the practice tab.*
+* [x] **9a.4. Weak and strong topics:** from `attempt_answer`, which subjects and topics go best and which worst, and a button that starts practice on a weak topic. *Was 9.4 (statistics).* *Done on 2026-11-05: the "Erős és gyenge témák" card of the practice tab, topics only (each card names its subject), at most three weak (below 80%) and three strong; a topic gets a score from 5 tasks seen (for now, see 12.7); "Gyakorlás" on a weak topic asks all its mistakes and fills the round with its other tasks, up to 30.*
+* [x] **9a.5. Review of old material:** lessons and topics that the student has not looked at for a long time, with a short review test; the oldest first, per subject. It needs a "last seen" date on the unit progress (a small migration in the user database). *Done on 2026-11-05 with no migration: "last seen" is the newest of what is already stored (a unit finished, a lesson read to the end again, any answer to the topic's tasks); the "Régen látott anyag" card (the oldest first, at most 5, each with its subject) and "Átismétlés", a round of 5 tasks of the topic recorded as `REVIEW`; due after 1 day for the beta (see 12.7).*
+* [x] **9a.6. Practice tab:** the screen from the approved prototype with 9a.2 to 9a.5 in it, replacing the "Hamarosan" screen. *Done on 2026-11-05: the four cards (free practice, mistakes, weak and strong topics, old material); on a tablet and a desktop in two columns as in the prototype (the free practice and the mistakes on the left, the scores and the old material on the right); the prototype's notes brought in line with what was decided during 9a.*
 
 ---
 
@@ -240,12 +243,15 @@ Bugs, polish and the release of the Hungarian subject, once the content (Milesto
   * After a change of the teaching language the subjects are not asked again (a Hungarian school's subjects stay when switching to Slovak).
   * Google sign-in on desktop is not tried yet (it works on Android).
   * Unconfirmed e-mail sign-ups stay in Supabase Auth; a cleanup belongs to 12.5.
+  * Sometimes, when the app is opened again, the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05; not every time).
 * [ ] **12.2.** Animations, reading view polish, accessibility checks. *Was 10.1. Android is the target platform; desktop is for development.*
 * [ ] **12.3.** Localization of the UI strings (Slovak and Hungarian). *Was 10.4.*
 * [ ] **12.4.** Closed beta of the Hungarian subject on Android. *Was 10.3.*
 * [ ] **12.5.** Abuse protection for sign-up: invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, and a review of the auth rate limits. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download. *Was 11.3a.*
 * [ ] **12.6. Consent documents:** the terms of use and the privacy notice written and published (`maturimate.madovygabor.com`), checked by a legal professional, linked from the consent text on the account step, with real document versions instead of "1.0". *Was 11.3b.*
 * [ ] **12.7.** Public release of the Hungarian subject. *Was 11.4.*
+  * Before the release: set the days before a finished topic is offered for review back to 14 (`ReviewList.DUE_AFTER_DAYS`, 1 for the beta so it can be tried the next day), and check the length of a review round (`ReviewList.ROUND`, 5 to start with).
+  * Before the release: raise the number of tasks seen before a topic gets a score on the practice tab (`TopicScores.MIN_SEEN`, 5 for the beta so it can be tried with the small topics; the plan was 20), to fit the real size of the topics then.
 
 ---
 

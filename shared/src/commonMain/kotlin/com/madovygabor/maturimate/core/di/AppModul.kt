@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.di
 
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 import com.madovygabor.maturimate.core.database.ContentDatabaseProvider
 import com.madovygabor.maturimate.core.database.ContentDatabaseSource
 import com.madovygabor.maturimate.core.database.LocalUserProvider
@@ -42,6 +43,11 @@ import com.madovygabor.maturimate.features.learning.presentation.TestSessionView
 import com.madovygabor.maturimate.features.learning.presentation.TopicTarget
 import com.madovygabor.maturimate.features.learning.presentation.TopicViewModel
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
+import com.madovygabor.maturimate.features.practice.domain.PracticeCatalog
+import com.madovygabor.maturimate.features.practice.domain.PracticeRoundSource
+import com.madovygabor.maturimate.features.practice.presentation.PRACTICE_ROUND
+import com.madovygabor.maturimate.features.practice.presentation.PracticePickerViewModel
+import com.madovygabor.maturimate.features.practice.presentation.PracticeViewModel
 import com.madovygabor.maturimate.features.profileDetails.domain.ActivityHistory
 import com.madovygabor.maturimate.features.profileDetails.domain.ProfileOverview
 import com.madovygabor.maturimate.features.profileDetails.presentation.HistoryViewModel
@@ -62,6 +68,9 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.features.practice.domain.TopicScores
+import com.madovygabor.maturimate.features.practice.domain.ReviewList
 
 /**
  * Platform-specific module declaration.
@@ -106,12 +115,21 @@ val sharedModule = module {
     // The last finished lessons and tests, for the home screen
     single { RecentActivities(get(), get()) }
     // Everything the home screen shows
-    single { HomeOverview(get(), get(), get(), get()) }
+    single {
+        val catalog = get<PracticeCatalog>()
+        HomeOverview(get(), get(), get(), get(), mistakeCount = { (catalog.allMistakes() as? OperationResult.Success)?.data?.size ?: 0 })
+    }
     // Everything the profile tab shows, and its full history
     single { ProfileOverview(get(), get(), get(), get()) }
     single { ActivityHistory(get(), get()) }
     // What a test round leaves in the user database: the attempt, the answers, the progress
     single { TestRecorder(get(), get()) }
+    // The finished topics the student may practice freely, and their tasks
+    single { PracticeCatalog(get(), get()) }
+    // The weak and strong topics of the practice tab
+    single { TopicScores(get(), get()) }
+    // The finished topics not seen for a long time (the review of old material)
+    single { ReviewList(get(), get()) }
 
     // Keeps the planned daily reminder in line with the profile (started by the app)
     single { ReminderSync(get(), get()) }
@@ -151,5 +169,12 @@ val sharedModule = module {
     viewModel { HomeViewModel(get()) }
     viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get(), get()) }
     viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
+    // The practice tab and its picker
+    viewModel { PracticeViewModel(get(), get(), get()) }
+    viewModel { (mode: PracticeMode) -> PracticePickerViewModel(get(), mode) }
+    // A free practice round: the same round view-model with the tasks of the chosen finished topics
+    viewModel(named(PRACTICE_ROUND)) { (topicIds: List<Long>, count: Int, title: String, mode: PracticeMode) ->
+        TestSessionViewModel(PracticeRoundSource(topicIds, count, title, get(), get(), get(), mode))
+    }
 }
 

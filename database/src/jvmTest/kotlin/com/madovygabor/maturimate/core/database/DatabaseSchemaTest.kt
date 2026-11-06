@@ -64,6 +64,66 @@ class DatabaseSchemaTest {
         assertEquals(false, db.progressQueries.selectAnswersOfAttempt(attemptId).executeAsOne().is_correct)
     }
 
+    /** The table `attempt` as the database versions 1 to 4 had it (three kinds of round), and the answers pointing at it. */
+    private fun JdbcSqliteDriver.createVersion4Attempts(withAnswers: Boolean = true) {
+        val driver = this
+        driver.execute(null, """
+            CREATE TABLE attempt (
+                attempt_id INTEGER CONSTRAINT pk_attempt PRIMARY KEY, user_id TEXT NOT NULL, attempt_type TEXT NOT NULL,
+                topic_id INTEGER, learning_unit_id INTEGER, status TEXT NOT NULL DEFAULT 'IN_PROGRESS',
+                started_at INTEGER NOT NULL, finished_at INTEGER, earned_points INTEGER, max_points INTEGER,
+                CONSTRAINT ck_attempt_type CHECK (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE', 'REVIEW')),
+                CONSTRAINT ck_attempt_scope CHECK (
+                    (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE') AND learning_unit_id IS NOT NULL AND topic_id IS NULL) OR
+                    (attempt_type = 'REVIEW' AND topic_id IS NOT NULL AND learning_unit_id IS NULL))
+            )
+        """.trimIndent(), 0)
+        if (!withAnswers) return // a database of version 1 gets its answers table from the migration 2.sqm
+        driver.execute(null, """
+            CREATE TABLE attempt_answer (
+                attempt_id INTEGER NOT NULL, task_id INTEGER NOT NULL, user_id TEXT NOT NULL,
+                is_correct INTEGER NOT NULL CHECK (is_correct IN (0, 1)), earned_points INTEGER NOT NULL,
+                max_points INTEGER NOT NULL, answered_at INTEGER NOT NULL, given_answer TEXT,
+                CONSTRAINT pk_attempt_answer PRIMARY KEY (attempt_id, task_id),
+                CONSTRAINT fk_attempt_answer_attempt FOREIGN KEY (attempt_id) REFERENCES attempt (attempt_id) ON DELETE CASCADE
+            )
+        """.trimIndent(), 0)
+    }
+
+    // A phone with database version 4 has the old `attempt` table (three kinds of round). The migration 4.sqm
+    // rebuilds it for the two practice kinds and must keep every round and every answer.
+    @Test
+    fun migrationKeepsTheRoundsAndTheAnswersAndAcceptsThePracticeRounds() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn())
+        UserDatabase.Schema.create(driver)
+        driver.execute(null, "DROP TABLE attempt_answer", 0)
+        driver.execute(null, "DROP TABLE attempt", 0)
+        driver.createVersion4Attempts()
+        driver.execute(null, "INSERT INTO attempt (attempt_id, user_id, attempt_type, learning_unit_id, status, started_at, finished_at, earned_points, max_points) VALUES (7, 'u', 'UNIT_ROUND', 50, 'FINISHED', 1000, 2000, 1, 2)", 0)
+        driver.execute(null, "INSERT INTO attempt (attempt_id, user_id, attempt_type, topic_id, started_at) VALUES (9, 'u', 'REVIEW', 11, 3000)", 0)
+        driver.execute(null, "INSERT INTO attempt_answer VALUES (7, 100, 'u', 0, 0, 1, 1500, '1=A')", 0)
+        driver.execute(null, "INSERT INTO attempt_answer VALUES (7, 101, 'u', 1, 1, 1, 1600, '1=B')", 0)
+
+        UserDatabase.Schema.migrate(driver, 4, 5)
+
+        val db = UserDatabase(driver)
+        // the rounds and the answers are all there, with the same ids and values
+        assertEquals(listOf(7L, 9L), db.progressQueries.selectAttempts("u").executeAsList().map { it.attempt_id }.sorted())
+        val old = db.progressQueries.selectAttempts("u").executeAsList().first { it.attempt_id == 7L }
+        assertEquals("UNIT_ROUND", old.attempt_type)
+        assertEquals(50L, old.learning_unit_id)
+        assertEquals(2L, old.max_points)
+        assertEquals(listOf(100L to false, 101L to true), db.progressQueries.selectAnswersOfAttempt(7).executeAsList().map { it.task_id to it.is_correct })
+        // the two practice kinds are accepted without a unit and a topic, and refused with one
+        db.progressQueries.insertAttempt("u", "FREE_PRACTICE", null, null, 4_000)
+        db.progressQueries.insertAttempt("u", "MISTAKE_PRACTICE", null, null, 5_000)
+        assertFailsWith<Exception> { db.progressQueries.insertAttempt("u", "FREE_PRACTICE", null, 50, 6_000) }
+        assertFailsWith<Exception> { db.progressQueries.insertAttempt("u", "UNIT_ROUND", null, null, 6_000) }
+        // an answer still belongs to its round: removing the round removes the answers (the foreign key came back)
+        driver.execute(null, "DELETE FROM attempt WHERE attempt_id = 7", 0)
+        assertEquals(0, db.progressQueries.selectAnswersOfAttempt(7).executeAsList().size)
+    }
+
     @Test
     fun contentQueriesReturnTheInsertedUnit() {
         val db = contentDatabase()
@@ -177,6 +237,7 @@ class DatabaseSchemaTest {
     fun migrationFromVersion1KeepsRowsAndAddsTheColumns() {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn())
         // the two changed tables as version 1 created them
+        driver.createVersion4Attempts(withAnswers = false)
         driver.execute(null, """
             CREATE TABLE user_profile (
                 user_id TEXT NOT NULL PRIMARY KEY, first_name TEXT, last_name TEXT, display_name TEXT,

@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,16 +22,20 @@ import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 
+/** The icon of an [AppActivityCard]: a lesson, a test of the path, or a practice round. */
+enum class ActivityIcon { LESSON, TEST, PRACTICE }
+
 /**
- * A finished lesson or test in a list (docs/design-system/components/ActivityCard.md): an icon (a book in a
- * circle for a lesson, a question mark in a rounded square for a test), the title, a line under it, and the
- * result as a tag; [kind] ("Lecke", "Teszt") is a second tag above the result when the list mixes both.
+ * A finished lesson, test or practice round in a list (docs/design-system/components/ActivityCard.md): an icon (a
+ * book in a circle for a lesson, a question mark in a rounded square for a test, a light bulb in a circle for
+ * practice), the title, a line under it, and the result as a tag; [kind] ("Lecke", "Teszt", "Gyakorlás") is a second
+ * tag above the result when the list mixes them.
  */
 @Composable
 fun AppActivityCard(
     title: String,
     meta: String,
-    isTest: Boolean,
+    icon: ActivityIcon,
     result: String,
     resultStyle: TagStyle,
     modifier: Modifier = Modifier,
@@ -49,9 +54,13 @@ fun AppActivityCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(spacing.space3),
         ) {
-            Surface(shape = if (isTest) MaterialTheme.shapes.small else MaterialTheme.shapes.extraLarge, color = colors.surfaceContainerHighest) {
+            Surface(shape = if (icon == ActivityIcon.TEST) MaterialTheme.shapes.small else MaterialTheme.shapes.extraLarge, color = colors.surfaceContainerHighest) {
                 Icon(
-                    if (isTest) Icons.Rounded.Quiz else Icons.Rounded.MenuBook,
+                    when (icon) {
+                        ActivityIcon.LESSON -> Icons.Rounded.MenuBook
+                        ActivityIcon.TEST -> Icons.Rounded.Quiz
+                        ActivityIcon.PRACTICE -> Icons.Rounded.Lightbulb
+                    },
                     contentDescription = null,
                     modifier = Modifier.padding(spacing.space2).size(MaterialTheme.layout.iconSmall),
                 )

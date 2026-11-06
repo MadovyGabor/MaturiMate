@@ -21,8 +21,11 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboard
 import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
 import com.madovygabor.maturimate.features.learning.presentation.LessonScreen
 import com.madovygabor.maturimate.features.learning.presentation.TestScreen
+import com.madovygabor.maturimate.features.practice.presentation.PracticePickerScreen
+import com.madovygabor.maturimate.features.practice.presentation.PracticeRoundScreen
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 
 // Root navigation composable that manages top-level navigation routes.
 @Composable
@@ -47,6 +50,8 @@ fun NavigationRoute(
                     subclass(Route.ExamWrite::class, Route.ExamWrite.serializer())
                     subclass(Route.Lesson::class, Route.Lesson.serializer())
                     subclass(Route.Test::class, Route.Test.serializer())
+                    subclass(Route.PracticeRound::class, Route.PracticeRound.serializer())
+                    subclass(Route.PracticePicker::class, Route.PracticePicker.serializer())
                 }
             }
         },
@@ -66,6 +71,10 @@ fun NavigationRoute(
             entry<Route.Main> {
                 MainFrameNavigation(mainTab = mainTab, profilePage = profilePage, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
                     onOpenTest = { rootBackStack.add(Route.Test(it)) },
+                    onOpenPracticePicker = { mistakes -> rootBackStack.add(Route.PracticePicker(mistakes)) },
+                    onStartMistakes = { count -> rootBackStack.add(Route.PracticeRound(emptyList(), count, PracticeMode.MISTAKES)) },
+                    onPracticeTopic = { topicId, count -> rootBackStack.add(Route.PracticeRound(listOf(topicId), count, PracticeMode.TOPIC)) },
+                    onReviewTopic = { topicId, count -> rootBackStack.add(Route.PracticeRound(listOf(topicId), count, PracticeMode.REVIEW)) },
                 )
             }
 
@@ -77,6 +86,25 @@ fun NavigationRoute(
             // A test, one task at a time, without the navigation bar
             entry<Route.Test> { route ->
                 BottomInsetBox { TestScreen(unitId = route.unitId, onClose = { rootBackStack.removeLastOrNull() }) }
+            }
+            // The practice picker; the round takes its place, so the end of the round goes back to the practice tab
+            entry<Route.PracticePicker> { route ->
+                BottomInsetBox {
+                    PracticePickerScreen(
+                        mistakes = route.mistakes,
+                        onBack = { rootBackStack.removeLastOrNull() },
+                        onStart = { start ->
+                            rootBackStack.removeLastOrNull()
+                            rootBackStack.add(Route.PracticeRound(start.topicIds, start.count, if (route.mistakes) PracticeMode.MISTAKES else PracticeMode.FREE))
+                        },
+                    )
+                }
+            }
+            // A free practice round of the chosen topics, without the navigation bar
+            entry<Route.PracticeRound> { route ->
+                BottomInsetBox {
+                    PracticeRoundScreen(topicIds = route.topicIds, count = route.count, mode = route.mode, onClose = { rootBackStack.removeLastOrNull() })
+                }
             }
             // A lesson, one page at a time, without the navigation bar
             entry<Route.Lesson> { route ->
