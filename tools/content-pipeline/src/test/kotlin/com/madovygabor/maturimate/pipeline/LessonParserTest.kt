@@ -26,6 +26,36 @@ class LessonParserTest {
     }
 
     @Test
+    fun listItemsStayOnSeparateLines() {
+        val lesson = parse("""
+            Intro line.
+            - first item,
+              continued here
+            - second item
+            1. a numbered one
+
+            After the list.
+        """)
+        assertEquals(emptyList(), lesson.errors)
+        assertEquals(
+            listOf("Intro line.", "- first item, continued here\n- second item\n1. a numbered one", "After the list."),
+            lesson.pages.single().blocks.map { it.text },
+        )
+    }
+
+    @Test
+    fun aListInsideABoxIsAllowed() {
+        val lesson = parse("""
+            :::tip
+            - one
+            - two
+            :::
+        """)
+        assertEquals(emptyList(), lesson.errors)
+        assertEquals("- one\n- two", lesson.pages.single().blocks.single().text)
+    }
+
+    @Test
     fun headingsStartPagesAndBoxesAreBlocks() {
         val lesson = parse("""
             ## One

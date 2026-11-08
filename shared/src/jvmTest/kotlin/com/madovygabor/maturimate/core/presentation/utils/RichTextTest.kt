@@ -47,5 +47,25 @@ class RichTextTest {
     fun wordsAreCountedWithoutTheMarkers() {
         assertEquals(4, wordCount("A **szókép** egy *átvitt*"))
         assertEquals(0, wordCount("  "))
+        assertEquals(4, wordCount("- egy két\n- három négy"))
+    }
+
+    @Test
+    fun listsAreRecognisedByTheirLines() {
+        assertEquals(
+            listOf(
+                TextBlock.Paragraph("Bevezető."),
+                TextBlock.Bullets(listOf("egy", "**kettő**")),
+                TextBlock.Numbered(listOf("első", "második")),
+                TextBlock.Paragraph("- egy\n1. vegyes"),
+            ),
+            textBlocks("Bevezető.\n\n- egy\n- **kettő**\n\n1. első\n3. második\n\n- egy\n1. vegyes"),
+        )
+    }
+
+    @Test
+    fun aDashWithoutSpaceIsNotAListMarker() {
+        assertEquals(listOf(TextBlock.Paragraph("-5 fok")), textBlocks("-5 fok"))
+        assertEquals("egy kettő", plainText("- egy\n- kettő"))
     }
 }

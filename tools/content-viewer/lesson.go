@@ -35,7 +35,14 @@ type Block struct {
 	Kind  string
 	Label string
 	Text  template.HTML // ready to show: escaped, with **bold** and *italic* turned into tags
+	List  bool          // Text is a <ul> or <ol> already, not a paragraph's text
 }
+
+// A list item starts with "- " or "1. " (the same rule as the pipeline's lesson parser).
+var (
+	listItem   = regexp.MustCompile(`^(-|\d+\.)\s+\S`)
+	listMarker = regexp.MustCompile(`^(-|\d+\.)\s+`)
+)
 
 // A short page fits one phone screen: about 60 to 90 words (content guide).
 const maxPageWords = 90
@@ -118,9 +125,35 @@ func parseBody(l *Lesson, body string) {
 		if page == nil {
 			newPage("")
 		}
-		raw := strings.Join(paragraph, " ")
-		page.Words += len(strings.Fields(raw))
-		b := Block{Kind: box, Text: inline(raw)}
+		var b Block
+		if listItem.MatchString(paragraph[0]) {
+			// A list: one item per marker line; a line without a marker continues the item before it.
+			var items []string
+			for _, line := range paragraph {
+				if listItem.MatchString(line) || len(items) == 0 {
+					items = append(items, line)
+				} else {
+					items[len(items)-1] += " " + line
+				}
+			}
+			tag := "ul"
+			if !strings.HasPrefix(items[0], "-") {
+				tag = "ol"
+			}
+			var out strings.Builder
+			out.WriteString("<" + tag + ">")
+			for _, item := range items {
+				text := strings.TrimSpace(listMarker.ReplaceAllString(item, ""))
+				page.Words += len(strings.Fields(text))
+				out.WriteString("<li>" + string(inline(text)) + "</li>")
+			}
+			out.WriteString("</" + tag + ">")
+			b = Block{Kind: box, Text: template.HTML(out.String()), List: true} // safe: each item went through inline
+		} else {
+			raw := strings.Join(paragraph, " ")
+			page.Words += len(strings.Fields(raw))
+			b = Block{Kind: box, Text: inline(raw)}
+		}
 		b.Label = boxLabels[box]
 		page.Blocks = append(page.Blocks, b)
 		paragraph = nil
@@ -155,6 +188,10 @@ func parseBody(l *Lesson, body string) {
 		case line == "":
 			flush()
 		default:
+			// A list item right after ordinary text starts a new paragraph (like the pipeline's parser).
+			if listItem.MatchString(line) && len(paragraph) > 0 && !listItem.MatchString(paragraph[0]) {
+				flush()
+			}
 			paragraph = append(paragraph, line)
 		}
 	}

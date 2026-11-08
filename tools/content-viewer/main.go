@@ -68,6 +68,8 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
   .report { border: 1px solid var(--line); border-radius: 12px; padding: .6rem 1.1rem; margin: 1rem 0; }
   .report h2 { font-size: 1rem; margin: .2rem 0; }
   .report ul { list-style: disc; padding-left: 1.4rem; }
+  .page ul { list-style: disc; padding-left: 1.4rem; }
+  .page ol { padding-left: 1.4rem; margin: .1rem 0; }
   .ok-text { color: #2e9e5b; font-weight: 600; }
   a.plain { color: inherit; }
 </style></head><body>
@@ -122,6 +124,7 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
           {{if .Title}}<h3>{{.Title}}</h3>{{end}}
           {{range .Blocks}}
             {{if .Kind}}<div class="box {{.Kind}}"><b class="label">{{.Label}}</b>{{.Text}}</div>
+            {{else if .List}}{{.Text}}
             {{else}}<p>{{.Text}}</p>{{end}}
           {{end}}
         </article>
