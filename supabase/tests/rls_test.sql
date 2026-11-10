@@ -282,6 +282,68 @@ DO $$ BEGIN
 EXCEPTION WHEN check_violation THEN NULL;
 END $$;
 
+-- ---- The progress tables: each user's own, deletes and change times ---
+INSERT INTO user_unit_progress (user_id, learning_unit_id, status, completed_at)
+    SELECT '00000000-0000-0000-0000-00000000000a', learning_unit_id, 'COMPLETED', now() FROM t_unit;
+INSERT INTO user_streak (user_id, current_streak, longest_streak, last_activity_date)
+    VALUES ('00000000-0000-0000-0000-00000000000a', 1, 1, current_date);
+INSERT INTO activity_log (user_id, activity_date, device_id, seconds_studied)
+    VALUES ('00000000-0000-0000-0000-00000000000a', current_date, 'phone', 60),
+           ('00000000-0000-0000-0000-00000000000a', current_date, 'desktop', 90);
+-- one row per device and day
+DO $$ BEGIN
+    INSERT INTO activity_log (user_id, activity_date, device_id)
+        VALUES ('00000000-0000-0000-0000-00000000000a', current_date, 'phone');
+    RAISE EXCEPTION 'FAIL: a second row for the same device and day was accepted';
+EXCEPTION WHEN unique_violation THEN NULL;
+END $$;
+DO $$ BEGIN
+    INSERT INTO activity_log (user_id, activity_date, device_id)
+        VALUES ('00000000-0000-0000-0000-00000000000a', current_date - 1, '');
+    RAISE EXCEPTION 'FAIL: an empty device id was accepted';
+EXCEPTION WHEN check_violation THEN NULL;
+END $$;
+-- the server stamps the change time, whatever the client sends
+UPDATE user_streak SET current_streak = 2, longest_streak = 2, updated_at = '2000-01-01';
+DO $$ BEGIN
+    IF (SELECT updated_at FROM user_streak) < now() - interval '1 minute' THEN
+        RAISE EXCEPTION 'FAIL: updated_at did not move on an update';
+    END IF;
+END $$;
+
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
+DO $$ BEGIN
+    IF (SELECT count(*) FROM user_unit_progress) + (SELECT count(*) FROM user_streak)
+        + (SELECT count(*) FROM activity_log) + (SELECT count(*) FROM attempt) <> 0 THEN
+        RAISE EXCEPTION 'FAIL: B reads the progress of A';
+    END IF;
+END $$;
+-- B deletes nothing of A (a policy filters the rows; no error, no effect)
+DELETE FROM attempt_answer;
+DELETE FROM attempt;
+DELETE FROM user_unit_progress;
+DELETE FROM user_streak;
+DELETE FROM activity_log;
+
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+DO $$ BEGIN
+    IF (SELECT count(*) FROM attempt) = 0 OR (SELECT count(*) FROM user_unit_progress) = 0
+        OR (SELECT count(*) FROM user_streak) = 0 OR (SELECT count(*) FROM activity_log) <> 2 THEN
+        RAISE EXCEPTION 'FAIL: B deleted rows of A';
+    END IF;
+END $$;
+-- A deletes their own progress, and the answers go with their rounds
+DELETE FROM attempt;
+DELETE FROM user_unit_progress;
+DELETE FROM user_streak;
+DELETE FROM activity_log;
+DO $$ BEGIN
+    IF (SELECT count(*) FROM attempt) + (SELECT count(*) FROM attempt_answer) + (SELECT count(*) FROM user_unit_progress)
+        + (SELECT count(*) FROM user_streak) + (SELECT count(*) FROM activity_log) <> 0 THEN
+        RAISE EXCEPTION 'FAIL: A could not delete their own progress';
+    END IF;
+END $$;
+
 -- ---- Not signed in: nothing ------------------------------------------
 RESET ROLE;
 SET LOCAL ROLE anon;
