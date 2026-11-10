@@ -116,7 +116,7 @@ class TestSessionViewModel(
     private val _state = MutableStateFlow<TestUiState>(TestUiState.Loading)
     val state: StateFlow<TestUiState> = _state.asStateFlow()
 
-    private var attemptId: Long? = null
+    private var attemptId: String? = null
 
     /** The last background save; the next one and the end of the round wait for it, so the order is kept. */
     private var saving: Job? = null

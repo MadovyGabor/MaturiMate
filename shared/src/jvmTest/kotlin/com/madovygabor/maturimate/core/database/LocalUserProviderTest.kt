@@ -50,7 +50,7 @@ class LocalUserProviderTest {
         profiles.saveTeachingLanguage(TeachingLanguage.HU)
         profiles.saveRole(UserRole.STUDENT)
         profiles.saveSubjects(listOf(UserSubject(1, compulsory = true)))
-        database.activityQueries.addActivity("guest-1", "2026-10-31", 10, 5, 3)
+        database.activityQueries.addActivity("guest-1", "2026-10-31", "device-1", 5, 3)
 
         provider.adoptAccount("account-1")
 
@@ -59,7 +59,7 @@ class LocalUserProviderTest {
         assertEquals("HU", database.profileQueries.selectProfile("account-1").executeAsOne().teaching_language)
         assertEquals(listOf(1L), database.profileQueries.selectRoles("account-1").executeAsList().map { it.role_id })
         assertEquals(1, database.profileQueries.selectSubjects("account-1").executeAsList().size)
-        assertEquals(10L, database.activityQueries.selectTotalXp("account-1").executeAsOne())
+        assertEquals(5L, database.activityQueries.selectActivity("account-1", "2026-10-31", "2026-10-31").executeAsOne().seconds_studied)
         assertNull(database.profileQueries.selectProfile("guest-1").executeAsOneOrNull())
         // the profile follows the new id
         assertEquals(UserRole.STUDENT, withTimeout(5_000) { profiles.profile.first { it?.role != null } }?.role)
@@ -68,8 +68,8 @@ class LocalUserProviderTest {
     @Test
     fun adoptingAnAccountMovesTheAnswersOfTheGuestsRounds() = runBlocking {
         val provider = LocalUserProvider(database) { "guest-1" }
-        database.progressQueries.insertAttempt("guest-1", "UNIT_ROUND", null, 51, 1_000)
-        val attemptId = database.progressQueries.lastInsertedId().executeAsOne()
+        val attemptId = "round-1"
+        database.progressQueries.insertAttempt(attemptId, "guest-1", "UNIT_ROUND", null, 51, 1_000)
         database.progressQueries.upsertAttemptAnswer(Attempt_answer(attemptId, 100, "guest-1", true, 2, 2, 2_000, "1=B"))
 
         provider.adoptAccount("account-1")
@@ -81,8 +81,8 @@ class LocalUserProviderTest {
     @Test
     fun anotherAccountDoesNotGetThePreviousAccountsAnswers() = runBlocking {
         val provider = LocalUserProvider(database) { "guest-1" }
-        database.progressQueries.insertAttempt("guest-1", "UNIT_ROUND", null, 51, 1_000)
-        val attemptId = database.progressQueries.lastInsertedId().executeAsOne()
+        val attemptId = "round-1"
+        database.progressQueries.insertAttempt(attemptId, "guest-1", "UNIT_ROUND", null, 51, 1_000)
         database.progressQueries.upsertAttemptAnswer(Attempt_answer(attemptId, 100, "guest-1", true, 2, 2, 2_000, null))
         provider.adoptAccount("account-a")
 
@@ -98,7 +98,7 @@ class LocalUserProviderTest {
         val profiles = UserProfileRepositoryImpl(database, provider, Dispatchers.Unconfined)
         profiles.saveTeachingLanguage(TeachingLanguage.HU)
         provider.adoptAccount("account-a")
-        database.activityQueries.addActivity("account-a", "2026-10-31", 10, 5, 3)
+        database.activityQueries.addActivity("account-a", "2026-10-31", "device-1", 5, 3)
 
         provider.adoptAccount("account-b")
 
@@ -106,8 +106,8 @@ class LocalUserProviderTest {
         assertFalse(provider.isGuest())
         assertNull(database.profileQueries.selectProfile("account-b").executeAsOneOrNull())
         assertNull(database.profileQueries.selectProfile("account-a").executeAsOneOrNull())
-        assertEquals(0L, database.activityQueries.selectTotalXp("account-b").executeAsOne())
-        assertEquals(0L, database.activityQueries.selectTotalXp("account-a").executeAsOne())
+        assertEquals(0, database.activityQueries.selectActivity("account-b", "2026-10-31", "2026-10-31").executeAsList().size)
+        assertEquals(0, database.activityQueries.selectActivity("account-a", "2026-10-31", "2026-10-31").executeAsList().size)
     }
 
     // A save used to read the id before its transaction, so a sign-up moving the rows in between

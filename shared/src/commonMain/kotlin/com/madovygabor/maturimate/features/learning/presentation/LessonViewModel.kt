@@ -96,7 +96,14 @@ class LessonViewModel(
                 }
                 is OperationResult.Error -> LessonUiState.Failed
             }
+            if (_state.value is LessonUiState.Ready) markOpened()
         }
+    }
+
+    /** A lesson opened for the first time is `IN_PROGRESS` from now on; one that already has a row is left as it is. */
+    private suspend fun markOpened() {
+        val earlier = (progress.unitProgressOf(unitId) as? OperationResult.Success)?.data
+        if (earlier == null) progress.saveUnitProgress(UnitProgress(unitId, UnitProgressStatus.IN_PROGRESS, startedAt = now(), completedAt = null))
     }
 
     /** The test that comes right after the lesson in its topic, if the next step is one. */
@@ -135,7 +142,7 @@ class LessonViewModel(
         viewModelScope.launch {
             tracker?.record(seconds)
             val time = now()
-            val earlier = (progress.unitProgress() as? OperationResult.Success)?.data?.firstOrNull { it.learningUnitId == unitId }
+            val earlier = (progress.unitProgressOf(unitId) as? OperationResult.Success)?.data
             val saved = progress.saveUnitProgress(
                 UnitProgress(unitId, UnitProgressStatus.COMPLETED, startedAt = earlier?.startedAt ?: time, completedAt = time)
             )

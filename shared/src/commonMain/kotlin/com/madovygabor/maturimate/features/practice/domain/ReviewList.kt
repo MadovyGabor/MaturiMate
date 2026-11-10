@@ -34,7 +34,7 @@ class ReviewList(
     private val content: ContentRepository,
     private val progress: ProgressRepository,
     private val now: () -> Instant = { Clock.System.now() },
-    private val timeZone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    private val timeZone: suspend () -> TimeZone = { TimeZone.currentSystemDefault() },
 ) {
 
     suspend fun load(): OperationResult<List<ReviewItem>, LearningError> = guarded {

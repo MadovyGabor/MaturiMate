@@ -62,6 +62,8 @@ class LessonViewModelTest {
     private fun progress(existing: List<UnitProgress> = emptyList(), saveFails: Boolean = false) =
         object : ProgressRepository by unsupported<ProgressRepository>() {
             override suspend fun unitProgress(): OperationResult<List<UnitProgress>, LearningError> = OperationResult.Success(existing)
+            override suspend fun unitProgressOf(learningUnitId: Long): OperationResult<UnitProgress?, LearningError> =
+                OperationResult.Success(existing.firstOrNull { it.learningUnitId == learningUnitId })
             override suspend fun saveUnitProgress(progress: UnitProgress): OperationResult<Unit, LearningError> =
                 if (saveFails) OperationResult.Error(LearningError.DATABASE_ERROR)
                 else { saved += progress; OperationResult.Success(Unit) }
@@ -148,7 +150,9 @@ class LessonViewModelTest {
         // the test that follows the lesson is opened next
         assertEquals(51L, withTimeout(5_000) { viewModel.finished.first() })
 
-        val progress = saved.single()
+        // opening the lesson saved it as started, finishing it as done
+        assertEquals(listOf(UnitProgressStatus.IN_PROGRESS, UnitProgressStatus.COMPLETED), saved.map { it.status })
+        val progress = saved.last()
         assertEquals(50L, progress.learningUnitId)
         assertEquals(UnitProgressStatus.COMPLETED, progress.status)
         assertEquals(Instant.fromEpochMilliseconds(5_000), progress.completedAt)

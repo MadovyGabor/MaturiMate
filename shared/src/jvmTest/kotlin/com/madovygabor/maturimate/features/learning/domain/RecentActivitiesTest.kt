@@ -73,7 +73,7 @@ class RecentActivitiesTest {
         assertEquals("Szóképek", list.last().title)
     }
 
-    private suspend fun practice(type: AttemptType, finishedAt: Long, tasks: List<Long>, status: AttemptStatus = AttemptStatus.FINISHED): Long {
+    private suspend fun practice(type: AttemptType, finishedAt: Long, tasks: List<Long>, status: AttemptStatus = AttemptStatus.FINISHED): String {
         val id = (progress.startAttempt(type, null, null, at(finishedAt - 500)) as OperationResult.Success).data
         tasks.forEachIndexed { index, task ->
             progress.recordAnswer(AttemptAnswer(id, task, index == 0, if (index == 0) 1 else 0, 1, at(finishedAt - 100), "1=A"))

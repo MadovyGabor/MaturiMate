@@ -46,7 +46,8 @@ class ContentRepositoryImpl(
     }
 
     override suspend fun units(topicId: Long): OperationResult<List<LearningUnit>, LearningError> = read { db ->
-        db.learningUnitQueries.selectPublishedByTopic(topicId).executeAsList().map { it.toDomain(db) }
+        // no pages: a listing only needs the title, the kind and the order, not the text of every lesson
+        db.learningUnitQueries.selectPublishedByTopic(topicId).executeAsList().map { it.toDomain() }
     }
 
     override suspend fun unit(learningUnitId: Long): OperationResult<LearningUnit, LearningError> = read { db ->

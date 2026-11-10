@@ -164,7 +164,7 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
                         Stats(summary.streak, summary.totals)
                         Progress(summary.subjects, state.open, actions.onToggle)
                     }
-                    Column(Modifier.weight(1f)) { Recent(summary.recent, summary.today, actions.onHistory) }
+                    Column(Modifier.weight(1f)) { Recent(summary.recent, summary.today, summary.zone, actions.onHistory) }
                 }
             } else {
                 Header(summary.firstName, actions.onSettings)
@@ -172,7 +172,7 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
                 if (summary.firstName == null) GuestCard(actions)
                 Stats(summary.streak, summary.totals)
                 Progress(summary.subjects, state.open, actions.onToggle)
-                Recent(summary.recent, summary.today, actions.onHistory)
+                Recent(summary.recent, summary.today, summary.zone, actions.onHistory)
             }
         }
     }
@@ -310,7 +310,7 @@ private fun line(title: String, count: LessonTestCount): ProgressLine {
 /** The last three activities, without day headings; "Összes megtekintése" opens the full history. */
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun Recent(recent: List<RecentActivity>, today: LocalDate, onHistory: () -> Unit) {
+private fun Recent(recent: List<RecentActivity>, today: LocalDate, zone: TimeZone, onHistory: () -> Unit) {
     val spacing = MaterialTheme.spacing
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -326,7 +326,7 @@ private fun Recent(recent: List<RecentActivity>, today: LocalDate, onHistory: ()
             EmptyNote(stringResource(Res.string.profile_history_empty))
         } else {
             recent.forEach { activity ->
-                ActivityItem(activity, meta = placeAndDay(activityPlace(activity), dayText(activity, today)))
+                ActivityItem(activity, meta = placeAndDay(activityPlace(activity), dayText(activity, today, zone)))
             }
         }
     }
@@ -335,8 +335,8 @@ private fun Recent(recent: List<RecentActivity>, today: LocalDate, onHistory: ()
 /** "Ma", "Tegnap", or the date, as on the home screen. */
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun dayText(activity: RecentActivity, today: LocalDate): String {
-    val day = activity.at.toLocalDateTime(TimeZone.currentSystemDefault()).date
+private fun dayText(activity: RecentActivity, today: LocalDate, zone: TimeZone): String {
+    val day = activity.at.toLocalDateTime(zone).date
     return when (day) {
         today -> stringResource(Res.string.home_when_today)
         today.minus(DatePeriod(days = 1)) -> stringResource(Res.string.home_when_yesterday)

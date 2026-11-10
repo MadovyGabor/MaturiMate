@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /** What the whole app depends on: the language of its texts and where it starts. */
 data class AppState(
@@ -32,6 +33,11 @@ class AppViewModel(
     repository: UserProfileRepository,
     retryDelaysMillis: List<Long> = READ_RETRY_DELAYS_MILLIS,
 ) : ViewModel() {
+
+    init {
+        // one time zone for the whole app: the device's, kept in the settings
+        viewModelScope.launch { repository.refreshTimeZone() }
+    }
 
     private val reload = MutableStateFlow(0)
     private val _failed = MutableStateFlow(false)

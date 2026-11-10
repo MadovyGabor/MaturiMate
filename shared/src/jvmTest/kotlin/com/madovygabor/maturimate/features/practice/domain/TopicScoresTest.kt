@@ -16,7 +16,6 @@ import com.madovygabor.maturimate.features.learning.data.ContentRepositoryImpl
 import com.madovygabor.maturimate.features.learning.data.ProgressRepositoryImpl
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.TaskProgress
-import com.madovygabor.maturimate.features.learning.domain.model.TaskProgressStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -67,7 +66,7 @@ class TopicScoresTest {
     /** The latest answer of each task: right (true) or wrong (false). */
     private fun answered(vararg tasks: Pair<Long, Boolean>) = runBlocking {
         for ((id, right) in tasks) progress.saveTaskProgress(
-            TaskProgress(id, if (right) 1 else 0, if (right) 0 else 1, if (right) 1 else 0, Instant.fromEpochMilliseconds(1), null, TaskProgressStatus.LEARNING)
+            TaskProgress(id, if (right) 1 else 0, if (right) 0 else 1, if (right) 1 else 0, Instant.fromEpochMilliseconds(1))
         ).data()
     }
 
