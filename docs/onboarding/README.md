@@ -69,7 +69,7 @@ Ask only for what is used. Everything is stored per account; the account id come
 | Terms and privacy accepted, age 16 or older | legal record | `user_consent` (new): version and time | account screen |
 | Marketing e-mails | newsletter | `user_consent`, separate, never preselected | account screen, optional |
 
-Not asked: date of birth (the age is confirmed instead; V1 is for users aged 16 or older, the GDPR consent age in Slovakia and Hungary), school type, school name. `date_of_birth` becomes nullable in the schema (step 4.2).
+Not asked: date of birth (the age is confirmed instead; V1 is for users aged 16 or older, the GDPR consent age in Slovakia and Hungary), school type, school name. `date_of_birth` was removed from the schema in step 11.1, since it is never asked.
 
 A guest ("Körülnézek") has no server account, name or e-mail: the answers stay on the phone under a temporary local id. Nothing is sent to the server before the user signs up and accepts the terms. Signing in is required after the first lesson.
 

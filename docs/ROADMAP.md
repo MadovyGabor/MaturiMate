@@ -1,5 +1,6 @@
-# MaturiMate Roadmap
 
+> **Updated 2026-11-10:** Milestone 11 is the database review and freeze only (done); its steps are plain points 11.1 to 11.8 (were 11.1a to 11.1h). The open bugs from the phone tests (was 11.2) moved to 13.5, and 12.2 is gone from Milestone 12 because 11.8 did it. The "Was 11.x" notes on steps of Milestones 12 and 15 refer to the numbers of Milestone 11 before this change. The release key and Play Console, crash reports, the legal drafts and the Supabase operations (was 11.3 to 11.6) moved to the start of Milestone 15 (15.1 to 15.4), because they only matter when there is something to give to testers. The Play Console app is created already.
+>
 > **Updated 2026-11-06 (staged release):** the plan from Milestone 10 on is redrawn: Hungarian content first, then the groundwork (11), the sync and download (12), code review (13) and UI refinement (14), all before the alpha (15); then the closed beta (16), the other subjects as downloadable packs (17), the open beta (18) and the release in September 2027 (19). Steps of finished milestones keep their old numbers; each new step says "Was …". Reasons in [DECISIONS](DECISIONS.md).
 >
 > **Updated 2026-11-03 (reordered):** the milestones after 7 are redrawn: 8 home screen and streak, 9 navigation, profile and settings, 9a practice, 10 Hungarian content, 11 sync and content download, 12 beta, polish and public release. The exam-style practice milestone is dropped. Old step numbers are noted in each step as "Was …". Reasons in [DECISIONS](DECISIONS.md).
@@ -225,26 +226,26 @@ The lessons and tests of the Hungarian subject, written in the private content r
 
 ---
 
-## Milestone 11: Groundwork for the alpha
+## Milestone 11: Database review and freeze *(done on 2026-11-10)*
 
-Everything that has to be settled before the first testers install the app. After 11.1 every change to the user database is a migration.
+The user database is shaped for the sync once, while the server's progress tables were still empty. From here every change to it is a migration pair (a phone `.sqm` and a Supabase migration). The audit is `llm/outputs/audit-11-1-report.md`; the plan and the decisions of 2026-11-10 are in `content/DECISIONS.md`. One phone migration (`5.sqm`) and one Supabase migration (`20261110120000_user_schema_freeze.sql`) carry the schema steps.
 
-* [ ] **11.1.** Review of the user database tables; then the schema is frozen. *Was 11.1.*
-* [ ] **11.2. Open items before testers:**
-  * Bug fixes from phone tests *(was 12.1)*: after a change of the teaching language the subjects are not asked again; Google sign-in on desktop is not tried yet (it works on Android); sometimes the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05, not every time).
-* [ ] **11.3. Release key and Play Console:** an own upload key instead of the debug key (6a.4) and Play App Signing; the SHA-1 fingerprints of both keys added to the Google OAuth client, so Google sign-in works in builds from the Play Store; find out what Google asks for the testing tracks (number of testers and days, privacy policy address, data safety form).
-* [ ] **11.4. Crash reports:** Sentry (Android and desktop) and a "report a problem" button in the settings. No personal data in the reports. No separate analytics tool: the learning data comes from the sync (12.3).
-* [ ] **11.5. Drafts of the terms of use and the privacy notice,** covering accounts, Supabase, Resend, Google sign-in and crash reports, published on `maturimate.madovygabor.com` and linked from the consent text on the account step. The legal review comes in 16.1. *Was part of 12.6.*
-* [ ] **11.6. Supabase and e-mail operations:** check the plan before the alpha (whether an inactive free project is paused, backups, `pg_dump` routine) and the e-mail limits (Resend and Supabase Auth) for the number of testers.
+* [x] **11.1. Round ids made by the device:** `attempt.attempt_id` is a UUID (text on the phone, `uuid` on the server). *Was 11.1a.*
+* [x] **11.2. Change times, reset marker, device id:** `updated_at` on five tables, `progress_reset_at` on the profile, `activity_log` per device (`local_device`). *Was 11.1b.*
+* [x] **11.3. Clean-up:** the unused columns, the attempt type `EXTRA_PRACTICE`, four unused indexes and the server table `user_task_progress` are removed; a unit is `IN_PROGRESS` when opened. *Was 11.1c.*
+* [x] **11.4. Server types and policies:** `timestamptz` for the user tables, DELETE policies for the progress tables, `rls_test.sql` extended. *Tested on a local PostgreSQL 16 with all migrations.* *Was 11.1d.*
+* [x] **11.5. Migration safety:** `SchemaMigrationTest` compares a schema migrated from version 1 with a fresh one (the version-1 DDL is a test resource). **The schema is frozen from here: every change is a migration pair.** *Was 11.1e.*
+* [x] **11.6. One time zone:** the device's, written to `user_settings.timezone` at every start (`refreshTimeZone`, called by `AppViewModel`); `StudyTracker.timeZone()` is the one zone, and the home and profile screens, `ReviewList` and `ActivityHistory` take the day from it; a streak is not cut when the last done day is ahead of today (a flight west). *Was 11.1f.*
+* [x] **11.7. Atomic writes and open rounds:** `recordTaskAnswer` counts an answer in SQL (nothing read first), `unitProgressOf` reads one unit, `updateStreak` keeps the read and the write of the streak in one transaction (the rule stays in `StudyTracker`), a round left `IN_PROGRESS` is closed as `ABANDONED` when the next round starts, the streak settles a day whose goal was lowered afterwards, and `ContentRepository.units()` comes without the lesson text (audit P2). *Was 11.1g.*
+* [x] **11.8. Supabase:** the five migrations that were not live (the four older ones and the new one) are applied to the live project with `supabase db push --remote`, without a branch (nobody uses the database yet); the advisors are clean except the leaked-password protection (see 15.4). *Done on 2026-11-10, moved here from 12.2.* *Was 11.1h.*
 
 ---
 
 ## Milestone 12: Sync and content download
 
-All of it before the alpha, so the testers use the real flow: sign-up, sync, download.
+All of it before the alpha, so the testers use the real flow: sign-up, sync, download. (12.2, the open Supabase migrations, was done in 11.8.)
 
 * [ ] **12.1. Sync design (plan first, no code before approval):** which tables travel and in which direction, conflicts when one account is used on several devices, checks on the server instead of trusting the phone, the time zone and the streak day, how a guest's progress merges with an existing account (see 12.5).
-* [ ] **12.2. Open Supabase migrations:** apply the written migrations (7.0a lesson pages, 7.5 `attempt_answer`, 8.1 activity seconds, 9a.2 attempt types) on a Supabase branch first, then on the live project.
 * [ ] **12.3.** Sync of user data between the phone and Supabase. With it: the reset of the progress (9.4b) removes the same rows on the server, the sign-out no longer has to remove the local data without a copy, the settings' "Szinkronizálás" row comes alive, and the name edited in the settings goes to the server. *Was 11.2.*
 * [ ] **12.4. Content path and download:** the exporter builds the starter pack (the first lesson of each subject, with the topics above it) bundled in the app and the full content, one pack per subject, downloaded after sign-up and for later updates: a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. The manifest gets a `kind` (`FULL` or `STARTER`) and an explicit schema number; a full file of the same version replaces a starter, never the other way round. Large downloads ask before using mobile data. `bundleContent -PcontentKind=full|starter` (development builds use the full file). *Was 11.3 and 11.4.*
 * [ ] **12.5. Required sign-in after the first lesson:** no "later" button. The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`). Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. *Was 11.5.*
@@ -261,6 +262,7 @@ Before the alpha, on the finished sync code.
 * [ ] **13.2.** Optimization: database calls, recomposition, memory, start-up time.
 * [ ] **13.3. Tests:** Android device tests in CI (waiting for an emulator since 6a.5), a test that the phone database upgrades from the version of the alpha, the shared profile flow in the coverage.
 * [ ] **13.4.** Dead code and documentation check.
+* [ ] **13.5. Bug fixes from phone tests** *(was 11.2 and 12.1)*: after a change of the teaching language the subjects are not asked again; Google sign-in on desktop is not tried yet (it works on Android); sometimes the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05, not every time).
 
 ---
 
@@ -280,9 +282,13 @@ Before the alpha. The screens were built quickly and work; here they get polishe
 
 About 20 acquaintances, several devices, the Hungarian subject, with sync and download, through a Play Console testing track. Target: early spring 2027 (the content of 10.3 decides).
 
-* [ ] **15.1.** Alpha release. Test the reminder on phones of several makers (battery savers often stop alarms).
-* [ ] **15.2.** Crash reports and feedback, fixes during the alpha.
-* [ ] **15.3. Exit to the closed beta:** every row of the screen checklist done, no open severe bug, about 99% crash-free sessions, the feedback processed.
+* [ ] **15.1. Release key and Play Console:** an own upload key instead of the debug key (6a.4) and Play App Signing; the SHA-1 fingerprints of both keys added to the Google OAuth client, so Google sign-in works in builds from the Play Store; find out what Google asks for the testing tracks (number of testers and days, privacy policy address, data safety form). *Was 11.3; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
+* [ ] **15.2. Crash reports:** Sentry (Android and desktop) and a "report a problem" button in the settings. No personal data in the reports. No separate analytics tool: the learning data comes from the sync (12.3). *Was 11.4; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
+* [ ] **15.3. Drafts of the terms of use and the privacy notice,** covering accounts, Supabase, Resend, Google sign-in and crash reports, published on `maturimate.madovygabor.com` and linked from the consent text on the account step. The legal review comes in 16.1. *Was part of 12.6.* *Was 11.5; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
+* [ ] **15.4. Supabase and e-mail operations:** check the plan before the alpha (whether an inactive free project is paused, backups, `pg_dump` routine) and the e-mail limits (Resend and Supabase Auth) for the number of testers. *Was 11.6; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
+* [ ] **15.5.** Alpha release. Test the reminder on phones of several makers (battery savers often stop alarms). Upload a first build to the internal testing track early, to try the whole chain (signing, install from Play, Google sign-in) before the testers come.
+* [ ] **15.6.** Crash reports and feedback, fixes during the alpha.
+* [ ] **15.7. Exit to the closed beta:** every row of the screen checklist done, no open severe bug, about 99% crash-free sessions, the feedback processed.
 
 ---
 
