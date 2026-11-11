@@ -42,7 +42,7 @@ class AccountSettingsTest {
     private var guests = 0
     private val localUser = LocalUserProvider(database) { "guest-${++guests}" }
     private val profiles = UserProfileRepositoryImpl(database, localUser, Dispatchers.Unconfined)
-    private val progress = ProgressRepositoryImpl(database, localUser, Dispatchers.Unconfined)
+    private val progress = ProgressRepositoryImpl(database, localUser, Dispatchers.Unconfined, now = { Instant.fromEpochMilliseconds(1_000) })
 
     private class Auth(private val password: String = "Old12345") : AuthRepository {
         var newPassword: String? = null
@@ -128,7 +128,7 @@ class AccountSettingsTest {
         val attempt = (progress.startAttempt(AttemptType.UNIT_ROUND, null, 51, at) as OperationResult.Success).data
         progress.finishAttempt(attempt, AttemptStatus.FINISHED, at, 5, 5)
         progress.saveStreak(Streak(4, 7, LocalDate(2026, 11, 4)))
-        progress.addActivity(DailyActivity(LocalDate(2026, 11, 4), xpEarned = 0, secondsStudied = 600, tasksAnswered = 5))
+        progress.addActivity(DailyActivity(LocalDate(2026, 11, 4), secondsStudied = 600, tasksAnswered = 5))
 
         assertEquals(OperationResult.Success(Unit), progress.resetProgress())
 
@@ -137,5 +137,7 @@ class AccountSettingsTest {
         assertEquals(4, (progress.streak() as OperationResult.Success).data!!.currentStreak)
         val days = (progress.activity(LocalDate(2026, 11, 4), LocalDate(2026, 11, 4)) as OperationResult.Success).data
         assertEquals(600, days.single().secondsStudied)
+        // the profile remembers when, so a sync can tell which progress is older than the reset
+        assertEquals(1_000L, database.profileQueries.selectProfile(localUser.userId()).executeAsOneOrNull()?.progress_reset_at)
     }
 }

@@ -1,7 +1,12 @@
 -- Practice rounds and progress of the user. Same tables as in supabase/migrations,
 -- without the foreign keys to auth.users and to content tables (topic, learning_unit, task).
+--
+-- Change times (`updated_at`, epoch milliseconds): a column default on insert (also for INSERT OR REPLACE), and
+-- every UPDATE sets it to the current time. The sync (Milestone 12) reads them.
+
+-- A round. Its id is made by the device (a UUID), so two devices of one account never collide.
 CREATE TABLE attempt (
-    attempt_id        INTEGER CONSTRAINT pk_attempt PRIMARY KEY,
+    attempt_id        TEXT    NOT NULL CONSTRAINT pk_attempt PRIMARY KEY,
     user_id           TEXT    NOT NULL,
     attempt_type      TEXT    NOT NULL,
     topic_id          INTEGER,
@@ -12,12 +17,12 @@ CREATE TABLE attempt (
     earned_points     INTEGER,
     max_points        INTEGER,
     CONSTRAINT ck_attempt_type
-        CHECK (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE', 'REVIEW', 'FREE_PRACTICE', 'MISTAKE_PRACTICE')),
+        CHECK (attempt_type IN ('UNIT_ROUND', 'REVIEW', 'FREE_PRACTICE', 'MISTAKE_PRACTICE')),
     CONSTRAINT ck_attempt_status
         CHECK (status IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')),
     -- unit rounds need the unit, a review needs the topic, a practice round has neither; never both
     CONSTRAINT ck_attempt_scope CHECK (
-        (attempt_type IN ('UNIT_ROUND', 'EXTRA_PRACTICE')
+        (attempt_type = 'UNIT_ROUND'
             AND learning_unit_id IS NOT NULL AND topic_id IS NULL) OR
         (attempt_type = 'REVIEW'
             AND topic_id IS NOT NULL AND learning_unit_id IS NULL) OR
@@ -29,9 +34,9 @@ CREATE TABLE attempt (
 );
 
 -- One answer of a test round: which task, right or wrong, the points and what the student answered.
--- Same table as in supabase/migrations/20261103130000_attempt_answer.sql, without the foreign key to the task.
+-- Same table as in supabase/migrations, without the foreign key to the task.
 CREATE TABLE attempt_answer (
-    attempt_id     INTEGER NOT NULL,
+    attempt_id     TEXT    NOT NULL,
     task_id        INTEGER NOT NULL,
     user_id        TEXT    NOT NULL,
     is_correct     INTEGER AS kotlin.Boolean NOT NULL CHECK (is_correct IN (0, 1)),
@@ -52,12 +57,15 @@ CREATE TABLE user_unit_progress (
     status            TEXT    NOT NULL DEFAULT 'IN_PROGRESS',
     started_at        INTEGER NOT NULL,
     completed_at      INTEGER,
+    updated_at        INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
     CONSTRAINT pk_user_unit_progress PRIMARY KEY (user_id, learning_unit_id),
     CONSTRAINT ck_user_unit_progress_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED')),
     CONSTRAINT ck_user_unit_progress_completed CHECK (
         (status = 'COMPLETED') = (completed_at IS NOT NULL))
 );
 
+-- A cache of how the student does on each task, built from the answers: it is not synced (a second device
+-- would double the counters) and can be rebuilt from `attempt_answer`.
 CREATE TABLE user_task_progress (
     user_id           TEXT    NOT NULL,
     task_id           INTEGER NOT NULL,
@@ -65,28 +73,17 @@ CREATE TABLE user_task_progress (
     times_wrong       INTEGER NOT NULL DEFAULT 0,
     correct_streak    INTEGER NOT NULL DEFAULT 0,
     last_answered_at  INTEGER NOT NULL,
-    next_review_at    INTEGER,
-    status            TEXT    NOT NULL DEFAULT 'LEARNING',
     CONSTRAINT pk_user_task_progress PRIMARY KEY (user_id, task_id),
     CONSTRAINT ck_user_task_progress_counts
-        CHECK (times_correct >= 0 AND times_wrong >= 0 AND correct_streak >= 0),
-    CONSTRAINT ck_user_task_progress_status CHECK (status IN ('LEARNING', 'MASTERED'))
+        CHECK (times_correct >= 0 AND times_wrong >= 0 AND correct_streak >= 0)
 );
 
 CREATE INDEX ix_attempt_user_started    ON attempt (user_id, started_at);
 CREATE INDEX ix_attempt_answer_user_task ON attempt_answer (user_id, task_id);
-CREATE INDEX ix_attempt_unit            ON attempt (learning_unit_id);
-CREATE INDEX ix_user_unit_progress_unit ON user_unit_progress (learning_unit_id);
-CREATE INDEX ix_user_task_progress_due  ON user_task_progress (user_id, next_review_at);
-CREATE INDEX ix_user_task_progress_task ON user_task_progress (task_id);
 
--- attempt_id is assigned by SQLite (INTEGER PRIMARY KEY is the rowid)
 insertAttempt:
-INSERT INTO attempt (user_id, attempt_type, topic_id, learning_unit_id, status, started_at)
-VALUES (?, ?, ?, ?, 'IN_PROGRESS', ?);
-
-lastInsertedId:
-SELECT last_insert_rowid();
+INSERT INTO attempt (attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at)
+VALUES (?, ?, ?, ?, ?, 'IN_PROGRESS', ?);
 
 finishAttempt:
 UPDATE attempt
@@ -111,18 +108,17 @@ SELECT * FROM attempt_answer WHERE attempt_id = :attemptId ORDER BY answered_at,
 selectUnitProgress:
 SELECT * FROM user_unit_progress WHERE user_id = :userId;
 
+selectUnitProgressOf:
+SELECT * FROM user_unit_progress WHERE user_id = :userId AND learning_unit_id = :learningUnitId;
+
 upsertUnitProgress:
-INSERT OR REPLACE INTO user_unit_progress VALUES ?;
+INSERT OR REPLACE INTO user_unit_progress (user_id, learning_unit_id, status, started_at, completed_at)
+VALUES (?, ?, ?, ?, ?);
 
 selectTaskProgress:
 SELECT * FROM user_task_progress WHERE user_id = :userId AND task_id = :taskId;
 
-selectDueTasks:
-SELECT * FROM user_task_progress
-WHERE user_id = :userId AND next_review_at IS NOT NULL AND next_review_at <= :now
-ORDER BY times_wrong DESC, next_review_at;
-
--- The mistakes: the tasks whose latest answer is wrong (DECISIONS 2026-11-05). A wrong answer sets the right
+-- The mistakes: the tasks whose latest answer is wrong. A wrong answer sets the right
 -- answers in a row to 0 and a right one raises it, so a task answered wrong last has a streak of 0.
 selectMistakeTaskIds:
 SELECT task_id FROM user_task_progress
@@ -136,7 +132,7 @@ WHERE user_id = :userId
 GROUP BY task_id;
 
 -- Every answered task and its right answers in a row: more than 0 means the latest answer is right (the scores of
--- the weak and strong topics, DECISIONS 2026-11-05).
+-- the weak and strong topics).
 selectAnsweredTasks:
 SELECT task_id, correct_streak FROM user_task_progress
 WHERE user_id = :userId
@@ -145,11 +141,32 @@ ORDER BY task_id;
 upsertTaskProgress:
 INSERT OR REPLACE INTO user_task_progress VALUES ?;
 
+-- One answer, counted in one statement group: nothing is read first, so two writers cannot lose a count.
+recordTaskAnswer {
+    INSERT OR IGNORE INTO user_task_progress (user_id, task_id, last_answered_at)
+    VALUES (:userId, :taskId, :answeredAt);
+
+    UPDATE user_task_progress SET
+        times_correct = times_correct + :right,
+        times_wrong = times_wrong + 1 - :right,
+        correct_streak = CASE WHEN :right = 1 THEN correct_streak + 1 ELSE 0 END,
+        last_answered_at = :answeredAt
+    WHERE user_id = :userId AND task_id = :taskId;
+}
+
+-- A round left open when the process died (the app was killed) is closed at the next start of a round.
+abandonOpenAttempts:
+UPDATE attempt SET status = 'ABANDONED', finished_at = max(started_at, :now)
+WHERE user_id = :userId AND status = 'IN_PROGRESS';
+
 -- "Haladás újrakezdése": what was done goes (the rounds, the answers, the finished lessons and tests, the
--- repetition of the tasks); the streak, the study time and the settings stay (DECISIONS 2026-11-04).
+-- repetition of the tasks); the streak, the study time and the settings stay. The profile remembers when:
+-- the sync ignores progress older than `progress_reset_at`.
 resetProgress {
+INSERT OR IGNORE INTO user_profile (user_id) VALUES (:userId);
 DELETE FROM attempt_answer WHERE user_id = :userId;
 DELETE FROM attempt WHERE user_id = :userId;
 DELETE FROM user_unit_progress WHERE user_id = :userId;
 DELETE FROM user_task_progress WHERE user_id = :userId;
+UPDATE user_profile SET progress_reset_at = :resetAt, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 }

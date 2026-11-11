@@ -380,7 +380,7 @@ class TestSessionViewModelTest {
         assertIs<TestUiState.Result>(result)
         assertFalse(result.passed)
         settled { (progress.attemptsOfUnit(50) as OperationResult.Success).data.singleOrNull()?.status == AttemptStatus.FINISHED }
-        assertEquals(emptyList(), (progress.unitProgress() as OperationResult.Success).data)
+        assertEquals(listOf(UnitProgressStatus.IN_PROGRESS), (progress.unitProgress() as OperationResult.Success).data.map { it.status })
     }
 
     @Test
@@ -413,7 +413,8 @@ class TestSessionViewModelTest {
         settled { (progress.attemptsOfUnit(51) as OperationResult.Success<List<com.madovygabor.maturimate.features.learning.domain.model.Attempt>, LearningError>).data.single().status == AttemptStatus.ABANDONED }
         val attempt = (progress.attemptsOfUnit(51) as OperationResult.Success).data.single()
         assertEquals(1, (progress.answersOfAttempt(attempt.id) as OperationResult.Success).data.size)
-        assertEquals(emptyList(), (progress.unitProgress() as OperationResult.Success).data)
+        // the unit was opened, and is not done
+        assertEquals(listOf(UnitProgressStatus.IN_PROGRESS), (progress.unitProgress() as OperationResult.Success).data.map { it.status })
     }
 
     @Test

@@ -129,7 +129,7 @@ val sharedModule = module {
     // The weak and strong topics of the practice tab
     single { TopicScores(get(), get()) }
     // The finished topics not seen for a long time (the review of old material)
-    single { ReviewList(get(), get()) }
+    single { ReviewList(get(), get(), timeZone = { get<StudyTracker>().timeZone() }) }
 
     // Keeps the planned daily reminder in line with the profile (started by the app)
     single { ReminderSync(get(), get()) }

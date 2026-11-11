@@ -95,7 +95,6 @@ class UserProfileRepositoryImpl(
                 User_subject(
                     user_id = userId,
                     subject_id = subject.subjectId,
-                    target_score = null,
                     source = if (subject.compulsory) "AUTO" else "CHOSEN",
                     added_at = addedAt + index,
                     level = subject.level?.name,
@@ -123,6 +122,17 @@ class UserProfileRepositoryImpl(
 
     override suspend fun completeOnboarding(at: Instant) = save { userId ->
         queries.updateOnboardingCompletedAt(at.toEpochMilliseconds(), userId)
+    }
+
+    override suspend fun refreshTimeZone(): OperationResult<Unit, DataError> = withContext(dispatcher) {
+        try {
+            queries.updateTimezone(timeZone(), localUser.userId())
+            OperationResult.Success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            OperationResult.Error(e.toDataError())
+        }
     }
 
     /** Creates the user's rows if needed and runs [block] in one transaction on the IO dispatcher. */

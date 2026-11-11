@@ -21,14 +21,14 @@ class UserDatabaseFileTest {
         val writes = (1..200).map { day ->
             pool.submit {
                 database.transaction {
-                    database.activityQueries.addActivity("user-1", "day-$day", 1, 1, 1)
+                    database.activityQueries.addActivity("user-1", "day-$day", "device-1", 1, 1)
                 }
             }
         }
         writes.forEach { it.get(30, TimeUnit.SECONDS) }
         pool.shutdown()
 
-        assertEquals(200L, database.activityQueries.selectTotalXp("user-1").executeAsOne())
+        assertEquals(200, database.activityQueries.selectActivity("user-1", "day-0", "day-999").executeAsList().size)
         dir.deleteRecursively()
     }
 }

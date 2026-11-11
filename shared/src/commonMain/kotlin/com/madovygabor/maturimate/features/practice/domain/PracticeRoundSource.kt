@@ -79,15 +79,15 @@ class PracticeRoundSource(
     private inline fun <T> OperationResult<T, *>.dataOr(failed: () -> Nothing): T =
         (this as? OperationResult.Success)?.data ?: failed()
 
-    override suspend fun answer(attemptId: Long, task: Task, answer: Answer, result: AnswerResult) {
+    override suspend fun answer(attemptId: String, task: Task, answer: Answer, result: AnswerResult) {
         recorder.answer(attemptId, task, answer, result)
     }
 
-    override suspend fun finish(attemptId: Long, entries: List<RoundEntry>) {
+    override suspend fun finish(attemptId: String, entries: List<RoundEntry>) {
         recorder.finishPractice(attemptId, entries)
     }
 
-    override suspend fun abandon(attemptId: Long, entries: List<RoundEntry>) {
+    override suspend fun abandon(attemptId: String, entries: List<RoundEntry>) {
         recorder.abandon(attemptId, entries)
     }
 }

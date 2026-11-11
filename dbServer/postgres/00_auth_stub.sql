@@ -3,7 +3,13 @@
 
 -- auth.users: the accounts
 CREATE SCHEMA IF NOT EXISTS auth;
-CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY, email text);
+
+-- Supabase keeps pgcrypto in the schema `extensions` and secrets in the Vault (vault.decrypted_secrets)
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+CREATE SCHEMA IF NOT EXISTS vault;
+CREATE TABLE IF NOT EXISTS vault.decrypted_secrets (name text PRIMARY KEY, decrypted_secret text);
 
 -- auth.uid(): the signed-in user, read from the JWT claims of the request
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid

@@ -13,7 +13,6 @@ import com.madovygabor.maturimate.features.learning.domain.model.OptionRole
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
 import com.madovygabor.maturimate.features.learning.domain.model.TaskOption
-import com.madovygabor.maturimate.features.learning.domain.model.TaskProgressStatus
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +55,7 @@ class TestRecorderTest {
         options = emptyList(), key = emptyList(), acceptedAnswers = listOf(AcceptedAnswer(1, "x", false)), attachments = emptyList(),
     )
 
-    private suspend fun answer(attemptId: Long, task: Task, answer: Answer) =
+    private suspend fun answer(attemptId: String, task: Task, answer: Answer) =
         recorder.answer(attemptId, task, answer, AnswerChecker.check(task, answer))
 
     @Test
@@ -124,8 +123,6 @@ class TestRecorderTest {
         }
         assertEquals(3, progressOfTask.timesCorrect)
         assertEquals(1, progressOfTask.timesWrong)
-        assertEquals(TaskProgressStatus.MASTERED, progressOfTask.status)
-        assertNull(progressOfTask.nextReviewAt)
     }
 
     @Test
@@ -136,7 +133,6 @@ class TestRecorderTest {
 
         val progressOfTask = progress.taskProgress(100).data()!!
         assertEquals(0, progressOfTask.correctStreak)
-        assertEquals(TaskProgressStatus.LEARNING, progressOfTask.status)
     }
 
     @Test
@@ -172,7 +168,25 @@ class TestRecorderTest {
 
         // one task wrong out of three: the attempt is finished, the unit is not done
         assertEquals(AttemptStatus.FINISHED, progress.attemptsOfUnit(51).data().single().status)
-        assertEquals(emptyList(), progress.unitProgress().data())
+        assertEquals(listOf(UnitProgressStatus.IN_PROGRESS), progress.unitProgress().data().map { it.status })
+    }
+
+    @Test
+    fun openingATestMarksTheUnitInProgressOnceAndNeverUndoesADoneUnit() = runBlocking {
+        recorder.start(51).data()
+        val started = progress.unitProgress().data().single()
+        assertEquals(UnitProgressStatus.IN_PROGRESS, started.status)
+        assertNull(started.completedAt)
+
+        // a second visit keeps the first start
+        clock += 5_000
+        recorder.start(51).data()
+        assertEquals(started.startedAt, progress.unitProgress().data().single().startedAt)
+
+        // a unit that is done stays done when its test is opened again
+        progress.saveUnitProgress(UnitProgress(51, UnitProgressStatus.COMPLETED, started.startedAt, started.startedAt)).data()
+        recorder.start(51).data()
+        assertEquals(UnitProgressStatus.COMPLETED, progress.unitProgress().data().single().status)
     }
 
     @Test
@@ -210,7 +224,7 @@ class TestRecorderTest {
         val attempt = progress.attemptsOfUnit(51).data().single()
         assertEquals(AttemptStatus.ABANDONED, attempt.status)
         assertEquals(1, attempt.earnedPoints)
-        assertEquals(emptyList(), progress.unitProgress().data())
+        assertEquals(listOf(UnitProgressStatus.IN_PROGRESS), progress.unitProgress().data().map { it.status })
         // what was answered stays recorded
         assertEquals(1, progress.answersOfAttempt(id).data().size)
     }

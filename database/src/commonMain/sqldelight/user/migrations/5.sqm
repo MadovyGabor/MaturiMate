@@ -1,0 +1,233 @@
+-- Version 4 to 5: groundwork for the sync (roadmap 11.1, decisions of 2026-11-10)
+-- (supabase/migrations/20261110120000_user_schema_freeze.sql). SQLite of Android API 26 cannot drop a column or
+-- change a key, so the tables are rebuilt; every row is kept.
+--
+-- * A round gets an id made by the device. The old whole-number ids are replaced by random ids (a number from
+--   one phone would collide with the same number from another).
+-- * `updated_at` on the profile, settings, unit progress, streak and daily activity: a column default, and every
+--   update query sets it. Rows kept here get the time of the migration.
+-- * `progress_reset_at` on the profile; the daily activity is kept per device (`device_id`).
+-- * Removed as unused: display_name, date_of_birth, school_type, target_score, theme, xp_earned,
+--   next_review_at, the task status, the attempt type EXTRA_PRACTICE and four indexes.
+
+-- ---- the device of this installation ----------------------------------------------------------------------------
+
+CREATE TABLE local_device (
+    slot       INTEGER NOT NULL CONSTRAINT pk_local_device PRIMARY KEY,
+    device_id  TEXT    NOT NULL,
+    CONSTRAINT ck_local_device_slot CHECK (slot = 1)
+);
+
+INSERT INTO local_device (slot, device_id) VALUES (1, lower(hex(randomblob(16))));
+
+-- ---- rounds and answers: ids made by the device ------------------------------------------------------------------
+
+CREATE TABLE attempt_id_map (old_id INTEGER NOT NULL PRIMARY KEY, new_id TEXT NOT NULL);
+INSERT INTO attempt_id_map (old_id, new_id) SELECT attempt_id, lower(hex(randomblob(16))) FROM attempt;
+
+CREATE TABLE attempt_old (
+    attempt_id TEXT, user_id TEXT, attempt_type TEXT, topic_id INTEGER, learning_unit_id INTEGER,
+    status TEXT, started_at INTEGER, finished_at INTEGER, earned_points INTEGER, max_points INTEGER
+);
+INSERT INTO attempt_old (attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points)
+SELECT m.new_id, a.user_id, a.attempt_type, a.topic_id, a.learning_unit_id, a.status, a.started_at, a.finished_at, a.earned_points, a.max_points
+FROM attempt a JOIN attempt_id_map m ON m.old_id = a.attempt_id;
+
+CREATE TABLE attempt_answer_old (
+    attempt_id TEXT, task_id INTEGER, user_id TEXT, is_correct INTEGER, earned_points INTEGER,
+    max_points INTEGER, answered_at INTEGER, given_answer TEXT
+);
+INSERT INTO attempt_answer_old (attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer)
+SELECT m.new_id, a.task_id, a.user_id, a.is_correct, a.earned_points, a.max_points, a.answered_at, a.given_answer
+FROM attempt_answer a JOIN attempt_id_map m ON m.old_id = a.attempt_id;
+
+DROP TABLE attempt_answer;
+DROP TABLE attempt;
+
+CREATE TABLE attempt (
+    attempt_id        TEXT    NOT NULL CONSTRAINT pk_attempt PRIMARY KEY,
+    user_id           TEXT    NOT NULL,
+    attempt_type      TEXT    NOT NULL,
+    topic_id          INTEGER,
+    learning_unit_id  INTEGER,
+    status            TEXT    NOT NULL DEFAULT 'IN_PROGRESS',
+    started_at        INTEGER NOT NULL,
+    finished_at       INTEGER,
+    earned_points     INTEGER,
+    max_points        INTEGER,
+    CONSTRAINT ck_attempt_type
+        CHECK (attempt_type IN ('UNIT_ROUND', 'REVIEW', 'FREE_PRACTICE', 'MISTAKE_PRACTICE')),
+    CONSTRAINT ck_attempt_status
+        CHECK (status IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')),
+    CONSTRAINT ck_attempt_scope CHECK (
+        (attempt_type = 'UNIT_ROUND'
+            AND learning_unit_id IS NOT NULL AND topic_id IS NULL) OR
+        (attempt_type = 'REVIEW'
+            AND topic_id IS NOT NULL AND learning_unit_id IS NULL) OR
+        (attempt_type IN ('FREE_PRACTICE', 'MISTAKE_PRACTICE')
+            AND learning_unit_id IS NULL AND topic_id IS NULL)),
+    CONSTRAINT ck_attempt_finished CHECK (finished_at IS NULL OR finished_at >= started_at),
+    CONSTRAINT ck_attempt_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
+INSERT INTO attempt (attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points)
+SELECT attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points FROM attempt_old;
+
+CREATE TABLE attempt_answer (
+    attempt_id     TEXT    NOT NULL,
+    task_id        INTEGER NOT NULL,
+    user_id        TEXT    NOT NULL,
+    is_correct     INTEGER NOT NULL CHECK (is_correct IN (0, 1)),
+    earned_points  INTEGER NOT NULL,
+    max_points     INTEGER NOT NULL,
+    answered_at    INTEGER NOT NULL,
+    given_answer   TEXT,
+    CONSTRAINT pk_attempt_answer PRIMARY KEY (attempt_id, task_id),
+    CONSTRAINT fk_attempt_answer_attempt FOREIGN KEY (attempt_id)
+        REFERENCES attempt (attempt_id) ON DELETE CASCADE,
+    CONSTRAINT ck_attempt_answer_points CHECK (
+        earned_points >= 0 AND max_points >= 0 AND earned_points <= max_points)
+);
+
+INSERT INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer)
+SELECT attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer FROM attempt_answer_old;
+
+DROP TABLE attempt_answer_old;
+DROP TABLE attempt_old;
+DROP TABLE attempt_id_map;
+
+CREATE INDEX ix_attempt_user_started     ON attempt (user_id, started_at);
+CREATE INDEX ix_attempt_answer_user_task ON attempt_answer (user_id, task_id);
+
+-- ---- profile: three columns go, the reset marker and the change time come ---------------------------------------
+
+CREATE TABLE user_profile_new (
+    user_id            TEXT    NOT NULL,
+    first_name         TEXT,
+    last_name          TEXT,
+    teaching_language  TEXT,
+    graduation_date    TEXT,
+    onboarding_completed_at  INTEGER,
+    progress_reset_at  INTEGER,
+    updated_at         INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
+    CONSTRAINT pk_user_profile PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_profile_language CHECK (teaching_language IN ('SK', 'HU'))
+);
+INSERT INTO user_profile_new (user_id, first_name, last_name, teaching_language, graduation_date, onboarding_completed_at)
+SELECT user_id, first_name, last_name, teaching_language, graduation_date, onboarding_completed_at FROM user_profile;
+DROP TABLE user_profile;
+ALTER TABLE user_profile_new RENAME TO user_profile;
+
+-- ---- settings: the theme goes -------------------------------------------------------------------------------------
+
+CREATE TABLE user_settings_new (
+    user_id             TEXT    NOT NULL,
+    ui_language         TEXT    NOT NULL DEFAULT 'SK',
+    timezone            TEXT    NOT NULL DEFAULT 'Europe/Bratislava',
+    daily_goal_minutes  INTEGER DEFAULT 10,
+    reminder_enabled    INTEGER NOT NULL DEFAULT 0 CHECK (reminder_enabled IN (0, 1)),
+    reminder_time       TEXT,
+    updated_at          INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
+    CONSTRAINT pk_user_settings PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_settings_language CHECK (ui_language IN ('SK', 'HU')),
+    CONSTRAINT ck_user_settings_goal
+        CHECK (daily_goal_minutes BETWEEN 1 AND 240),
+    CONSTRAINT ck_user_settings_reminder
+        CHECK (reminder_enabled = 0 OR reminder_time IS NOT NULL)
+);
+INSERT INTO user_settings_new (user_id, ui_language, timezone, daily_goal_minutes, reminder_enabled, reminder_time)
+SELECT user_id, ui_language, timezone, daily_goal_minutes, reminder_enabled, reminder_time FROM user_settings;
+DROP TABLE user_settings;
+ALTER TABLE user_settings_new RENAME TO user_settings;
+
+-- ---- subjects: the target score goes -----------------------------------------------------------------------------
+
+CREATE TABLE user_subject_new (
+    user_id       TEXT    NOT NULL,
+    subject_id    INTEGER NOT NULL,
+    source        TEXT    NOT NULL DEFAULT 'CHOSEN',
+    added_at      INTEGER NOT NULL,
+    level         TEXT,
+    CONSTRAINT pk_user_subject PRIMARY KEY (user_id, subject_id),
+    CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN')),
+    CONSTRAINT ck_user_subject_level CHECK (level IN ('B1', 'B2'))
+);
+INSERT INTO user_subject_new (user_id, subject_id, source, added_at, level)
+SELECT user_id, subject_id, source, added_at, level FROM user_subject;
+DROP TABLE user_subject;
+ALTER TABLE user_subject_new RENAME TO user_subject;
+
+-- ---- unit progress: the change time comes, the unused index goes ------------------------------------------------
+
+CREATE TABLE user_unit_progress_new (
+    user_id           TEXT    NOT NULL,
+    learning_unit_id  INTEGER NOT NULL,
+    status            TEXT    NOT NULL DEFAULT 'IN_PROGRESS',
+    started_at        INTEGER NOT NULL,
+    completed_at      INTEGER,
+    updated_at        INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
+    CONSTRAINT pk_user_unit_progress PRIMARY KEY (user_id, learning_unit_id),
+    CONSTRAINT ck_user_unit_progress_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED')),
+    CONSTRAINT ck_user_unit_progress_completed CHECK (
+        (status = 'COMPLETED') = (completed_at IS NOT NULL))
+);
+INSERT INTO user_unit_progress_new (user_id, learning_unit_id, status, started_at, completed_at)
+SELECT user_id, learning_unit_id, status, started_at, completed_at FROM user_unit_progress;
+DROP TABLE user_unit_progress;
+ALTER TABLE user_unit_progress_new RENAME TO user_unit_progress;
+
+-- ---- task progress: a cache, two columns and two indexes go -----------------------------------------------------
+
+CREATE TABLE user_task_progress_new (
+    user_id           TEXT    NOT NULL,
+    task_id           INTEGER NOT NULL,
+    times_correct     INTEGER NOT NULL DEFAULT 0,
+    times_wrong       INTEGER NOT NULL DEFAULT 0,
+    correct_streak    INTEGER NOT NULL DEFAULT 0,
+    last_answered_at  INTEGER NOT NULL,
+    CONSTRAINT pk_user_task_progress PRIMARY KEY (user_id, task_id),
+    CONSTRAINT ck_user_task_progress_counts
+        CHECK (times_correct >= 0 AND times_wrong >= 0 AND correct_streak >= 0)
+);
+INSERT INTO user_task_progress_new (user_id, task_id, times_correct, times_wrong, correct_streak, last_answered_at)
+SELECT user_id, task_id, times_correct, times_wrong, correct_streak, last_answered_at FROM user_task_progress;
+DROP TABLE user_task_progress;
+ALTER TABLE user_task_progress_new RENAME TO user_task_progress;
+
+-- ---- streak: the change time comes ------------------------------------------------------------------------------
+
+CREATE TABLE user_streak_new (
+    user_id             TEXT    NOT NULL,
+    current_streak      INTEGER NOT NULL DEFAULT 0,
+    longest_streak      INTEGER NOT NULL DEFAULT 0,
+    last_activity_date  TEXT,
+    updated_at          INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
+    CONSTRAINT pk_user_streak PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_streak_values
+        CHECK (current_streak >= 0 AND longest_streak >= current_streak)
+);
+INSERT INTO user_streak_new (user_id, current_streak, longest_streak, last_activity_date)
+SELECT user_id, current_streak, longest_streak, last_activity_date FROM user_streak;
+DROP TABLE user_streak;
+ALTER TABLE user_streak_new RENAME TO user_streak;
+
+-- ---- daily activity: one row per device, no xp ------------------------------------------------------------------
+
+CREATE TABLE activity_log_new (
+    activity_id      INTEGER CONSTRAINT pk_activity_log PRIMARY KEY,
+    user_id          TEXT    NOT NULL,
+    activity_date    TEXT    NOT NULL,
+    device_id        TEXT    NOT NULL,
+    seconds_studied  INTEGER NOT NULL DEFAULT 0,
+    tasks_answered   INTEGER NOT NULL DEFAULT 0,
+    updated_at       INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
+    CONSTRAINT uq_activity_log_day UNIQUE (user_id, activity_date, device_id),
+    CONSTRAINT ck_activity_log_values
+        CHECK (seconds_studied >= 0 AND tasks_answered >= 0)
+);
+INSERT INTO activity_log_new (activity_id, user_id, activity_date, device_id, seconds_studied, tasks_answered)
+SELECT a.activity_id, a.user_id, a.activity_date, d.device_id, a.seconds_studied, a.tasks_answered
+FROM activity_log a, local_device d WHERE d.slot = 1;
+DROP TABLE activity_log;
+ALTER TABLE activity_log_new RENAME TO activity_log;

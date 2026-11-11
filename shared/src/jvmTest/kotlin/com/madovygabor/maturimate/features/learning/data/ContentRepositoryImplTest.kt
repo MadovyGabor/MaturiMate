@@ -98,7 +98,11 @@ class ContentRepositoryImplTest {
 
     @Test
     fun unitsAreMappedByType() = runBlocking {
-        val (summary, practice) = repository.units(11).data()
+        val (listed, practice) = repository.units(11).data()
+        assertIs<LearningUnit.Summary>(listed)
+        // a listing comes without the text of the lesson; the lesson itself has its pages
+        assertEquals(emptyList(), listed.pages)
+        val summary = repository.unit(listed.id).data()
         assertIs<LearningUnit.Summary>(summary)
         assertEquals(listOf("Mi a szókép?", null), summary.pages.map { it.title })
         // blocks come back in block order, whatever the order they were written in

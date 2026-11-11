@@ -5,6 +5,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.ContinueTarget
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlin.time.ExperimentalTime
 
@@ -47,6 +48,8 @@ data class HomeSummary(
     val motto: MottoKind,
     /** How many tasks were answered wrong last; the card of the mistake practice shows it. */
     val mistakes: Int = 0,
+    /** The zone of the days (the goal, the week, the activities): the one the tracker counts in. */
+    val zone: TimeZone = TimeZone.currentSystemDefault(),
 )
 
 /**
@@ -98,6 +101,7 @@ class HomeOverview(
                 recent = latest,
                 motto = mottoOf(goal.reached, streak, hadStreak, studiedBefore = latest.isNotEmpty() || goal.secondsStudied > 0),
                 mistakes = mistakeCount(),
+                zone = tracker.timeZone(),
             )
         )
     }

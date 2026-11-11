@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlin.time.ExperimentalTime
 
 /** A subject of the user. [progress] is empty while the installed content has no such subject ("Hamarosan"). */
@@ -28,6 +29,8 @@ data class ProfileSummary(
     val recent: List<RecentActivity>,
     /** Today in the user's time zone, to say "Ma" or "Tegnap" next to an activity. */
     val today: LocalDate,
+    /** The zone of those days: the one the tracker counts in. */
+    val zone: TimeZone = TimeZone.currentSystemDefault(),
 )
 
 /**
@@ -71,7 +74,7 @@ class ProfileOverview(
             .distinct()
             .sortedBy { it.ordinal }
             .map { subject -> ProfileSubject(subject, installed.firstOrNull { it.subjectId == subject.id }) }
-        return OperationResult.Success(ProfileSummary(user?.firstName, streak, totals, subjects, latest, today))
+        return OperationResult.Success(ProfileSummary(user?.firstName, streak, totals, subjects, latest, today, tracker.timeZone()))
     }
 
     companion object {

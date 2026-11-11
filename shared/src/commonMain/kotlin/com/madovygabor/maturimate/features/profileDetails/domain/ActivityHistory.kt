@@ -54,7 +54,7 @@ data class History(val sections: List<HistorySection>, val today: LocalDate)
 class ActivityHistory(
     private val recent: RecentActivities,
     private val tracker: StudyTracker,
-    private val timeZone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    private val timeZone: suspend () -> TimeZone = { tracker.timeZone() },
 ) {
 
     suspend fun load(): OperationResult<History, LearningError> {
