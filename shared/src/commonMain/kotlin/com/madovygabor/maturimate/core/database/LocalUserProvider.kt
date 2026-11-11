@@ -23,16 +23,28 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class LocalUserProvider(
     private val database: UserDatabase,
+    private val newDeviceId: () -> String = { Uuid.random().toString() },
     private val newGuestId: () -> String = { GUEST_PREFIX + Uuid.random() },
 ) {
     private val queries get() = database.profileQueries
     @Volatile
     private var cached: String? = null
+    @Volatile
+    private var cachedDevice: String? = null
 
     fun userId(): String = cached ?: database.transactionWithResult {
         queries.insertLocalUser(newGuestId(), true)
         queries.selectLocalUser().executeAsOne().user_id
     }.also { cached = it }
+
+    /**
+     * The id of this installation: made once, kept when the user signs out. The study time of a day is stored per
+     * device, so two devices of one account add up exactly.
+     */
+    fun deviceId(): String = cachedDevice ?: database.transactionWithResult {
+        queries.insertLocalDevice(newDeviceId())
+        queries.selectLocalDevice().executeAsOne()
+    }.also { cachedDevice = it }
 
     /** True while no account is signed in on this phone. */
     fun isGuest(): Boolean {

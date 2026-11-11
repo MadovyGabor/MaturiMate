@@ -126,6 +126,21 @@ class HomeOverviewTest {
         assertNull(overview.load().data().next)
     }
 
+    @Test
+    fun theHomeScreenCountsItsDaysInTheZoneOfTheTracker() = runBlocking {
+        // the stored zone is far from the device's: the goal, the week and the activity labels must use the stored one
+        val auckland = TimeZone.of("Pacific/Auckland")
+        val late = Instant.parse("2026-11-04T23:30:00Z")
+        val inAuckland = HomeOverview(
+            StudyTracker(progress, { StudySettings(10, auckland) }) { late },
+            LearningCourse(content, progress), RecentActivities(progress, content), profile,
+        )
+
+        val summary = inAuckland.load().data()
+        assertEquals(auckland, summary.zone)
+        assertEquals(kotlinx.datetime.LocalDate(2026, 11, 5), summary.goal.date)
+    }
+
     private fun motto(reached: Boolean = false, streak: Int = 0, hadStreak: Boolean = false, studied: Boolean = true) =
         HomeOverview.mottoOf(reached, streak, hadStreak, studied)
 

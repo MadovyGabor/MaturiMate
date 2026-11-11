@@ -115,6 +115,47 @@ class StudyTrackerTest {
     }
 
     @Test
+    fun loweringTheGoalAfterStudyingCountsTheDayForTheStreak() = runBlocking {
+        tracker.record(480).data()
+        assertEquals(0, tracker.currentStreak().data())
+
+        // 8 minutes were studied; the goal is lowered to 5 afterwards
+        goal = 5
+        assertTrue(tracker.today().data().reached)
+        assertEquals(1, tracker.currentStreak().data())
+        // and tomorrow goes on from it, not from zero
+        day("2026-11-05"); tracker.record(300).data()
+        assertEquals(2, tracker.currentStreak().data())
+    }
+
+    @Test
+    fun aStreakIsKeptWhenTheLastDoneDayIsAheadOfToday() = runBlocking {
+        // done on the 5th in Auckland; the phone is in Lisbon now, where it is still the 4th
+        zone = TimeZone.of("Pacific/Auckland")
+        clock = Instant.parse("2026-11-04T20:00:00Z")
+        tracker.record(600).data()
+        assertEquals(LocalDate(2026, 11, 5), progress.streak().data()!!.lastActivityDate)
+
+        zone = TimeZone.of("Europe/Lisbon")
+        clock = Instant.parse("2026-11-04T23:00:00Z")
+        tracker.record(600).data()
+
+        val streak = progress.streak().data()!!
+        assertEquals(1, streak.currentStreak)
+        assertEquals(LocalDate(2026, 11, 5), streak.lastActivityDate)
+        assertEquals(1, tracker.currentStreak().data())
+    }
+
+    @Test
+    fun theTrackerCountsInTheZoneOfTheSettings() = runBlocking {
+        zone = TimeZone.of("Pacific/Auckland")
+        assertEquals(TimeZone.of("Pacific/Auckland"), tracker.timeZone())
+        // 23:30 UTC is already the next day in Auckland
+        clock = Instant.parse("2026-11-04T23:30:00Z")
+        assertEquals(LocalDate(2026, 11, 5), tracker.today().data().date)
+    }
+
+    @Test
     fun hadStreakIsTrueOnceAStreakHasStarted() = runBlocking {
         assertFalse(tracker.hadStreak())
         tracker.record(600).data()

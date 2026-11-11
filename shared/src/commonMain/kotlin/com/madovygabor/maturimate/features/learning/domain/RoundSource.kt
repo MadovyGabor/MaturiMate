@@ -10,7 +10,7 @@ enum class RoundKind { TEST, PRACTICE }
 
 /** The start of a round: its tasks and its attempt, or why there is none. */
 sealed interface RoundStart {
-    data class Ready(val title: String, val tasks: List<Task>, val attemptId: Long) : RoundStart
+    data class Ready(val title: String, val tasks: List<Task>, val attemptId: String) : RoundStart
 
     /** There is no task to ask. */
     data object Empty : RoundStart
@@ -33,13 +33,13 @@ interface RoundSource {
     suspend fun start(random: Random): RoundStart
 
     /** Records the answer to one task. */
-    suspend fun answer(attemptId: Long, task: Task, answer: Answer, result: AnswerResult)
+    suspend fun answer(attemptId: String, task: Task, answer: Answer, result: AnswerResult)
 
     /** The last task is answered (or, in practice, the student ended the round after some answers). */
-    suspend fun finish(attemptId: Long, entries: List<RoundEntry>)
+    suspend fun finish(attemptId: String, entries: List<RoundEntry>)
 
     /** The student left before the end; what was answered stays recorded. */
-    suspend fun abandon(attemptId: Long, entries: List<RoundEntry>)
+    suspend fun abandon(attemptId: String, entries: List<RoundEntry>)
 }
 
 /**
@@ -66,15 +66,15 @@ class UnitRoundSource(
         return RoundStart.Ready(unit.title, tasks, attemptId)
     }
 
-    override suspend fun answer(attemptId: Long, task: Task, answer: Answer, result: AnswerResult) {
+    override suspend fun answer(attemptId: String, task: Task, answer: Answer, result: AnswerResult) {
         recorder.answer(attemptId, task, answer, result)
     }
 
-    override suspend fun finish(attemptId: Long, entries: List<RoundEntry>) {
+    override suspend fun finish(attemptId: String, entries: List<RoundEntry>) {
         recorder.finish(attemptId, unitId, entries)
     }
 
-    override suspend fun abandon(attemptId: Long, entries: List<RoundEntry>) {
+    override suspend fun abandon(attemptId: String, entries: List<RoundEntry>) {
         recorder.abandon(attemptId, entries)
     }
 }

@@ -253,7 +253,7 @@ class PracticePickerViewModelTest {
         ).data()
         for (id in tasks) progress.saveTaskProgress(
             com.madovygabor.maturimate.features.learning.domain.model.TaskProgress(
-                id, 0, 1, 0, Instant.fromEpochMilliseconds(5), null, com.madovygabor.maturimate.features.learning.domain.model.TaskProgressStatus.LEARNING,
+                id, 0, 1, 0, Instant.fromEpochMilliseconds(5),
             )
         ).data()
     }

@@ -7,7 +7,7 @@ import kotlin.time.Instant
 /** Domain models of the user's progress (user database). */
 
 enum class AttemptType {
-    UNIT_ROUND, EXTRA_PRACTICE, REVIEW,
+    UNIT_ROUND, REVIEW,
 
     /** A free practice round over the topics the student picked; belongs to no unit and no topic. */
     FREE_PRACTICE,
@@ -21,7 +21,8 @@ enum class AttemptStatus { IN_PROGRESS, FINISHED, ABANDONED }
 /** One practice round. Unit rounds have [learningUnitId], a review has [topicId]. */
 @OptIn(ExperimentalTime::class)
 data class Attempt(
-    val id: Long,
+    /** Made by the device (a UUID), so two devices of one account never collide. */
+    val id: String,
     val type: AttemptType,
     val topicId: Long?,
     val learningUnitId: Long?,
@@ -38,7 +39,7 @@ data class Attempt(
  */
 @OptIn(ExperimentalTime::class)
 data class AttemptAnswer(
-    val attemptId: Long,
+    val attemptId: String,
     val taskId: Long,
     val isCorrect: Boolean,
     val earnedPoints: Int,
@@ -57,12 +58,13 @@ data class UnitProgress(
     val completedAt: Instant?,
 )
 
-enum class TaskProgressStatus { LEARNING, MASTERED }
-
 /** A task the student has answered, and whether the latest answer is right. */
 data class AnsweredTask(val taskId: Long, val rightNow: Boolean)
 
-/** Summary of how the user does on one task; drives repetition and weak spots. */
+/**
+ * Summary of how the user does on one task; drives the mistakes and the weak and strong topics. A cache built
+ * from the answers: it is not synced.
+ */
 @OptIn(ExperimentalTime::class)
 data class TaskProgress(
     val taskId: Long,
@@ -70,8 +72,6 @@ data class TaskProgress(
     val timesWrong: Int,
     val correctStreak: Int,
     val lastAnsweredAt: Instant,
-    val nextReviewAt: Instant?,
-    val status: TaskProgressStatus,
 )
 
 data class Streak(
@@ -82,7 +82,6 @@ data class Streak(
 
 data class DailyActivity(
     val date: LocalDate,
-    val xpEarned: Int,
     val secondsStudied: Int,
     val tasksAnswered: Int,
 )

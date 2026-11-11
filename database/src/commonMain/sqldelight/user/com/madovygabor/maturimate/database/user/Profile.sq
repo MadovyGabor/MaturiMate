@@ -1,21 +1,19 @@
 -- Profile, role, settings and subjects of the user. Same tables as in supabase/migrations,
 -- without the foreign keys to auth.users, role and subject (server-only and content-database tables).
 -- Phone only: first_name and last_name may be empty, because a guest has no name until sign-up.
+-- `updated_at` (epoch milliseconds) is set on every write, see Progress.sq.
 CREATE TABLE user_profile (
     user_id            TEXT    NOT NULL,
     first_name         TEXT,
     last_name          TEXT,
-    display_name       TEXT,
-    date_of_birth      TEXT,
-    school_type        TEXT,
     teaching_language  TEXT,
     graduation_date    TEXT,
     -- epoch milliseconds; empty while the onboarding is not finished
     onboarding_completed_at  INTEGER,
+    -- epoch milliseconds of the last "Haladás újrakezdése"; the sync ignores progress older than this
+    progress_reset_at  INTEGER,
+    updated_at         INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
     CONSTRAINT pk_user_profile PRIMARY KEY (user_id),
-    CONSTRAINT ck_user_profile_birth CHECK (date_of_birth >= '1900-01-01'),
-    CONSTRAINT ck_user_profile_school_type
-        CHECK (school_type IN ('GYMNASIUM', 'VOCATIONAL', 'OTHER')),
     CONSTRAINT ck_user_profile_language CHECK (teaching_language IN ('SK', 'HU'))
 );
 
@@ -32,13 +30,12 @@ CREATE TABLE user_settings (
     user_id             TEXT    NOT NULL,
     ui_language         TEXT    NOT NULL DEFAULT 'SK',
     timezone            TEXT    NOT NULL DEFAULT 'Europe/Bratislava',
-    theme               TEXT    NOT NULL DEFAULT 'SYSTEM',
     daily_goal_minutes  INTEGER DEFAULT 10,
     reminder_enabled    INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0 CHECK (reminder_enabled IN (0, 1)),
     reminder_time       TEXT,
+    updated_at          INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
     CONSTRAINT pk_user_settings PRIMARY KEY (user_id),
     CONSTRAINT ck_user_settings_language CHECK (ui_language IN ('SK', 'HU')),
-    CONSTRAINT ck_user_settings_theme CHECK (theme IN ('LIGHT', 'DARK', 'SYSTEM')),
     CONSTRAINT ck_user_settings_goal
         CHECK (daily_goal_minutes BETWEEN 1 AND 240),
     CONSTRAINT ck_user_settings_reminder
@@ -48,13 +45,11 @@ CREATE TABLE user_settings (
 CREATE TABLE user_subject (
     user_id       TEXT    NOT NULL,
     subject_id    INTEGER NOT NULL,
-    target_score  REAL,
     source        TEXT    NOT NULL DEFAULT 'CHOSEN',
     added_at      INTEGER NOT NULL,
     -- the level of a subject that has levels (English: B1 or B2); empty for the others
     level         TEXT,
     CONSTRAINT pk_user_subject PRIMARY KEY (user_id, subject_id),
-    CONSTRAINT ck_user_subject_score CHECK (target_score BETWEEN 0 AND 100),
     CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN')),
     CONSTRAINT ck_user_subject_level CHECK (level IN ('B1', 'B2'))
 );
@@ -68,6 +63,21 @@ CREATE TABLE local_user (
     CONSTRAINT ck_local_user_slot CHECK (slot = 1)
 );
 
+-- Phone only: the id of this installation, made once and never removed (not even by a sign-out). The study
+-- time of a day is kept per device (`activity_log`), so two devices of one account add up exactly.
+CREATE TABLE local_device (
+    slot       INTEGER NOT NULL CONSTRAINT pk_local_device PRIMARY KEY,
+    device_id  TEXT    NOT NULL,
+    CONSTRAINT ck_local_device_slot CHECK (slot = 1)
+);
+
+selectLocalDevice:
+SELECT device_id FROM local_device WHERE slot = 1;
+
+-- keeps the existing row, so the id of the installation never changes
+insertLocalDevice:
+INSERT OR IGNORE INTO local_device (slot, device_id) VALUES (1, :deviceId);
+
 selectLocalUser:
 SELECT * FROM local_user WHERE slot = 1;
 
@@ -77,17 +87,19 @@ INSERT OR IGNORE INTO local_user (slot, user_id, is_guest) VALUES (1, :userId, :
 
 -- After sign-up or sign-in: every row of the guest becomes the account's, in one transaction.
 -- A row the account already has on this phone is replaced by the guest's (UPDATE OR REPLACE).
+-- The rows of the tables that have `updated_at` get the time of the take-over, so the sync sees them as changed
+-- (a moved row with its old time could lose against a newer server row or never be uploaded).
 adoptAccount {
-UPDATE OR REPLACE user_profile SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_settings SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_profile SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
+UPDATE OR REPLACE user_settings SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE user_role SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_subject SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt_answer SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_unit_progress SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_unit_progress SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE user_task_progress SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_streak SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE activity_log SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_streak SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
+UPDATE OR REPLACE activity_log SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
 }
 
@@ -124,13 +136,10 @@ DELETE FROM local_user;
 }
 
 updateNames:
-UPDATE user_profile SET first_name = :firstName, last_name = :lastName WHERE user_id = :userId;
+UPDATE user_profile SET first_name = :firstName, last_name = :lastName, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 
 selectProfile:
 SELECT * FROM user_profile WHERE user_id = :userId;
-
-upsertProfile:
-INSERT OR REPLACE INTO user_profile VALUES ?;
 
 -- profile and settings of one user; empty until the first save creates both rows
 selectUserProfile:
@@ -148,22 +157,26 @@ ensureSettings:
 INSERT OR IGNORE INTO user_settings (user_id, timezone, daily_goal_minutes) VALUES (:userId, :timezone, NULL);
 
 updateTeachingLanguage:
-UPDATE user_profile SET teaching_language = :language WHERE user_id = :userId;
+UPDATE user_profile SET teaching_language = :language, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 
 updateGraduationDate:
-UPDATE user_profile SET graduation_date = :date WHERE user_id = :userId;
+UPDATE user_profile SET graduation_date = :date, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 
 updateOnboardingCompletedAt:
-UPDATE user_profile SET onboarding_completed_at = :completedAt WHERE user_id = :userId;
+UPDATE user_profile SET onboarding_completed_at = :completedAt, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
+
+-- the zone of the device, written at every start (one zone for the whole app)
+updateTimezone:
+UPDATE user_settings SET timezone = :timezone, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId AND timezone <> :timezone;
 
 updateUiLanguage:
-UPDATE user_settings SET ui_language = :language WHERE user_id = :userId;
+UPDATE user_settings SET ui_language = :language, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 
 updateReminder:
-UPDATE user_settings SET reminder_enabled = :enabled, reminder_time = :time WHERE user_id = :userId;
+UPDATE user_settings SET reminder_enabled = :enabled, reminder_time = :time, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 
 updateDailyGoal:
-UPDATE user_settings SET daily_goal_minutes = :minutes WHERE user_id = :userId;
+UPDATE user_settings SET daily_goal_minutes = :minutes, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId;
 
 selectRoles:
 SELECT * FROM user_role WHERE user_id = :userId ORDER BY role_id;
@@ -180,9 +193,6 @@ DELETE FROM user_role WHERE user_id = :userId;
 
 selectSettings:
 SELECT * FROM user_settings WHERE user_id = :userId;
-
-upsertSettings:
-INSERT OR REPLACE INTO user_settings VALUES ?;
 
 selectSubjects:
 SELECT * FROM user_subject WHERE user_id = :userId ORDER BY added_at;

@@ -36,4 +36,11 @@ interface UserProfileRepository {
     /** The account holder's name, saved at sign-up. */
     suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, DataError>
     suspend fun completeOnboarding(at: Instant): OperationResult<Unit, DataError>
+
+    /**
+     * Writes the device's time zone to the settings when it differs (one zone for the whole app: the days of the
+     * streak, the goal and the history). Does nothing while the user has no settings yet; they get the device's zone
+     * when they are created.
+     */
+    suspend fun refreshTimeZone(): OperationResult<Unit, DataError> = OperationResult.Success(Unit)
 }

@@ -359,15 +359,15 @@ private fun RecentActivities(summary: HomeSummary) {
                 )
             }
         } else {
-            summary.recent.forEach { ActivityRow(it, today = summary.goal.date) }
+            summary.recent.forEach { ActivityRow(it, today = summary.goal.date, zone = summary.zone) }
         }
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun ActivityRow(activity: RecentActivity, today: kotlinx.datetime.LocalDate) {
-    val day = activity.at.toLocalDateTime(TimeZone.currentSystemDefault()).date
+private fun ActivityRow(activity: RecentActivity, today: kotlinx.datetime.LocalDate, zone: TimeZone) {
+    val day = activity.at.toLocalDateTime(zone).date
     val whenText = when (day) {
         today -> stringResource(Res.string.home_when_today)
         today.minus(DatePeriod(days = 1)) -> stringResource(Res.string.home_when_yesterday)

@@ -13,7 +13,6 @@ import com.madovygabor.maturimate.features.learning.domain.model.OptionRole
 import com.madovygabor.maturimate.features.learning.domain.model.Task
 import com.madovygabor.maturimate.features.learning.domain.model.TaskFormat
 import com.madovygabor.maturimate.features.learning.domain.model.TaskOption
-import com.madovygabor.maturimate.features.learning.domain.model.TaskProgressStatus
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import kotlinx.coroutines.Dispatchers
@@ -50,7 +49,7 @@ class TestRecorderPracticeTest {
         key = listOf(KeySlot(1, "B", null)), acceptedAnswers = emptyList(), attachments = emptyList(),
     )
 
-    private suspend fun answer(attemptId: Long, label: String): RoundEntry {
+    private suspend fun answer(attemptId: String, label: String): RoundEntry {
         val answer = Answer.Choice(mapOf(1 to label))
         return recorder.answer(attemptId, multipleChoice, answer, AnswerChecker.check(multipleChoice, answer))
     }
@@ -66,13 +65,15 @@ class TestRecorderPracticeTest {
         attempts.values.forEach {
             assertNull(it.learningUnitId)
             assertNull(it.topicId)
-            assertEquals(AttemptStatus.IN_PROGRESS, it.status)
         }
+        // only one round is open at a time: starting the second closed the first, which was left open
+        assertEquals(AttemptStatus.ABANDONED, attempts.getValue(free).status)
+        assertEquals(AttemptStatus.IN_PROGRESS, attempts.getValue(mistakes).status)
     }
 
     @Test
     fun onlyThePracticeTypesCanStartAPracticeRound() {
-        listOf(AttemptType.UNIT_ROUND, AttemptType.EXTRA_PRACTICE, AttemptType.REVIEW).forEach { type ->
+        listOf(AttemptType.UNIT_ROUND, AttemptType.REVIEW).forEach { type ->
             assertFailsWith<IllegalArgumentException> { runBlocking { recorder.startPractice(type) } }
         }
     }
@@ -95,12 +96,11 @@ class TestRecorderPracticeTest {
     }
 
     @Test
-    fun threeRightAnswersInARowAcrossPracticeRoundsMasterTheTask() = runBlocking {
+    fun rightAnswersInARowCountAcrossPracticeRounds() = runBlocking {
         repeat(3) { answer(recorder.startPractice(AttemptType.FREE_PRACTICE).data(), "B") }
 
         val taskProgress = progress.taskProgress(100).data()!!
         assertEquals(3, taskProgress.correctStreak)
-        assertEquals(TaskProgressStatus.MASTERED, taskProgress.status)
     }
 
     @Test

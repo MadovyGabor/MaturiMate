@@ -48,6 +48,21 @@ class UserProfileRepositoryImplTest {
     private suspend fun current(): UserProfile = repository.profile.first() ?: fail("expected a profile")
 
     @Test
+    fun theTimeZoneOfTheDeviceReplacesTheStoredOne() = runBlocking {
+        var device = "Europe/Budapest"
+        val moving = UserProfileRepositoryImpl(database, localUser, Dispatchers.Unconfined, timeZone = { device }, now = { Instant.fromEpochMilliseconds(7_000) })
+        // nothing to update before the first save; the first save writes the device's zone
+        moving.refreshTimeZone().ok()
+        assertNull(moving.profile.first())
+        moving.saveGraduationDate(LocalDate(2027, 3, 15)).ok()
+        assertEquals("Europe/Budapest", moving.profile.first()!!.timezone)
+
+        device = "Europe/Lisbon"
+        moving.refreshTimeZone().ok()
+        assertEquals("Europe/Lisbon", moving.profile.first()!!.timezone)
+    }
+
+    @Test
     fun noProfileBeforeTheFirstSave() = runBlocking {
         assertNull(repository.profile.first())
     }
