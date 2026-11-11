@@ -344,6 +344,68 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ---- Consent archive: the server only, the app has no access --------
+RESET ROLE;
+INSERT INTO consent_archive (user_id, email_hmac, consent_type, document_version, accepted_at)
+    VALUES ('00000000-0000-0000-0000-0000000000ff', 'x', 'TERMS', '1.0', now());
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+DO $$ BEGIN
+    PERFORM count(*) FROM consent_archive;
+    RAISE EXCEPTION 'FAIL: a user reads the consent archive';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+DO $$ BEGIN
+    INSERT INTO consent_archive (user_id, email_hmac, consent_type, document_version, accepted_at)
+        VALUES ('00000000-0000-0000-0000-00000000000a', 'x', 'TERMS', '1.0', now());
+    RAISE EXCEPTION 'FAIL: a user wrote the consent archive';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+
+-- ---- delete_my_account: archive first, then delete, own account only --
+RESET ROLE;
+INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-0000000000d1', ' Dora@Example.com ');
+INSERT INTO user_profile (user_id, first_name, last_name) VALUES ('00000000-0000-0000-0000-0000000000d1', 'D', 'D');
+INSERT INTO user_consent (user_id, consent_type, document_version)
+    VALUES ('00000000-0000-0000-0000-0000000000d1', 'TERMS', '1.0'),
+           ('00000000-0000-0000-0000-0000000000d1', 'PRIVACY', '1.0');
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000d1');
+-- without the Vault key nothing is deleted
+DO $$ BEGIN
+    PERFORM delete_my_account();
+    RAISE EXCEPTION 'FAIL: the account was deleted without the HMAC key';
+EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL:%' THEN RAISE; END IF;
+END $$;
+RESET ROLE;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000d1')
+        OR (SELECT count(*) FROM consent_archive WHERE user_id = '00000000-0000-0000-0000-0000000000d1') <> 0 THEN
+        RAISE EXCEPTION 'FAIL: a refused deletion changed something';
+    END IF;
+END $$;
+INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('consent_hmac_key', 'test-key');
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000d1');
+SELECT delete_my_account();
+RESET ROLE;
+DO $$ BEGIN
+    -- the account and its rows are gone
+    IF EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000d1')
+        OR EXISTS (SELECT 1 FROM user_profile WHERE user_id = '00000000-0000-0000-0000-0000000000d1')
+        OR EXISTS (SELECT 1 FROM user_consent WHERE user_id = '00000000-0000-0000-0000-0000000000d1') THEN
+        RAISE EXCEPTION 'FAIL: the account was not deleted';
+    END IF;
+    -- both consents are archived, with the HMAC of the lower-case trimmed address and not the address
+    IF (SELECT count(*) FROM consent_archive
+        WHERE user_id = '00000000-0000-0000-0000-0000000000d1'
+          AND email_hmac = encode(extensions.hmac('dora@example.com', 'test-key', 'sha256'), 'hex')) <> 2 THEN
+        RAISE EXCEPTION 'FAIL: the consents were not archived correctly';
+    END IF;
+    -- other users are untouched
+    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-00000000000b') THEN
+        RAISE EXCEPTION 'FAIL: another account was deleted';
+    END IF;
+END $$;
+
 -- ---- Not signed in: nothing ------------------------------------------
 RESET ROLE;
 SET LOCAL ROLE anon;
@@ -356,6 +418,12 @@ DO $$ BEGIN
     PERFORM save_sign_up('X', 'Y', 'HU', NULL, 'HU', 'Europe/Bratislava', 10::smallint,
         false, NULL, 1::smallint, '[]'::jsonb, ARRAY[]::text[], '1.0', now());
     RAISE EXCEPTION 'FAIL: anon called save_sign_up';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM delete_my_account();
+    RAISE EXCEPTION 'FAIL: anon called delete_my_account';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 

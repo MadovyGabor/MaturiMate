@@ -87,17 +87,19 @@ INSERT OR IGNORE INTO local_user (slot, user_id, is_guest) VALUES (1, :userId, :
 
 -- After sign-up or sign-in: every row of the guest becomes the account's, in one transaction.
 -- A row the account already has on this phone is replaced by the guest's (UPDATE OR REPLACE).
+-- The rows of the tables that have `updated_at` get the time of the take-over, so the sync sees them as changed
+-- (a moved row with its old time could lose against a newer server row or never be uploaded).
 adoptAccount {
-UPDATE OR REPLACE user_profile SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_settings SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_profile SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
+UPDATE OR REPLACE user_settings SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE user_role SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_subject SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt_answer SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_unit_progress SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_unit_progress SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE user_task_progress SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_streak SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE activity_log SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_streak SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
+UPDATE OR REPLACE activity_log SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 INSERT OR REPLACE INTO local_user (slot, user_id, is_guest) VALUES (1, :accountId, 0);
 }
 

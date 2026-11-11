@@ -73,7 +73,7 @@ This section describes the code on `main`, after Milestone 1 (core and database)
 - Android splash screen and a desktop window entry point.
 - Database core (Milestone 1):
   - The PostgreSQL schema (originally 30 tables, now 27 in `supabase/migrations` with Supabase Auth) and a local PostgreSQL in Docker.
-  - Content database (13 tables) and user database (8 tables) with SQLDelight, in a shared `:database` module.
+  - Content database (15 tables) and user database (10 tables, plus 2 phone-only state tables) with SQLDelight, in a shared `:database` module.
   - Content pipeline (`tools/content-pipeline`): validates the lesson and task files, exports the content database file for the app, and imports the content into PostgreSQL.
   - The app installs the bundled content file on first start (checked on the Android emulator).
   - Content and progress repositories (domain interfaces, SQLDelight implementations), not used by any screen yet.

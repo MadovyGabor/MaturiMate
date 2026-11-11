@@ -59,7 +59,7 @@ The schema is allowed to change freely until the first tester installs the app. 
 ## Milestone 1: Core and database
 
 * [x] **1.1. Database design:** the final PostgreSQL schema with 30 tables (`../dbServer/postgres/01_ddl.sql`) and a local PostgreSQL in Docker.
-* [x] **1.2. Local databases in the app:** SQLDelight content database (13 tables) and user database (8 tables) in a shared `:database` module, with drivers for Android and desktop.
+* [x] **1.2. Local databases in the app:** SQLDelight content database (13 tables) and user database (8 tables) in a shared `:database` module, with drivers for Android and desktop. *The numbers were true then; today it is 15 and 10 (plus 2 phone-only state tables) on the phone and 28 on the server.*
 * [x] **1.3. Content pipeline:** validator, exporter to the content database file, and importer into PostgreSQL (`../tools/content-pipeline`). The app installs the bundled content file on first start.
 * [x] **1.4. Provenance on tasks:** every task and lesson records its source in the content files (own, teacher, AI reviewed by a human, public domain); the validator requires it.
 * [x] **1.5. Review of the `database` branch:** its drivers and Gradle setup were reused; its exam-centred schema was replaced. The branch (it contained a digitised official paper) has been deleted.
@@ -239,17 +239,22 @@ The user database is shaped for the sync once, while the server's progress table
 * [x] **11.7. Atomic writes and open rounds:** `recordTaskAnswer` counts an answer in SQL (nothing read first), `unitProgressOf` reads one unit, `updateStreak` keeps the read and the write of the streak in one transaction (the rule stays in `StudyTracker`), a round left `IN_PROGRESS` is closed as `ABANDONED` when the next round starts, the streak settles a day whose goal was lowered afterwards, and `ContentRepository.units()` comes without the lesson text (audit P2). *Was 11.1g.*
 * [x] **11.8. Supabase:** the five migrations that were not live (the four older ones and the new one) are applied to the live project with `supabase db push --remote`, without a branch (nobody uses the database yet); the advisors are clean except the leaked-password protection (see 15.4). *Done on 2026-11-10, moved here from 12.2.* *Was 11.1h.*
 
+* [x] **11.9. Proof of consent after deletion:** server table `consent_archive` and the function `delete_my_account()` (migration `20261111120000_consent_archive.sql`), table closed to the app, tests in `rls_test.sql` (also the stand-in for the Vault and pgcrypto in `dbServer/postgres/00_auth_stub.sql`). Found in the comparison with the older design (`llm/outputs/database-comparison-report.md`, F1); the rest of that report is worked through in the steps below. The function that fills it comes with 12.6. *Not yet applied to the live project.*
+* [x] **11.10. Leaderboard tables dropped:** `season` and `season_score` (migration `20261111130000_drop_leaderboard_tables.sql`): empty, used by nothing, points were dropped on 2026-11-03. A leaderboard, if built, comes with its own design.
+* [x] **11.11. `updated_at` on the take-over of a guest:** `adoptAccount` (`Profile.sq`) sets `updated_at` on the five synced tables, and `UpdatedAtGuardTest` fails for any UPDATE of a synced table that does not set it. Found in the comparison with the older course design (F5).
+
 ---
 
 ## Milestone 12: Sync and content download
 
-All of it before the alpha, so the testers use the real flow: sign-up, sync, download. (12.2, the open Supabase migrations, was done in 11.8.)
+All of it before the alpha, so the testers use the real flow: sign-up, sync, download. (The open Supabase migrations were done in 11.8.)
 
-* [ ] **12.1. Sync design (plan first, no code before approval):** which tables travel and in which direction, conflicts when one account is used on several devices, checks on the server instead of trusting the phone, the time zone and the streak day, how a guest's progress merges with an existing account (see 12.5).
+* [ ] **12.1. Sync design (plan first, no code before approval):** which tables travel and in which direction, conflicts when one account is used on several devices, checks on the server instead of trusting the phone, the time zone and the streak day, how a guest's progress merges with an existing account (see 12.5). **The merge rule is per table so no data is lost:** answers and units are added, not replaced; the streak keeps the longest value; the reset marker keeps the newest; daily minutes add up per device. A guest row with a fresh `updated_at` must not simply overwrite newer account data.
+* [ ] **12.2. Backups of the user data** (before the sync goes live, because real data starts with the sync): a daily, automatic, encrypted backup. GitHub Actions on a schedule runs `pg_dump --format=custom` through the Supabase pooler (session mode) for the user tables and `auth.users` (the content tables are left out: the private Git repository and the importer restore them), encrypts the file with `age` (private key only with the owner), and uploads it to Cloudflare R2 (EU), keeping 30 days. Keys and the connection string are GitHub Secrets. The secrets that cannot be rebuilt (the Vault key `consent_hmac_key`, the `age` private key) are kept in a password manager. A restore test into an empty database (schema, then content, then user data) once before the alpha and every six months. If the project moves to Supabase Pro (daily backups), this stays as a second copy. *Moved here from 15.4 on 2026-11-11.*
 * [ ] **12.3.** Sync of user data between the phone and Supabase. With it: the reset of the progress (9.4b) removes the same rows on the server, the sign-out no longer has to remove the local data without a copy, the settings' "Szinkronizálás" row comes alive, and the name edited in the settings goes to the server. *Was 11.2.*
 * [ ] **12.4. Content path and download:** the exporter builds the starter pack (the first lesson of each subject, with the topics above it) bundled in the app and the full content, one pack per subject, downloaded after sign-up and for later updates: a private Storage bucket readable only by signed-in users, signed links, download to a temporary file, hash check, then swap in one step; on failure the current file stays. The manifest gets a `kind` (`FULL` or `STARTER`) and an explicit schema number; a full file of the same version replaces a starter, never the other way round. Large downloads ask before using mobile data. `bundleContent -PcontentKind=full|starter` (development builds use the full file). *Was 11.3 and 11.4.*
-* [ ] **12.5. Required sign-in after the first lesson:** no "later" button. The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`). Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. *Was 11.5.*
-* [ ] **12.6. Account deletion** (required by GDPR and the app stores), with a web link for the stores. *Was 11.6.*
+* [ ] **12.5. Required sign-in after the first lesson:** no "later" button. The guest's rows are merged with the account's by the per-table rule of 12.1, never by letting the guest's fresh `updated_at` overwrite newer account data. The local move of the guest's rows exists since 5.12 (`LocalUserProvider.adoptAccount`). Signing in to an existing account keeps that account's data and adds the guest's progress where the account has none. *Was 11.5.*
+* [ ] **12.6. Account deletion** (required by GDPR and the app stores), with a web link for the stores. The deletion is immediate and final and runs on the server (`delete_my_account()`, made in 11.9: it copies the consents to `consent_archive` with the e-mail as an HMAC, then deletes the user and all their rows); here the app button that calls it, and the Vault secret `consent_hmac_key` created on the live project. With it `export_my_data()`, a function that gives a user a JSON copy of their own rows (GDPR access and portability), and a clean-up of archive rows past `delete_after`. *Was 11.6.*
 * [ ] **12.7. Exam dates:** the app computes the date of the written exams from the rule of the second Monday of March (`ExamDates.secondWeekWeekday`); here it takes the official date when it is published, through the same sync as the content and the settings. *Was 11.7.*
 
 ---
@@ -284,8 +289,8 @@ About 20 acquaintances, several devices, the Hungarian subject, with sync and do
 
 * [ ] **15.1. Release key and Play Console:** an own upload key instead of the debug key (6a.4) and Play App Signing; the SHA-1 fingerprints of both keys added to the Google OAuth client, so Google sign-in works in builds from the Play Store; find out what Google asks for the testing tracks (number of testers and days, privacy policy address, data safety form). *Was 11.3; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
 * [ ] **15.2. Crash reports:** Sentry (Android and desktop) and a "report a problem" button in the settings. No personal data in the reports. No separate analytics tool: the learning data comes from the sync (12.3). *Was 11.4; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
-* [ ] **15.3. Drafts of the terms of use and the privacy notice,** covering accounts, Supabase, Resend, Google sign-in and crash reports, published on `maturimate.madovygabor.com` and linked from the consent text on the account step. The legal review comes in 16.1. *Was part of 12.6.* *Was 11.5; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
-* [ ] **15.4. Supabase and e-mail operations:** check the plan before the alpha (whether an inactive free project is paused, backups, `pg_dump` routine) and the e-mail limits (Resend and Supabase Auth) for the number of testers. *Was 11.6; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
+* [ ] **15.3. Drafts of the terms of use and the privacy notice,** covering accounts, Supabase, Resend, Google sign-in and crash reports, published on `maturimate.madovygabor.com` and linked from the consent text on the account step. It also says that the proof of consent is kept after an account is deleted (`consent_archive`, 3 years, to be confirmed in 16.1) and that deleted accounts stay in the backups for up to 30 days. The legal review comes in 16.1. *Was part of 12.6.* *Was 11.5; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
+* [ ] **15.4. Supabase and e-mail operations:** check the plan before the alpha (whether an inactive free project is paused; the backups are step 12.2) and the e-mail limits (Resend and Supabase Auth) for the number of testers. *Was 11.6; moved here on 2026-11-10: it only matters when there is something to hand to testers.*
 * [ ] **15.5.** Alpha release. Test the reminder on phones of several makers (battery savers often stop alarms). Upload a first build to the internal testing track early, to try the whole chain (signing, install from Play, Google sign-in) before the testers come.
 * [ ] **15.6.** Crash reports and feedback, fixes during the alpha.
 * [ ] **15.7. Exit to the closed beta:** every row of the screen checklist done, no open severe bug, about 99% crash-free sessions, the feedback processed.
@@ -312,6 +317,7 @@ Each subject is a downloadable pack (12.4), so adding one changes the content, n
 
 ## Milestone 18: Open beta
 
+* [ ] **18.0. E-mail sending moves to the Azure e-mail service** (Azure Communication Services Email) before the first public opening, in place of Resend: new sender domain records (DKIM, SPF, DMARC) on `maturimate.madovygabor.com`, new SMTP settings in Supabase Auth, the e-mail templates re-tried (sign-up confirmation, password reset), the sending limits checked for the expected number of users, and the privacy notice (processors) updated. Decided 2026-11-11. The alpha and the closed beta stay on Resend.
 * [ ] **18.1. Abuse protection for sign-up:** invisible CAPTCHA (hCaptcha or Cloudflare Turnstile) on sign-up and password reset, a review of the auth rate limits, a cleanup of unconfirmed e-mail sign-ups in Supabase Auth. Synced progress is checked on the server, not trusted as sent. Optional, if abuse is seen: Play Integrity before a content download. *Was 12.5 and 11.3a.*
 * [ ] **18.2.** Gradual opening: by invitation first, then open; the finished subject packs join as they are ready.
 
@@ -338,6 +344,11 @@ Only after NIVAM gives permission. The request is planned for when the app works
 
 * [ ] **21.1.** Written permission covering papers, answer keys, audio, offline caching, attribution and free or paid use. *Was 14.1.*
 * [ ] **21.2.** Official papers and listening tasks with audio, loaded as new rows. The exam table returns as a database migration. *Was 14.2.*
+
+## Later ideas
+
+* **Search and "weak topics" on tags.** The tag tables are filled by the content but no screen reads them yet. When a search or a weak-topics function is built: accent-insensitive search (`unaccent` and an index on `lower(unaccent(name))` on the server, an own normalising function in `:shared` for the phone, because SQLite has no `unaccent`).
+* **A leaderboard** would need its own design (XP source, display name, who appears in it); the old tables were dropped in 11.10.
 
 ---
 
