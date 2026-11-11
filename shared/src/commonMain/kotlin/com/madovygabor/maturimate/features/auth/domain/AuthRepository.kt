@@ -49,7 +49,7 @@ enum class AuthError : Error {
 /**
  * Sign-up, sign-in and password reset with Supabase Auth.
  *
- * E-mails carry a 6-digit code that the user types into the app (DECISIONS 2026-10-31).
+ * E-mails carry a 6-digit code that the user types into the app.
  * Google sign-in comes with the account screen (roadmap step 5.12).
  */
 interface AuthRepository {

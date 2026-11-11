@@ -62,7 +62,7 @@ A complete example is the test fixture `src/test/resources/content-valid/`.
 * The options of a task keep the order of the file, and the app shows them in it. In a `TRUE_FALSE` task the first option is the true one ("igaz") and the second the false one ("hamis"): the app puts a check on the first and an X on the second.
 * In `tasks.json`, options are referenced by their label (`"key": [{"option": "B"}]`); matching keys also name the prompt label. Ids of options, accepted answers and attachments are derived as `task_id * 100 + position`, so a task has at most 99 of each.
 * Every task and unit has `source_type` (`OWN`, `TEACHER`, `AI_REVIEWED`, `PUBLIC_DOMAIN`). `AI_REVIEWED` needs `reviewed_at`; `TEACHER` and `PUBLIC_DOMAIN` need `source_note`. Provenance is checked, not imported.
-* Texts use only `**bold**`, `*italic*` and `[[n]]` gap markers.
+* Texts use only `**bold**`, `*italic*` and `[[n]]` gap markers. Only the text of a lesson (pages and boxes) may also have lists, see below; a list in a task is an error.
 * Files named `*_private.json` are never read.
 
 ## Lesson files (pages and boxes)
@@ -97,7 +97,30 @@ A box with the thing to remember.
 
 * **`## Title` starts a page.** The title appears in the table of contents of the lesson. Text before the first `##` is a page without a title; a file without any `##` is one page. Only level 2 headings are allowed.
 * **Boxes** are written `:::type` … `:::`, alone on their lines. Types: `example`, `tip`, `note`, `warning`. The keyword is the same in every language; the label ("Példa", "Príklad") is an app string in both languages. An unknown type, a box that is not closed, or a box inside a box is an error.
-* **Inside a page and a box** only `**bold**`, `*italic*` and paragraphs are allowed, like everywhere else (no lists, links, code or HTML).
+* **Inside a page and a box** `**bold**`, `*italic*`, paragraphs and lists are allowed (no links, code or HTML).
+* **Lists** are written like in Markdown, one item per line, with a blank line before and after the list:
+
+  ```
+  Három ismert program:
+
+  - **Microsoft Word**: a legelterjedtebb.
+  - **Google Docs**: böngészőben fut.
+  - **LibreOffice Writer**: ingyenes.
+
+  A lépések sorrendje fontos:
+
+  1. Megírod a szöveget.
+  2. Formázod.
+  3. Átnézed a helyesírást.
+  ```
+
+  * `- ` (dash and a space) starts a bullet, `1. ` (number, dot, space) a numbered item. The app shows the bullets as "•" and numbers the items by position (1., 2., 3.), whatever number is written.
+  * A list is not mixed: one list is all bullets or all numbered. A blank line ends it; a line without a marker right after an item continues that item.
+  * A list item right after an ordinary line, without a blank line, starts a new block anyway; still leave the blank line for readability.
+  * Items are short (one or two lines) and carry no nested lists. `+` and `*` markers are an error (`*` is italic).
+  * Take care that a normal paragraph does not start with a number and a dot ("5. nap volt…") or "- " by accident: it would become a list.
+  * Lists count in the 60 to 90 words of a page.
+  * Not allowed in tasks (question, options, explanation): a list there is a validation error.
 * **A short page** fits one phone screen without scrolling (about 60 to 90 words); a longer text, such as the plot of a work, is split into several pages.
 * **Several parts of one topic** are several files in its folder; the number in the file name and the `sort_order` give the order, with tests between them. For example `10-intro.md`, `20-mini.json`, `30-part2.md`, `40-mini.json`, `50-test.json`.
 

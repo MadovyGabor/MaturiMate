@@ -8,7 +8,7 @@ data class UserSubject(
     val subjectId: Long,
     /** Compulsory for the user's exam (`source` = AUTO); picked by the user otherwise (CHOSEN). */
     val compulsory: Boolean,
-    /** Not written since English became two subjects (DECISIONS 2026-11-01); the column stays. */
+    /** Not written since English became two subjects; the column stays. */
     val level: SubjectLevel? = null,
 )
 

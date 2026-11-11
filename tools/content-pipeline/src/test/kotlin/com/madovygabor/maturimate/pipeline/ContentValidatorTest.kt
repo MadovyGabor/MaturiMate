@@ -246,6 +246,18 @@ class ContentValidatorTest {
     }
 
     @Test
+    fun listsAreAllowedInLessonsButNotInTasks() {
+        val lessonWithList = valid.copy(summaries = valid.summaries.map {
+            it.copy(pages = listOf(LessonPageData(null, listOf(LessonBlockData("PARAGRAPH", "- egy\n- kettő\n1. három")))))
+        })
+        assertEquals(emptyList(), errorsOf(lessonWithList))
+        assertError(
+            withTask(1001) { it.copy(explanation = "- egy\n- kettő") },
+            "explanation contains a list",
+        )
+    }
+
+    @Test
     fun optionWhyFollowsTheTextFormat() = assertError(
         withTask(1001) { it.copy(options = it.options.map { o -> o.copy(why = "rossz **jelölés") }) },
         "option why has an unclosed **",

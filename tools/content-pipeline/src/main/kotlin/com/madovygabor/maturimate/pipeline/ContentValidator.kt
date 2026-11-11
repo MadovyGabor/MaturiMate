@@ -202,7 +202,7 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
                 if (page.blocks.size > MAX_BLOCKS) error(pageWhere, "at most $MAX_BLOCKS blocks on a page")
                 page.blocks.forEach { block ->
                     if (block.text.isBlank()) error(pageWhere, "an empty ${block.type.lowercase()} block")
-                    checkText(pageWhere, "text", block.text)
+                    checkText(pageWhere, "text", block.text, allowLists = true)
                 }
             }
             positive(where, "estimated_minutes", u.estimatedMinutes)
@@ -283,11 +283,16 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
         length(where, "source_note", p.sourceNote, 300)
     }
 
-    /** Only `**bold**`, `*italic*` and `[[n]]` are allowed in texts. */
-    private fun checkText(where: String, field: String, text: String) {
+    /**
+     * Only `**bold**`, `*italic*` and `[[n]]` are allowed in texts; the text of a lesson may also have lists
+     * (`- ` and `1. ` lines, [allowLists]).
+     */
+    private fun checkText(where: String, field: String, text: String, allowLists: Boolean = false) {
         FORBIDDEN_MARKUP.forEach { (pattern, name) ->
             if (pattern.containsMatchIn(text)) error(where, "$field contains $name, which the text format does not support")
         }
+        if (!allowLists && LIST.containsMatchIn(text)) error(where, "$field contains a list, which the text format does not support here")
+        if (allowLists && PLUS_LIST.containsMatchIn(text)) error(where, "$field has a list with '+': write list items with '- '")
         val singleStars = text.replace("**", "").count { it == '*' }
         if (text.split("**").size % 2 == 0) error(where, "$field has an unclosed **")
         if (singleStars % 2 != 0) error(where, "$field has an unclosed *")
@@ -327,9 +332,10 @@ class ContentValidator(private val describe: (File) -> String = { it.path }) {
             Regex("""]\(""") to "a link",
             Regex("""(?m)^\s{0,3}#{1,6}\s""") to "a heading",
             Regex("""(?m)^\s{0,3}>""") to "a quote block",
-            Regex("""(?m)^\s*([-+]|\d+\.)\s""") to "a list",
             Regex("""`""") to "code",
             Regex("""__""") to "underline",
         )
+        private val LIST = Regex("""(?m)^\s*([-+]|\d+\.)\s""")
+        private val PLUS_LIST = Regex("""(?m)^\s*\+\s""")
     }
 }

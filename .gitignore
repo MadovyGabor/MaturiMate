@@ -27,7 +27,7 @@ shared/src/commonMain/composeResources/files/*_private.json
 shared/src/commonMain/composeResources/files/content.db
 shared/src/commonMain/composeResources/files/content-manifest.json
 
-# Lesson and task files: a separate private repository cloned here (see docs/DECISIONS.md)
+# Lesson and task files: a separate private repository cloned here
 /content/
 
 # Planning notes for the AI assistant (kept locally)

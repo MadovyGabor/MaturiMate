@@ -89,7 +89,7 @@ class MistakesTest {
         }
     }
 
-    /** The rule as written in DECISIONS: the tasks whose newest answer (`attempt_answer`) is wrong. */
+    /** The rule as decided: the tasks whose newest answer (`attempt_answer`) is wrong. */
     private suspend fun byTheNewestAnswer(): Set<Long> {
         val answers = progress.attempts().data().flatMap { progress.answersOfAttempt(it.id).data() }
         return answers.groupBy { it.taskId }.mapValues { (_, list) -> list.maxBy { it.answeredAt } }.filterValues { !it.isCorrect }.keys

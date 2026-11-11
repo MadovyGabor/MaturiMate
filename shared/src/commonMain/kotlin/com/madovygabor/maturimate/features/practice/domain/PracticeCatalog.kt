@@ -40,7 +40,7 @@ data class PracticeSubject(val subject: Subject, val parts: List<PracticeNode>)
  *   tasks. The tasks of a topic are the active tasks of its tests (`PRACTICE` units), each task once even when it
  *   sits in several tests. The final test of a parent topic adds nothing of its own: its tasks belong to the topics
  *   below.
- * * **Mistakes:** every topic with a **mistake**, a task whose latest answer is wrong (DECISIONS 2026-11-05),
+ * * **Mistakes:** every topic with a **mistake**, a task whose latest answer is wrong,
  *   finished or not. A mistake belongs to the topic of its task (always a topic with no topics below it); a
  *   switched-off task or a task of an unpublished topic is not counted.
  */
