@@ -16,6 +16,8 @@ import com.madovygabor.maturimate.features.learning.domain.StudyTracker
 import com.madovygabor.maturimate.features.reminder.domain.ReminderKind
 import com.madovygabor.maturimate.features.reminder.domain.ReminderMessage
 import com.madovygabor.maturimate.features.reminder.domain.ReminderScheduler
+import com.madovygabor.maturimate.features.userProfile.domain.ExamCalendar
+import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
 import com.madovygabor.maturimate.features.reminder.domain.chooseReminder
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
@@ -57,7 +59,8 @@ class ReminderReceiver : BroadcastReceiver(), KoinComponent {
                     val message = chooseReminder(
                         streak = streak,
                         hadStreak = tracker.hadStreak(),
-                        daysToExam = profile.graduationDate?.let { today.daysUntil(it) },
+                        // the official date when it replaces the rule's (the same calendar as the home screen)
+                        daysToExam = ExamCalendar(get<ExamDateRepository>().dates.first()).effectiveDate(profile.graduationDate)?.let { today.daysUntil(it) },
                         dayNumber = today.toEpochDays(),
                     )
                     show(context, profile.uiLanguage, message)

@@ -1,5 +1,8 @@
 package com.madovygabor.maturimate.features.learning.domain
 
+import com.madovygabor.maturimate.features.userProfile.domain.ExamCalendar
+import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
+import com.madovygabor.maturimate.features.userProfile.domain.OfficialExamDate
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.features.learning.domain.model.ContinueTarget
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
@@ -50,6 +53,8 @@ data class HomeSummary(
     val mistakes: Int = 0,
     /** The zone of the days (the goal, the week, the activities): the one the tracker counts in. */
     val zone: TimeZone = TimeZone.currentSystemDefault(),
+    /** The official exam date offered instead of a date picked by hand, until the user answers it. */
+    val examOffer: OfficialExamDate? = null,
 )
 
 /**
@@ -64,6 +69,8 @@ class HomeOverview(
     private val profile: UserProfileRepository,
     /** The number of mistakes (the mistake practice lives in the practice feature). */
     private val mistakeCount: suspend () -> Int = { 0 },
+    /** The official exam dates, when the sync has brought them. */
+    private val examDates: ExamDateRepository? = null,
 ) {
 
     suspend fun load(): OperationResult<HomeSummary, LearningError> {
@@ -88,7 +95,9 @@ class HomeOverview(
             is OperationResult.Error -> return OperationResult.Error(result.error)
         }
         val user = profile.profile.first()
-        val daysToExam = user?.graduationDate?.let { goal.date.daysUntil(it) }?.takeIf { it > 0 }
+        val calendar = ExamCalendar(examDates?.dates?.first().orEmpty())
+        val daysToExam = calendar.effectiveDate(user?.graduationDate)?.let { goal.date.daysUntil(it) }?.takeIf { it > 0 }
+        val offer = calendar.offer(user?.graduationDate)?.takeIf { examDates?.isAnswered(it) == false }
         val hadStreak = tracker.hadStreak()
         return OperationResult.Success(
             HomeSummary(
@@ -102,6 +111,7 @@ class HomeOverview(
                 motto = mottoOf(goal.reached, streak, hadStreak, studiedBefore = latest.isNotEmpty() || goal.secondsStudied > 0),
                 mistakes = mistakeCount(),
                 zone = tracker.timeZone(),
+                examOffer = offer,
             )
         )
     }
