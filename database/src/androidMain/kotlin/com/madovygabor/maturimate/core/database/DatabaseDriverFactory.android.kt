@@ -15,7 +15,7 @@ actual class DatabaseDriverFactory(private val context: Context) {
     actual fun createUserDriver(): SqlDriver = driver(UserDatabase.Schema, USER_DATABASE_NAME)
 
     actual fun contentStorage(): ContentStorage =
-        FileContentStorage(context.getDatabasePath(CONTENT_DATABASE_NAME).parentFile!!)
+        FileContentStorage(context.getDatabasePath(CONTENT_DATABASE_NAME).parentFile!!, AndroidSqliteRunner())
 
     // the exported file carries PRAGMA user_version = schema version, so the helper neither creates nor migrates it
     actual fun createContentDriver(): SqlDriver = driver(ContentDatabase.Schema, CONTENT_DATABASE_NAME)

@@ -49,6 +49,10 @@ CREATE TABLE user_subject (
     added_at      INTEGER NOT NULL,
     -- the level of a subject that has levels (English: B1 or B2); empty for the others
     level         TEXT,
+    -- epoch milliseconds; empty while the subject is chosen. A dropped subject is marked, not deleted, so the
+    -- removal travels to the other devices through the sync.
+    removed_at    INTEGER,
+    updated_at    INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
     CONSTRAINT pk_user_subject PRIMARY KEY (user_id, subject_id),
     CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN')),
     CONSTRAINT ck_user_subject_level CHECK (level IN ('B1', 'B2'))
@@ -93,7 +97,7 @@ adoptAccount {
 UPDATE OR REPLACE user_profile SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE user_settings SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE user_role SET user_id = :accountId WHERE user_id = :guestId;
-UPDATE OR REPLACE user_subject SET user_id = :accountId WHERE user_id = :guestId;
+UPDATE OR REPLACE user_subject SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE attempt_answer SET user_id = :accountId WHERE user_id = :guestId;
 UPDATE OR REPLACE user_unit_progress SET user_id = :accountId, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :guestId;
@@ -132,6 +136,7 @@ DELETE FROM user_unit_progress WHERE user_id = :userId;
 DELETE FROM user_task_progress WHERE user_id = :userId;
 DELETE FROM user_streak WHERE user_id = :userId;
 DELETE FROM activity_log WHERE user_id = :userId;
+DELETE FROM sync_state;
 DELETE FROM local_user;
 }
 
@@ -194,14 +199,20 @@ DELETE FROM user_role WHERE user_id = :userId;
 selectSettings:
 SELECT * FROM user_settings WHERE user_id = :userId;
 
+-- the subjects the user studies (dropped ones stay in the table, marked)
 selectSubjects:
-SELECT * FROM user_subject WHERE user_id = :userId ORDER BY added_at;
+SELECT * FROM user_subject WHERE user_id = :userId AND removed_at IS NULL ORDER BY added_at;
 
+-- a subject that is already there is kept as it is; reviveSubject then sets it
 insertSubject:
-INSERT OR IGNORE INTO user_subject VALUES ?;
+INSERT OR IGNORE INTO user_subject (user_id, subject_id, source, added_at, level) VALUES (:userId, :subjectId, :source, :addedAt, :level);
+
+-- a subject chosen again keeps its row (and its added_at is the new one, to keep the order of the list)
+reviveSubject:
+UPDATE user_subject SET removed_at = NULL, source = :source, level = :level, added_at = :addedAt, updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId AND subject_id = :subjectId;
 
 deleteSubjects:
-DELETE FROM user_subject WHERE user_id = :userId;
+UPDATE user_subject SET removed_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER), updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId AND removed_at IS NULL;
 
 deleteSubject:
-DELETE FROM user_subject WHERE user_id = :userId AND subject_id = :subjectId;
+UPDATE user_subject SET removed_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER), updated_at = CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER) WHERE user_id = :userId AND subject_id = :subjectId AND removed_at IS NULL;

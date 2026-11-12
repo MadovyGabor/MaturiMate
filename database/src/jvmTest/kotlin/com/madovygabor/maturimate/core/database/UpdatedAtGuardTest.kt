@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 class UpdatedAtGuardTest {
 
     /** The tables with `updated_at` that the sync compares. A new synced table is added here. */
-    private val syncedTables = listOf("user_profile", "user_settings", "user_unit_progress", "user_streak", "activity_log")
+    private val syncedTables = listOf("user_profile", "user_settings", "user_subject", "user_unit_progress", "user_streak", "activity_log")
 
     private val updateStatement = Regex(
         """UPDATE\s+(?:OR\s+\w+\s+)?(\w+)\s+SET\b(.*?);""",

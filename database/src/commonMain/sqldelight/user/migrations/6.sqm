@@ -1,0 +1,73 @@
+-- Version 6 to 7: the sync (roadmap 12.1b, plan llm/outputs/plan-12.md section 2.1)
+-- (supabase/migrations/20261112120000_sync_groundwork.sql).
+--
+-- * `user_subject` gets `removed_at` and `updated_at`: a subject that is dropped is marked, not deleted, so the
+--   removal can travel to the other devices. SQLite cannot add a column with a default expression, so the table
+--   is rebuilt; every row is kept (`updated_at` = the time of the migration).
+-- * `exam_date`: a mirror of the server table with the official dates of the written exams (pulled, never pushed).
+-- * `sync_state`, `content_pending` and `pending_revocation`: state of this phone only (like `local_user` and `local_device`).
+
+CREATE TABLE user_subject_new (
+    user_id       TEXT    NOT NULL,
+    subject_id    INTEGER NOT NULL,
+    source        TEXT    NOT NULL DEFAULT 'CHOSEN',
+    added_at      INTEGER NOT NULL,
+    level         TEXT,
+    removed_at    INTEGER,
+    updated_at    INTEGER NOT NULL DEFAULT (CAST(ROUND((julianday('now') - 2440587.5) * 86400000) AS INTEGER)),
+    CONSTRAINT pk_user_subject PRIMARY KEY (user_id, subject_id),
+    CONSTRAINT ck_user_subject_source CHECK (source IN ('AUTO', 'CHOSEN')),
+    CONSTRAINT ck_user_subject_level CHECK (level IN ('B1', 'B2'))
+);
+
+INSERT INTO user_subject_new (user_id, subject_id, source, added_at, level)
+SELECT user_id, subject_id, source, added_at, level FROM user_subject;
+
+DROP TABLE user_subject;
+ALTER TABLE user_subject_new RENAME TO user_subject;
+
+CREATE TABLE exam_date (
+    exam_date_id  INTEGER NOT NULL PRIMARY KEY,
+    exam_year     INTEGER NOT NULL,
+    subject_id    INTEGER,
+    exam_on       TEXT    NOT NULL,
+    published_at  INTEGER NOT NULL,
+    note          TEXT,
+    CONSTRAINT uq_exam_date UNIQUE (exam_year, subject_id)
+);
+
+CREATE TABLE sync_state (
+    slot                 INTEGER NOT NULL CONSTRAINT pk_sync_state PRIMARY KEY,
+    user_id              TEXT    NOT NULL,
+    pull_cursor          TEXT,
+    last_push_at         INTEGER,
+    last_success_at      INTEGER,
+    last_error           TEXT,
+    full_push_pending    INTEGER NOT NULL DEFAULT 1 CHECK (full_push_pending IN (0, 1)),
+    guest_merge_pending  INTEGER NOT NULL DEFAULT 0 CHECK (guest_merge_pending IN (0, 1)),
+    rejected_count       INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT ck_sync_state_slot CHECK (slot = 1)
+);
+
+CREATE TABLE content_pending (
+    subject_id       INTEGER NOT NULL CONSTRAINT pk_content_pending PRIMARY KEY,
+    content_version  INTEGER NOT NULL,
+    schema_version   INTEGER NOT NULL,
+    size_bytes       INTEGER NOT NULL,
+    sha256           TEXT    NOT NULL,
+    state            TEXT    NOT NULL,
+    CONSTRAINT ck_content_pending_state CHECK (state IN ('AVAILABLE', 'DOWNLOADED', 'NEEDS_MOBILE_DATA'))
+);
+
+CREATE TABLE pending_revocation (
+    slot           INTEGER NOT NULL CONSTRAINT pk_pending_revocation PRIMARY KEY,
+    refresh_token  TEXT    NOT NULL,
+    CONSTRAINT ck_pending_revocation_slot CHECK (slot = 1)
+);
+
+-- Phone only: the official dates the user has answered (yes or no) on the home screen, with the publication answered.
+-- A new publication of the same date asks again.
+CREATE TABLE exam_date_answer (
+    exam_date_id  INTEGER NOT NULL CONSTRAINT pk_exam_date_answer PRIMARY KEY,
+    published_at  INTEGER NOT NULL
+);

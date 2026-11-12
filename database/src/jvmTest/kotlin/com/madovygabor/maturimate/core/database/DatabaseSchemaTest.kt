@@ -12,7 +12,6 @@ import com.madovygabor.maturimate.database.content.Topic
 import com.madovygabor.maturimate.database.content.Unit_task
 import com.madovygabor.maturimate.database.user.UserDatabase
 import com.madovygabor.maturimate.database.user.User_role
-import com.madovygabor.maturimate.database.user.User_subject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -195,10 +194,10 @@ class DatabaseSchemaTest {
     @Test
     fun subjectLevelIsB1B2OrEmpty() {
         val db = userDatabase()
-        db.profileQueries.insertSubject(User_subject("user-1", 3, "AUTO", 1_000, "B2"))
-        db.profileQueries.insertSubject(User_subject("user-1", 1, "AUTO", 1_000, null))
+        db.profileQueries.insertSubject("user-1", 3, "AUTO", 1_000, "B2")
+        db.profileQueries.insertSubject("user-1", 1, "AUTO", 1_000, null)
         // INSERT OR IGNORE skips the row with an unknown level
-        db.profileQueries.insertSubject(User_subject("user-1", 4, "CHOSEN", 1_000, "C1"))
+        db.profileQueries.insertSubject("user-1", 4, "CHOSEN", 1_000, "C1")
 
         val subjects = db.profileQueries.selectSubjects("user-1").executeAsList()
         assertEquals(mapOf(3L to "B2", 1L to null), subjects.associate { it.subject_id to it.level })
@@ -238,5 +237,37 @@ class DatabaseSchemaTest {
         assertFailsWith<Exception> {
             driver.execute(null, "UPDATE user_subject SET level = 'C1' WHERE user_id = 'guest-1'", 0)
         }
+    }
+
+    @Test
+    fun migrationFromVersion6KeepsSubjectsWithoutAMarker() {
+        val driver = UserSchemaVersions.driverAt(6)
+        driver.execute(null, "INSERT INTO user_subject (user_id, subject_id, source, added_at, level) VALUES ('u', 1, 'AUTO', 1000, NULL)", 0)
+        driver.execute(null, "INSERT INTO user_subject (user_id, subject_id, source, added_at, level) VALUES ('u', 3, 'CHOSEN', 2000, 'B2')", 0)
+
+        UserDatabase.Schema.migrate(driver, 6, UserDatabase.Schema.version)
+        val db = UserDatabase(driver)
+
+        val subjects = db.profileQueries.selectSubjects("u").executeAsList()
+        assertEquals(listOf(1L, 3L), subjects.map { it.subject_id })
+        assertTrue(subjects.all { it.removed_at == null && it.updated_at > 0 })
+        assertEquals("B2", subjects.last().level)
+    }
+
+    @Test
+    fun aDroppedSubjectIsMarkedAndCanComeBack() {
+        val db = userDatabase()
+        db.profileQueries.insertSubject("u", 2, "CHOSEN", 1_000, null)
+        db.profileQueries.deleteSubject("u", 2)
+        assertTrue(db.profileQueries.selectSubjects("u").executeAsList().isEmpty())
+
+        // the row is still there, marked
+        val row = db.profileQueries.selectSubjects("u").executeAsList()
+        assertTrue(row.isEmpty())
+        db.profileQueries.insertSubject("u", 2, "CHOSEN", 5_000, null)
+        db.profileQueries.reviveSubject("CHOSEN", null, 5_000, "u", 2)
+        val back = db.profileQueries.selectSubjects("u").executeAsOne()
+        assertNull(back.removed_at)
+        assertEquals(5_000L, back.added_at)
     }
 }

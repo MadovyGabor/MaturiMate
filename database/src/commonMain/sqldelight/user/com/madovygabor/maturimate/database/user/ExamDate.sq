@@ -1,0 +1,33 @@
+-- Official dates of the written exams, a mirror of the server table `exam_date` (supabase/migrations).
+-- Pulled by the sync and replaced whole; `subject_id` empty = every subject. Dates are YYYY-MM-DD.
+CREATE TABLE exam_date (
+    exam_date_id  INTEGER NOT NULL PRIMARY KEY,
+    exam_year     INTEGER NOT NULL,
+    subject_id    INTEGER,
+    exam_on       TEXT    NOT NULL,
+    published_at  INTEGER NOT NULL,
+    note          TEXT,
+    CONSTRAINT uq_exam_date UNIQUE (exam_year, subject_id)
+);
+
+-- Phone only: the official dates the user has answered (yes or no) on the home screen, with the publication answered.
+-- A new publication of the same date asks again.
+CREATE TABLE exam_date_answer (
+    exam_date_id  INTEGER NOT NULL CONSTRAINT pk_exam_date_answer PRIMARY KEY,
+    published_at  INTEGER NOT NULL
+);
+
+selectAnswer:
+SELECT published_at FROM exam_date_answer WHERE exam_date_id = :examDateId;
+
+saveAnswer:
+INSERT OR REPLACE INTO exam_date_answer (exam_date_id, published_at) VALUES (:examDateId, :publishedAt);
+
+selectAll:
+SELECT * FROM exam_date ORDER BY exam_year, subject_id;
+
+deleteAll:
+DELETE FROM exam_date;
+
+insert:
+INSERT INTO exam_date VALUES ?;
