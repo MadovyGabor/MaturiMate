@@ -13,7 +13,8 @@ Kotlin Multiplatform app (Android and desktop JVM) with Compose Multiplatform: a
 | touch content, the validator, exporter or importer | [tools/content-pipeline/README.md](tools/content-pipeline/README.md) |
 | write or change lessons and tasks (in `content/`) | `content/AGENTS.md` (the content guide: process, quality rules; private repository) and the pipeline README above; to look at the result, run the read-only viewer ([tools/content-viewer/README.md](tools/content-viewer/README.md)) |
 | touch Supabase settings (auth, providers, e-mail) | [docs/supabase-setup.md](llm/supabase-setup.md) |
-| touch the server database | [dbServer/README.md](dbServer/README.md); the schema is in `supabase/migrations` (add a new migration, never edit an applied one); row level security is tested in `supabase/tests/rls_test.sql` |
+| touch backups, the content packs, R2 or the Worker | [docs/runbooks/](docs/runbooks/) (`cloudflare.md`, `backup.md`, `restore.md`) |
+| touch the server database | [dbServer/README.md](dbServer/README.md); the schema is in `supabase/migrations` (add a new migration, never edit an applied one); row level security is tested in `supabase/tests/rls_test.sql`, the sync in `supabase/tests/sync_test.sql` |
 
 ## How we work
 

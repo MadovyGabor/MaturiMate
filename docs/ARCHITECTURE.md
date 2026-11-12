@@ -171,15 +171,15 @@ Offline-first, with three databases:
 | Database | Where | Contents | Written by |
 |---|---|---|---|
 | Content (SQLite, `content.db`) | Phone, read-only | 15 content tables: subjects, topic tree, learning units, tasks with options, keys and accepted answers, tags | The exporter; installed as a whole file |
-| User (SQLite, `maturimate_user.db`) | Phone | 10 user tables: profile, role, settings, subjects, rounds (`attempt`) and their answers, unit and task progress, streak, daily activity; plus the phone-only `local_user` (whose rows these are) and `local_device` (the id of this installation) | The app |
-| Server (PostgreSQL) | Supabase; a local copy in Docker | The 28 tables of `../supabase/migrations`: synced progress, plus a copy of the content. Accounts are Supabase Auth users (`auth.users`) | The importer (content); the app through Supabase, protected by row level security (accounts, progress) |
+| User (SQLite, `maturimate_user.db`) | Phone | 10 user tables: profile, role, settings, subjects, rounds (`attempt`) and their answers, unit and task progress, streak, daily activity; plus the phone-only `local_user` (whose rows these are), `local_device` (the id of this installation), `sync_state` (cursor and push mark of the sync), `content_pending`, `pending_revocation` (the session of an offline sign-out), `exam_date` (a copy of the official exam dates) and `exam_date_answer` | The app; the sync |
+| Server (PostgreSQL) | Supabase; a local copy in Docker | The tables of `../supabase/migrations`: synced progress, plus a copy of the content, `exam_date`, `content_release` (the packs offered) and `content_download` (the daily-limit log). Accounts are Supabase Auth users (`auth.users`) | The importer (content); the app through Supabase, protected by row level security (accounts, progress) |
 
 The PostgreSQL schema in `supabase/migrations` comes from the original 30-table design: the design's own sign-in tables (`app_user`, `user_session`, `password_reset_token`) are replaced by Supabase Auth, every `user_id` is a `uuid` referencing `auth.users`, and `user_consent` also records the age confirmation (`AGE_16`). Schema changes are new migration files; an applied migration is never edited. The SQLite schemas repeat it table by table with the same table and column names; only the types and the constraints SQLite cannot express differ (timestamps as epoch milliseconds, dates as `YYYY-MM-DD` text, booleans as `0/1`, no PL/pgSQL triggers, no foreign keys from user tables to content tables or to `auth.users`). Two columns were added after the original design: `user_subject.level` (English level) and `user_profile.onboarding_completed_at` (see [DECISIONS](../content/DECISIONS.md) 2026-10-31). A change to the user database also gets a SQLDelight migration (`database/src/commonMain/sqldelight/user/migrations/<version>.sqm`, the same change as the Supabase migration), so the database on an installed app is upgraded instead of rebuilt.
 
 **The user database since the freeze (step 11.1, decisions of 2026-11-10).** The user tables are shaped for the sync (Milestone 12); from here every change is a migration pair (a phone `.sqm` and a Supabase migration), and `SchemaMigrationTest` fails when a schema migrated from version 1 differs from a fresh one.
 
 * **A round (`attempt`) has an id made by the device** (a UUID text on the phone, `uuid` on the server); `attempt_answer` points at it. Two devices of one account never collide.
-* **`updated_at`** (epoch milliseconds on the phone, `timestamptz` on the server) is on `user_profile`, `user_settings`, `user_unit_progress`, `user_streak` and `activity_log`. On the phone it is a column default plus `updated_at = …` in every `UPDATE` query (SQLDelight 2.4 does not read triggers); the server has a trigger. `attempt` and `attempt_answer` do not change after the round, `user_subject` is replaced whole.
+* **`updated_at`** (epoch milliseconds on the phone, `timestamptz` on the server) is on `user_profile`, `user_settings`, `user_subject`, `user_unit_progress`, `user_streak` and `activity_log`. On the phone it is a column default plus `updated_at = …` in every `UPDATE` query (SQLDelight 2.4 does not read triggers); the server has a trigger. `attempt` and `attempt_answer` do not change after the round. A dropped subject is marked (`user_subject.removed_at`), not deleted, so the removal can travel.
 * **`user_profile.progress_reset_at`** is set by "Haladás újrakezdése": the sync ignores progress older than it, because deleted rows cannot be seen by a sync.
 * **`activity_log` is one row per device and day** (`device_id` from `local_device`); the screens read the sum of a day (`selectActivity` groups by day).
 * **`user_task_progress` is a phone-side cache, not synced**: the counters of the mistakes and the topic scores, which the sync rebuilds from `attempt_answer`. The server has no such table.
@@ -187,6 +187,15 @@ The PostgreSQL schema in `supabase/migrations` comes from the original 30-table 
 * All server times of the user tables are `timestamptz`; the progress tables have DELETE policies for the owner.
 * **One time zone:** the device's. `AppViewModel` writes it to `user_settings.timezone` at every start (`UserProfileRepository.refreshTimeZone`); `StudyTracker.timeZone()` is what the streak, the goal, the home and profile screens, `ReviewList` and `ActivityHistory` count their days in.
 * **Writes that must not lose a count are done in the database:** `ProgressRepository.recordTaskAnswer` (the answers and the right answers in a row, in SQL), `updateStreak` (the streak read and written in one transaction; the rule stays in `StudyTracker`). A round left `IN_PROGRESS` when the app was killed is closed as `ABANDONED` when the next round starts.
+
+### 9.0 The sync (Milestone 12)
+
+One call, `sync_user_data` (`supabase/migrations/20261118120000_sync_functions.sql`), under a per-user advisory lock and the caller's row level security: the phone sends what changed since its push mark, the server checks every row (bad rounds are rejected whole, future times are cut, another device's minutes are refused), merges per table, and returns everything that changed since the phone's cursor, plus the official exam dates and the current content releases. The plan with the rules is `llm/outputs/plan-12.md`; the decisions of 2026-11-12 are in `content/DECISIONS.md`.
+
+* **Clocks:** the server keeps the phone's `updated_at` when the sync writes (the session flag `maturimate.sync` in `fn_set_updated_at`), so the newer change wins, not the later upload. The pull cursor is the server-only `server_updated_at`.
+* **Merge rules:** rounds and answers are added (the first finished version wins); unit progress: the furthest wins, the earlier times stay; streak: the longest stays, the current one comes from the later day; daily minutes: one row per device, the larger counter; profile, settings and subjects: the newer change; the reset marker keeps the newest. A guest who signs in to an existing account syncs once in the guest-merge mode: the account's profile, settings, roles and subjects win, the guest's learning data is added. The time zone never travels; nor does anything of the account itself (password, e-mail).
+* **On the phone:** `features/sync`: `SyncEngine` (one run at a time, a request during a run queues one more; batches of 200 rounds; pull pages), `SyncStoreImpl` (applies an answer in one transaction with the same rules as `INSERT OR IGNORE` plus a conditional `UPDATE`, rebuilds `user_task_progress` from the answers, moves the cursor in the same transaction), `SyncTriggers` (opening and foreground with a 5-minute gap, the end of every round and lesson, settings changes after 3 seconds, by hand; no background jobs), `SupabaseSyncRepository`. The settings row and the profile badge show the state; the sign-out uploads first.
+* Tested by `supabase/tests/sync_test.sql` (CI runs it after `rls_test.sql`) and the `features/sync` tests.
 
 ### 9.1 Content pipeline
 
@@ -206,7 +215,8 @@ Files (Git) ──┤
 * `bundleContent` (Gradle task of `:tools:content-pipeline`) exports into `../shared/src/commonMain/composeResources/files`. These files are gitignored; a build without them runs, but has no content.
 * `ContentInstaller` (`:database`) installs a content file only if its schema version equals the app's, its size and SHA-256 match the manifest, and its `content_version` is higher than the installed one. It writes a temporary file and renames it over the old one, manifest last. The user database is never touched.
 * `ContentDatabaseProvider` (`core/database`) installs the bundled file on first use and opens the installed one; it returns null when there is no content. Checked on the Android emulator (API 37): installed on first start, "up to date" after a restart.
-* Not built yet: downloading newer content files. They will go through the same installer; the open content driver must be closed before a swap.
+* **Packs (Milestone 12.4):** the release build bundles a **starter** (`-PcontentKind=starter`: the first lesson of each subject); development builds bundle the full file. After sign-up the app downloads one **pack per subject** from the private Cloudflare R2 bucket through a 10-minute link of the Worker (`workers/content-link`, [runbook](runbooks/cloudflare.md)). `ContentUpdater` (`features/content`) compares the releases the sync returns with what is installed, asks before more than 100 MB on mobile data, and hands the bytes to the installer, which checks size and hash against the release of the server.
+* `ContentInstaller` keeps every part (`parts/bundled`, `parts/pack-<subject>`) and builds `content.db` from them (packs first, the bundled file last, merged without overwriting), then moves it in place with `content-installed.json` written last. So a pack always wins over the starter text of its subject, and a bundled starter never replaces a full subject. `ContentDatabaseProvider.applyPending()` swaps under its mutex and only while no lesson, test or practice round is open (`swapAllowed`, set by the navigation).
 
 ### 9.3 Repositories
 
@@ -219,7 +229,7 @@ Files (Git) ──┤
 ## 10. Not built yet
 
 * The lesson and test screens (Milestone 7, steps 7.2 to 7.5); the subjects tab already uses the content and the progress.
-* Content updates by download and sync of progress (see the [ROADMAP](ROADMAP.md)). Accounts exist: sign-up, sign-in and the profile on the server (step 5.12).
+* The live Supabase project still lacks the migrations of Milestone 12, the Worker is not deployed (`core/config/ContentConfig.LINK_URL` is empty, so the app does not download yet) and the backups have no secrets yet; see the [ROADMAP](ROADMAP.md) and the [runbooks](runbooks/).
 
 ---
 
