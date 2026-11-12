@@ -3,6 +3,7 @@ package com.madovygabor.maturimate.core.di
 import android.app.Application
 import com.madovygabor.maturimate.features.reminder.domain.ReminderScheduler
 import com.madovygabor.maturimate.features.reminder.domain.ReminderSync
+import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import com.madovygabor.maturimate.reminder.AndroidReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,5 +26,7 @@ class MyApplication : Application(), KoinComponent {
         }
         // plans the daily reminder, and again whenever the profile changes it (also after a restart of the phone)
         applicationScope.launch { get<ReminderSync>().run() }
+        // uploads a settings change a few seconds after it was made
+        applicationScope.launch { get<SyncTriggers>().run() }
     }
 }

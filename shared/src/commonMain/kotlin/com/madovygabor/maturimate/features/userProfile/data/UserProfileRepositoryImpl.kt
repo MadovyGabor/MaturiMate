@@ -91,15 +91,10 @@ class UserProfileRepositoryImpl(
         val addedAt = now().toEpochMilliseconds()
         // added_at keeps the order of the list
         subjects.forEachIndexed { index, subject ->
-            queries.insertSubject(
-                User_subject(
-                    user_id = userId,
-                    subject_id = subject.subjectId,
-                    source = if (subject.compulsory) "AUTO" else "CHOSEN",
-                    added_at = addedAt + index,
-                    level = subject.level?.name,
-                )
-            )
+            val source = if (subject.compulsory) "AUTO" else "CHOSEN"
+            val at = addedAt + index
+            queries.insertSubject(userId, subject.subjectId, source, at, subject.level?.name)
+            queries.reviveSubject(source, subject.level?.name, at, userId, subject.subjectId)
         }
     }
 
