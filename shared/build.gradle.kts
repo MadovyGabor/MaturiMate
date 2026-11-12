@@ -60,6 +60,8 @@ kotlin {
             implementation(libs.supabase.auth)
             implementation(libs.supabase.compose.auth)
             implementation(libs.supabase.postgrest)
+            // the download of the content packs (the engine is the one of the Supabase client)
+            implementation(libs.ktor.client.core)
 
             // Material icons
             implementation(libs.compose.material.icons.extended)
