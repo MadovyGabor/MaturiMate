@@ -35,4 +35,12 @@ A database created before the Supabase migration (with the old `01_ddl.sql`) sti
 
 - The importer reads `DATABASE_URL` from the environment or from `dbServer/.env`.
 - `PostgresWriterTest` creates a throwaway database with the auth stand-in and the migrations; it is skipped when PostgreSQL is not running.
-- `supabase/tests/rls_test.sql` checks the row level security policies (CI runs it after the migrations).
+- `supabase/tests/rls_test.sql` checks the row level security policies, and `supabase/tests/sync_test.sql` the sync, the download permission, the export and the clean-up (CI runs both after the migrations):
+
+  ```bash
+  for f in dbServer/postgres/00_auth_stub.sql supabase/migrations/*.sql supabase/tests/rls_test.sql supabase/tests/sync_test.sql; do
+    psql -v ON_ERROR_STOP=1 -q -f "$f"
+  done
+  ```
+- `pg_cron` is not in this image: the schedule of `clean_up_logs()` (migration `20261125120000_account_data.sql`) is skipped here; on Supabase enable the extension once (Database → Extensions) and apply the migration again or schedule it by hand.
+- `PublisherTest` (the `publish` command) uses a throwaway database like `PostgresWriterTest`.
