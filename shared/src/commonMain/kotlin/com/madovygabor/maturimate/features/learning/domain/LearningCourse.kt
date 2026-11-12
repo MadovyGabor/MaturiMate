@@ -30,6 +30,8 @@ import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressSta
 class LearningCourse(
     private val content: ContentRepository,
     private val progress: ProgressRepository,
+    /** A guest gets one lesson; after it, the next step is the sign-up (decided 2026-10-30, roadmap 12.5). */
+    private val isGuest: suspend () -> Boolean = { false },
 ) {
 
     /** Every subject of the installed content with the user's progress in it. */
@@ -105,14 +107,14 @@ class LearningCourse(
         val units = content.units(topicId).orThrow()
 
         if (children.isEmpty()) {
-            TopicLevel.Path(topic.title, parentTitle, steps(units, done))
+            TopicLevel.Path(topic.title, parentTitle, steps(units, done, current(done)))
         } else {
             val below = children.fold(StepCount.ZERO) { sum, child -> sum + count(child, done) }
             val final = units.filterIsInstance<LearningUnit.Practice>().firstOrNull { it.kind == PracticeKind.FINAL }
             val finalStep = final?.let {
                 val state = when {
                     it.id in done -> StepState.DONE
-                    below.done == below.total -> StepState.CURRENT
+                    below.done == below.total -> current(done)
                     else -> StepState.TODO
                 }
                 PathStep(it, StepKind.FINAL_TEST, state)
@@ -121,12 +123,16 @@ class LearningCourse(
         }
     }
 
-    private fun steps(units: List<LearningUnit>, done: Set<Long>): List<PathStep> {
+    /** The state of the next step: the sign-up for a guest who has done a lesson already. */
+    private suspend fun current(done: Set<Long>): StepState =
+        if (done.isNotEmpty() && isGuest()) StepState.SIGN_UP else StepState.CURRENT
+
+    private fun steps(units: List<LearningUnit>, done: Set<Long>, current: StepState): List<PathStep> {
         var currentTaken = false
         return units.sortedBy { it.sortOrder }.map { unit ->
             val state = when {
                 unit.id in done -> StepState.DONE
-                !currentTaken -> StepState.CURRENT.also { currentTaken = true }
+                !currentTaken -> current.also { currentTaken = true }
                 else -> StepState.TODO
             }
             PathStep(unit, kindOf(unit), state)

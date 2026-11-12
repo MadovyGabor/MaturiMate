@@ -50,4 +50,13 @@ interface AccountRepository {
 
     /** The signed-in account's profile; null when it has none on the server yet. */
     suspend fun downloadProfile(): OperationResult<RemoteProfile?, AuthError>
+
+    /**
+     * Deletes the signed-in account on the server at once and for good (`delete_my_account`): the proof of the consents is
+     * kept in the archive, everything else of the user goes.
+     */
+    suspend fun deleteAccount(): OperationResult<Unit, AuthError> = OperationResult.Error(AuthError.UNKNOWN)
+
+    /** A JSON copy of every row the server keeps about the signed-in user (`export_my_data`). */
+    suspend fun exportMyData(): OperationResult<String, AuthError> = OperationResult.Error(AuthError.UNKNOWN)
 }

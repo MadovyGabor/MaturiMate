@@ -29,6 +29,7 @@ data class LearningDeepLink(val subjectId: Long, val topicIds: List<Long>)
 fun LearningNavigation(
     onOpenLesson: (Long) -> Unit,
     onOpenTest: (Long) -> Unit,
+    onSignUp: () -> Unit = {},
     deepLink: LearningDeepLink? = null,
     onDeepLinkHandled: () -> Unit = {},
 ) {
@@ -80,6 +81,7 @@ fun LearningNavigation(
                     onTopicClick = { backStack.add(Route.Main.Subject.Topic(it.topic.id)) },
                     onLessonClick = onOpenLesson,
                     onTestClick = onOpenTest,
+                    onSignUp = onSignUp,
                 )
             }
             entry<Route.Main.Subject.Topic> { route ->
@@ -90,6 +92,7 @@ fun LearningNavigation(
                     onTopicClick = { backStack.add(Route.Main.Subject.Topic(it.topic.id)) },
                     onLessonClick = onOpenLesson,
                     onTestClick = onOpenTest,
+                    onSignUp = onSignUp,
                 )
             }
         },

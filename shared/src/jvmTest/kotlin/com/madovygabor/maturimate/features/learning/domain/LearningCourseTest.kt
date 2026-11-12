@@ -19,6 +19,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressSta
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
@@ -62,7 +63,7 @@ class LearningCourseTest {
 
     private val content = ContentRepositoryImpl({ database }, Dispatchers.Unconfined)
 
-    private fun course(vararg completed: Long, progressFails: Boolean = false) = LearningCourse(
+    private fun course(vararg completed: Long, progressFails: Boolean = false, guest: Boolean = false) = LearningCourse(
         content,
         object : ProgressRepository by unsupported<ProgressRepository>() {
             override suspend fun unitProgress(): OperationResult<List<UnitProgress>, LearningError> =
@@ -71,6 +72,7 @@ class LearningCourseTest {
                     UnitProgress(it, UnitProgressStatus.COMPLETED, Instant.fromEpochMilliseconds(0), Instant.fromEpochMilliseconds(1))
                 })
         },
+        isGuest = { guest }
     )
 
     private fun <T> OperationResult<T, LearningError>.data(): T = when (this) {
@@ -195,10 +197,26 @@ class LearningCourseTest {
         assertEquals(OperationResult.Error(LearningError.DATABASE_ERROR), course(progressFails = true).subjects())
         assertEquals(OperationResult.Error(LearningError.DATABASE_ERROR), course(progressFails = true).topic(11))
     }
+
+    @Test
+    fun aGuestWhoHasDoneALessonSeesTheSignUpAsTheNextStep() = runBlocking {
+        // an account goes on as before
+        val account = course(50).topic(11).data() as TopicLevel.Path
+        assertEquals(StepState.CURRENT, account.steps.first { it.state != StepState.DONE }.state)
+        // a guest with no lesson done can open the first one
+        val fresh = course(guest = true).topic(11).data() as TopicLevel.Path
+        assertEquals(StepState.CURRENT, fresh.steps.first().state)
+        // a guest after the first lesson: the next step is the sign-up
+        val after = course(50, guest = true).topic(11).data() as TopicLevel.Path
+        assertEquals(StepState.DONE, after.steps.first().state)
+        assertEquals(StepState.SIGN_UP, after.steps[1].state)
+        assertTrue(after.steps.none { it.state == StepState.CURRENT })
+    }
 }
 
 /** A stand-in that rejects every call; a test overrides the one call it needs. */
 private inline fun <reified T : Any> unsupported(): T =
     java.lang.reflect.Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, _ ->
         throw UnsupportedOperationException(method.name)
+
     } as T

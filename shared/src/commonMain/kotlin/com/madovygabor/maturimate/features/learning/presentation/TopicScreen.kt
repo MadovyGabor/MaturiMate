@@ -42,6 +42,8 @@ import com.madovygabor.maturimate.features.learning.domain.model.StepState
 import com.madovygabor.maturimate.features.learning.domain.model.TopicLevel
 import com.madovygabor.maturimate.features.learning.domain.model.TopicSummary
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
+import maturimate.shared.generated.resources.path_sign_up_step_text
+import maturimate.shared.generated.resources.path_sign_up_step_title
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_back
 import maturimate.shared.generated.resources.learning_part_meta
@@ -70,6 +72,8 @@ fun TopicScreen(
     onTopicClick: (TopicSummary) -> Unit,
     onLessonClick: (Long) -> Unit,
     onTestClick: (Long) -> Unit,
+    /** The sign-up step of a guest opens the account screen. */
+    onSignUp: () -> Unit = {},
     viewModel: TopicViewModel = koinViewModel(key = target.toString()) { parametersOf(target) },
 ) {
     // read again whenever the screen comes back, so progress made deeper in shows here
@@ -83,6 +87,7 @@ fun TopicScreen(
         onStepClick = { step ->
             when {
                 step.state == StepState.TODO -> viewModel.onLockedStepClicked()
+                step.state == StepState.SIGN_UP -> onSignUp()
                 step.kind == StepKind.LESSON -> onLessonClick(step.unit.id)
                 else -> onTestClick(step.unit.id)
             }
@@ -166,9 +171,12 @@ fun TopicContent(
 @Composable
 private fun Step(step: PathStep, isFirst: Boolean, isLast: Boolean, onClick: () -> Unit) {
     val unit = step.unit
-    val meta = when (unit) {
-        is LearningUnit.Summary -> stringResource(Res.string.learning_step_lesson_meta, unit.estimatedMinutes)
-        is LearningUnit.Practice -> stringResource(Res.string.learning_step_tasks_meta, unit.roundSize)
+    val meta = when {
+        // the step stays the one that comes, the card says what to do first
+        step.state == StepState.SIGN_UP -> stringResource(Res.string.path_sign_up_step_text)
+        unit is LearningUnit.Summary -> stringResource(Res.string.learning_step_lesson_meta, unit.estimatedMinutes)
+        unit is LearningUnit.Practice -> stringResource(Res.string.learning_step_tasks_meta, unit.roundSize)
+        else -> ""
     }
     AppPathStep(
         style = when (step.kind) {
@@ -178,7 +186,7 @@ private fun Step(step: PathStep, isFirst: Boolean, isLast: Boolean, onClick: () 
         },
         state = when (step.state) {
             StepState.DONE -> PathStepState.DONE
-            StepState.CURRENT -> PathStepState.CURRENT
+            StepState.CURRENT, StepState.SIGN_UP -> PathStepState.CURRENT
             StepState.TODO -> PathStepState.TODO
         },
         title = unit.title,
@@ -186,6 +194,7 @@ private fun Step(step: PathStep, isFirst: Boolean, isLast: Boolean, onClick: () 
         stateLabel = when (step.state) {
             StepState.DONE -> stringResource(Res.string.learning_step_done)
             StepState.CURRENT -> stringResource(Res.string.learning_step_next)
+            StepState.SIGN_UP -> stringResource(Res.string.path_sign_up_step_title)
             StepState.TODO -> null
         },
         isFirst = isFirst,

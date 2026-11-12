@@ -94,6 +94,11 @@ fun MainFrameNavigation(
                                 onOpenTest = onOpenTest,
                                 deepLink = deepLink.value,
                                 onDeepLinkHandled = { deepLink.value = null },
+                                // a guest after the first lesson: the account screen of the profile tab
+                                onSignUp = {
+                                    profilePage.value = Route.Main.Profile.SignUp
+                                    navigator.navigate(Route.Main.Profile)
+                                },
                             )
                         }
                         // Practice: the free practice, and what comes next (Milestone 9a)

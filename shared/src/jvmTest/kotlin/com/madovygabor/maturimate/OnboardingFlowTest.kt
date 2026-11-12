@@ -33,6 +33,7 @@ import io.github.jan.supabase.auth.MemorySessionManager
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respondError
 import io.ktor.http.HttpStatusCode
@@ -110,7 +111,7 @@ class OnboardingFlowTest {
     private object NoSettings : AccountSettings {
         override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun changePassword(oldPassword: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
-        override suspend fun signOut(): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun signOut(force: Boolean): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
     }
 
     private object NoSetup : AccountSetup {
@@ -150,6 +151,7 @@ class OnboardingFlowTest {
                                 autoLoadFromStorage = false
                                 enableLifecycleCallbacks = false
                             }
+                            install(Postgrest)
                             install(ComposeAuth) { googleNativeLogin(serverClientId = "test") }
                         }
                     }
