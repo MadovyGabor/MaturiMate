@@ -27,7 +27,9 @@ import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Settings
+import maturimate.shared.generated.resources.sync_badge_description
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -116,7 +118,8 @@ fun ProfileOverviewScreen(
     // read again whenever the screen comes back, so what was done on another tab shows here
     LaunchedEffect(Unit) { viewModel.refresh() }
     val state by viewModel.state.collectAsState()
-    ProfileOverviewContent(state, ProfileActions(onSettings, onHistory, onSignUp, onSignIn, viewModel::toggle, viewModel::refresh))
+    val syncBadge by viewModel.syncBadge.collectAsState()
+    ProfileOverviewContent(state, ProfileActions(onSettings, onHistory, onSignUp, onSignIn, viewModel::toggle, viewModel::refresh, syncBadge))
 }
 
 /** What the profile can do; one object keeps the parameters short. */
@@ -128,6 +131,8 @@ data class ProfileActions(
     val onSignIn: () -> Unit = {},
     val onToggle: (Long) -> Unit = {},
     val onRetry: () -> Unit = {},
+    /** The quiet sign that the progress has not been uploaded for a day (or the last upload failed for a reason other than "no network"). */
+    val syncBadge: Boolean = false,
 )
 
 @OptIn(ExperimentalTime::class)
@@ -159,7 +164,7 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
             if (wide) {
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing.space6)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-                        Header(summary.firstName, actions.onSettings)
+                        Header(summary.firstName, actions.onSettings, actions.syncBadge)
                         if (summary.firstName == null) GuestCard(actions)
                         Stats(summary.streak, summary.totals)
                         Progress(summary.subjects, state.open, actions.onToggle)
@@ -167,7 +172,7 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
                     Column(Modifier.weight(1f)) { Recent(summary.recent, summary.today, summary.zone, actions.onHistory) }
                 }
             } else {
-                Header(summary.firstName, actions.onSettings)
+                Header(summary.firstName, actions.onSettings, actions.syncBadge)
                 // a guest sees the call to sign up first, right under the name
                 if (summary.firstName == null) GuestCard(actions)
                 Stats(summary.streak, summary.totals)
@@ -180,7 +185,7 @@ private fun ProfileReady(state: ProfileOverviewUiState.Ready, actions: ProfileAc
 
 /** A small circle with the initial, the name with "Profil" under it, and the gear to the settings. */
 @Composable
-private fun Header(firstName: String?, onSettings: () -> Unit) {
+private fun Header(firstName: String?, onSettings: () -> Unit, syncBadge: Boolean) {
     val spacing = MaterialTheme.spacing
     val colors = MaterialTheme.colorScheme
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space3)) {
@@ -205,6 +210,12 @@ private fun Header(firstName: String?, onSettings: () -> Unit) {
         Column(Modifier.weight(1f).semantics { heading() }) {
             Text(firstName ?: stringResource(Res.string.profile_guest), style = MaterialTheme.typography.headlineSmall)
             Text(stringResource(Res.string.profile_tab_title), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+        }
+        if (syncBadge) {
+            // calm on purpose: the quiet metadata color, no gold and no error red; a tap opens the settings, where the sync row says more
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Rounded.CloudOff, contentDescription = stringResource(Res.string.sync_badge_description), tint = colors.onSurfaceVariant)
+            }
         }
         IconButton(onClick = onSettings) {
             Icon(Icons.Rounded.Settings, contentDescription = stringResource(Res.string.profile_settings), tint = colors.onSurfaceVariant)

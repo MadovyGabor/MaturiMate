@@ -21,6 +21,7 @@ import maturimate.shared.generated.resources.account_first_name
 import maturimate.shared.generated.resources.account_last_name
 import maturimate.shared.generated.resources.account_password_hint
 import maturimate.shared.generated.resources.common_cancel
+import maturimate.shared.generated.resources.common_ok
 import maturimate.shared.generated.resources.common_save
 import maturimate.shared.generated.resources.settings_name_title
 import maturimate.shared.generated.resources.settings_password
@@ -119,5 +120,15 @@ internal fun PasswordDialog(busy: Boolean, error: AuthError?, onSave: (String, S
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.common_cancel)) } },
+    )
+}
+
+/** A message with one button that closes it. */
+@Composable
+internal fun InfoDialog(text: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        text = { Text(text, style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.common_ok)) } },
     )
 }

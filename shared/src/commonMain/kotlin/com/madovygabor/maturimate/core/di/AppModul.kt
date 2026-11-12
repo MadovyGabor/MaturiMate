@@ -1,5 +1,10 @@
 package com.madovygabor.maturimate.core.di
 
+import com.madovygabor.maturimate.features.auth.domain.SessionRevoker
+import com.madovygabor.maturimate.features.content.data.InstalledContentPacks
+import com.madovygabor.maturimate.features.content.domain.ContentPacks
+import com.madovygabor.maturimate.features.content.domain.ContentSwapGate
+import org.koin.dsl.binds
 import com.madovygabor.maturimate.features.practice.domain.PracticeMode
 import com.madovygabor.maturimate.core.database.ContentDatabaseProvider
 import com.madovygabor.maturimate.core.database.ContentDatabaseSource
@@ -59,6 +64,29 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import org.koin.core.module.dsl.bind
+import com.madovygabor.maturimate.features.auth.data.PendingRevocation
+import com.madovygabor.maturimate.core.config.ContentConfig
+import com.madovygabor.maturimate.features.content.data.AccessTokens
+import com.madovygabor.maturimate.features.content.data.SupabaseAccessTokens
+import com.madovygabor.maturimate.features.content.data.WorkerPackSource
+import com.madovygabor.maturimate.features.content.domain.ContentUpdater
+import com.madovygabor.maturimate.features.content.domain.NetworkState
+import io.ktor.client.HttpClient
+import com.madovygabor.maturimate.features.sync.data.SupabaseSyncRepository
+import com.madovygabor.maturimate.features.userProfile.data.ExamDateRepositoryImpl
+import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
+import com.madovygabor.maturimate.features.sync.data.SyncSessionImpl
+import com.madovygabor.maturimate.features.sync.data.SyncStoreImpl
+import com.madovygabor.maturimate.features.sync.domain.SyncEngine
+import com.madovygabor.maturimate.features.sync.domain.SyncRepository
+import com.madovygabor.maturimate.features.sync.domain.SyncSession
+import com.madovygabor.maturimate.features.sync.domain.SyncStore
+import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 import org.koin.core.module.dsl.singleOf
@@ -100,10 +128,14 @@ val sharedModule = module {
     // Every call to the user database runs on this dispatcher, one at a time: no two transactions
     // overlap, and a sign-up that moves the guest's rows cannot interleave with a save
     single(USER_DATABASE) { Dispatchers.IO.limitedParallelism(1) }
-    single<ProgressRepository> { ProgressRepositoryImpl(get(), get(), get(USER_DATABASE)) }
+    single<ProgressRepository> { ProgressRepositoryImpl(get(), get(), get(USER_DATABASE), onProgressSaved = { get<SyncTriggers>().onRoundEnd() }) }
 
     // The learning path: subjects, parts, topics, steps and their progress
-    single { LearningCourse(get(), get()) }
+    single {
+        val localUser = get<LocalUserProvider>()
+        val dispatcher = get<CoroutineDispatcher>(USER_DATABASE)
+        LearningCourse(get(), get(), isGuest = { withContext(dispatcher) { localUser.isGuest() } })
+    }
     // Study time per day, the daily goal and the streak; the goal and the time zone come from the profile
     single {
         val profile = get<UserProfileRepository>()
@@ -117,7 +149,7 @@ val sharedModule = module {
     // Everything the home screen shows
     single {
         val catalog = get<PracticeCatalog>()
-        HomeOverview(get(), get(), get(), get(), mistakeCount = { (catalog.allMistakes() as? OperationResult.Success)?.data?.size ?: 0 })
+        HomeOverview(get(), get(), get(), get(), mistakeCount = { (catalog.allMistakes() as? OperationResult.Success)?.data?.size ?: 0 }, examDates = getOrNull())
     }
     // Everything the profile tab shows, and its full history
     single { ProfileOverview(get(), get(), get(), get()) }
@@ -134,6 +166,9 @@ val sharedModule = module {
     // Keeps the planned daily reminder in line with the profile (started by the app)
     single { ReminderSync(get(), get()) }
 
+    // The official exam dates the sync brings
+    single<ExamDateRepository> { ExamDateRepositoryImpl(get(), get(USER_DATABASE)) }
+
     // Profile and settings of the local user
     single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }
 
@@ -141,8 +176,35 @@ val sharedModule = module {
     single { createAppSupabaseClient() }
     single<AuthRepository> { AuthRepositoryImpl(get<SupabaseClient>().auth) }
     single<AccountRepository> { SupabaseAccountRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
-    single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE)) }
-    single<AccountSettings> { AccountSettingsImpl(get(), get(), get(), get(), get(USER_DATABASE)) }
+    // The sync of the account's data with Supabase (a guest has nothing to sync)
+    single<SyncRepository> { SupabaseSyncRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
+    single<SyncStore> { SyncStoreImpl(get(), get(), get(USER_DATABASE)) }
+    single<SyncSession> { SyncSessionImpl(get<SupabaseClient>().auth, get(), get(USER_DATABASE)) }
+    single { SyncEngine(get(), get(), get(), now = { Clock.System.now().toEpochMilliseconds() }) }
+    // When the sync runs; started by the app (run) and by the screens
+    single {
+        SyncTriggers(
+            get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default), now = { Clock.System.now().toEpochMilliseconds() },
+            // the releases of the server: the content of the chosen subjects is downloaded when newer
+            afterSync = { releases -> get<ContentUpdater>().onReleases(releases) },
+        )
+    }
+    // The content packs: a link from the Worker, the file, the swap when no lesson is open
+    single<AccessTokens> { SupabaseAccessTokens(get<SupabaseClient>().auth) }
+    single { InstalledContentPacks(get()) } binds arrayOf(ContentPacks::class, ContentSwapGate::class)
+    single {
+        val profiles = get<UserProfileRepository>()
+        ContentUpdater(
+            packs = get(),
+            source = WorkerPackSource(ContentConfig.LINK_URL, get(), HttpClient()),
+            network = getOrNull<NetworkState>() ?: NetworkState { false },
+            chosenSubjects = { profiles.profile.first()?.subjects?.map { it.subjectId }.orEmpty() },
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        )
+    }
+    single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE), sync = get()) }
+    single { PendingRevocation(get(), get(), get(USER_DATABASE)) } binds arrayOf(SessionRevoker::class)
+    single<AccountSettings> { AccountSettingsImpl(get(), get(), get(), get(USER_DATABASE), sync = get(), revocation = get(), account = get(), exportSaver = getOrNull()) }
 
     // UI Controllers
 
@@ -150,7 +212,13 @@ val sharedModule = module {
     singleOf(::SnackbarController)
 
     // ViewModels
-    viewModel { AppViewModel(get()) }
+    viewModel {
+        AppViewModel(
+            get(), syncTriggers = getOrNull(), sessionRevoker = getOrNull(),
+            // a screen test without the content database has none
+            contentSwapGate = runCatching { get<ContentSwapGate>() }.getOrNull(),
+        )
+    }
     viewModelOf(::OnboardingNavigationViewModel)
     viewModelOf(::LanguageViewModel)
     viewModelOf(::RoleViewModel)
@@ -161,12 +229,12 @@ val sharedModule = module {
     viewModel { PlanViewModel(get()) }
     viewModelOf(::AccountViewModel)
     viewModelOf(::SignInViewModel)
-    viewModel { SettingsViewModel(get(), auth = get(), accountSettings = get(), progress = get()) }
-    viewModel { ProfileOverviewViewModel(get()) }
+    viewModel { SettingsViewModel(get(), auth = get(), accountSettings = get(), progress = get(), syncEngine = getOrNull(), syncTriggers = getOrNull(), contentUpdater = runCatching { get<ContentUpdater>() }.getOrNull()) }
+    viewModel { ProfileOverviewViewModel(get(), getOrNull<SyncEngine>()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }
     viewModel { (target: TopicTarget) -> TopicViewModel(get(), target, get()) }
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), getOrNull(), getOrNull()) }
     viewModel { (unitId: Long) -> LessonViewModel(unitId, get(), get(), get(), get()) }
     viewModel { (unitId: Long) -> TestSessionViewModel(unitId, get(), get()) }
     // The practice tab and its picker

@@ -21,6 +21,13 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import com.madovygabor.maturimate.features.sync.domain.SyncEngine
+import com.madovygabor.maturimate.features.content.domain.ContentUpdateState
+import com.madovygabor.maturimate.features.content.domain.ContentUpdater
+import com.madovygabor.maturimate.features.sync.domain.SyncState
+import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,6 +52,10 @@ data class SettingsUiState(
     val daysLeft: Int?,
     /** The signed-in account; empty for a guest. */
     val account: AccountUser? = null,
+    /** How the upload of the progress stands. */
+    val sync: SyncState = SyncState(),
+    /** Whether new content waits, downloads or is up to date. */
+    val content: ContentUpdateState = ContentUpdateState(),
 ) {
     /** The learning answers this role has. */
     val learningSteps: List<OnboardingStep> get() = LEARNING_STEPS.filter { it in onboardingSteps(profile.role) }
@@ -61,6 +72,9 @@ class SettingsViewModel(
     private val auth: AuthRepository? = null,
     private val accountSettings: AccountSettings? = null,
     private val progress: ProgressRepository? = null,
+    private val syncEngine: SyncEngine? = null,
+    private val syncTriggers: SyncTriggers? = null,
+    private val contentUpdater: ContentUpdater? = null,
 ) : ViewModel() {
 
     private val _busy = MutableStateFlow(false)
@@ -69,14 +83,19 @@ class SettingsViewModel(
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
 
     /** Null until the profile is read, or when it cannot be read. */
-    val state: StateFlow<SettingsUiState?> = repository.profile
-        .map { profile ->
+    val state: StateFlow<SettingsUiState?> = combine(
+        repository.profile,
+        syncEngine?.state ?: flowOf(SyncState()),
+        contentUpdater?.state ?: flowOf(ContentUpdateState()),
+    ) { profile, sync, content ->
             profile?.let {
                 SettingsUiState(
                     profile = it,
                     daysLeft = it.graduationDate?.takeIf { _ -> it.role == UserRole.STUDENT }?.let { date -> today.daysUntil(date).coerceAtLeast(0) },
                     // read with the profile, so a sign-up made from the profile shows here at once
                     account = auth?.currentUser(),
+                    sync = sync,
+                    content = content,
                 )
             }
         }
@@ -114,9 +133,36 @@ class SettingsViewModel(
         onDone(progress?.resetProgress() is OperationResult.Success)
     }
 
-    /** Signs out; the local rows go and the app starts again with the welcome screen. [onDone] gets the error, if any. */
-    fun signOut(onDone: (AuthError?) -> Unit) = work {
-        onDone((accountSettings?.signOut() as? OperationResult.Error)?.error)
+    /**
+     * Uploads what waits, signs out, and the local rows go: the app starts again with the welcome screen. [onDone] gets the
+     * error, if any; [AuthError.NETWORK] means the upload failed and nothing was removed, unless [force].
+     */
+    fun signOut(force: Boolean = false, onDone: (AuthError?) -> Unit) = work {
+        onDone((accountSettings?.signOut(force) as? OperationResult.Error)?.error)
+    }
+
+    /** "A fiók törlése": on the server for good, then here. [onDone] gets the error, if any. */
+    fun deleteAccount(onDone: (AuthError?) -> Unit) = work {
+        onDone((accountSettings?.deleteAccount() as? OperationResult.Error)?.error)
+    }
+
+    /** "Adataim letöltése": [onDone] gets where the file went, or the error. */
+    fun exportData(onDone: (String?, AuthError?) -> Unit) = work {
+        when (val result = accountSettings?.exportData()) {
+            is OperationResult.Success -> onDone(result.data, null)
+            is OperationResult.Error -> onDone(null, result.error)
+            null -> onDone(null, AuthError.UNKNOWN)
+        }
+    }
+
+    /** "Tartalom frissítése": checks and downloads now (also over mobile data: the user asked). */
+    fun updateContent() {
+        contentUpdater?.requestUpdate()
+    }
+
+    /** "Szinkronizálás": a full run now. */
+    fun syncNow() {
+        syncTriggers?.onManual()
     }
 
     /** A new name, on the server and on this phone. [onDone] gets the error, if any. */
