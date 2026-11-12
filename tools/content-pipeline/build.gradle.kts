@@ -32,12 +32,15 @@ tasks.register<JavaExec>("bundleContent") {
     workingDir = rootDir
     val contentDir = providers.gradleProperty("contentDir").orElse("content")
     val contentVersion = providers.gradleProperty("contentVersion")
+    // full (default: development builds keep every lesson) or starter (CI and the release build)
+    val contentKind = providers.gradleProperty("contentKind").orElse("full")
     argumentProviders += CommandLineArgumentProvider {
         listOf(
             "export",
             contentDir.get(),
             "shared/src/commonMain/composeResources/files",
             "--version=${contentVersion.orNull ?: error("-PcontentVersion=yyyyMMddNN is required")}",
+            "--kind=${contentKind.get()}",
         )
     }
 }

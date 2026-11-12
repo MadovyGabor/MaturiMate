@@ -18,6 +18,7 @@ From the repository root:
 * `--version` is `yyyyMMddNN` and must be higher than the previous release; the app only installs a higher version.
 * `--previous` is the `content.db` of the last release. The export fails if any subject, topic, learning unit or task of it is missing from the files: switch rows off (`"is_active": false`, `"is_published": false`) instead of removing them, because users' progress refers to them.
 * The schema comes from the shared `:database` module, the same code the app uses. The same files and version give a byte-identical file (same `sha256`).
+* `--kind=full` (the default) also writes **one pack per subject** into `packs/<subject_id>/` (the same two files, one subject each, the catalogue tables `task_format` and `tag` repeated in every pack). `--kind=starter` writes only the first published lesson of each subject (down the first published topic of every level) with the topics above it: no tasks, no practice units. The manifest carries `kind` (`FULL` or `STARTER`) and `subject_ids`; an old manifest without them reads as `FULL`.
 
 ## Bundle into the app
 
@@ -25,7 +26,7 @@ From the repository root:
 ./gradlew :tools:content-pipeline:bundleContent -PcontentVersion=2026102801 -PcontentDir=content
 ```
 
-Exports into `shared/src/commonMain/composeResources/files/` (gitignored). The app installs this file on first start, and on later starts only when its `content_version` is higher than the installed one. A build without bundled content runs, but has no lessons.
+`-PcontentKind=full|starter` (default `full`: development builds keep every lesson; CI and the release build use `starter`). Exports into `shared/src/commonMain/composeResources/files/` (gitignored). The app installs this file on first start, and on later starts only when its `content_version` is higher than the installed one. A build without bundled content runs, but has no lessons.
 
 ## Import (server copy)
 
@@ -36,6 +37,14 @@ Start the local database (`docker compose -f dbServer/docker-compose.yml up -d`,
 ```
 
 `--dry-run` only validates. Without it, the content is written in one transaction.
+
+## Publish (the packs the app downloads)
+
+```bash
+./gradlew :tools:content-pipeline:run --args="publish content --version=2026120101"
+```
+
+Runs the full export, uploads every pack to the private R2 bucket at `packs/<schema>/<subject>/<version>/content.db` and writes the `content_release` rows (the older release of the same subject and schema stops being current). It refuses to run before `import` wrote the same files to the server. Needs `DATABASE_URL`, `R2_ACCOUNT_ID`, `R2_CONTENT_ACCESS_KEY_ID` and `R2_CONTENT_SECRET_ACCESS_KEY` (environment or `dbServer/.env`). Details: [docs/runbooks/cloudflare.md](../../docs/runbooks/cloudflare.md).
 
 ## Content folder
 

@@ -44,10 +44,30 @@ class SqliteExporter {
      * @param contentVersion `yyyyMMddNN`, higher than every earlier release.
      * @param previous the `content.db` of the previous release; no id of it may be missing.
      */
-    fun export(content: ContentSet, outDir: File, contentVersion: Long, previous: File? = null): ContentManifest {
+    fun export(
+        content: ContentSet,
+        outDir: File,
+        contentVersion: Long,
+        previous: File? = null,
+        kind: ContentKind = ContentKind.FULL,
+        warn: (String) -> Unit = {},
+    ): ContentManifest {
         val createdAt = releaseTime(contentVersion)
-        previous?.let { checkNothingRemoved(content, it, contentVersion) }
+        // the check compares with the whole previous release, so it applies to a full export only
+        if (kind == ContentKind.FULL) previous?.let { checkNothingRemoved(content, it, contentVersion) }
 
+        val selected = if (kind == ContentKind.STARTER) content.starter(warn) else content
+        val manifest = write(selected, outDir, contentVersion, createdAt, kind)
+        if (kind == ContentKind.FULL) {
+            // one pack per subject: the same two files, one subject each, the same version
+            selected.subjects.forEach { subject ->
+                write(selected.forSubject(subject.subjectId), File(outDir, "packs/${subject.subjectId}"), contentVersion, createdAt, kind)
+            }
+        }
+        return manifest
+    }
+
+    private fun write(content: ContentSet, outDir: File, contentVersion: Long, createdAt: Long, kind: ContentKind): ContentManifest {
         outDir.mkdirs()
         val dbFile = File(outDir, CONTENT_FILE_NAME)
         dbFile.delete()
@@ -69,6 +89,8 @@ class SqliteExporter {
             fileName = CONTENT_FILE_NAME,
             sizeBytes = bytes.size.toLong(),
             sha256 = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) },
+            kind = kind.name,
+            subjectIds = content.subjects.map { it.subjectId },
         )
         File(outDir, ContentManifest.FILE_NAME).writeText(manifest.toJson())
         return manifest
