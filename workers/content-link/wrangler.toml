@@ -9,5 +9,5 @@ compatibility_date = "2025-10-01"
 # public values
 SUPABASE_URL = "https://usqefjhcnehwgszvecym.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_1t7ZFmPKmNeSayYcJKGXbQ_dT4M16M8"
-R2_ACCOUNT_ID = "REPLACE_WITH_CLOUDFLARE_ACCOUNT_ID"
+R2_ACCOUNT_ID = "4191f2124a80892d8c38eb98238fa5a7"
 R2_BUCKET = "maturimate-content"
