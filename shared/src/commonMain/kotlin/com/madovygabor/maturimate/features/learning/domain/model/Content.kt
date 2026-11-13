@@ -30,7 +30,7 @@ data class Topic(
 enum class PracticeKind { MINI, TOPIC, FINAL }
 
 /** A block of a lesson page: a paragraph or a box. The label of a box is an app string, not part of the content. */
-enum class BlockType { PARAGRAPH, EXAMPLE, TIP, NOTE, WARNING }
+enum class BlockType { PARAGRAPH, EXAMPLE, TIP, NOTE, WARNING, QUOTE }
 
 /** Text in the app's format (`**bold**`, `*italic*`; paragraphs of a box are separated by a blank line). */
 data class LessonBlock(val type: BlockType, val text: String)

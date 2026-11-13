@@ -13,14 +13,20 @@ data class ParsedLesson(val pages: List<LessonPageData>, val errors: List<String
  * Splits the text of a lesson file (the part after the front matter) into pages and blocks.
  *
  * * `## Title` starts a page; text before the first `##` is a page without a title.
- * * `:::type` ... `:::` is a box (`example`, `tip`, `note`, `warning`); it ends with a line of its own.
+ * * `:::type` ... `:::` is a box (`example`, `tip`, `note`, `warning`, `quote`); it ends with a line of its own.
  * * Blank lines separate paragraphs; the lines of one paragraph are joined with a space.
  * * Lines that start with `- ` or `1. ` form a list: the items stay on separate lines of the block text.
  * * Other heading levels, unknown box types, boxes inside boxes and boxes that are not closed are errors.
  */
 object LessonParser {
 
-    private val BOX_TYPES = mapOf("example" to "EXAMPLE", "tip" to "TIP", "note" to "NOTE", "warning" to "WARNING")
+    private val BOX_TYPES = mapOf(
+        "example" to "EXAMPLE",
+        "tip" to "TIP",
+        "note" to "NOTE",
+        "warning" to "WARNING",
+        "quote" to "QUOTE",
+    )
     private val BOX_START = Regex("""^:::\s*(\S+)\s*$""")
     private val PAGE_TITLE = Regex("""^##\s+(.+?)\s*$""")
     private val OTHER_HEADING = Regex("""^#{1,6}(\s|$)""")

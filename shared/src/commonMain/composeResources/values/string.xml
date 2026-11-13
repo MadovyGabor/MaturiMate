@@ -224,6 +224,7 @@
     <string name="lesson_box_tip">Tip</string>
     <string name="lesson_box_note">Poznámka</string>
     <string name="lesson_box_warning">Pozor</string>
+    <string name="lesson_box_quote">Citát</string>
     <string name="lesson_close">Zavrieť</string>
     <string name="lesson_contents">Obsah</string>
     <string name="lesson_finish">Dokončiť</string>

@@ -90,9 +90,12 @@ class LessonParserTest {
             ::: warning
             b
             :::
+            :::quote
+            c
+            :::
         """)
         assertEquals(emptyList(), lesson.errors)
-        assertEquals(listOf("NOTE", "WARNING"), lesson.pages.single().blocks.map { it.type })
+        assertEquals(listOf("NOTE", "WARNING", "QUOTE"), lesson.pages.single().blocks.map { it.type })
     }
 
     @Test

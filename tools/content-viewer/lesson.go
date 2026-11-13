@@ -30,7 +30,7 @@ type Page struct {
 	Words  int
 }
 
-// Block is a paragraph (Kind is empty) or a box (Kind is example, tip, note or warning).
+// Block is a paragraph (Kind is empty) or a box (Kind is example, tip, note, warning or quote).
 type Block struct {
 	Kind  string
 	Label string
@@ -52,6 +52,7 @@ var boxLabels = map[string]string{
 	"tip":     "Jegyezd meg",
 	"note":    "Megjegyzés",
 	"warning": "Vigyázat",
+	"quote":   "Idézet",
 }
 
 var (

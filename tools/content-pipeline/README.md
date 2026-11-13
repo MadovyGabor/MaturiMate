@@ -105,7 +105,7 @@ A box with the thing to remember.
 ```
 
 * **`## Title` starts a page.** The title appears in the table of contents of the lesson. Text before the first `##` is a page without a title; a file without any `##` is one page. Only level 2 headings are allowed.
-* **Boxes** are written `:::type` … `:::`, alone on their lines. Types: `example`, `tip`, `note`, `warning`. The keyword is the same in every language; the label ("Példa", "Príklad") is an app string in both languages. An unknown type, a box that is not closed, or a box inside a box is an error.
+* **Boxes** are written `:::type` … `:::`, alone on their lines. Types: `example`, `tip`, `note`, `warning`, `quote`. The keyword is the same in every language; the label ("Példa", "Príklad") is an app string in both languages. An unknown type, a box that is not closed, or a box inside a box is an error.
 * **Inside a page and a box** `**bold**`, `*italic*`, paragraphs and lists are allowed (no links, code or HTML).
 * **Lists** are written like in Markdown, one item per line, with a blank line before and after the list:
 
