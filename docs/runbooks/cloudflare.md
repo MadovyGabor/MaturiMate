@@ -44,7 +44,7 @@ npx wrangler secret put R2_READ_SECRET_ACCESS_KEY
 npx wrangler deploy
 ```
 
-Before the first deploy replace `R2_ACCOUNT_ID` in `wrangler.toml` with the account id, and put the address the deploy prints (`https://maturimate-content-link.<subdomain>.workers.dev`) into `core/config/ContentConfig.kt` of the app. If the Supabase project still signs its tokens with the old shared secret (Supabase → Settings → JWT keys), also `npx wrangler secret put SUPABASE_JWT_SECRET`; with the newer asymmetric keys nothing more is needed (the Worker reads the public keys).
+Before the first deploy replace `R2_ACCOUNT_ID` in `wrangler.toml` with the account id, and put the address the deploy prints with `/link` added (`https://maturimate-content-link.<subdomain>.workers.dev/link`; the Worker answers only that path, everything else is 404) into `core/config/ContentConfig.kt` of the app. If the Supabase project still signs its tokens with the old shared secret (Supabase → Settings → JWT keys), also `npx wrangler secret put SUPABASE_JWT_SECRET`; with the newer asymmetric keys nothing more is needed (the Worker reads the public keys).
 
 Tested in CI (`worker` job, Vitest). The deploy is manual.
 
