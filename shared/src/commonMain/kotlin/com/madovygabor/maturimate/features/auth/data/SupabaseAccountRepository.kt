@@ -99,6 +99,17 @@ class SupabaseAccountRepository(
         )
     }
 
+    override suspend fun deleteAccount() = call {
+        userId()
+        postgrest.rpc("delete_my_account")
+        Unit
+    }
+
+    override suspend fun exportMyData() = call {
+        userId()
+        postgrest.rpc("export_my_data").data
+    }
+
     /** Runs the requests; every failure becomes an [AuthError], so a bad answer cannot crash the app. */
     private suspend fun <T> call(block: suspend () -> T): OperationResult<T, AuthError> =
         try {

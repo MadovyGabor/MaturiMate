@@ -1,5 +1,9 @@
 package com.madovygabor.maturimate.features.learning.presentation
 
+import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
+import com.madovygabor.maturimate.features.userProfile.domain.OfficialExamDate
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import kotlinx.coroutines.flow.drop
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
@@ -19,10 +23,38 @@ sealed interface HomeUiState {
 }
 
 /** The home tab: what to do today. It reads again whenever the screen comes back. */
-class HomeViewModel(private val overview: HomeOverview) : ViewModel() {
+class HomeViewModel(
+    private val overview: HomeOverview,
+    private val examDates: ExamDateRepository? = null,
+    private val profile: UserProfileRepository? = null,
+) : ViewModel() {
 
     private val _state = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
+
+    init {
+        // an official date that the sync brings changes the countdown at once, without a restart
+        examDates?.let { repository ->
+            viewModelScope.launch { repository.dates.drop(1).collect { refresh() } }
+        }
+    }
+
+    /** "Frissítés": the official date replaces the one picked by hand. */
+    fun acceptOfficialDate(date: OfficialExamDate) {
+        viewModelScope.launch {
+            profile?.saveGraduationDate(date.date)
+            examDates?.markAnswered(date)
+            refresh()
+        }
+    }
+
+    /** "Nem, marad": the own date stays, and this publication does not ask again. */
+    fun keepOwnDate(date: OfficialExamDate) {
+        viewModelScope.launch {
+            examDates?.markAnswered(date)
+            refresh()
+        }
+    }
 
     fun refresh() {
         viewModelScope.launch {

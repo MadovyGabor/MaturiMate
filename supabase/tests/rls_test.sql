@@ -179,7 +179,8 @@ SELECT save_sign_up('Béla', 'Nagy', 'HU', DATE '2027-03-08', 'HU', 'Europe/Brat
 DO $$ BEGIN
     IF (SELECT count(*) FROM user_consent) <> 3
         OR (SELECT array_agg(role_id) FROM user_role) IS DISTINCT FROM ARRAY[2::smallint]
-        OR (SELECT array_agg(subject_id) FROM user_subject) IS DISTINCT FROM ARRAY[4::smallint]
+        OR (SELECT array_agg(subject_id) FROM user_subject WHERE removed_at IS NULL) IS DISTINCT FROM ARRAY[4::smallint]
+        OR (SELECT count(*) FROM user_subject WHERE removed_at IS NOT NULL) <> 2
         OR (SELECT daily_goal_minutes FROM user_settings) <> 15 THEN
         RAISE EXCEPTION 'FAIL: a retry of save_sign_up duplicated or kept old rows';
     END IF;
@@ -404,6 +405,79 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-00000000000b') THEN
         RAISE EXCEPTION 'FAIL: another account was deleted';
     END IF;
+END $$;
+
+-- ---- 12.1b: sync groundwork ------------------------------------------
+-- A marks a subject removed; the row stays, and a later save_sign_up brings it back with the same added_at
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
+DO $$
+DECLARE
+    before_added timestamptz;
+    sid smallint;
+BEGIN
+    SELECT subject_id, added_at INTO sid, before_added FROM user_subject LIMIT 1;
+    UPDATE user_subject SET removed_at = now() WHERE subject_id = sid;
+    PERFORM save_sign_up('A', 'A', 'HU', NULL, 'HU', 'Europe/Bratislava', 10::smallint, false, NULL, 1::smallint,
+        jsonb_build_array(jsonb_build_object('subject_id', sid, 'source', 'CHOSEN', 'level', 'B2')),
+        ARRAY[]::text[], '1.0', now());
+    IF (SELECT removed_at FROM user_subject WHERE subject_id = sid) IS NOT NULL
+        OR (SELECT added_at FROM user_subject WHERE subject_id = sid) IS DISTINCT FROM before_added THEN
+        RAISE EXCEPTION 'FAIL: save_sign_up did not revive the removed subject with its added_at';
+    END IF;
+END $$;
+
+-- a direct update is stamped by the server; with the sync flag the phone's change time is kept
+DO $$
+BEGIN
+    UPDATE user_subject SET updated_at = '2000-01-01';
+    IF (SELECT updated_at FROM user_subject LIMIT 1) < now() - interval '1 minute' THEN
+        RAISE EXCEPTION 'FAIL: a direct update kept a client updated_at';
+    END IF;
+    PERFORM set_config('maturimate.sync', 'on', true);
+    UPDATE user_subject SET updated_at = '2000-01-01';
+    IF (SELECT updated_at FROM user_subject LIMIT 1) <> '2000-01-01' THEN
+        RAISE EXCEPTION 'FAIL: the sync flag did not keep the supplied updated_at';
+    END IF;
+    PERFORM set_config('maturimate.sync', 'off', true);
+END $$;
+
+-- server_updated_at moves on every write and the phone-supplied time does not touch it
+DO $$
+DECLARE
+    first_cursor timestamptz;
+BEGIN
+    SELECT server_updated_at INTO first_cursor FROM user_subject LIMIT 1;
+    UPDATE user_subject SET level = 'B1';
+    IF (SELECT server_updated_at FROM user_subject LIMIT 1) <= first_cursor THEN
+        RAISE EXCEPTION 'FAIL: server_updated_at did not move';
+    END IF;
+END $$;
+
+-- exam dates and the current content releases are readable by any signed-in user
+RESET ROLE;
+INSERT INTO exam_date (exam_year, subject_id, exam_on) VALUES (2027, NULL, DATE '2027-03-16');
+INSERT INTO content_release (subject_id, schema_version, content_version, object_path, size_bytes, sha256)
+    SELECT subject_id, 7, 2026111201, 'packs/7/x/2026111201/content.db', 1000, repeat('a', 64) FROM t_subject;
+INSERT INTO content_release (subject_id, schema_version, content_version, object_path, size_bytes, sha256, is_current)
+    SELECT subject_id, 7, 2026111101, 'packs/7/x/2026111101/content.db', 900, repeat('b', 64), false FROM t_subject;
+SELECT pg_temp.become('00000000-0000-0000-0000-00000000000b');
+DO $$ BEGIN
+    IF (SELECT count(*) FROM exam_date) <> 1 THEN
+        RAISE EXCEPTION 'FAIL: a signed-in user cannot read the exam dates';
+    END IF;
+    IF (SELECT count(*) FROM content_release) <> 1 THEN
+        RAISE EXCEPTION 'FAIL: a signed-in user sees old content releases or none';
+    END IF;
+    BEGIN
+        INSERT INTO exam_date (exam_year, exam_on) VALUES (2028, DATE '2028-03-14');
+        RAISE EXCEPTION 'FAIL: a user wrote an exam date';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+    BEGIN
+        PERFORM count(*) FROM content_download;
+        RAISE EXCEPTION 'FAIL: a user can read the download log';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
 END $$;
 
 -- ---- Not signed in: nothing ------------------------------------------

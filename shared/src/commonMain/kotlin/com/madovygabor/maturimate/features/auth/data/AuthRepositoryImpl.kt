@@ -13,6 +13,9 @@ import io.github.jan.supabase.auth.exception.AuthWeakPasswordException
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.exceptions.HttpRequestException
+import io.ktor.client.request.bearerAuth
+import io.ktor.http.HttpMethod
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -77,6 +80,28 @@ class AuthRepositoryImpl(private val auth: Auth) : AuthRepository {
 
     override suspend fun signOut() = call {
         auth.signOut()
+    }
+
+    override fun refreshToken(): String? = auth.currentSessionOrNull()?.refreshToken
+
+    override suspend fun clearLocalSession() {
+        auth.clearSession()
+    }
+
+    override suspend fun revokeSession(refreshToken: String) = call {
+        // a session of the user who signed in again is not touched
+        if (auth.currentSessionOrNull() != null) return@call
+        // an access token for the old session, without making it this phone's session (the app would see a sign-in)
+        val session = auth.refreshSession(refreshToken)
+        val client = auth.supabaseClient
+        val response = client.httpClient.request("${client.supabaseHttpUrl}/auth/v1/logout") {
+            method = HttpMethod.Post
+            bearerAuth(session.accessToken)
+        }
+        // 401, 403, 404: the session or the user is gone already, which is what was wanted
+        if (!response.status.isSuccess() && response.status.value !in listOf(401, 403, 404)) {
+            throw IllegalStateException("logout answered ${response.status.value}")
+        }
     }
 
     override suspend fun sendPasswordResetCode(email: String) = call {

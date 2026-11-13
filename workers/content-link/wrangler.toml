@@ -1,0 +1,13 @@
+# The Worker that gives the app a link to a content pack (step 12.4c). Deploy: `npx wrangler deploy` in this folder.
+# Secrets are never written here: `npx wrangler secret put R2_READ_ACCESS_KEY_ID` and `R2_READ_SECRET_ACCESS_KEY`
+# (an R2 API token that may only READ the content bucket). docs/runbooks/cloudflare.md has the whole procedure.
+name = "maturimate-content-link"
+main = "src/index.ts"
+compatibility_date = "2025-10-01"
+
+[vars]
+# public values
+SUPABASE_URL = "https://usqefjhcnehwgszvecym.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_1t7ZFmPKmNeSayYcJKGXbQ_dT4M16M8"
+R2_ACCOUNT_ID = "4191f2124a80892d8c38eb98238fa5a7"
+R2_BUCKET = "maturimate-content"

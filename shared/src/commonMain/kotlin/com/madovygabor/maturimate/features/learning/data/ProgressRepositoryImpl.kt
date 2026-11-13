@@ -8,6 +8,7 @@ import com.madovygabor.maturimate.features.learning.data.mapper.toRow
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
 import com.madovygabor.maturimate.features.learning.domain.model.Attempt
+import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptStatus
 import com.madovygabor.maturimate.features.learning.domain.model.AttemptType
@@ -41,6 +42,8 @@ class ProgressRepositoryImpl(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val newAttemptId: () -> String = { Uuid.random().toString() },
     private val now: () -> Instant = { Clock.System.now() },
+    /** Called after a round ended or a lesson was finished: the sync takes the change to the server. */
+    private val onProgressSaved: () -> Unit = {},
 ) : ProgressRepository {
 
     private val progress get() = database.progressQueries
@@ -69,7 +72,8 @@ class ProgressRepositoryImpl(
         maxPoints: Int,
     ): OperationResult<Unit, LearningError> = run {
         progress.finishAttempt(status.name, finishedAt.toEpochMilliseconds(), earnedPoints.toLong(), maxPoints.toLong(), attemptId)
-    }
+        Unit
+    }.also { if (it is OperationResult.Success) onProgressSaved() }
 
     override suspend fun recordAnswer(answer: AttemptAnswer): OperationResult<Unit, LearningError> = run {
         progress.upsertAttemptAnswer(answer.toRow(userId()))
@@ -103,7 +107,8 @@ class ProgressRepositoryImpl(
             progress.startedAt.toEpochMilliseconds(),
             progress.completedAt?.toEpochMilliseconds(),
         )
-    }
+        Unit
+    }.also { if (it is OperationResult.Success && progress.status == UnitProgressStatus.COMPLETED) onProgressSaved() }
 
     override suspend fun taskProgress(taskId: Long): OperationResult<TaskProgress?, LearningError> = run {
         progress.selectTaskProgress(userId(), taskId).executeAsOneOrNull()?.toDomain()

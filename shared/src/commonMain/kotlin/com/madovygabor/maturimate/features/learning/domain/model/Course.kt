@@ -19,7 +19,8 @@ data class StepCount(val done: Int, val total: Int) {
 enum class StepKind { LESSON, MINI_TEST, TOPIC_TEST, FINAL_TEST }
 
 /** [CURRENT] is the first step not done yet; every step after it is [TODO]. */
-enum class StepState { DONE, CURRENT, TODO }
+/** [SIGN_UP]: the next step of a guest who has done the first lesson: signing up comes first (roadmap 12.5). */
+enum class StepState { DONE, CURRENT, TODO, SIGN_UP }
 
 /** One step of a path: a lesson or a test, with its state for the user. */
 data class PathStep(val unit: LearningUnit, val kind: StepKind, val state: StepState)

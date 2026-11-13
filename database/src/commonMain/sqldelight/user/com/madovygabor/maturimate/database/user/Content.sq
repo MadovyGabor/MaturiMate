@@ -1,0 +1,19 @@
+-- Phone only: content packs the server offers that are not installed yet (step 12.4).
+CREATE TABLE content_pending (
+    subject_id       INTEGER NOT NULL CONSTRAINT pk_content_pending PRIMARY KEY,
+    content_version  INTEGER NOT NULL,
+    schema_version   INTEGER NOT NULL,
+    size_bytes       INTEGER NOT NULL,
+    sha256           TEXT    NOT NULL,
+    state            TEXT    NOT NULL,
+    CONSTRAINT ck_content_pending_state CHECK (state IN ('AVAILABLE', 'DOWNLOADED', 'NEEDS_MOBILE_DATA'))
+);
+
+selectContentPending:
+SELECT * FROM content_pending ORDER BY subject_id;
+
+upsertContentPending:
+INSERT OR REPLACE INTO content_pending VALUES ?;
+
+deleteContentPending:
+DELETE FROM content_pending WHERE subject_id = :subjectId;

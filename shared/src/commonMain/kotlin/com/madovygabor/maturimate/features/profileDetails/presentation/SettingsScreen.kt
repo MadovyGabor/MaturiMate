@@ -125,6 +125,33 @@ import maturimate.shared.generated.resources.settings_sign_in_hint
 import maturimate.shared.generated.resources.settings_sign_out
 import maturimate.shared.generated.resources.settings_sync
 import maturimate.shared.generated.resources.settings_sync_hint
+import maturimate.shared.generated.resources.settings_sign_out_unsynced_text
+import maturimate.shared.generated.resources.settings_sign_out_unsynced_title
+import maturimate.shared.generated.resources.settings_delete_confirm
+import maturimate.shared.generated.resources.settings_delete_text
+import maturimate.shared.generated.resources.settings_delete_title
+import maturimate.shared.generated.resources.settings_export
+import maturimate.shared.generated.resources.settings_export_done
+import maturimate.shared.generated.resources.settings_export_hint
+import maturimate.shared.generated.resources.settings_sign_out_anyway
+import maturimate.shared.generated.resources.settings_sync_date
+import maturimate.shared.generated.resources.settings_sync_error
+import maturimate.shared.generated.resources.settings_sync_running
+import maturimate.shared.generated.resources.settings_sync_today
+import maturimate.shared.generated.resources.settings_sync_waiting
+import maturimate.shared.generated.resources.settings_sync_waiting_rounds
+import org.jetbrains.compose.resources.pluralStringResource
+import com.madovygabor.maturimate.features.sync.domain.SyncState
+import com.madovygabor.maturimate.features.content.domain.ContentUpdateState
+import maturimate.shared.generated.resources.settings_content_available
+import maturimate.shared.generated.resources.settings_content_downloading
+import maturimate.shared.generated.resources.settings_content_error
+import maturimate.shared.generated.resources.settings_content_mobile
+import maturimate.shared.generated.resources.settings_content_up_to_date
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.Instant
 import maturimate.shared.generated.resources.account_create
 import maturimate.shared.generated.resources.subjects_coming_soon
 import maturimate.shared.generated.resources.welcome_have_account
@@ -189,7 +216,11 @@ fun SettingsScreen(
                         onSaveNames = viewModel::saveNames,
                         onChangePassword = viewModel::changePassword,
                         onReset = viewModel::resetProgress,
-                        onSignOut = viewModel::signOut,
+                        onSignOut = { force, done -> viewModel.signOut(force, done) },
+                        onSync = viewModel::syncNow,
+                        onUpdateContent = viewModel::updateContent,
+                        onDeleteAccount = viewModel::deleteAccount,
+                        onExport = viewModel::exportData,
                         busy = busy,
                     ),
                 )
@@ -225,12 +256,16 @@ data class SettingsActions(
     val onSaveNames: (String, String, (AuthError?) -> Unit) -> Unit = { _, _, _ -> },
     val onChangePassword: (String, String, (AuthError?) -> Unit) -> Unit = { _, _, _ -> },
     val onReset: ((Boolean) -> Unit) -> Unit = {},
-    val onSignOut: ((AuthError?) -> Unit) -> Unit = {},
+    val onSignOut: (Boolean, (AuthError?) -> Unit) -> Unit = { _, _ -> },
+    val onSync: () -> Unit = {},
+    val onUpdateContent: () -> Unit = {},
+    val onDeleteAccount: ((AuthError?) -> Unit) -> Unit = {},
+    val onExport: ((String?, AuthError?) -> Unit) -> Unit = {},
     val busy: Boolean = false,
 )
 
 /** The dialog open over the list. */
-private enum class SettingsDialog { NAME, PASSWORD, RESET, SIGN_OUT }
+private enum class SettingsDialog { NAME, PASSWORD, RESET, SIGN_OUT, SIGN_OUT_UNSYNCED, DELETE, EXPORTED }
 
 @Composable
 fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
@@ -239,6 +274,7 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
     var choosing by remember { mutableStateOf<LanguageKind?>(null) }
     var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
     var error by remember { mutableStateOf<AuthError?>(null) }
+    var exportedTo by remember { mutableStateOf<String?>(null) }
     val openDialog: (SettingsDialog) -> Unit = { error = null; dialog = it }
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         // tablet and desktop: the groups in two columns
@@ -266,8 +302,11 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
             }
             val right: @Composable () -> Unit = {
                 App(state.profile, onAppLanguage = { choosing = LanguageKind.APP })
-                Data()
-                Danger(state, onReset = { openDialog(SettingsDialog.RESET) }, onSignOut = { openDialog(SettingsDialog.SIGN_OUT) })
+                Data(
+                    state, onSync = actions.onSync, onUpdateContent = actions.onUpdateContent,
+                    onExport = { actions.onExport { where, _ -> if (where != null) { exportedTo = where; dialog = SettingsDialog.EXPORTED } } },
+                )
+                Danger(state, onReset = { openDialog(SettingsDialog.RESET) }, onSignOut = { openDialog(SettingsDialog.SIGN_OUT) }, onDelete = { openDialog(SettingsDialog.DELETE) })
             }
             if (wide) {
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing.space6)) {
@@ -303,7 +342,20 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
             SettingsDialog.SIGN_OUT -> ConfirmDialog(
                 stringResource(Res.string.settings_sign_out_title), stringResource(Res.string.settings_sign_out_text),
                 stringResource(Res.string.settings_sign_out), actions.busy,
-                onConfirm = { actions.onSignOut(after) }, onDismiss = close,
+                // the upload failed: nothing was removed, and the user decides
+                onConfirm = { actions.onSignOut(false) { failed -> if (failed == AuthError.NETWORK) dialog = SettingsDialog.SIGN_OUT_UNSYNCED else after(failed) } },
+                onDismiss = close,
+            )
+            SettingsDialog.DELETE -> ConfirmDialog(
+                stringResource(Res.string.settings_delete_title), stringResource(Res.string.settings_delete_text),
+                stringResource(Res.string.settings_delete_confirm), actions.busy,
+                onConfirm = { actions.onDeleteAccount(after) }, onDismiss = close,
+            )
+            SettingsDialog.EXPORTED -> InfoDialog(stringResource(Res.string.settings_export_done, exportedTo.orEmpty()), onDismiss = close)
+            SettingsDialog.SIGN_OUT_UNSYNCED -> ConfirmDialog(
+                stringResource(Res.string.settings_sign_out_unsynced_title), stringResource(Res.string.settings_sign_out_unsynced_text),
+                stringResource(Res.string.settings_sign_out_anyway), actions.busy,
+                onConfirm = { actions.onSignOut(true, after) }, onDismiss = close,
             )
             null -> Unit
         }
@@ -425,25 +477,68 @@ private fun App(profile: UserProfile, onAppLanguage: () -> Unit) {
     }
 }
 
-/** The sync and the content download: there already, so they are not forgotten (12.3, 12.4). */
+/** The sync and the content download: the sync row shows how the upload stands and runs it by hand. */
 @Composable
-private fun Data() {
-    val soon = SettingsTrailing.Soon(stringResource(Res.string.subjects_coming_soon))
+private fun Data(state: SettingsUiState, onSync: () -> Unit, onUpdateContent: () -> Unit, onExport: () -> Unit) {
     AppSettingsGroup(stringResource(Res.string.settings_group_data), Icons.Rounded.Sync) {
-        AppSettingsRow(Icons.Rounded.Sync, stringResource(Res.string.settings_sync), stringResource(Res.string.settings_sync_hint), onClick = {}, trailing = soon, divider = false)
-        AppSettingsRow(Icons.Rounded.CloudDownload, stringResource(Res.string.settings_content), stringResource(Res.string.settings_content_hint), onClick = {}, trailing = soon)
+        // a guest has nothing to sync
+        if (!state.isGuest) {
+            AppSettingsRow(
+                Icons.Rounded.Sync, stringResource(Res.string.settings_sync), syncValue(state.sync),
+                onClick = onSync, trailing = SettingsTrailing.None, divider = true,
+            )
+        }
+        // a guest gets the content with the account; until then the row only says what it is for
+        AppSettingsRow(
+            Icons.Rounded.CloudDownload, stringResource(Res.string.settings_content),
+            if (state.isGuest) stringResource(Res.string.settings_content_hint) else contentValue(state.content),
+            onClick = { if (!state.isGuest) onUpdateContent() }, trailing = SettingsTrailing.None, divider = !state.isGuest,
+        )
+        // a copy of what the server keeps about the account (a guest has nothing there)
+        if (!state.isGuest) {
+            AppSettingsRow(Icons.Rounded.CloudDownload, stringResource(Res.string.settings_export), stringResource(Res.string.settings_export_hint), onClick = onExport, trailing = SettingsTrailing.None, divider = false)
+        }
     }
 }
 
-/** The red rows: the reset, the sign-out, and the account deletion (12.6). */
+/** The line under "Tartalom frissítése". */
 @Composable
-private fun Danger(state: SettingsUiState, onReset: () -> Unit, onSignOut: () -> Unit) {
-    val soon = SettingsTrailing.Soon(stringResource(Res.string.subjects_coming_soon))
+private fun contentValue(content: ContentUpdateState): String {
+    val megabytes = ((content.pendingBytes + 1024 * 1024 - 1) / (1024 * 1024)).toString()
+    return when {
+        content.downloading -> stringResource(Res.string.settings_content_downloading)
+        content.lastError != null -> stringResource(Res.string.settings_content_error)
+        content.needsMobileData -> stringResource(Res.string.settings_content_mobile, megabytes)
+        content.pending.isNotEmpty() -> stringResource(Res.string.settings_content_available, megabytes)
+        content.installedVersion != null -> stringResource(Res.string.settings_content_up_to_date, content.installedVersion.toString())
+        else -> stringResource(Res.string.settings_content_hint)
+    }
+}
+
+/** The line under "Szinkronizálás": running, the error, the rounds waiting, or when it last went through. */
+@Composable
+private fun syncValue(sync: SyncState): String = when {
+    sync.running -> stringResource(Res.string.settings_sync_running)
+    sync.lastError != null -> stringResource(Res.string.settings_sync_error)
+    sync.pendingRounds > 0 -> pluralStringResource(Res.plurals.settings_sync_waiting_rounds, sync.pendingRounds, sync.pendingRounds)
+    sync.lastSuccessAt == null -> stringResource(Res.string.settings_sync_waiting)
+    else -> {
+        val zone = TimeZone.currentSystemDefault()
+        val last = Instant.fromEpochMilliseconds(sync.lastSuccessAt).toLocalDateTime(zone)
+        val time = "${last.hour.toString().padStart(2, '0')}:${last.minute.toString().padStart(2, '0')}"
+        if (last.date == Clock.System.now().toLocalDateTime(zone).date) stringResource(Res.string.settings_sync_today, time)
+        else stringResource(Res.string.settings_sync_date, "${last.date}")
+    }
+}
+
+/** The red rows: the reset, the sign-out, and the account deletion. */
+@Composable
+private fun Danger(state: SettingsUiState, onReset: () -> Unit, onSignOut: () -> Unit, onDelete: () -> Unit) {
     AppSettingsGroup(stringResource(Res.string.settings_group_danger), Icons.Rounded.RestartAlt) {
         AppSettingsRow(Icons.Rounded.RestartAlt, stringResource(Res.string.settings_reset), stringResource(Res.string.settings_reset_hint), onClick = onReset, trailing = SettingsTrailing.None, danger = true, divider = false)
         if (!state.isGuest) {
             AppSettingsRow(Icons.AutoMirrored.Rounded.Logout, stringResource(Res.string.settings_sign_out), null, onClick = onSignOut, trailing = SettingsTrailing.None, danger = true)
-            AppSettingsRow(Icons.Rounded.Delete, stringResource(Res.string.settings_delete), stringResource(Res.string.settings_delete_hint), onClick = {}, trailing = soon, danger = true)
+            AppSettingsRow(Icons.Rounded.Delete, stringResource(Res.string.settings_delete), stringResource(Res.string.settings_delete_hint), onClick = onDelete, trailing = SettingsTrailing.None, danger = true)
         }
     }
 }

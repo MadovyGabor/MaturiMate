@@ -41,6 +41,9 @@ import java.util.Locale
 import javax.imageio.ImageIO
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.time.Clock
+import com.madovygabor.maturimate.features.sync.domain.SyncState
+import com.madovygabor.maturimate.features.sync.domain.SyncError
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -148,7 +151,8 @@ class SettingsTest {
 
         onNodeWithText("Fiók létrehozása").performClick()
         assertTrue(signUp)
-        onNodeWithText("Szinkronizálás").assertExists()
+        // a guest has nothing to sync
+        onAllNodesWithText("Szinkronizálás").assertCountEquals(0)
         onNodeWithText("Az iskolád tanítási nyelve").assertExists()
         onNodeWithText("Az app nyelve").assertExists()
         // sign-out and deletion only with an account
@@ -175,6 +179,30 @@ class SettingsTest {
 
         account = account.copy(hasPassword = false)
         onAllNodesWithText("Jelszó megváltoztatása").assertCountEquals(0)
+    }
+
+    @Test
+    fun theSyncRowShowsHowTheUploadStands() = runDesktopComposeUiTest(412, 2400) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val loaded = runBlocking { SettingsViewModel(student(repository()), today).loaded() }
+        val account = AccountUser("id", "anna@example.com", "Anna", "Kovács")
+        var sync by mutableStateOf(SyncState(signedIn = true))
+        var tapped = 0
+        setContent { AppTheme { SettingsContent(loaded.copy(account = account, sync = sync), SettingsActions(onSync = { tapped++ })) } }
+
+        // never uploaded
+        onNodeWithText("Még nincs feltöltve").assertExists()
+        sync = SyncState(signedIn = true, pendingRounds = 2)
+        onNodeWithText("Feltöltésre vár: 2 kör").assertExists()
+        sync = SyncState(signedIn = true, running = true)
+        onNodeWithText("Szinkronizálás…").assertExists()
+        sync = SyncState(signedIn = true, lastError = SyncError.SERVER)
+        onNodeWithText("Nem sikerült. Koppints az újrapróbáláshoz.").assertExists()
+        // a run that went through: the date or the time
+        sync = SyncState(signedIn = true, lastSuccessAt = Clock.System.now().toEpochMilliseconds())
+        onNodeWithText("Utoljára: ma", substring = true).assertExists()
+        onNodeWithText("Szinkronizálás").performClick()
+        assertEquals(1, tapped)
     }
 
     @Test

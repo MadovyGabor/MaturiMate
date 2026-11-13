@@ -91,7 +91,7 @@ jobs:
           PGPASSWORD: ci-only
         run: |
           createdb -h localhost -U maturimate rls_test
-          for f in dbServer/postgres/00_auth_stub.sql supabase/migrations/*.sql supabase/tests/rls_test.sql; do
+          for f in dbServer/postgres/00_auth_stub.sql supabase/migrations/*.sql supabase/tests/rls_test.sql supabase/tests/sync_test.sql; do
             psql -h localhost -U maturimate -d rls_test -v ON_ERROR_STOP=1 -q -f "$f"
           done
 
@@ -108,6 +108,24 @@ jobs:
           include_passed: true
           require_tests: true
 
+  worker:
+    name: Worker (content link)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: workers/content-link
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: workers/content-link/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
   app:
     name: App (tests and desktop build)
     runs-on: ubuntu-latest
@@ -122,7 +140,7 @@ jobs:
 
       # Bundle the made-up test content, so the app's content provider test runs too
       - name: Bundle test content
-        run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentVersion=2000010101
+        run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentKind=starter -PcontentVersion=2000010101
 
       - name: Tests
         run: ./gradlew :shared:jvmTest

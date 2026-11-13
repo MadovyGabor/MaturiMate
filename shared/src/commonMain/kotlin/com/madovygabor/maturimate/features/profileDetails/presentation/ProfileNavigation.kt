@@ -46,6 +46,10 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
         if (reopen && backStack.lastOrNull() == Route.Main.Profile.Overview) backStack.add(page)
     }
     LaunchedEffect(backStack.lastOrNull()) { backStack.lastOrNull()?.let { openPage.value = it } }
+    // the sign-up step of the path asks for the account screen
+    LaunchedEffect(openPage.value) {
+        if (openPage.value == Route.Main.Profile.SignUp && backStack.lastOrNull() != Route.Main.Profile.SignUp) backStack.add(Route.Main.Profile.SignUp)
+    }
     val back: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
 
     NavDisplay(

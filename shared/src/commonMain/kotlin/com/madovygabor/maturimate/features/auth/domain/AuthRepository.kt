@@ -67,6 +67,18 @@ interface AuthRepository {
     suspend fun signIn(email: String, password: String): OperationResult<Unit, AuthError>
     suspend fun signOut(): OperationResult<Unit, AuthError>
 
+    /** The refresh token of the current session, or null when signed out. */
+    fun refreshToken(): String? = null
+
+    /** Removes the session from this phone only, without telling the server (a sign-out without a network). */
+    suspend fun clearLocalSession() {}
+
+    /**
+     * Ends on the server a session that was cleared locally while offline, by its old [refreshToken]. Does nothing
+     * (and succeeds) while another session is open on this phone.
+     */
+    suspend fun revokeSession(refreshToken: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+
     suspend fun sendPasswordResetCode(email: String): OperationResult<Unit, AuthError>
     /** Checks the password reset code; it signs the user in, and the code cannot be used again. */
     suspend fun verifyResetCode(email: String, code: String): OperationResult<Unit, AuthError>

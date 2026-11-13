@@ -28,6 +28,8 @@ data class ImportReport(
  *   practice unit and the pages of a lesson are replaced. The user database never references them.
  * * Tasks, learning units and topics that disappeared from the files are deactivated, never deleted,
  *   because the user database may still reference them.
+ * * The rows are collected first and sent in chunks of [CHUNK] rows, one statement per chunk. A row per
+ *   statement made the import wait for one network round trip per row (about 25 000 of them).
  */
 class PostgresWriter(private val connection: Connection) {
 
@@ -57,57 +59,47 @@ class PostgresWriter(private val connection: Connection) {
         listOf("task_tag", "task_key", "task_option", "task_accepted_answer", "task_attachment")
             .forEach { deleteWhereIn(it, "task_id", taskIds) }
 
-        content.taskFormats.forEach {
-            upsert("task_format", "task_format_id", it.taskFormatId,
-                "code" to it.code, "name" to it.name, "answer_mode" to it.answerMode, "description" to it.description)
-        }
-        content.tags.forEach {
-            upsert("tag", "tag_id", it.tagId, "name" to it.name, "tag_type" to it.tagType)
-        }
+        val t = Tables()
+        content.taskFormats.forEach { t.taskFormat.add(it.taskFormatId, it.code, it.name, it.answerMode, it.description) }
+        content.tags.forEach { t.tag.add(it.tagId, it.name, it.tagType) }
         content.subjects.forEach {
-            upsert("subject", "subject_id", it.subjectId, "code" to it.code, "name_hu" to it.nameHu,
-                "name_sk" to it.nameSk, "track" to it.track, "description" to it.description)
+            t.subject.add(it.subjectId, it.code, it.nameHu, it.nameSk, it.track, it.description)
         }
         // parents come before their children (the loader reads the tree top-down)
         content.topics.forEach {
-            upsert("topic", "topic_id", it.file.topicId, "subject_id" to it.subjectId,
-                "parent_topic_id" to it.parentTopicId, "title" to it.file.title, "description" to it.file.description,
-                "order_index" to it.file.orderIndex, "is_published" to it.file.isPublished)
+            t.topic.add(it.file.topicId, it.subjectId, it.parentTopicId, it.file.title, it.file.description,
+                it.file.orderIndex, it.file.isPublished)
         }
         content.summaries.forEach {
-            upsert("learning_unit", "learning_unit_id", it.learningUnitId, "topic_id" to it.topicId,
-                "unit_type" to "SUMMARY", "title" to it.title, "practice_kind" to null,
-                "estimated_minutes" to it.estimatedMinutes, "round_size" to 5, "xp_reward" to it.xpReward,
-                "sort_order" to it.sortOrder, "is_published" to it.isPublished)
+            t.learningUnit.add(it.learningUnitId, it.topicId, "SUMMARY", it.title, null,
+                it.estimatedMinutes, 5, it.xpReward, it.sortOrder, it.isPublished)
         }
         content.practices.forEach { p ->
             val u = p.file
-            upsert("learning_unit", "learning_unit_id", u.learningUnitId, "topic_id" to p.topicId,
-                "unit_type" to "PRACTICE", "title" to u.title, "practice_kind" to u.practiceKind,
-                "estimated_minutes" to u.estimatedMinutes, "round_size" to u.roundSize, "xp_reward" to u.xpReward,
-                "sort_order" to u.sortOrder, "is_published" to u.isPublished)
+            t.learningUnit.add(u.learningUnitId, p.topicId, "PRACTICE", u.title, u.practiceKind,
+                u.estimatedMinutes, u.roundSize, u.xpReward, u.sortOrder, u.isPublished)
         }
 
         content.summaries.forEach { unit ->
             unit.pages.forEachIndexed { pageIndex, page ->
-                insert("unit_page", "learning_unit_id" to unit.learningUnitId, "page_no" to pageIndex + 1, "title" to page.title)
+                t.unitPage.add(unit.learningUnitId, pageIndex + 1, page.title)
                 page.blocks.forEachIndexed { blockIndex, block ->
-                    insert("page_block", "learning_unit_id" to unit.learningUnitId, "page_no" to pageIndex + 1,
-                        "block_no" to blockIndex + 1, "block_type" to block.type, "body_text" to block.text)
+                    t.pageBlock.add(unit.learningUnitId, pageIndex + 1, blockIndex + 1, block.type, block.text)
                 }
             }
         }
 
         val formatIds = content.taskFormats.associate { it.code to it.taskFormatId }
         val tagIds = content.tags.associate { it.name to it.tagId }
-        content.tasks.forEach { writeTask(it, formatIds.getValue(it.entry.format), tagIds) }
+        content.tasks.forEach { bufferTask(it, formatIds.getValue(it.entry.format), tagIds, t) }
 
         content.practices.forEach { p ->
             p.file.tasks.forEachIndexed { index, entry ->
-                insert("unit_task", "learning_unit_id" to p.file.learningUnitId, "task_id" to entry.taskId,
-                    "sort_order" to index + 1, "is_core" to entry.isCore)
+                t.unitTask.add(p.file.learningUnitId, entry.taskId, index + 1, entry.isCore)
             }
         }
+
+        t.inOrder.forEach { flush(it) }
 
         val deactivated = mapOf(
             "task" to deactivateMissing("task", "task_id", "is_active", taskIds),
@@ -119,63 +111,71 @@ class PostgresWriter(private val connection: Connection) {
         return ImportReport(inserted.toMap(), updated.toMap(), deactivated)
     }
 
-    private fun writeTask(task: LoadedTask, formatId: Long, tagIds: Map<String, Long>) {
-        val t = task.entry
-        upsert("task", "task_id", t.taskId, "topic_id" to task.topicId, "task_format_id" to formatId,
-            "question_text" to t.questionText, "explanation" to t.explanation, "max_points" to t.maxPoints,
-            "answer_word_limit" to t.answerWordLimit, "is_active" to t.isActive)
+    private fun bufferTask(task: LoadedTask, formatId: Long, tagIds: Map<String, Long>, t: Tables) {
+        val e = task.entry
+        t.task.add(e.taskId, task.topicId, formatId, e.questionText, e.explanation, e.maxPoints,
+            e.answerWordLimit, e.isActive)
 
         // child ids are derived from the task id and the position in the file
         val optionIds = mutableMapOf<Pair<String, String>, Long>()
-        t.options.forEachIndexed { index, o ->
-            val id = childId(t.taskId, index)
+        e.options.forEachIndexed { index, o ->
+            val id = childId(e.taskId, index)
             optionIds[o.role to o.label] = id
-            insert("task_option", "option_id" to id, "task_id" to t.taskId, "option_role" to o.role,
-                "option_label" to o.label, "option_text" to o.text, "why" to o.why)
+            t.taskOption.add(id, e.taskId, o.role, o.label, o.text, o.why)
         }
-        t.key.forEach { k ->
-            insert("task_key", "task_id" to t.taskId, "answer_slot" to k.slot,
-                "prompt_option_id" to k.prompt?.let { optionIds.getValue("PROMPT" to it) },
-                "option_id" to optionIds.getValue("ANSWER" to k.option))
+        e.key.forEach { k ->
+            t.taskKey.add(e.taskId, k.slot,
+                k.prompt?.let { optionIds.getValue("PROMPT" to it) },
+                optionIds.getValue("ANSWER" to k.option))
         }
-        t.acceptedAnswers.forEachIndexed { index, a ->
-            insert("task_accepted_answer", "accepted_answer_id" to childId(t.taskId, index), "task_id" to t.taskId,
-                "answer_slot" to a.slot, "answer_text" to a.text, "case_sensitive" to a.caseSensitive)
+        e.acceptedAnswers.forEachIndexed { index, a ->
+            t.acceptedAnswer.add(childId(e.taskId, index), e.taskId, a.slot, a.text, a.caseSensitive)
         }
-        t.attachments.forEachIndexed { index, a ->
-            insert("task_attachment", "attachment_id" to childId(t.taskId, index), "task_id" to t.taskId,
-                "file_url" to a.fileUrl, "media_type" to a.mediaType, "alt_text" to a.altText)
+        e.attachments.forEachIndexed { index, a ->
+            t.attachment.add(childId(e.taskId, index), e.taskId, a.fileUrl, a.mediaType, a.altText)
         }
-        t.tags.forEach { insert("task_tag", "task_id" to t.taskId, "tag_id" to tagIds.getValue(it)) }
+        e.tags.forEach { t.taskTag.add(e.taskId, tagIds.getValue(it)) }
     }
 
-    private fun upsert(table: String, idColumn: String, id: Long, vararg columns: Pair<String, Any?>) {
-        val names = listOf(idColumn) + columns.map { it.first }
-        val sql = """
-            INSERT INTO $table (${names.joinToString()}) VALUES (${names.joinToString { "?" }})
-            ON CONFLICT ($idColumn) DO UPDATE SET ${columns.joinToString { "${it.first} = EXCLUDED.${it.first}" }}
-            WHERE (${columns.joinToString { "$table.${it.first}" }}) IS DISTINCT FROM (${columns.joinToString { "EXCLUDED.${it.first}" }})
-            RETURNING (xmax = 0) AS inserted
-        """.trimIndent()
-        connection.prepareStatement(sql).use { statement ->
-            statement.bind(listOf(id) + columns.map { it.second })
-            statement.executeQuery().use { rows ->
-                // no row: the existing row was already equal
-                if (rows.next()) {
-                    val counter = if (rows.getBoolean("inserted")) inserted else updated
-                    counter.merge(table, 1, Int::plus)
+    /** Sends the rows of one table in chunks: an upsert when it has an id column, a plain insert when not. */
+    private fun flush(table: BufferedTable) {
+        table.rows.chunked(CHUNK).forEach { chunk ->
+            val values = chunk.flatten()
+            if (table.idColumn == null) {
+                connection.prepareStatement(insertSql(table, chunk.size)).use { statement ->
+                    statement.bind(values)
+                    statement.executeUpdate()
+                }
+            } else {
+                connection.prepareStatement(upsertSql(table, chunk.size)).use { statement ->
+                    statement.bind(values)
+                    // only the rows that changed come back, so the counts are the same as one statement per row
+                    statement.executeQuery().use { resultRows ->
+                        while (resultRows.next()) {
+                            val counter = if (resultRows.getBoolean("inserted")) inserted else updated
+                            counter.merge(table.name, 1, Int::plus)
+                        }
+                    }
                 }
             }
         }
     }
 
-    private fun insert(table: String, vararg columns: Pair<String, Any?>) {
-        val sql = "INSERT INTO $table (${columns.joinToString { it.first }}) VALUES (${columns.joinToString { "?" }})"
-        connection.prepareStatement(sql).use {
-            it.bind(columns.map { c -> c.second })
-            it.executeUpdate()
-        }
+    private fun insertSql(table: BufferedTable, rowCount: Int): String =
+        "INSERT INTO ${table.name} (${table.columns.joinToString()}) VALUES ${placeholders(rowCount, table.columns.size)}"
+
+    private fun upsertSql(table: BufferedTable, rowCount: Int): String {
+        val id = table.idColumn ?: error("${table.name} has no id column")
+        val others = table.columns.filter { it != id }
+        return "INSERT INTO ${table.name} (${table.columns.joinToString()}) " +
+            "VALUES ${placeholders(rowCount, table.columns.size)} " +
+            "ON CONFLICT ($id) DO UPDATE SET ${others.joinToString { "$it = EXCLUDED.$it" }} " +
+            "WHERE (${others.joinToString { "${table.name}.$it" }}) IS DISTINCT FROM (${others.joinToString { "EXCLUDED.$it" }}) " +
+            "RETURNING (xmax = 0) AS inserted"
     }
+
+    private fun placeholders(rowCount: Int, columnCount: Int): String =
+        (1..rowCount).joinToString(", ") { "(" + (1..columnCount).joinToString { "?" } + ")" }
 
     private fun deleteWhereIn(table: String, column: String, ids: List<Long>) {
         connection.prepareStatement("DELETE FROM $table WHERE $column = ANY (?)").use {
@@ -214,7 +214,49 @@ class PostgresWriter(private val connection: Connection) {
         }
     }
 
+    /** The rows of one table, collected before they are sent. [idColumn] is null for a table that is only inserted. */
+    private class BufferedTable(val name: String, val idColumn: String?, vararg names: String) {
+        val columns: List<String> = names.toList()
+        val rows = mutableListOf<List<Any?>>()
+
+        fun add(vararg values: Any?) {
+            require(values.size == columns.size) { "$name: ${values.size} values for ${columns.size} columns" }
+            rows += values.toList()
+        }
+    }
+
+    /** All tables of one import. The order of [inOrder] is the order of the foreign keys. */
+    private class Tables {
+        val taskFormat = BufferedTable("task_format", "task_format_id", "task_format_id", "code", "name", "answer_mode", "description")
+        val tag = BufferedTable("tag", "tag_id", "tag_id", "name", "tag_type")
+        val subject = BufferedTable("subject", "subject_id", "subject_id", "code", "name_hu", "name_sk", "track", "description")
+        val topic = BufferedTable("topic", "topic_id", "topic_id", "subject_id", "parent_topic_id", "title", "description",
+            "order_index", "is_published")
+        val learningUnit = BufferedTable("learning_unit", "learning_unit_id", "learning_unit_id", "topic_id", "unit_type",
+            "title", "practice_kind", "estimated_minutes", "round_size", "xp_reward", "sort_order", "is_published")
+        val task = BufferedTable("task", "task_id", "task_id", "topic_id", "task_format_id", "question_text", "explanation",
+            "max_points", "answer_word_limit", "is_active")
+        val taskOption = BufferedTable("task_option", null, "option_id", "task_id", "option_role", "option_label", "option_text", "why")
+        val taskKey = BufferedTable("task_key", null, "task_id", "answer_slot", "prompt_option_id", "option_id")
+        val acceptedAnswer = BufferedTable("task_accepted_answer", null, "accepted_answer_id", "task_id", "answer_slot",
+            "answer_text", "case_sensitive")
+        val attachment = BufferedTable("task_attachment", null, "attachment_id", "task_id", "file_url", "media_type", "alt_text")
+        val taskTag = BufferedTable("task_tag", null, "task_id", "tag_id")
+        val unitPage = BufferedTable("unit_page", null, "learning_unit_id", "page_no", "title")
+        val pageBlock = BufferedTable("page_block", null, "learning_unit_id", "page_no", "block_no", "block_type", "body_text")
+        val unitTask = BufferedTable("unit_task", null, "learning_unit_id", "task_id", "sort_order", "is_core")
+
+        val inOrder: List<BufferedTable>
+            get() = listOf(
+                taskFormat, tag, subject, topic, learningUnit, task, taskOption, taskKey,
+                acceptedAnswer, attachment, taskTag, unitPage, pageBlock, unitTask,
+            )
+    }
+
     private companion object {
+        /** Rows per statement. Far below the 65 535 bind parameters of PostgreSQL. */
+        const val CHUNK = 500
+
         val IDENTITY_COLUMNS = listOf(
             "task_format" to "task_format_id", "tag" to "tag_id", "subject" to "subject_id", "topic" to "topic_id",
             "task" to "task_id", "task_option" to "option_id", "task_accepted_answer" to "accepted_answer_id",

@@ -26,6 +26,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
+import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
+import com.madovygabor.maturimate.features.userProfile.domain.OfficialExamDate
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.fail
@@ -139,6 +142,23 @@ class HomeOverviewTest {
         val summary = inAuckland.load().data()
         assertEquals(auckland, summary.zone)
         assertEquals(kotlinx.datetime.LocalDate(2026, 11, 5), summary.goal.date)
+    }
+
+    @Test
+    fun theOfficialExamDateReplacesTheRulesDateInTheCountdown() = runBlocking {
+        // the profile holds the rule's date (8 March 2027); the official one is a week later
+        val official = OfficialExamDate(1, 2027, null, LocalDate(2027, 3, 15), publishedAt = 1)
+        val dates = object : ExamDateRepository {
+            override val dates = MutableStateFlow(listOf(official))
+            override suspend fun isAnswered(date: OfficialExamDate) = false
+            override suspend fun markAnswered(date: OfficialExamDate) {}
+        }
+        val withOfficial = HomeOverview(tracker, LearningCourse(content, progress), RecentActivities(progress, content), profile, examDates = dates)
+
+        val summary = withOfficial.load().data()
+        assertEquals(131, summary.daysToExam)
+        // the rule's date is replaced without asking
+        assertNull(summary.examOffer)
     }
 
     private fun motto(reached: Boolean = false, streak: Int = 0, hadStreak: Boolean = false, studied: Boolean = true) =

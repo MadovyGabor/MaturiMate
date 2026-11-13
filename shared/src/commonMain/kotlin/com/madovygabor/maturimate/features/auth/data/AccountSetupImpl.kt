@@ -8,6 +8,9 @@ import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.ConsentType
 import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
+import com.madovygabor.maturimate.features.sync.domain.SyncEngine
+import com.madovygabor.maturimate.features.sync.domain.SyncOutcome
+import com.madovygabor.maturimate.features.sync.domain.SyncReason
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -31,6 +34,8 @@ class AccountSetupImpl(
     private val profiles: UserProfileRepository,
     private val localUser: LocalUserProvider,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /** With the sync, a sign-in brings the account's data by a guest-merge sync instead of the old profile download. */
+    private val sync: SyncEngine? = null,
 ) : AccountSetup {
 
     // Both run to the end even when the screen that started them goes away: saving a new app
@@ -62,6 +67,7 @@ class AccountSetupImpl(
     private suspend fun signIn(): OperationResult<SignedInAccount, AuthError> {
         val accountId = auth.currentUser()?.id ?: return OperationResult.Error(AuthError.INVALID_CREDENTIALS)
         adopt(accountId)
+        if (sync != null) return signInWithSync(sync)
         val remote = when (val result = account.downloadProfile()) {
             is OperationResult.Success -> result.data
             is OperationResult.Error -> return OperationResult.Error(result.error)
@@ -72,6 +78,19 @@ class AccountSetupImpl(
         // read after the writes, so the onboarding continues from these answers and not from older ones
         val local = profiles.profile.first()
         return OperationResult.Success(SignedInAccount(remote?.profile?.isOnboardingCompleted == true, local))
+    }
+
+    /**
+     * The guest's rows are the account's now (adopt); one sync in the guest-merge mode adds the guest's learning data to the
+     * account and brings the account's profile, settings, roles and subjects back, which win over the guest's (roadmap
+     * 12.5). When it fails (no network) the mode stays set and the next sync does it; the sign-in reports the error.
+     */
+    private suspend fun signInWithSync(sync: SyncEngine): OperationResult<SignedInAccount, AuthError> {
+        val outcome = sync.sync(SyncReason.AFTER_SIGN_IN)
+        if (outcome is SyncOutcome.Failed) return OperationResult.Error(AuthError.NETWORK)
+        // read after the sync, so the onboarding continues from the account's answers
+        val local = profiles.profile.first()
+        return OperationResult.Success(SignedInAccount(local?.isOnboardingCompleted == true, local))
     }
 
     private fun adopt(accountId: String) = localUser.adoptAccount(accountId)

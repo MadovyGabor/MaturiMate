@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.presentation.utils.READ_RETRY_DELAYS_MILLIS
 import com.madovygabor.maturimate.core.presentation.utils.retryReads
+import com.madovygabor.maturimate.features.auth.domain.SessionRevoker
+import com.madovygabor.maturimate.features.content.domain.ContentSwapGate
+import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,11 +30,18 @@ data class AppState(
     val onboardingCompleted: Boolean,
 )
 
-/** Follows the saved profile, so a new language or a finished onboarding takes effect at once. */
+/**
+ * Follows the saved profile, so a new language or a finished onboarding takes effect at once. It also passes on what the
+ * whole app does: the sync when the app comes to the front, a sign-out the server has not heard of yet, and whether a
+ * lesson is open (the content file is not swapped under it).
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModel(
     repository: UserProfileRepository,
     retryDelaysMillis: List<Long> = READ_RETRY_DELAYS_MILLIS,
+    private val syncTriggers: SyncTriggers? = null,
+    private val sessionRevoker: SessionRevoker? = null,
+    private val contentSwapGate: ContentSwapGate? = null,
 ) : ViewModel() {
 
     init {
@@ -68,5 +78,18 @@ class AppViewModel(
     fun retry() {
         _failed.value = false
         reload.update { it + 1 }
+    }
+
+    /** The app opened or came back to the front. */
+    fun onForeground() {
+        // the sync runs at most every five minutes from here
+        syncTriggers?.onForeground()
+        // a sign-out made without a network is told to the server now, if the network is back
+        sessionRevoker?.let { viewModelScope.launch { runCatching { it.revokePending() } } }
+    }
+
+    /** A lesson, a test or a practice round opened (true) or the last one closed (false). */
+    fun onReadingChanged(reading: Boolean) {
+        contentSwapGate?.let { viewModelScope.launch { it.setReading(reading) } }
     }
 }

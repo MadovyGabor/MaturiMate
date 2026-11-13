@@ -67,7 +67,13 @@ class LocalUserProvider(
         val current = userId()
         when {
             current == accountId -> Unit
-            isGuest() -> queries.adoptAccount(accountId = accountId, guestId = current)
+            isGuest() -> database.transaction {
+                queries.adoptAccount(accountId = accountId, guestId = current)
+                // the first sync of the account merges: the account's profile wins, the guest's learning data is added
+                database.syncQueries.clearSyncState()
+                database.syncQueries.ensureSyncState(accountId)
+                database.syncQueries.setGuestMergePending(true)
+            }
             else -> queries.switchAccount(previousId = current, accountId = accountId)
         }
         cached = accountId

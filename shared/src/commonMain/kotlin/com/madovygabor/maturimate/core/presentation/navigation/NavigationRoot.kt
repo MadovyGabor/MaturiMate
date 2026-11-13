@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.core.presentation.navigation
 
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,8 @@ fun NavigationRoute(
     profilePage: MutableState<NavKey>,
     /** The language the app is built with (`AppState.language`). */
     appLanguage: TeachingLanguage?,
+    /** True while a lesson, a test or a practice round is open: the content file is not swapped under it. */
+    onReadingChanged: (Boolean) -> Unit = {},
 ){
 
     val rootBackStack = rememberNavBackStack(
@@ -58,6 +61,10 @@ fun NavigationRoute(
 
         startRoute,
     )
+
+    // a downloaded content pack is swapped in only while no lesson, test or practice round is open
+    val reading = rootBackStack.any { it is Route.Lesson || it is Route.Test || it is Route.PracticeRound }
+    LaunchedEffect(reading) { onReadingChanged(reading) }
 
     NavDisplay(
         modifier = modifier,

@@ -164,6 +164,25 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun anOldSessionIsEndedWithoutBecomingThePhonesSession() = runBlocking {
+        var logoutAuth: String? = null
+        val repository = repository { request ->
+            if (request.url.encodedPath.endsWith("/logout")) {
+                logoutAuth = request.headers[HttpHeaders.Authorization]
+                respond("", HttpStatusCode.NoContent)
+            } else json(session())
+        }
+
+        assertTrue(repository.revokeSession("old-refresh").isSuccess())
+
+        assertEquals(listOf("POST /auth/v1/token", "POST /auth/v1/logout"), requests.map { it.first })
+        assertTrue("old-refresh" in requests[0].second)
+        assertEquals("Bearer access", logoutAuth)
+        // the phone stays signed out: no session was imported, so the app never saw a sign-in
+        assertEquals(null, repository.currentUser())
+    }
+
+    @Test
     fun passwordResetSendsCodeThenSetsTheNewPassword() = runBlocking {
         val repository = repository { request ->
             when (request.url.encodedPath) {

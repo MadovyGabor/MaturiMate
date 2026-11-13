@@ -22,6 +22,7 @@ import com.madovygabor.maturimate.core.presentation.systemPadding
 import com.madovygabor.maturimate.core.presentation.systemPaddingExceptBottom
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.MainScaffoldWrapper
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -36,6 +37,12 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App(viewModel: AppViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsState()
     val failed by viewModel.failed.collectAsState()
+
+    // the sync runs when the app opens and when it comes back to the front (at most every five minutes)
+    LifecycleResumeEffect(Unit) {
+        viewModel.onForeground()
+        onPauseOrDispose { }
+    }
 
     // Apply the application's Material 3 theme
     AppTheme {
@@ -64,6 +71,7 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                             mainTab = mainTab,
                             profilePage = profilePage,
                             appLanguage = appState.language,
+                            onReadingChanged = viewModel::onReadingChanged,
                         )
                     }
                 }

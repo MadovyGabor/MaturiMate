@@ -1,0 +1,201 @@
+-- Phone only: the state of the sync with the server (step 12.3). One row at most. Times are epoch milliseconds,
+-- `pull_cursor` is the opaque cursor the server gave.
+CREATE TABLE sync_state (
+    slot                 INTEGER NOT NULL CONSTRAINT pk_sync_state PRIMARY KEY,
+    user_id              TEXT    NOT NULL,
+    pull_cursor          TEXT,
+    last_push_at         INTEGER,
+    last_success_at      INTEGER,
+    last_error           TEXT,
+    full_push_pending    INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1 CHECK (full_push_pending IN (0, 1)),
+    guest_merge_pending  INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0 CHECK (guest_merge_pending IN (0, 1)),
+    rejected_count       INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT ck_sync_state_slot CHECK (slot = 1)
+);
+
+selectSyncState:
+SELECT * FROM sync_state WHERE slot = 1;
+
+ensureSyncState:
+INSERT OR IGNORE INTO sync_state (slot, user_id) VALUES (1, :userId);
+
+clearSyncState:
+DELETE FROM sync_state;
+
+markPushed:
+UPDATE sync_state SET last_push_at = coalesce(:lastPushAt, last_push_at), full_push_pending = 0 WHERE slot = 1;
+
+markSynced:
+UPDATE sync_state SET pull_cursor = :cursor, last_success_at = :at, last_error = NULL, rejected_count = :rejected WHERE slot = 1;
+
+markFailed:
+UPDATE sync_state SET last_error = :error WHERE slot = 1;
+
+requestFullPush:
+UPDATE sync_state SET full_push_pending = 1 WHERE slot = 1;
+
+setGuestMergePending:
+UPDATE sync_state SET guest_merge_pending = :pending WHERE slot = 1;
+
+-- ---- what changed on the phone (the push) ------------------------------------------------------------------------
+
+selectChangedProfile:
+SELECT * FROM user_profile WHERE user_id = :userId AND updated_at > :since;
+
+selectChangedSettings:
+SELECT * FROM user_settings WHERE user_id = :userId AND updated_at > :since;
+
+selectChangedSubjects:
+SELECT * FROM user_subject WHERE user_id = :userId AND updated_at > :since ORDER BY updated_at;
+
+-- finished or abandoned rounds only, the oldest first; a round never changes after it ended
+selectFinishedAttemptsSince:
+SELECT * FROM attempt
+WHERE user_id = :userId AND status <> 'IN_PROGRESS' AND finished_at > :since
+ORDER BY finished_at, attempt_id
+LIMIT :limit;
+
+countPendingRounds:
+SELECT COUNT(*) FROM attempt WHERE user_id = :userId AND status <> 'IN_PROGRESS' AND finished_at > :since;
+
+oldestPendingRound:
+SELECT MIN(finished_at) FROM attempt WHERE user_id = :userId AND status <> 'IN_PROGRESS' AND finished_at > :since;
+
+selectAnswersOfAttempts:
+SELECT * FROM attempt_answer WHERE attempt_id IN :attemptIds ORDER BY attempt_id, task_id;
+
+selectChangedUnitProgress:
+SELECT * FROM user_unit_progress WHERE user_id = :userId AND updated_at > :since ORDER BY updated_at;
+
+selectChangedStreak:
+SELECT * FROM user_streak WHERE user_id = :userId AND updated_at > :since;
+
+-- only this device's rows: the rows of the other devices came from the server and only their own device may send them
+selectChangedActivity:
+SELECT * FROM activity_log WHERE user_id = :userId AND device_id = :deviceId AND updated_at > :since ORDER BY activity_date;
+
+selectOnboardingRoleId:
+SELECT MIN(role_id) FROM user_role WHERE user_id = :userId AND role_id IN (1, 2, 3);
+
+-- ---- applying what the server returned (the pull). The SQLite of Android 8 has no UPSERT, so every rule is an
+-- INSERT OR IGNORE and a conditional UPDATE. Every UPDATE of a synced table sets updated_at. ----------------------------
+
+applyProfileInsert:
+INSERT OR IGNORE INTO user_profile (user_id, first_name, last_name, teaching_language, graduation_date, onboarding_completed_at, progress_reset_at, updated_at)
+VALUES (:userId, :firstName, :lastName, :language, :graduationDate, :onboardingCompletedAt, :resetAt, :updatedAt);
+
+-- the newer change wins the row; a name that comes empty does not erase the one on the phone
+applyProfile:
+UPDATE user_profile SET first_name = coalesce(nullif(:firstName, ''), first_name), last_name = coalesce(nullif(:lastName, ''), last_name),
+    teaching_language = :language, graduation_date = :graduationDate, onboarding_completed_at = :onboardingCompletedAt,
+    updated_at = :updatedAt
+WHERE user_id = :userId AND (:forced OR updated_at < :updatedAt);
+
+-- the reset marker keeps the newest
+applyResetMarker:
+UPDATE user_profile SET progress_reset_at = :resetAt, updated_at = CASE WHEN updated_at > :updatedAt THEN updated_at ELSE :updatedAt END
+WHERE user_id = :userId AND (progress_reset_at IS NULL OR progress_reset_at < :resetAt);
+
+-- a reset learned from the server: the rounds and units started up to the marker go, the streak and the minutes stay
+deleteAnswersUpTo:
+DELETE FROM attempt_answer WHERE user_id = :userId AND attempt_id IN (SELECT attempt_id FROM attempt WHERE user_id = :userId AND started_at <= :resetAt);
+
+deleteAttemptsUpTo:
+DELETE FROM attempt WHERE user_id = :userId AND started_at <= :resetAt;
+
+deleteUnitProgressUpTo:
+DELETE FROM user_unit_progress WHERE user_id = :userId AND started_at <= :resetAt;
+
+applySettingsInsert:
+INSERT OR IGNORE INTO user_settings (user_id, ui_language, daily_goal_minutes, reminder_enabled, reminder_time, updated_at)
+VALUES (:userId, :uiLanguage, :dailyGoal, :reminderEnabled, :reminderTime, :updatedAt);
+
+-- the time zone is not synced
+applySettings:
+UPDATE user_settings SET ui_language = :uiLanguage, daily_goal_minutes = :dailyGoal, reminder_enabled = :reminderEnabled,
+    reminder_time = :reminderTime, updated_at = :updatedAt
+WHERE user_id = :userId AND (:forced OR updated_at < :updatedAt);
+
+applySubjectInsert:
+INSERT OR IGNORE INTO user_subject (user_id, subject_id, source, level, added_at, removed_at, updated_at)
+VALUES (:userId, :subjectId, :source, :level, :addedAt, :removedAt, :updatedAt);
+
+applySubject:
+UPDATE user_subject SET source = :source, level = :level, removed_at = :removedAt,
+    added_at = CASE WHEN added_at < :addedAt THEN added_at ELSE :addedAt END, updated_at = :updatedAt
+WHERE user_id = :userId AND subject_id = :subjectId AND (:forced OR updated_at < :updatedAt);
+
+applyAttempt:
+INSERT OR IGNORE INTO attempt (attempt_id, user_id, attempt_type, topic_id, learning_unit_id, status, started_at, finished_at, earned_points, max_points)
+VALUES (:attemptId, :userId, :type, :topicId, :unitId, :status, :startedAt, :finishedAt, :earned, :max);
+
+applyAnswer:
+INSERT OR IGNORE INTO attempt_answer (attempt_id, task_id, user_id, is_correct, earned_points, max_points, answered_at, given_answer)
+VALUES (:attemptId, :taskId, :userId, :isCorrect, :earned, :max, :answeredAt, :givenAnswer);
+
+applyUnitProgressInsert:
+INSERT OR IGNORE INTO user_unit_progress (user_id, learning_unit_id, status, started_at, completed_at, updated_at)
+VALUES (:userId, :unitId, :status, :startedAt, :completedAt, :updatedAt);
+
+-- the furthest wins, the earlier times are kept
+applyUnitProgress:
+UPDATE user_unit_progress SET
+    status = CASE WHEN status = 'COMPLETED' OR :status = 'COMPLETED' THEN 'COMPLETED' ELSE 'IN_PROGRESS' END,
+    started_at = CASE WHEN started_at < :startedAt THEN started_at ELSE :startedAt END,
+    completed_at = CASE WHEN completed_at IS NULL THEN :completedAt WHEN :completedAt IS NULL THEN completed_at
+                        WHEN completed_at < :completedAt THEN completed_at ELSE :completedAt END,
+    updated_at = CASE WHEN updated_at > :updatedAt THEN updated_at ELSE :updatedAt END
+WHERE user_id = :userId AND learning_unit_id = :unitId;
+
+applyStreakInsert:
+INSERT OR IGNORE INTO user_streak (user_id, current_streak, longest_streak, last_activity_date, updated_at)
+VALUES (:userId, :current, :longest, :lastDate, :updatedAt);
+
+applyStreak:
+UPDATE user_streak SET current_streak = :current, longest_streak = :longest, last_activity_date = :lastDate, updated_at = :updatedAt
+WHERE user_id = :userId;
+
+applyActivityInsert:
+INSERT OR IGNORE INTO activity_log (user_id, activity_date, device_id, seconds_studied, tasks_answered, updated_at)
+VALUES (:userId, :activityDate, :deviceId, :seconds, :tasks, :updatedAt);
+
+-- a device's own counters only grow, so the larger value is the newer one
+applyActivity:
+UPDATE activity_log SET
+    seconds_studied = CASE WHEN seconds_studied > :seconds THEN seconds_studied ELSE :seconds END,
+    tasks_answered = CASE WHEN tasks_answered > :tasks THEN tasks_answered ELSE :tasks END,
+    updated_at = CASE WHEN updated_at > :updatedAt THEN updated_at ELSE :updatedAt END
+WHERE user_id = :userId AND activity_date = :activityDate AND device_id = :deviceId;
+
+-- the cache of the tasks, built again from the answers (correlated subqueries: no window functions before SQLite 3.25)
+clearTaskProgress:
+DELETE FROM user_task_progress WHERE user_id = :userId;
+
+rebuildTaskProgress:
+INSERT INTO user_task_progress (user_id, task_id, times_correct, times_wrong, correct_streak, last_answered_at)
+SELECT a.user_id, a.task_id, SUM(a.is_correct), SUM(1 - a.is_correct),
+    (SELECT COUNT(*) FROM attempt_answer b
+      WHERE b.user_id = a.user_id AND b.task_id = a.task_id AND b.is_correct = 1
+        AND b.answered_at > COALESCE((SELECT MAX(c.answered_at) FROM attempt_answer c
+                                       WHERE c.user_id = a.user_id AND c.task_id = a.task_id AND c.is_correct = 0), 0)),
+    MAX(a.answered_at)
+FROM attempt_answer a WHERE a.user_id = :userId GROUP BY a.user_id, a.task_id;
+
+-- ---- the session of an offline sign-out ------------------------------------------------------------------------------
+
+-- Phone only. A sign-out without a network cannot end the session on the server, so the old refresh token is kept here and
+-- the server is told at the next opening with a network. At most one.
+CREATE TABLE pending_revocation (
+    slot           INTEGER NOT NULL CONSTRAINT pk_pending_revocation PRIMARY KEY,
+    refresh_token  TEXT    NOT NULL,
+    CONSTRAINT ck_pending_revocation_slot CHECK (slot = 1)
+);
+
+selectPendingRevocation:
+SELECT refresh_token FROM pending_revocation WHERE slot = 1;
+
+savePendingRevocation:
+INSERT OR REPLACE INTO pending_revocation (slot, refresh_token) VALUES (1, :refreshToken);
+
+clearPendingRevocation:
+DELETE FROM pending_revocation;

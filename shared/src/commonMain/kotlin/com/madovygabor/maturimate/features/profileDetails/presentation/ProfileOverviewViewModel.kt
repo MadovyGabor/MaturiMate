@@ -8,6 +8,13 @@ import com.madovygabor.maturimate.features.profileDetails.domain.History
 import com.madovygabor.maturimate.features.profileDetails.domain.ProfileOverview
 import com.madovygabor.maturimate.features.profileDetails.domain.ProfileSummary
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import com.madovygabor.maturimate.features.sync.domain.SyncEngine
+import com.madovygabor.maturimate.features.sync.domain.SyncState
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -24,7 +31,15 @@ sealed interface ProfileOverviewUiState {
 }
 
 /** The profile tab: the facts about the student. It reads again whenever the screen comes back. */
-class ProfileOverviewViewModel(private val overview: ProfileOverview) : ViewModel() {
+class ProfileOverviewViewModel(
+    private val overview: ProfileOverview,
+    syncEngine: SyncEngine? = null,
+    private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+) : ViewModel() {
+
+    /** The quiet cloud-off sign: the progress waits for more than a day, or the last upload failed for a reason other than "no network". */
+    val syncBadge: StateFlow<Boolean> = (syncEngine?.state ?: flowOf(SyncState())).map { it.showBadge(now()) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _state = MutableStateFlow<ProfileOverviewUiState>(ProfileOverviewUiState.Loading)
     val state: StateFlow<ProfileOverviewUiState> = _state.asStateFlow()

@@ -79,8 +79,11 @@ class ContentRepositoryImpl(
     private suspend fun <T : Any> read(block: (ContentDatabase) -> T?): OperationResult<T, LearningError> =
         withContext(dispatcher) {
             try {
-                val db = source.get() ?: return@withContext OperationResult.Error(LearningError.NO_CONTENT)
-                block(db)?.let { OperationResult.Success(it) } ?: OperationResult.Error(LearningError.NOT_FOUND)
+                // inside the source's read: a content swap cannot close the file meanwhile
+                source.read { db ->
+                    if (db == null) OperationResult.Error(LearningError.NO_CONTENT)
+                    else block(db)?.let { OperationResult.Success(it) } ?: OperationResult.Error(LearningError.NOT_FOUND)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

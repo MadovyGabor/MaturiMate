@@ -53,6 +53,12 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import maturimate.shared.generated.resources.home_exam_official_keep
+import maturimate.shared.generated.resources.home_exam_official_title
+import maturimate.shared.generated.resources.home_exam_official_update
+import com.madovygabor.maturimate.features.userProfile.domain.OfficialExamDate
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.home_activity_meta
 import maturimate.shared.generated.resources.home_all_done_text
@@ -121,22 +127,38 @@ fun HomeScreen(
     // read again whenever the screen comes back, so what was done on another screen shows here
     LaunchedEffect(Unit) { viewModel.refresh() }
     val state by viewModel.state.collectAsState()
-    HomeContent(state, onContinue, onRetry = viewModel::refresh, onOpenPractice = onOpenPractice)
+    HomeContent(
+        state, onContinue, onRetry = viewModel::refresh, onOpenPractice = onOpenPractice,
+        onAcceptExamDate = viewModel::acceptOfficialDate, onKeepExamDate = viewModel::keepOwnDate,
+    )
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun HomeContent(state: HomeUiState, onContinue: (ContinueTarget) -> Unit, onRetry: () -> Unit, onOpenPractice: () -> Unit = {}) {
+fun HomeContent(
+    state: HomeUiState,
+    onContinue: (ContinueTarget) -> Unit,
+    onRetry: () -> Unit,
+    onOpenPractice: () -> Unit = {},
+    onAcceptExamDate: (OfficialExamDate) -> Unit = {},
+    onKeepExamDate: (OfficialExamDate) -> Unit = {},
+) {
     when (state) {
         HomeUiState.Loading -> Unit
         HomeUiState.Failed -> Column(Modifier.fillMaxSize().padding(MaterialTheme.spacing.space4)) { LoadError(onRetry) }
-        is HomeUiState.Ready -> HomeReady(state.summary, onContinue, onOpenPractice)
+        is HomeUiState.Ready -> HomeReady(state.summary, onContinue, onOpenPractice, onAcceptExamDate, onKeepExamDate)
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun HomeReady(summary: HomeSummary, onContinue: (ContinueTarget) -> Unit, onOpenPractice: () -> Unit) {
+private fun HomeReady(
+    summary: HomeSummary,
+    onContinue: (ContinueTarget) -> Unit,
+    onOpenPractice: () -> Unit,
+    onAcceptExamDate: (OfficialExamDate) -> Unit,
+    onKeepExamDate: (OfficialExamDate) -> Unit,
+) {
     val spacing = MaterialTheme.spacing
     val layout = MaterialTheme.layout
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -149,6 +171,7 @@ private fun HomeReady(summary: HomeSummary, onContinue: (ContinueTarget) -> Unit
             verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
             Greeting(summary)
+            summary.examOffer?.let { ExamDateNotice(it, onAcceptExamDate, onKeepExamDate) }
             if (wide) {
                 // the two cards side by side, as tall as the taller one
                 Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(spacing.space4)) {
@@ -162,6 +185,21 @@ private fun HomeReady(summary: HomeSummary, onContinue: (ContinueTarget) -> Unit
             // the mistake practice, only when there is a mistake to practice
             if (summary.mistakes > 0) SuggestionCard(summary.mistakes, onOpenPractice)
             RecentActivities(summary)
+        }
+    }
+}
+
+/** A calm notice: the official exam date is out and differs from the one picked by hand. Asked once per publication. */
+@Composable
+private fun ExamDateNotice(date: OfficialExamDate, onAccept: (OfficialExamDate) -> Unit, onKeep: (OfficialExamDate) -> Unit) {
+    val spacing = MaterialTheme.spacing
+    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Column(Modifier.padding(spacing.space4), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+            Text(stringResource(Res.string.home_exam_official_title, date.date.toString()), style = MaterialTheme.typography.bodyLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                AppButton(stringResource(Res.string.home_exam_official_update), onClick = { onAccept(date) }, compact = true)
+                AppButton(stringResource(Res.string.home_exam_official_keep), onClick = { onKeep(date) }, variant = AppButtonVariant.TEXT, compact = true)
+            }
         }
     }
 }

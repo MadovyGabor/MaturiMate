@@ -23,7 +23,7 @@ actual class DatabaseDriverFactory(private val appDir: File) {
         )
     }
 
-    actual fun contentStorage(): ContentStorage = FileContentStorage(appDir)
+    actual fun contentStorage(): ContentStorage = FileContentStorage(appDir, JdbcSqliteRunner())
 
     actual fun createContentDriver(): SqlDriver =
         JdbcSqliteDriver("jdbc:sqlite:${File(appDir, CONTENT_DATABASE_NAME).absolutePath}", foreignKeysOn())
