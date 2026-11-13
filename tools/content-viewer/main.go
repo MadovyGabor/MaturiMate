@@ -43,6 +43,7 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
   .box.tip { border-color: #2e9e5b; background: #2e9e5b14; }
   .box.warning { border-color: var(--warn); background: #cc333314; }
   .box.note { border-color: var(--muted); background: #8881; }
+  .box.quote { border-color: #8b5cf6; background: #8b5cf612; font-style: italic; }
   .box b.label { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
   p { margin: .5rem 0; }
   .tasks h2 { margin-top: 2.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }

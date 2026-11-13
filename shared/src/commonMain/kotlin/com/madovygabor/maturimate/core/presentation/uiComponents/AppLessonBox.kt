@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FormatQuote
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Warning
@@ -32,8 +33,8 @@ import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.utils.AppRichText
 
-/** The kinds of box in a lesson page (`:::example`, `:::tip`, `:::note`, `:::warning`). */
-enum class LessonBoxType { EXAMPLE, TIP, NOTE, WARNING }
+/** The kinds of box in a lesson page (`:::example`, `:::tip`, `:::note`, `:::warning`, `:::quote`). */
+enum class LessonBoxType { EXAMPLE, TIP, NOTE, WARNING, QUOTE }
 
 /**
  * A box in a lesson page: a label and a text (docs/design-system/components/LessonBox.md).
@@ -58,6 +59,7 @@ fun AppLessonBox(
         LessonBoxType.TIP -> { container = colors.surfaceContainerLow; content = colors.onBackground; icon = Icons.Rounded.Lightbulb }
         LessonBoxType.NOTE -> { container = colors.secondaryContainer; content = colors.onSecondaryContainer; icon = Icons.Rounded.Info }
         LessonBoxType.WARNING -> { container = colors.errorContainer; content = colors.onErrorContainer; icon = Icons.Rounded.Warning }
+        LessonBoxType.QUOTE -> { container = colors.surfaceContainerLow; content = colors.onBackground; icon = Icons.Rounded.FormatQuote }
     }
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -66,9 +68,14 @@ fun AppLessonBox(
         contentColor = content,
     ) {
         Row(Modifier.height(IntrinsicSize.Min)) {
-            // a tip also has a gold bar at its side
-            if (type == LessonBoxType.TIP) {
-                Box(Modifier.width(MaterialTheme.layout.accentBar).fillMaxHeight().background(MaterialTheme.extendedColors.brandGold))
+            // a tip has a gold bar at its side; a quote has a secondary accent bar
+            val barColor = when (type) {
+                LessonBoxType.TIP -> MaterialTheme.extendedColors.brandGold
+                LessonBoxType.QUOTE -> colors.secondary
+                else -> null
+            }
+            if (barColor != null) {
+                Box(Modifier.width(MaterialTheme.layout.accentBar).fillMaxHeight().background(barColor))
             }
             Column(
                 modifier = Modifier.padding(horizontal = spacing.space3, vertical = spacing.space3),

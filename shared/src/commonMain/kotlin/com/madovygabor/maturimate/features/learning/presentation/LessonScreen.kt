@@ -60,6 +60,7 @@ import maturimate.shared.generated.resources.learning_load_error
 import maturimate.shared.generated.resources.learning_retry
 import maturimate.shared.generated.resources.lesson_box_example
 import maturimate.shared.generated.resources.lesson_box_note
+import maturimate.shared.generated.resources.lesson_box_quote
 import maturimate.shared.generated.resources.lesson_box_tip
 import maturimate.shared.generated.resources.lesson_box_warning
 import maturimate.shared.generated.resources.lesson_close
@@ -251,6 +252,7 @@ private fun Block(block: LessonBlock) {
         BlockType.TIP -> AppLessonBox(LessonBoxType.TIP, stringResource(Res.string.lesson_box_tip), block.text)
         BlockType.NOTE -> AppLessonBox(LessonBoxType.NOTE, stringResource(Res.string.lesson_box_note), block.text)
         BlockType.WARNING -> AppLessonBox(LessonBoxType.WARNING, stringResource(Res.string.lesson_box_warning), block.text)
+        BlockType.QUOTE -> AppLessonBox(LessonBoxType.QUOTE, stringResource(Res.string.lesson_box_quote), block.text)
     }
 }
 

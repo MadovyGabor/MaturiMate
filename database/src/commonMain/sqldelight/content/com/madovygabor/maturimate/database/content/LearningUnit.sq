@@ -46,7 +46,7 @@ CREATE TABLE page_block (
     CONSTRAINT fk_page_block_page FOREIGN KEY (learning_unit_id, page_no)
         REFERENCES unit_page (learning_unit_id, page_no) ON DELETE CASCADE,
     CONSTRAINT ck_page_block_no CHECK (block_no >= 1),
-    CONSTRAINT ck_page_block_type CHECK (block_type IN ('PARAGRAPH', 'EXAMPLE', 'TIP', 'NOTE', 'WARNING'))
+    CONSTRAINT ck_page_block_type CHECK (block_type IN ('PARAGRAPH', 'EXAMPLE', 'TIP', 'NOTE', 'WARNING', 'QUOTE'))
 );
 
 CREATE TABLE unit_task (

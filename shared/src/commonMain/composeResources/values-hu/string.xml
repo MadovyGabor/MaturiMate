@@ -215,6 +215,7 @@
     <string name="lesson_box_tip">Tipp</string>
     <string name="lesson_box_note">Jegyzet</string>
     <string name="lesson_box_warning">Figyelem</string>
+    <string name="lesson_box_quote">Idézet</string>
     <string name="lesson_close">Kilépés</string>
     <string name="lesson_contents">Tartalom</string>
     <string name="lesson_finish">Befejezés</string>
