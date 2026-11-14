@@ -69,12 +69,24 @@ class UserProfileRepositoryImpl(
     }
 
     override suspend fun saveTeachingLanguage(language: TeachingLanguage) = save { userId ->
+        dropSubjectsOnLanguageChange(userId, language)
         queries.updateTeachingLanguage(language.name, userId)
         queries.updateUiLanguage(language.name, userId)
     }
 
     override suspend fun saveSchoolLanguage(language: TeachingLanguage) = save { userId ->
+        dropSubjectsOnLanguageChange(userId, language)
         queries.updateTeachingLanguage(language.name, userId)
+    }
+
+    /**
+     * The subjects depend on the school language, so a real change removes all of them (marked removed with a new
+     * `updated_at`, like [saveSubjects], so the removal syncs) and the user is asked again. Runs inside the save's
+     * transaction. A first language (none stored yet) or the same language leaves the subjects alone.
+     */
+    private fun dropSubjectsOnLanguageChange(userId: String, language: TeachingLanguage) {
+        val stored = queries.selectUserProfile(userId).executeAsOneOrNull()?.teaching_language
+        if (stored != null && stored != language.name) queries.deleteSubjects(userId)
     }
 
     override suspend fun saveUiLanguage(language: TeachingLanguage) = save { userId ->
@@ -159,21 +171,24 @@ class UserProfileRepositoryImpl(
     private fun User_subject.toDomain() = UserSubject(
         subjectId = subject_id,
         compulsory = source == "AUTO",
-        level = level?.let { SubjectLevel.valueOf(it) },
+        // a level this version does not know: no level
+        level = level?.let { runCatching { SubjectLevel.valueOf(it) }.getOrNull() },
     )
 
     private fun SelectUserProfile.toDomain(role: UserRole?, subjects: List<UserSubject>) = UserProfile(
         firstName = first_name?.takeIf { it.isNotBlank() },
         lastName = last_name?.takeIf { it.isNotBlank() },
-        teachingLanguage = teaching_language?.let { TeachingLanguage.valueOf(it) },
+        // a value this version cannot read (the sync may bring one) falls back instead of failing the whole profile:
+        // no school language (the onboarding asks it again)
+        teachingLanguage = teaching_language?.let { runCatching { TeachingLanguage.valueOf(it) }.getOrNull() },
         role = role,
-        graduationDate = graduation_date?.let { LocalDate.parse(it) },
-        uiLanguage = TeachingLanguage.valueOf(ui_language),
+        graduationDate = graduation_date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+        uiLanguage = runCatching { TeachingLanguage.valueOf(ui_language) }.getOrDefault(TeachingLanguage.SK),
         dailyGoalMinutes = daily_goal_minutes?.toInt(),
         timezone = timezone,
         onboardingCompletedAt = onboarding_completed_at?.let { Instant.fromEpochMilliseconds(it) },
         subjects = subjects,
         reminderEnabled = reminder_enabled,
-        reminderTime = reminder_time?.let { LocalTime.parse(it) },
+        reminderTime = reminder_time?.let { runCatching { LocalTime.parse(it) }.getOrNull() },
     )
 }

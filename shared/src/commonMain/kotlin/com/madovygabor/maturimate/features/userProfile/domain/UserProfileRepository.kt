@@ -17,10 +17,13 @@ interface UserProfileRepository {
     /** The profile, again after every change; null until the first answer is saved. */
     val profile: Flow<UserProfile?>
 
-    /** Also sets the language of the app. */
+    /**
+     * Also sets the language of the app. A change from a language saved before removes all subjects (they depend on
+     * the school language), so they are asked again.
+     */
     suspend fun saveTeachingLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
 
-    /** The school's language only, from the settings; the app language stays. */
+    /** The school's language only, from the settings; the app language stays. A real change removes all subjects. */
     suspend fun saveSchoolLanguage(language: TeachingLanguage): OperationResult<Unit, DataError>
 
     /** The language of the app's labels only, from the settings. */

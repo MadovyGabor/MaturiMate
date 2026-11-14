@@ -31,9 +31,8 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTime::class)
 class UserProfileRepositoryImplTest {
 
-    private val database = UserDatabase(
-        JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
-    )
+    private val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
+    private val database = UserDatabase(driver)
     private val localUser = LocalUserProvider(database, newGuestId = { "guest-1" })
     private val repository = UserProfileRepositoryImpl(
         database, localUser, Dispatchers.Unconfined,
@@ -187,6 +186,65 @@ class UserProfileRepositoryImplTest {
         repository.saveSubjects(listOf(UserSubject(4, compulsory = false))).ok()
 
         assertEquals(listOf(UserSubject(4, compulsory = false)), current().subjects)
+    }
+
+    private suspend fun saveTwoSubjects() {
+        repository.saveSubjects(listOf(UserSubject(1, compulsory = true), UserSubject(4, compulsory = false))).ok()
+    }
+
+    @Test
+    fun aRealSchoolLanguageChangeRemovesAllSubjectsAndTheRemovalSyncs() = runBlocking {
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+        saveTwoSubjects()
+        // an old stamp, so the change below is the only one newer than it
+        driver.execute(null, "UPDATE user_subject SET updated_at = 1", 0)
+
+        repository.saveSchoolLanguage(TeachingLanguage.HU).ok()
+
+        assertEquals(TeachingLanguage.HU, current().teachingLanguage)
+        assertEquals(emptyList(), current().subjects)
+        val changed = database.syncQueries.selectChangedSubjects("guest-1", 1).executeAsList()
+        assertEquals(listOf(1L, 4L), changed.map { it.subject_id }.sorted())
+        assertTrue(changed.all { it.removed_at != null })
+    }
+
+    @Test
+    fun theFirstOnboardingLanguageAlsoRemovesTheSubjectsOfAnotherLanguage() = runBlocking {
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+        saveTwoSubjects()
+        repository.saveTeachingLanguage(TeachingLanguage.HU).ok()
+        assertEquals(emptyList(), current().subjects)
+    }
+
+    @Test
+    fun theSameLanguageKeepsTheSubjects() = runBlocking {
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+        saveTwoSubjects()
+        driver.execute(null, "UPDATE user_subject SET updated_at = 1", 0)
+
+        repository.saveSchoolLanguage(TeachingLanguage.SK).ok()
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+
+        assertEquals(listOf(1L, 4L), current().subjects.map { it.subjectId })
+        assertTrue(database.syncQueries.selectChangedSubjects("guest-1", 1).executeAsList().isEmpty())
+    }
+
+    @Test
+    fun valuesTheAppCannotReadFallBackInsteadOfFailingTheProfile() = runBlocking {
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+        repository.saveSubjects(listOf(UserSubject(3, compulsory = true, level = SubjectLevel.B2))).ok()
+        driver.execute(null, "PRAGMA ignore_check_constraints = ON", 0)
+        driver.execute(null, "UPDATE user_profile SET teaching_language = 'XX', graduation_date = 'soon'", 0)
+        driver.execute(null, "UPDATE user_settings SET ui_language = 'XX', reminder_time = 'late'", 0)
+        driver.execute(null, "UPDATE user_subject SET level = 'C9'", 0)
+
+        val profile = current()
+
+        assertNull(profile.teachingLanguage)
+        assertNull(profile.graduationDate)
+        assertNull(profile.reminderTime)
+        assertEquals(TeachingLanguage.SK, profile.uiLanguage)
+        assertNull(profile.subjects.single().level)
     }
 
     @Test

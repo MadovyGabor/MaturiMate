@@ -86,6 +86,13 @@ class OnboardingResumeTest {
         assertEquals(Route.AppOnboarding.Goal, onboardingBackStack(learner).last())
     }
 
+    // A school-language change removes the subjects, so the resume asks them again.
+    @Test
+    fun aProfileWhoseLanguageChangedHasNoSubjectsAndResumesAtTheSubjects() {
+        val changed = profile(TeachingLanguage.HU, UserRole.STUDENT).copy(subjects = emptyList(), graduationDate = LocalDate(2027, 3, 15), dailyGoalMinutes = 10)
+        assertEquals(Route.AppOnboarding.Subjects, onboardingBackStack(changed).last())
+    }
+
     @Test
     fun nextStepFollowsTheRole() {
         assertEquals(Route.AppOnboarding.Subjects, nextRoute(OnboardingStep.ROLE, UserRole.TEACHER))
