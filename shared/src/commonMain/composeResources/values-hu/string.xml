@@ -60,9 +60,6 @@
 
     <!-- Onboarding: exam date -->
     <string name="common_save">Mentés</string>
-    <string name="profile_title">Profilom</string>
-    <string name="profile_why">Koppints arra a válaszra, amit módosítanál.</string>
-    <string name="profile_reminder_off">Kikapcsolva</string>
     <string name="profile_not_set">Nincs beállítva</string>
     <string name="common_cancel">Mégse</string>
     <string name="common_ok">OK</string>
@@ -300,7 +297,6 @@
     <string name="home_when_today">Ma</string>
     <string name="home_when_yesterday">Tegnap</string>
     <string name="home_activity_meta">%1$s · %2$s</string>
-    <string name="home_week_title">Ez a hét</string>
     <string name="home_day_1">H</string>
     <string name="home_day_2">K</string>
     <string name="home_day_3">Sze</string>

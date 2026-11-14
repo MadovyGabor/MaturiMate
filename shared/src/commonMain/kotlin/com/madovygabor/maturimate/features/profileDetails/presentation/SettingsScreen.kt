@@ -124,7 +124,6 @@ import maturimate.shared.generated.resources.settings_school_language_value
 import maturimate.shared.generated.resources.settings_sign_in_hint
 import maturimate.shared.generated.resources.settings_sign_out
 import maturimate.shared.generated.resources.settings_sync
-import maturimate.shared.generated.resources.settings_sync_hint
 import maturimate.shared.generated.resources.settings_sign_out_unsynced_text
 import maturimate.shared.generated.resources.settings_sign_out_unsynced_title
 import maturimate.shared.generated.resources.settings_delete_confirm

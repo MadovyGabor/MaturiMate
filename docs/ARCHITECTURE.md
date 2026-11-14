@@ -138,7 +138,7 @@ The practice tab (`Route.Main.Practice`) opens two more root routes: `Route.Prac
 
 ## 6. Responsive Layout
 
-`MainFrame.kt` wraps its content in `BoxWithConstraints` (line 38) and sets `isDesktop = maxWidth > LayoutConstants.DesktopThreshold` (line 40). `LayoutConstants.DesktopThreshold` is `600.dp` (`StatickUiSettings.kt:33`). Below the threshold, the frame uses a `NavigationBar` (line 84). At or above the threshold, it uses a `NavigationRail` (line 46).
+`MainFrame.kt` wraps its content in `BoxWithConstraints` (line 38) and sets `isDesktop = maxWidth > MaterialTheme.layout.breakpointMedium` (line 40). `breakpointMedium` is `600.dp` (`theme/Layout.kt`); the rail is `layout.railWidth` (100 dp). Below the threshold, the frame uses a `NavigationBar` (line 84). At or above the threshold, it uses a `NavigationRail` (line 46).
 
 ---
 

@@ -166,6 +166,7 @@ class DesignTokensSyncTest {
             "breakpoint-expanded" to layout.breakpointExpanded.value,
             "content-max-width" to layout.contentMaxWidth.value,
             "side-panel-width" to layout.sidePanelWidth.value,
+            "rail-width" to layout.railWidth.value,
             "touch-target" to layout.touchTarget.value,
             "icon" to layout.icon.value,
             "icon-small" to layout.iconSmall.value,

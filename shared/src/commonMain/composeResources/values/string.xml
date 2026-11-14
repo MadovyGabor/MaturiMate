@@ -62,9 +62,6 @@
 
     <!-- Onboarding: exam date -->
     <string name="common_save">Uložiť</string>
-    <string name="profile_title">Môj profil</string>
-    <string name="profile_why">Ťukni na odpoveď, ktorú chceš zmeniť.</string>
-    <string name="profile_reminder_off">Vypnutá</string>
     <string name="profile_not_set">Nenastavené</string>
     <string name="common_cancel">Zrušiť</string>
     <string name="common_ok">OK</string>
@@ -310,7 +307,6 @@
     <string name="home_when_today">Dnes</string>
     <string name="home_when_yesterday">Včera</string>
     <string name="home_activity_meta">%1$s · %2$s</string>
-    <string name="home_week_title">Tento týždeň</string>
     <string name="home_day_1">Po</string>
     <string name="home_day_2">Ut</string>
     <string name="home_day_3">St</string>

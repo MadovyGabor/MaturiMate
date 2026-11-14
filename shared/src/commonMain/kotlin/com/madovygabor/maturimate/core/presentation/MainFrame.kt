@@ -19,12 +19,10 @@ import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.TOP_LEVEL_NAVBAR_DESTINATIONS
-import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +39,7 @@ fun MainFrame(
 
     BoxWithConstraints {
         // Determine if the device is considered a desktop based on maxWidth
-        val isDesktop = maxWidth > LayoutConstants.DesktopThreshold
+        val isDesktop = maxWidth > MaterialTheme.layout.breakpointMedium
         // a tablet keeps the tabs in the middle of the rail; a wide window starts them at the top
         val railAtTop = maxWidth >= MaterialTheme.layout.breakpointExpanded
 
@@ -50,7 +48,7 @@ fun MainFrame(
             // Desktop navigation side bar
             Row(Modifier.fillMaxSize().systemBottomPadding()) {
                 NavigationRail(
-                    modifier = Modifier.width(100.dp),
+                    modifier = Modifier.width(MaterialTheme.layout.railWidth),
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     header = { /* Application logo */ }
                 ) {
