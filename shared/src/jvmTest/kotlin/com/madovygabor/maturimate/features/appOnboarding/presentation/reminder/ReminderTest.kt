@@ -1,6 +1,10 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation.reminder
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toAwtImage
+import com.madovygabor.maturimate.core.presentation.NotificationPermissionResult
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithText
@@ -18,6 +22,7 @@ import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositor
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -25,6 +30,9 @@ import kotlinx.datetime.LocalTime
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_cancel
 import maturimate.shared.generated.resources.reminder_not_now
+import maturimate.shared.generated.resources.reminder_open_settings
+import maturimate.shared.generated.resources.reminder_permission_blocked
+import maturimate.shared.generated.resources.reminder_permission_denied
 import maturimate.shared.generated.resources.reminder_permission_hint
 import maturimate.shared.generated.resources.reminder_title
 import maturimate.shared.generated.resources.reminder_turn_on
@@ -42,6 +50,10 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class ReminderTest {
 
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+
     private val defaultLocale: Locale = Locale.getDefault()
 
     @AfterTest
@@ -53,7 +65,7 @@ class ReminderTest {
         val database = UserDatabase(
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
         )
-        return UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
+        return UserProfileRepositoryImpl(database, LocalUserProvider(database), dbDispatcher)
     }
 
     @Test
@@ -72,6 +84,50 @@ class ReminderTest {
         viewModel.onAnswer(false) { off.complete(Unit) }
         withTimeout(5_000) { off.await() }
         assertFalse(repository.profile.first()!!.reminderEnabled)
+    }
+
+    @Test
+    fun aRefusedPermissionSavesNothingAndKeepsTheStepOpen() = runBlocking {
+        val repository = repository()
+        val viewModel = ReminderViewModel(repository, SnackbarController())
+        var next = 0
+
+        viewModel.onPermissionResult(NotificationPermissionResult.DENIED) { next++ }
+        assertEquals(NotificationPermissionResult.DENIED, viewModel.state.value.permission)
+        viewModel.onPermissionResult(NotificationPermissionResult.BLOCKED) { next++ }
+        assertEquals(NotificationPermissionResult.BLOCKED, viewModel.state.value.permission)
+
+        assertEquals(0, next)
+        // nothing was saved as the user's choice
+        assertFalse(repository.profile.first()?.reminderEnabled ?: false)
+        assertEquals(null, repository.profile.first()?.reminderTime)
+
+        val on = CompletableDeferred<Unit>()
+        viewModel.onPermissionResult(NotificationPermissionResult.GRANTED) { on.complete(Unit) }
+        withTimeout(5_000) { on.await() }
+        assertTrue(repository.profile.first()!!.reminderEnabled)
+        assertEquals(null, viewModel.state.value.permission)
+    }
+
+    @Test
+    fun theHintTellsDeniedFromBlockedAndOnlyBlockedOffersTheSettings() = runComposeUiTest {
+        var state by mutableStateOf(ReminderUiState(permission = NotificationPermissionResult.DENIED))
+        var opened = 0
+        setContent {
+            AppTheme(darkTheme = false) {
+                ReminderContent(state, UserRole.STUDENT, showPermissionHint = true, {}, {}, {}, {}, onOpenSettings = { opened++ })
+            }
+        }
+
+        onNodeWithText(text(Res.string.reminder_permission_denied)).assertExists()
+        onNodeWithText(text(Res.string.reminder_permission_hint)).assertDoesNotExist()
+        onNodeWithText(text(Res.string.reminder_open_settings)).assertDoesNotExist()
+
+        state = ReminderUiState(permission = NotificationPermissionResult.BLOCKED)
+        onNodeWithText(text(Res.string.reminder_permission_blocked)).assertExists()
+        onNodeWithText(text(Res.string.reminder_permission_denied)).assertDoesNotExist()
+        onNodeWithText(text(Res.string.reminder_open_settings)).performClick()
+        assertEquals(1, opened)
     }
 
     @Test

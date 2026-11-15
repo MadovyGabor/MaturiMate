@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.DataError
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -26,6 +27,10 @@ import kotlin.test.assertTrue
 
 /** The ViewModels run on the Swing main dispatcher here, so each check waits for the state it expects. */
 class OnboardingQuestionViewModelTest {
+
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     private val snackbar = SnackbarController()
 
@@ -109,7 +114,7 @@ class OnboardingQuestionViewModelTest {
         val database = UserDatabase(
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
         )
-        val repository = UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
+        val repository = UserProfileRepositoryImpl(database, LocalUserProvider(database), dbDispatcher)
         val role = RoleViewModel(repository, snackbar)
         role.onSelected(UserRole.TEACHER)
         val done = CompletableDeferred<UserRole>()

@@ -23,8 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.core.presentation.NotificationPermissionResult
 import com.madovygabor.maturimate.core.presentation.notificationsNeedPermission
 import com.madovygabor.maturimate.core.presentation.rememberNotificationPermissionRequest
+import com.madovygabor.maturimate.core.presentation.rememberOpenNotificationSettings
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
@@ -51,6 +54,9 @@ import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_cancel
 import maturimate.shared.generated.resources.common_ok
 import maturimate.shared.generated.resources.reminder_not_now
+import maturimate.shared.generated.resources.reminder_open_settings
+import maturimate.shared.generated.resources.reminder_permission_blocked
+import maturimate.shared.generated.resources.reminder_permission_denied
 import maturimate.shared.generated.resources.reminder_permission_hint
 import maturimate.shared.generated.resources.reminder_time
 import maturimate.shared.generated.resources.reminder_title
@@ -69,6 +75,8 @@ fun LocalTime.hoursAndMinutes(): String = "${hour.toString().padStart(2, '0')}:$
 data class ReminderUiState(
     val time: LocalTime = DEFAULT_REMINDER_TIME,
     val saving: Boolean = false,
+    /** How the last permission request ended when it did not allow notifications (DENIED or BLOCKED); null before. */
+    val permission: NotificationPermissionResult? = null,
 )
 
 /**
@@ -92,6 +100,20 @@ class ReminderViewModel(
 
     fun onTimeSelected(time: LocalTime) {
         _state.update { it.copy(time = time) }
+    }
+
+    /**
+     * The answer of the permission request. Allowed: the reminder is turned on. Otherwise nothing is saved: the screen
+     * says why and offers to try again or (when the system will not ask any more) the system settings, and the user
+     * decides with "Most nem" (so a refusal is never saved as that choice).
+     */
+    fun onPermissionResult(result: NotificationPermissionResult, onSaved: () -> Unit) {
+        if (result == NotificationPermissionResult.GRANTED) {
+            _state.update { it.copy(permission = null) }
+            onAnswer(true, onSaved)
+        } else {
+            _state.update { it.copy(permission = result) }
+        }
     }
 
     /** Saves the answer; [enabled] is false for "Most nem" and when notifications are not allowed. */
@@ -118,7 +140,8 @@ fun ReminderScreen(
 ) {
     val state by viewModel.state.collectAsState()
     // the system dialog's answer decides whether the reminder is on
-    val requestPermission = rememberNotificationPermissionRequest { granted -> viewModel.onAnswer(granted, onNext) }
+    val requestPermission = rememberNotificationPermissionRequest { result -> viewModel.onPermissionResult(result, onNext) }
+    val openSettings = rememberOpenNotificationSettings()
     ReminderContent(
         state = state,
         role = role,
@@ -127,6 +150,7 @@ fun ReminderScreen(
         onTurnOn = requestPermission,
         onNotNow = { viewModel.onAnswer(false, onNext) },
         onBack = onBack,
+        onOpenSettings = openSettings,
     )
 }
 
@@ -139,6 +163,7 @@ fun ReminderContent(
     onTurnOn: () -> Unit,
     onNotNow: () -> Unit,
     onBack: () -> Unit,
+    onOpenSettings: () -> Unit = {},
 ) {
     var picking by remember { mutableStateOf(false) }
     OnboardingScaffold(
@@ -153,8 +178,16 @@ fun ReminderContent(
         Text(stringResource(Res.string.reminder_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(stringResource(Res.string.reminder_time), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
         TimeField(state.time.hoursAndMinutes(), onClick = { picking = true })
-        if (showPermissionHint) {
-            Text(stringResource(Res.string.reminder_permission_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        when (state.permission) {
+            null -> if (showPermissionHint) {
+                Text(stringResource(Res.string.reminder_permission_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            NotificationPermissionResult.DENIED, NotificationPermissionResult.GRANTED ->
+                Text(stringResource(Res.string.reminder_permission_denied), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+            NotificationPermissionResult.BLOCKED -> {
+                Text(stringResource(Res.string.reminder_permission_blocked), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                AppButton(stringResource(Res.string.reminder_open_settings), onOpenSettings, variant = AppButtonVariant.OUTLINED)
+            }
         }
     }
     if (picking) {

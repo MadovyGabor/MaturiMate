@@ -101,16 +101,39 @@ class OnboardingResumeTest {
         assertEquals(Route.AppOnboarding.Goal, nextRoute(OnboardingStep.SUBJECTS, UserRole.LEARNER))
         assertEquals(Route.AppOnboarding.Goal, nextRoute(OnboardingStep.DATE, UserRole.STUDENT))
         // teachers have neither: the reminder comes after the subjects
-        assertEquals(Route.AppOnboarding.Reminder, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER))
-        assertEquals(Route.AppOnboarding.Reminder, nextRoute(OnboardingStep.GOAL, UserRole.LEARNER))
+        assertEquals(Route.AppOnboarding.Reminder, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER, reminder = true))
+        assertEquals(Route.AppOnboarding.Reminder, nextRoute(OnboardingStep.GOAL, UserRole.LEARNER, reminder = true))
     }
 
     @Test
     fun stepsFollowTheRole() {
-        assertEquals(8, onboardingSteps(null).size)
-        assertEquals(8, onboardingSteps(UserRole.STUDENT).size)
-        assertEquals(OnboardingStep.entries - OnboardingStep.DATE, onboardingSteps(UserRole.LEARNER))
-        assertEquals(OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL, onboardingSteps(UserRole.TEACHER))
+        assertEquals(8, onboardingSteps(null, reminder = true).size)
+        assertEquals(8, onboardingSteps(UserRole.STUDENT, reminder = true).size)
+        assertEquals(OnboardingStep.entries - OnboardingStep.DATE, onboardingSteps(UserRole.LEARNER, reminder = true))
+        assertEquals(OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL, onboardingSteps(UserRole.TEACHER, reminder = true))
+    }
+
+    // The desktop app has no reminder: the step is left out, so the header counts one step less and nothing saves a
+    // reminder that never comes.
+    @Test
+    fun theDesktopSkipsTheReminderStep() {
+        assertEquals(7, onboardingSteps(null, reminder = false).size)
+        assertEquals(OnboardingStep.entries - OnboardingStep.REMINDER, onboardingSteps(UserRole.STUDENT, reminder = false))
+        assertEquals(OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.REMINDER, onboardingSteps(UserRole.LEARNER, reminder = false))
+        assertEquals(Route.AppOnboarding.Plan, nextRoute(OnboardingStep.GOAL, UserRole.STUDENT, reminder = false))
+        assertEquals(Route.AppOnboarding.Plan, nextRoute(OnboardingStep.SUBJECTS, UserRole.TEACHER, reminder = false))
+        // a step the platform hides still continues with the next shown one
+        assertEquals(Route.AppOnboarding.Plan, nextRoute(OnboardingStep.REMINDER, UserRole.TEACHER, reminder = false))
+        // this test runs on the JVM, whose default is the desktop's
+        assertEquals(onboardingSteps(null, reminder = false), onboardingSteps(null))
+    }
+
+    @Test
+    fun theDesktopResumesAtThePlanAfterTheGoal() {
+        val withGoal = profile(TeachingLanguage.HU, UserRole.STUDENT)
+            .copy(subjects = listOf(UserSubject(1, true)), graduationDate = LocalDate(2027, 3, 15), dailyGoalMinutes = 10)
+        assertEquals(Route.AppOnboarding.Plan, onboardingBackStack(withGoal).last())
+        assertTrue(Route.AppOnboarding.Reminder !in onboardingBackStack(withGoal))
     }
 
     @Test
@@ -118,7 +141,7 @@ class OnboardingResumeTest {
         val learner = profile(TeachingLanguage.HU, UserRole.LEARNER)
             .copy(subjects = listOf(UserSubject(4, compulsory = false)), dailyGoalMinutes = 15, reminderEnabled = true)
         // the reminder has no answer of its own, so a resumed onboarding asks it again
-        assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(learner).last())
+        assertEquals(Route.AppOnboarding.Plan, onboardingBackStack(learner).last())
     }
 
     @Test
@@ -128,19 +151,19 @@ class OnboardingResumeTest {
         val withGoal = withDate.copy(dailyGoalMinutes = 10)
         assertEquals(Route.AppOnboarding.Date, onboardingBackStack(base).last())
         assertEquals(Route.AppOnboarding.Goal, onboardingBackStack(withDate).last())
-        // the reminder, the plan and the account have no stored answer: a resumed onboarding asks the reminder again
-        assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(withGoal).last())
+        // the plan and the account (and the reminder, on a phone) have no stored answer: a resumed onboarding asks the plan again
+        assertEquals(Route.AppOnboarding.Plan, onboardingBackStack(withGoal).last())
         // Back walks through every earlier screen
         assertEquals(
             listOf(
                 Route.AppOnboarding.Welcome, Route.AppOnboarding.Language, Route.AppOnboarding.Role, Route.AppOnboarding.Subjects,
-                Route.AppOnboarding.Date, Route.AppOnboarding.Goal, Route.AppOnboarding.Reminder,
+                Route.AppOnboarding.Date, Route.AppOnboarding.Goal, Route.AppOnboarding.Plan,
             ),
             onboardingBackStack(withGoal),
         )
 
         val teacher = profile(TeachingLanguage.SK, UserRole.TEACHER).copy(subjects = listOf(UserSubject(4, false)))
-        assertEquals(Route.AppOnboarding.Reminder, onboardingBackStack(teacher).last())
+        assertEquals(Route.AppOnboarding.Plan, onboardingBackStack(teacher).last())
         assertTrue(Route.AppOnboarding.Date !in onboardingBackStack(teacher) && Route.AppOnboarding.Goal !in onboardingBackStack(teacher))
     }
 

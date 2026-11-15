@@ -21,6 +21,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUi
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -34,12 +35,17 @@ import java.io.File
 import java.util.Locale
 import javax.imageio.ImageIO
 import kotlin.test.AfterTest
+import com.madovygabor.maturimate.features.userProfile.domain.StudyEstimate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class GoalTest {
+
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     private val defaultLocale: Locale = Locale.getDefault()
 
@@ -50,7 +56,7 @@ class GoalTest {
         val database = UserDatabase(
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
         )
-        return UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
+        return UserProfileRepositoryImpl(database, LocalUserProvider(database), dbDispatcher)
     }
 
     @Test
@@ -70,6 +76,9 @@ class GoalTest {
         assertEquals(61, hoursPerYear(10))
         assertEquals(91, hoursPerYear(15))
         assertEquals(122, hoursPerYear(20))
+        // the plan's rule: half an hour rounds up, 10 minutes x 115 days = 19 hours
+        assertEquals(StudyEstimate.hours(10, 365), hoursPerYear(10))
+        assertEquals(19, StudyEstimate.hours(10, 115))
     }
 
     @Test

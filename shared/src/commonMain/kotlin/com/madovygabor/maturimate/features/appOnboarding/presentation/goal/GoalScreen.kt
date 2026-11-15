@@ -26,6 +26,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUi
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
+import com.madovygabor.maturimate.features.userProfile.domain.StudyEstimate
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.flow.first
@@ -44,8 +45,10 @@ import org.koin.compose.viewmodel.koinViewModel
 val GOAL_OPTIONS = listOf(5, 10, 15, 20)
 const val DEFAULT_GOAL = 10
 
-/** Practice in a year at this daily goal, in whole hours. */
-fun hoursPerYear(minutesPerDay: Int): Int = (minutesPerDay * 365 + 30) / 60
+/** Practice in a year at this daily goal, in whole hours (the rounding of [StudyEstimate]). */
+fun hoursPerYear(minutesPerDay: Int): Int = StudyEstimate.hours(minutesPerDay, DAYS_PER_YEAR)
+
+private const val DAYS_PER_YEAR = 365
 
 /** The daily goal question (students and learners); 10 minutes is preselected. */
 class GoalViewModel(

@@ -60,6 +60,7 @@ kotlin {
             implementation(libs.supabase.auth)
             implementation(libs.supabase.compose.auth)
             implementation(libs.supabase.postgrest)
+            implementation(libs.multiplatform.settings.no.arg)
             // the download of the content packs (the engine is the one of the Supabase client)
             implementation(libs.ktor.client.core)
 
@@ -72,6 +73,10 @@ kotlin {
             //Koin Android
             implementation(libs.koin.android)
 
+            // per-app language, and the file picker of the data export
+            implementation(libs.androidx.appcompat)
+            implementation(libs.androidx.activity.compose)
+
             // HTTP engine of the Supabase client
             implementation(libs.ktor.client.okhttp)
 
@@ -80,6 +85,8 @@ kotlin {
         jvmMain.dependencies {
             // HTTP engine of the Supabase client
             implementation(libs.ktor.client.okhttp)
+            // the desktop Google sign-in's own loopback receiver (GoogleSignIn.jvm.kt); used directly, so declared here
+            implementation(libs.ktor.server.cio)
         }
 
         commonTest.dependencies {

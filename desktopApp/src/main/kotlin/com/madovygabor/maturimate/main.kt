@@ -3,6 +3,7 @@ package com.madovygabor.maturimate
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.madovygabor.maturimate.core.di.initKoin
+import com.madovygabor.maturimate.core.presentation.appWindowTitle
 import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ fun main() {
         // 2. Launch the main application window; App reads the profile and picks the start screen
         Window(
             onCloseRequest = ::exitApplication,
-            title = "MaturiMate",
+            title = appWindowTitle(),
             // You could add icon = painterResource(...) here later
         ) {
             // Call the common App entry point

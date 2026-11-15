@@ -46,6 +46,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,17 +70,18 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditi
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.date.DateScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.GoalScreen
+import com.madovygabor.maturimate.core.presentation.remindersAvailable
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.ReminderScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.hoursAndMinutes
 import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.SubjectsScreen
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.label
+import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.shared.generated.resources.Res
-import com.madovygabor.maturimate.features.auth.domain.AuthError
 import maturimate.shared.generated.resources.settings_reset_confirm
 import maturimate.shared.generated.resources.settings_reset_text
 import maturimate.shared.generated.resources.settings_reset_title
@@ -126,11 +131,10 @@ import maturimate.shared.generated.resources.settings_sign_out
 import maturimate.shared.generated.resources.settings_sync
 import maturimate.shared.generated.resources.settings_sign_out_unsynced_text
 import maturimate.shared.generated.resources.settings_sign_out_unsynced_title
-import maturimate.shared.generated.resources.settings_delete_confirm
-import maturimate.shared.generated.resources.settings_delete_text
-import maturimate.shared.generated.resources.settings_delete_title
 import maturimate.shared.generated.resources.settings_export
-import maturimate.shared.generated.resources.settings_export_done
+import maturimate.shared.generated.resources.settings_delete_word
+import com.madovygabor.maturimate.features.auth.presentation.rememberGoogleSignIn
+import maturimate.shared.generated.resources.settings_email_fixed
 import maturimate.shared.generated.resources.settings_export_hint
 import maturimate.shared.generated.resources.settings_sign_out_anyway
 import maturimate.shared.generated.resources.settings_sync_date
@@ -147,14 +151,13 @@ import maturimate.shared.generated.resources.settings_content_downloading
 import maturimate.shared.generated.resources.settings_content_error
 import maturimate.shared.generated.resources.settings_content_mobile
 import maturimate.shared.generated.resources.settings_content_up_to_date
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
 import kotlin.time.Instant
 import maturimate.shared.generated.resources.account_create
 import maturimate.shared.generated.resources.subjects_coming_soon
 import maturimate.shared.generated.resources.welcome_have_account
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.ExperimentalTime
@@ -164,6 +167,14 @@ private sealed interface SettingsPage {
     data object List : SettingsPage
     data class Edit(val step: OnboardingStep) : SettingsPage
 }
+
+/** The pages as numbers (the list is -1, a question is its step's place), so the open pages survive a rotation. */
+private val pagesSaver = listSaver<SnapshotStateList<SettingsPage>, Int>(
+    save = { pages -> pages.map { (it as? SettingsPage.Edit)?.step?.ordinal ?: -1 } },
+    restore = { saved ->
+        saved.map { if (it < 0) SettingsPage.List else SettingsPage.Edit(OnboardingStep.entries[it]) }.toMutableStateList()
+    },
+)
 
 /** Which language the choice dialog changes. */
 private enum class LanguageKind { SCHOOL, APP }
@@ -182,15 +193,28 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val busy by viewModel.busy.collectAsState()
-    val backStack = remember { mutableStateListOf<SettingsPage>(SettingsPage.List) }
-    val done: () -> Unit = { if (backStack.size > 1) backStack.removeLast() else onBack() }
+    val dialogs by viewModel.dialogs.collectAsState()
+    val backStack = rememberSaveable(saver = pagesSaver) { mutableStateListOf<SettingsPage>(SettingsPage.List) }
+    val done: () -> Unit = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) else onBack() }
     // the first of the questions still missing replaces the one just answered, so Back returns
     // to the list; each question then asks for what is still missing after it
     val continueWith: (List<OnboardingStep>) -> Unit = { missing ->
-        backStack.removeLast()
+        backStack.removeAt(backStack.lastIndex)
         missing.firstOrNull()?.let { backStack.add(SettingsPage.Edit(it)) }
     }
     val open: (OnboardingStep) -> Unit = { backStack.add(SettingsPage.Edit(it)) }
+    // The proof for deleting an account made with Google: a fresh Google sign-in of the same account. Composed only while
+    // that deletion dialog is open, so the flow ends (and reports closed) with the dialog.
+    val googleProof = if (dialogs.dialog == SettingsDialog.DELETE && state?.account?.hasPassword == false) {
+        rememberGoogleSignIn(
+            onSignedIn = viewModel::onGoogleDeletionSignedIn,
+            onError = viewModel::onGoogleDeletionFailed,
+            onClosed = viewModel::onGoogleDeletionClosed,
+            accountHint = state?.account?.email,
+        )
+    } else {
+        null
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -207,21 +231,28 @@ fun SettingsScreen(
                     SettingsActions(
                         onBack = onBack,
                         onEdit = open,
+                        // the subjects are asked again only once the new language is saved
                         onSchoolLanguage = { language -> viewModel.setSchoolLanguage(language) { open(OnboardingStep.SUBJECTS) } },
                         onAppLanguage = viewModel::setAppLanguage,
                         onReminder = { enabled -> if (!viewModel.setReminder(enabled)) open(OnboardingStep.REMINDER) },
                         onSignUp = onSignUp,
                         onSignIn = onSignIn,
+                        onOpenDialog = viewModel::openDialog,
+                        onCloseDialog = viewModel::closeDialog,
+                        onClearError = viewModel::clearError,
                         onSaveNames = viewModel::saveNames,
+                        onSendPasswordCode = viewModel::sendPasswordCode,
                         onChangePassword = viewModel::changePassword,
                         onReset = viewModel::resetProgress,
-                        onSignOut = { force, done -> viewModel.signOut(force, done) },
+                        onSignOut = viewModel::signOut,
                         onSync = viewModel::syncNow,
                         onUpdateContent = viewModel::updateContent,
                         onDeleteAccount = viewModel::deleteAccount,
+                        onDeleteWithGoogle = { if (googleProof != null) viewModel.startGoogleDeletion(openGoogle = googleProof) },
                         onExport = viewModel::exportData,
                         busy = busy,
                     ),
+                    dialogs,
                 )
             }
             entry<SettingsPage.Edit> { page ->
@@ -242,7 +273,10 @@ fun SettingsScreen(
     )
 }
 
-/** What the settings list can do; one object keeps the parameters short. */
+/**
+ * What the settings list can do; one object keeps the parameters short. The dialogs and their results live in the view
+ * model ([SettingsDialogState]); these only ask it to act.
+ */
 data class SettingsActions(
     val onBack: (() -> Unit)? = null,
     val onEdit: (OnboardingStep) -> Unit = {},
@@ -251,30 +285,32 @@ data class SettingsActions(
     val onReminder: (Boolean) -> Unit = {},
     val onSignUp: () -> Unit = {},
     val onSignIn: () -> Unit = {},
-    /** The name, the password, the reset and the sign-out; each gets back the error, if any. */
-    val onSaveNames: (String, String, (AuthError?) -> Unit) -> Unit = { _, _, _ -> },
-    val onChangePassword: (String, String, (AuthError?) -> Unit) -> Unit = { _, _, _ -> },
-    val onReset: ((Boolean) -> Unit) -> Unit = {},
-    val onSignOut: (Boolean, (AuthError?) -> Unit) -> Unit = { _, _ -> },
+    val onOpenDialog: (SettingsDialog) -> Unit = {},
+    val onCloseDialog: () -> Unit = {},
+    val onClearError: () -> Unit = {},
+    val onSaveNames: (String, String) -> Unit = { _, _ -> },
+    /** The password change: the e-mailed code is sent; then the current password, the code and the new one are saved. */
+    val onSendPasswordCode: () -> Unit = {},
+    val onChangePassword: (String, String, String) -> Unit = { _, _, _ -> },
+    val onReset: () -> Unit = {},
+    /** The sign-out; true goes on although the upload failed. */
+    val onSignOut: (Boolean) -> Unit = {},
     val onSync: () -> Unit = {},
     val onUpdateContent: () -> Unit = {},
-    val onDeleteAccount: ((AuthError?) -> Unit) -> Unit = {},
-    val onExport: ((String?, AuthError?) -> Unit) -> Unit = {},
+    /** The deletion of an account with a password, proved by that password. */
+    val onDeleteAccount: (String) -> Unit = {},
+    /** The deletion of an account made with Google, proved by a fresh Google sign-in. */
+    val onDeleteWithGoogle: () -> Unit = {},
+    /** The export; true shares it instead of saving it to a file. */
+    val onExport: (Boolean) -> Unit = {},
     val busy: Boolean = false,
 )
 
-/** The dialog open over the list. */
-private enum class SettingsDialog { NAME, PASSWORD, RESET, SIGN_OUT, SIGN_OUT_UNSYNCED, DELETE, EXPORTED }
-
 @Composable
-fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
+fun SettingsContent(state: SettingsUiState?, actions: SettingsActions, dialogs: SettingsDialogState = SettingsDialogState()) {
     val spacing = MaterialTheme.spacing
     val layout = MaterialTheme.layout
-    var choosing by remember { mutableStateOf<LanguageKind?>(null) }
-    var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
-    var error by remember { mutableStateOf<AuthError?>(null) }
-    var exportedTo by remember { mutableStateOf<String?>(null) }
-    val openDialog: (SettingsDialog) -> Unit = { error = null; dialog = it }
+    var choosing by rememberSaveable { mutableStateOf<LanguageKind?>(null) }
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         // tablet and desktop: the groups in two columns
         val wide = maxWidth >= layout.breakpointMedium
@@ -295,17 +331,24 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
             if (state == null) return@Column
             Who(state)
             val left: @Composable () -> Unit = {
-                Account(state, actions, onName = { openDialog(SettingsDialog.NAME) }, onPassword = { openDialog(SettingsDialog.PASSWORD) })
+                Account(state, actions, onName = { actions.onOpenDialog(SettingsDialog.NAME) }, onPassword = { actions.onOpenDialog(SettingsDialog.PASSWORD) })
                 Learning(state, actions, onSchoolLanguage = { choosing = LanguageKind.SCHOOL })
-                Notifications(state.profile, actions)
+                // the desktop app sends no reminder, so it offers no setting for it
+                if (remindersAvailable) Notifications(state.profile, actions)
             }
             val right: @Composable () -> Unit = {
                 App(state.profile, onAppLanguage = { choosing = LanguageKind.APP })
                 Data(
                     state, onSync = actions.onSync, onUpdateContent = actions.onUpdateContent,
-                    onExport = { actions.onExport { where, _ -> if (where != null) { exportedTo = where; dialog = SettingsDialog.EXPORTED } } },
+                    // where it can be shared, the user chooses; otherwise it goes straight to the save dialog
+                    onExport = { if (state.canShareExport) actions.onOpenDialog(SettingsDialog.EXPORT) else actions.onExport(false) },
                 )
-                Danger(state, onReset = { openDialog(SettingsDialog.RESET) }, onSignOut = { openDialog(SettingsDialog.SIGN_OUT) }, onDelete = { openDialog(SettingsDialog.DELETE) })
+                Danger(
+                    state,
+                    onReset = { actions.onOpenDialog(SettingsDialog.RESET) },
+                    onSignOut = { actions.onOpenDialog(SettingsDialog.SIGN_OUT) },
+                    onDelete = { actions.onOpenDialog(SettingsDialog.DELETE) },
+                )
             }
             if (wide) {
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing.space6)) {
@@ -319,42 +362,46 @@ fun SettingsContent(state: SettingsUiState?, actions: SettingsActions) {
         }
     }
     if (state != null) {
-        val close = { dialog = null }
-        // a dialog closes on success and shows the error otherwise
-        val after: (AuthError?) -> Unit = { failed -> if (failed == null) dialog = null else error = failed }
-        when (dialog) {
+        val close = actions.onCloseDialog
+        val error = dialogs.error
+        when (dialogs.dialog) {
             SettingsDialog.NAME -> NameDialog(
                 lastName = state.profile.lastName ?: state.account?.lastName.orEmpty(),
                 firstName = state.profile.firstName ?: state.account?.firstName.orEmpty(),
                 busy = actions.busy, error = error,
-                onSave = { first, last -> actions.onSaveNames(first, last, after) }, onDismiss = close,
+                onSave = actions.onSaveNames, onDismiss = close,
             )
             SettingsDialog.PASSWORD -> PasswordDialog(
-                busy = actions.busy, error = error,
-                onSave = { old, new -> actions.onChangePassword(old, new, after) }, onDismiss = close,
+                email = state.account?.email.orEmpty(), step = dialogs.passwordStep, busy = actions.busy, error = error,
+                onSendCode = actions.onSendPasswordCode, onClearError = actions.onClearError,
+                onSave = actions.onChangePassword, onDismiss = close,
             )
             SettingsDialog.RESET -> ConfirmDialog(
                 stringResource(Res.string.settings_reset_title), stringResource(Res.string.settings_reset_text),
                 stringResource(Res.string.settings_reset_confirm), actions.busy,
-                onConfirm = { actions.onReset { dialog = null } }, onDismiss = close,
+                onConfirm = actions.onReset, onDismiss = close, error = error,
             )
             SettingsDialog.SIGN_OUT -> ConfirmDialog(
                 stringResource(Res.string.settings_sign_out_title), stringResource(Res.string.settings_sign_out_text),
                 stringResource(Res.string.settings_sign_out), actions.busy,
-                // the upload failed: nothing was removed, and the user decides
-                onConfirm = { actions.onSignOut(false) { failed -> if (failed == AuthError.NETWORK) dialog = SettingsDialog.SIGN_OUT_UNSYNCED else after(failed) } },
-                onDismiss = close,
+                // the upload failed: nothing was removed, and the user decides (the view model opens the next dialog)
+                onConfirm = { actions.onSignOut(false) }, onDismiss = close, error = error,
             )
-            SettingsDialog.DELETE -> ConfirmDialog(
-                stringResource(Res.string.settings_delete_title), stringResource(Res.string.settings_delete_text),
-                stringResource(Res.string.settings_delete_confirm), actions.busy,
-                onConfirm = { actions.onDeleteAccount(after) }, onDismiss = close,
+            SettingsDialog.DELETE -> DeleteDialog(
+                // an account made with Google has no password: it proves itself by a fresh Google sign-in
+                withPassword = state.account?.hasPassword != false,
+                word = stringResource(Res.string.settings_delete_word),
+                busy = actions.busy, error = error,
+                onDelete = actions.onDeleteAccount, onGoogle = actions.onDeleteWithGoogle,
+                onClearError = actions.onClearError, onDismiss = close,
             )
-            SettingsDialog.EXPORTED -> InfoDialog(stringResource(Res.string.settings_export_done, exportedTo.orEmpty()), onDismiss = close)
             SettingsDialog.SIGN_OUT_UNSYNCED -> ConfirmDialog(
                 stringResource(Res.string.settings_sign_out_unsynced_title), stringResource(Res.string.settings_sign_out_unsynced_text),
                 stringResource(Res.string.settings_sign_out_anyway), actions.busy,
-                onConfirm = { actions.onSignOut(true, after) }, onDismiss = close,
+                onConfirm = { actions.onSignOut(true) }, onDismiss = close, error = error,
+            )
+            SettingsDialog.EXPORT -> ExportDialog(
+                onSave = { actions.onExport(false) }, onShare = { actions.onExport(true) }, onDismiss = close,
             )
             null -> Unit
         }
@@ -386,7 +433,8 @@ private fun Who(state: SettingsUiState) {
             contentColor = if (name != null) colors.onPrimaryContainer else colors.onSurfaceVariant,
         ) {
             Box(contentAlignment = Alignment.Center) {
-                if (name != null) Text(name.take(1).uppercase(), style = MaterialTheme.typography.titleLarge)
+                val initial = name?.firstOrNull { it.isLetter() }
+                if (initial != null) Text(initial.uppercase(), style = MaterialTheme.typography.titleLarge)
                 else Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(MaterialTheme.layout.iconSmall))
             }
         }
@@ -401,16 +449,14 @@ private fun Who(state: SettingsUiState) {
     }
 }
 
-/** The account's full name (the family name first in Hungarian), or the first name of the profile. */
+/** The full name (the family name first in Hungarian): the one saved on this phone, else the account's (from Google). */
 private fun fullName(state: SettingsUiState): String? {
-    val account = state.account
-    val parts = if (state.profile.uiLanguage == TeachingLanguage.HU) listOf(account?.lastName, account?.firstName) else listOf(account?.firstName, account?.lastName)
-    val full = parts.filterNot { it.isNullOrBlank() }.joinToString(" ").ifBlank { null }
-    // the names saved on this phone (sign-up, the settings) come first, then the account's from Google
-    val profile = state.profile
-    val local = (if (profile.uiLanguage == TeachingLanguage.HU) listOf(profile.lastName, profile.firstName) else listOf(profile.firstName, profile.lastName))
-        .filterNot { it.isNullOrBlank() }.joinToString(" ").ifBlank { null }
-    return local ?: full
+    fun join(last: String?, first: String?): String? {
+        val parts = if (state.profile.uiLanguage == TeachingLanguage.HU) listOf(last, first) else listOf(first, last)
+        return parts.filterNot { it.isNullOrBlank() }.joinToString(" ").ifBlank { null }
+    }
+    // the names saved on this phone (sign-up, the settings) come first; the account's only when there are none
+    return join(state.profile.lastName, state.profile.firstName) ?: join(state.account?.lastName, state.account?.firstName)
 }
 
 @Composable
@@ -423,7 +469,7 @@ private fun Account(state: SettingsUiState, actions: SettingsActions, onName: ()
             // the name and the password need the account on the server; without a session they only show
             val signedIn = state.account != null
             AppSettingsRow(Icons.Rounded.Person, stringResource(Res.string.settings_name), fullName(state), onClick = onName.takeIf { signedIn }, divider = false)
-            state.account?.email?.let { AppSettingsRow(Icons.Rounded.Email, stringResource(Res.string.settings_email), it, onClick = null) }
+            state.account?.email?.let { AppSettingsRow(Icons.Rounded.Email, stringResource(Res.string.settings_email), stringResource(Res.string.settings_email_fixed, it), onClick = null) }
             // an account made with Google has no password
             if (state.account?.hasPassword == true) {
                 AppSettingsRow(Icons.Rounded.Key, stringResource(Res.string.settings_password), stringResource(Res.string.settings_password_hint), onClick = onPassword)
@@ -483,7 +529,7 @@ private fun Data(state: SettingsUiState, onSync: () -> Unit, onUpdateContent: ()
         // a guest has nothing to sync
         if (!state.isGuest) {
             AppSettingsRow(
-                Icons.Rounded.Sync, stringResource(Res.string.settings_sync), syncValue(state.sync),
+                Icons.Rounded.Sync, stringResource(Res.string.settings_sync), syncValue(state.sync, state.today),
                 onClick = onSync, trailing = SettingsTrailing.None, divider = true,
             )
         }
@@ -516,7 +562,7 @@ private fun contentValue(content: ContentUpdateState): String {
 
 /** The line under "Szinkronizálás": running, the error, the rounds waiting, or when it last went through. */
 @Composable
-private fun syncValue(sync: SyncState): String = when {
+private fun syncValue(sync: SyncState, today: LocalDate?): String = when {
     sync.running -> stringResource(Res.string.settings_sync_running)
     sync.lastError != null -> stringResource(Res.string.settings_sync_error)
     sync.pendingRounds > 0 -> pluralStringResource(Res.plurals.settings_sync_waiting_rounds, sync.pendingRounds, sync.pendingRounds)
@@ -525,7 +571,7 @@ private fun syncValue(sync: SyncState): String = when {
         val zone = TimeZone.currentSystemDefault()
         val last = Instant.fromEpochMilliseconds(sync.lastSuccessAt).toLocalDateTime(zone)
         val time = "${last.hour.toString().padStart(2, '0')}:${last.minute.toString().padStart(2, '0')}"
-        if (last.date == Clock.System.now().toLocalDateTime(zone).date) stringResource(Res.string.settings_sync_today, time)
+        if (last.date == today) stringResource(Res.string.settings_sync_today, time)
         else stringResource(Res.string.settings_sync_date, "${last.date}")
     }
 }
@@ -551,7 +597,7 @@ private fun LanguageDialog(current: TeachingLanguage?, onChoose: (TeachingLangua
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2)) {
                 TeachingLanguage.entries.forEach { language ->
-                    AppChoiceCard(title = languageName(language), description = "", selected = language == current, onClick = { onChoose(language) })
+                    AppChoiceCard(badge = language.name, title = languageName(language), description = "", selected = language == current, onClick = { onChoose(language) })
                 }
             }
         },

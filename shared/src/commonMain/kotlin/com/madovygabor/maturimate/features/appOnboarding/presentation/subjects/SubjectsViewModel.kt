@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
-import com.madovygabor.maturimate.features.learning.domain.ContentRepository
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
 import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
@@ -28,8 +27,6 @@ data class SubjectItem(
     val selected: Boolean,
     /** Compulsory for a student: preselected and cannot be removed. */
     val locked: Boolean,
-    /** The installed content has this subject; "Hamarosan" otherwise. */
-    val ready: Boolean,
     /** English shown once, with the level question; the level decides which English subject is saved. */
     val asksLevel: Boolean = false,
 )
@@ -53,7 +50,6 @@ data class SubjectsUiState(
  */
 class SubjectsViewModel(
     private val repository: UserProfileRepository,
-    private val contentRepository: ContentRepository,
     private val snackbarController: SnackbarController,
 ) : ViewModel() {
 
@@ -63,10 +59,6 @@ class SubjectsViewModel(
     init {
         viewModelScope.launch {
             val profile = readOrNull { repository.profile.first() }
-            val readyCodes = when (val subjects = contentRepository.subjects()) {
-                is OperationResult.Success -> subjects.data.map { it.code }.toSet()
-                is OperationResult.Error -> emptySet()
-            }
             val role = profile?.role
             val saved = profile?.subjects.orEmpty().mapNotNull { CatalogSubject.byId(it.subjectId) }
             val offered = CatalogSubject.offeredTo(role, profile?.teachingLanguage)
@@ -81,7 +73,6 @@ class SubjectsViewModel(
                     // nothing saved yet: a student starts with the compulsory subjects
                     selected = locked || isSaved,
                     locked = locked,
-                    ready = subject.code in readyCodes,
                     asksLevel = asksLevel,
                 )
             }

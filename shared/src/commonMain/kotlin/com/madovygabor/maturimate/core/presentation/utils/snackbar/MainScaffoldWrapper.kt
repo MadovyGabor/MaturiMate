@@ -8,11 +8,30 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+
+/**
+ * The height of the bottom navigation bar that the snackbar has to clear. The main frame sets it while its bar is on
+ * screen; it is zero everywhere else (the onboarding, a lesson, the wide layout with a side rail).
+ */
+@Stable
+class BottomBarHeight {
+    var value: Dp by mutableStateOf(0.dp)
+}
+
+/** The [BottomBarHeight] of the app: provided by [MainScaffoldWrapper], set by the main frame. */
+val LocalBottomBarHeight = compositionLocalOf { BottomBarHeight() }
 
 /**
  * A root-level wrapper that provides a global [Scaffold] with [SnackbarHost] support.
@@ -39,13 +58,17 @@ fun MainScaffoldWrapper(content: @Composable (PaddingValues) -> Unit) {
         }
     }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                // Adjusting bottom padding to ensure it doesn't overlap with bottom bars
-                modifier = Modifier.padding(bottom = 75.dp),
-            ) },
-        content = content
-    )
+    val bottomBar = remember { BottomBarHeight() }
+    CompositionLocalProvider(LocalBottomBarHeight provides bottomBar) {
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    // above the bottom bar of the main frame, if it is on screen
+                    modifier = Modifier.padding(bottom = bottomBar.value),
+                )
+            },
+            content = content
+        )
+    }
 }

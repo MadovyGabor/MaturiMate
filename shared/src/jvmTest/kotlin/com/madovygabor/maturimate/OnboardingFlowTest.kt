@@ -49,6 +49,7 @@ import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.account_browse
+import maturimate.shared.generated.resources.common_back
 import maturimate.shared.generated.resources.common_next
 import maturimate.shared.generated.resources.date_title
 import maturimate.shared.generated.resources.goal_title
@@ -56,7 +57,6 @@ import maturimate.shared.generated.resources.language_hu_desc
 import maturimate.shared.generated.resources.language_title
 import maturimate.shared.generated.resources.level_unknown
 import maturimate.shared.generated.resources.plan_title
-import maturimate.shared.generated.resources.reminder_not_now
 import maturimate.shared.generated.resources.role_learner
 import maturimate.shared.generated.resources.role_student
 import maturimate.shared.generated.resources.role_title
@@ -110,14 +110,15 @@ class OnboardingFlowTest {
     /** The settings' account changes; the flow does not use them. */
     private object NoSettings : AccountSettings {
         override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
-        override suspend fun changePassword(oldPassword: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun sendPasswordCode(): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun changePassword(oldPassword: String, code: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun signOut(force: Boolean): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
     }
 
     private object NoSetup : AccountSetup {
         override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> =
             OperationResult.Success(Unit)
-        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(false, null))
+        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(false, null, isSetUp = false))
     }
 
     // the subject list and the subjects tab read the subjects and their root topics; every other call fails
@@ -168,14 +169,20 @@ class OnboardingFlowTest {
 
     private fun text(key: StringResource) = runBlocking { getString(key) }
 
-    private fun ComposeUiTest.click(key: StringResource) = onNodeWithText(text(key)).performClick()
+    // A button of a question is disabled until its saved answer is read (on the database's thread): a click right after the
+    // title appears would do nothing, and the flow would wait for the next screen for ever
+    private fun ComposeUiTest.click(key: StringResource) {
+        val enabled = androidx.compose.ui.test.hasText(text(key)) and androidx.compose.ui.test.isEnabled()
+        waitUntil(timeoutMillis = 5_000) { onAllNodes(enabled).fetchSemanticsNodes().isNotEmpty() }
+        onNode(enabled).performClick()
+    }
 
     private fun ComposeUiTest.waitFor(key: StringResource) = waitUntil(timeoutMillis = 5_000) {
         onAllNodes(androidx.compose.ui.test.hasText(text(key))).fetchSemanticsNodes().isNotEmpty()
     }
 
-    /** From the welcome screen to the home screen as a Hungarian student who looks around as a guest. */
-    private fun ComposeUiTest.goThroughAsStudent() {
+    /** From the welcome screen to the last step (the account) as a Hungarian student. */
+    private fun ComposeUiTest.goToAccountStep() {
         waitFor(Res.string.welcome_start)
         click(Res.string.welcome_start)
         waitFor(Res.string.language_title)
@@ -197,11 +204,15 @@ class OnboardingFlowTest {
         click(Res.string.common_next)
         waitFor(Res.string.goal_title)
         click(Res.string.common_next)
-        waitFor(Res.string.reminder_not_now)
-        click(Res.string.reminder_not_now)
+        // the desktop app has no reminder: the goal is followed by the plan, and nothing saves a reminder
         waitFor(Res.string.plan_title)
         click(Res.string.common_next)
         waitFor(Res.string.account_title)
+    }
+
+    /** From the welcome screen to the home screen as a Hungarian student who looks around as a guest. */
+    private fun ComposeUiTest.goThroughAsStudent() {
+        goToAccountStep()
         click(Res.string.account_browse)
 
         // the home screen
@@ -279,6 +290,35 @@ class OnboardingFlowTest {
         waitFor(Res.string.settings_app_language)
         assertEquals(UserRole.LEARNER, profile().role)
         assertEquals(0, onAllNodes(androidx.compose.ui.test.hasText(text(Res.string.onboarding_step_date))).fetchSemanticsNodes().size)
+    }
+
+    // #6: the back stack is kept over the rebuild; the new language continues with the role, then asks the subjects again
+    @Test
+    fun aLanguageChangeOnTheWayBackContinuesWithTheRoleAndAsksTheSubjectsAgain() = runDesktopComposeUiTest(412, 915) {
+        setContent { App() }
+        goToAccountStep()
+
+        // Back to the language question, six steps up (no reminder step on the desktop)
+        repeat(6) { onAllNodes(androidx.compose.ui.test.hasContentDescription(text(Res.string.common_back))).onFirst().performClick() }
+        waitFor(Res.string.language_title)
+        click(Res.string.language_sk_desc)
+        click(Res.string.common_next)
+
+        // the school's language changed: the screens are rebuilt in Slovak and the onboarding goes on with the role
+        Locale.setDefault(Locale.forLanguageTag("sk"))
+        waitFor(Res.string.role_title)
+        assertEquals(TeachingLanguage.SK, profile().teachingLanguage)
+        assertEquals(UserRole.STUDENT, profile().role)
+        assertTrue(profile().subjects.isEmpty())
+        click(Res.string.role_student)
+        click(Res.string.common_next)
+
+        // the subjects are asked again, none is selected
+        waitFor(Res.string.subjects_title_student)
+        assertTrue(profile().subjects.isEmpty())
+        click(Res.string.level_unknown)
+        click(Res.string.common_next)
+        waitFor(Res.string.date_title)
     }
 
     @Test

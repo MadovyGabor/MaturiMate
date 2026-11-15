@@ -6,7 +6,7 @@ import org.koin.dsl.KoinAppDeclaration
 
 /**
  * Entry point for Koin initialization.
- * Returns [KoinApplication] to allow manual dependency retrieval (useful for Desktop/Tests).
+ * Starts Koin with the shared and the platform modules; [config] adds the platform's own setup (the Android context, for example).
  */
 fun initKoin(config: KoinAppDeclaration? = null) {
     startKoin {

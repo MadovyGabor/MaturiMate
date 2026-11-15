@@ -221,6 +221,97 @@ class SyncEngineTest {
         assertEquals(2, repository.calls.size)
     }
 
+    // ---- card 11, S1-1: no call under another account's session ----
+
+    /** Signed in for the first [times] checks, then the session belongs to another account. */
+    private class SwitchingSession(private var times: Int) : SyncSession {
+        override suspend fun isSignedIn() = times-- > 0
+        override suspend fun deviceId() = "dev"
+    }
+
+    // A Google sign-in of another account (the deletion's proof) could put that account's session in place while a run was
+    // between two calls: the next call went out with the other account's token.
+    @Test
+    fun aSessionOfAnotherAccountBeforeTheCallSendsNothingAndAppliesNothing() = runBlocking {
+        val engine = SyncEngine(repository, store, SwitchingSession(times = 1), now = { 1_000 })
+
+        assertEquals(SyncOutcome.NotApplicable, engine.sync(SyncReason.OPENING))
+
+        assertTrue(repository.calls.isEmpty())
+        assertTrue(store.applied.isEmpty())
+        assertEquals(null, store.failed)
+    }
+
+    @Test
+    fun aSessionThatChangesDuringARunStopsItBeforeTheNextCallAndAppliesNothing() = runBlocking {
+        // two pages of rounds: the second call must not go out once the session is another account's
+        store.rounds = listOf(
+            PendingChanges(SyncChanges(), pushedUpTo = 100, moreRounds = true),
+            PendingChanges(SyncChanges(), pushedUpTo = 200, moreRounds = false),
+        )
+        // the run's own check, the check before the first call, then another account
+        val engine = SyncEngine(repository, store, SwitchingSession(times = 2), now = { 1_000 })
+
+        assertEquals(SyncOutcome.NotApplicable, engine.sync(SyncReason.OPENING))
+
+        assertEquals(1, repository.calls.size)
+        assertTrue(store.applied.isEmpty())
+        assertTrue(store.pushedPages.isEmpty())
+    }
+
+    @Test
+    fun anAnswerThatComesBackUnderAnotherSessionIsNotApplied() = runBlocking {
+        // the run's check and the check before the call pass; the session changes while the call is out
+        val engine = SyncEngine(repository, store, SwitchingSession(times = 2), now = { 1_000 })
+
+        assertEquals(SyncOutcome.NotApplicable, engine.sync(SyncReason.OPENING))
+
+        assertEquals(1, repository.calls.size)
+        assertTrue(store.applied.isEmpty())
+        assertEquals(null, store.state.cursor)
+    }
+
+    // Card 12 (S1-1 server part): the server refuses a call whose session is not the account the phone sent
+    @Test
+    fun aRefusalForAnotherAccountEndsTheRunLikeTheOwnCheck() = runBlocking {
+        repository.answers += err(SyncError.WRONG_ACCOUNT)
+
+        assertEquals(SyncOutcome.NotApplicable, engine.sync(SyncReason.OPENING))
+
+        assertEquals(1, repository.calls.size)
+        assertTrue(store.applied.isEmpty())
+        assertEquals(null, store.failed)
+        assertEquals(null, engine.state.value.lastError)
+        assertFalse(engine.state.value.running)
+    }
+
+    @Test
+    fun aSyncAskedForWhileHeldWaitsAndRunsAfterTheRelease() = runBlocking<Unit> {
+        engine.hold()
+
+        assertEquals(SyncOutcome.Queued, engine.sync(SyncReason.ROUND_END))
+        assertTrue(repository.calls.isEmpty())
+
+        engine.release()
+        assertEquals(1, repository.calls.size)
+        // nothing asked for during the hold: the release runs nothing
+        engine.hold()
+        engine.release()
+        assertEquals(1, repository.calls.size)
+    }
+
+    @Test
+    fun aForgottenHoldRunsOut() = runBlocking<Unit> {
+        val time = kotlin.time.TestTimeSource()
+        val engine = SyncEngine(repository, store, session, now = { 1_000 }, timeSource = time)
+        engine.hold()
+        assertEquals(SyncOutcome.Queued, engine.sync(SyncReason.ROUND_END))
+
+        time += SyncEngine.MAX_HOLD + kotlin.time.Duration.parse("1s")
+
+        assertIs<SyncOutcome.Done>(engine.sync(SyncReason.ROUND_END))
+    }
+
     @Test
     fun theStateShowsTheRoundsThatWaitForTheUpload() = runBlocking {
         store.pendingRoundsCount = 2 to 700L

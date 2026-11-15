@@ -18,6 +18,7 @@ import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUi
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.ExamDates
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -42,6 +43,10 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class DateTest {
 
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+
     private val defaultLocale: Locale = Locale.getDefault()
     private val today = LocalDate(2026, 10, 31)
 
@@ -54,7 +59,7 @@ class DateTest {
         val database = UserDatabase(
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
         )
-        return UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
+        return UserProfileRepositoryImpl(database, LocalUserProvider(database), dbDispatcher)
     }
 
     @Test

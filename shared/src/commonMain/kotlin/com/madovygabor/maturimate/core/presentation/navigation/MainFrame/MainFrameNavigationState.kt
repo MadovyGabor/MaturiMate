@@ -84,7 +84,12 @@ val serializersConfig = SavedStateConfiguration {
             subclass(Route.Main.Subject::class, Route.Main.Subject.serializer())
             subclass(Route.Main.Practice::class, Route.Main.Practice.serializer())
             subclass(Route.Main.Profile::class, Route.Main.Profile.serializer())
-
+            // the pages of the profile tab, for the saved `profilePage` of `App`
+            subclass(Route.Main.Profile.Overview::class, Route.Main.Profile.Overview.serializer())
+            subclass(Route.Main.Profile.History::class, Route.Main.Profile.History.serializer())
+            subclass(Route.Main.Profile.Settings::class, Route.Main.Profile.Settings.serializer())
+            subclass(Route.Main.Profile.SignUp::class, Route.Main.Profile.SignUp.serializer())
+            subclass(Route.Main.Profile.SignIn::class, Route.Main.Profile.SignIn.serializer())
         }
     }
 }

@@ -23,6 +23,10 @@ import kotlin.test.assertTrue
 
 class LocalUserProviderTest {
 
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+
     private val database = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY).also { UserDatabase.Schema.create(it) }
     )
@@ -46,7 +50,7 @@ class LocalUserProviderTest {
     @Test
     fun adoptingAnAccountMovesEveryGuestRow() = runBlocking {
         val provider = LocalUserProvider(database) { "guest-1" }
-        val profiles = UserProfileRepositoryImpl(database, provider, Dispatchers.Unconfined)
+        val profiles = UserProfileRepositoryImpl(database, provider, dbDispatcher)
         profiles.saveTeachingLanguage(TeachingLanguage.HU)
         profiles.saveRole(UserRole.STUDENT)
         profiles.saveSubjects(listOf(UserSubject(1, compulsory = true)))
@@ -95,7 +99,7 @@ class LocalUserProviderTest {
     @Test
     fun anotherAccountDoesNotGetThePreviousAccountsRows() = runBlocking {
         val provider = LocalUserProvider(database) { "guest-1" }
-        val profiles = UserProfileRepositoryImpl(database, provider, Dispatchers.Unconfined)
+        val profiles = UserProfileRepositoryImpl(database, provider, dbDispatcher)
         profiles.saveTeachingLanguage(TeachingLanguage.HU)
         provider.adoptAccount("account-a")
         database.activityQueries.addActivity("account-a", "2026-10-31", "device-1", 5, 3)
@@ -108,6 +112,22 @@ class LocalUserProviderTest {
         assertNull(database.profileQueries.selectProfile("account-a").executeAsOneOrNull())
         assertEquals(0, database.activityQueries.selectActivity("account-b", "2026-10-31", "2026-10-31").executeAsList().size)
         assertEquals(0, database.activityQueries.selectActivity("account-a", "2026-10-31", "2026-10-31").executeAsList().size)
+    }
+
+    // A switch to another account used to keep the old account's sync state, so the new account pulled from the old cursor.
+    @Test
+    fun anotherAccountStartsWithItsOwnSyncState() = runBlocking {
+        val provider = LocalUserProvider(database) { "guest-1" }
+        provider.adoptAccount("account-a")
+        database.syncQueries.markSynced(cursor = "cursor-of-a", at = 1_000, rejected = 0)
+
+        provider.adoptAccount("account-b")
+
+        val state = database.syncQueries.selectSyncState().executeAsOne()
+        assertEquals("account-b", state.user_id)
+        assertNull(state.pull_cursor)
+        assertNull(state.last_success_at)
+        assertTrue(state.full_push_pending)
     }
 
     // A save used to read the id before its transaction, so a sign-up moving the rows in between

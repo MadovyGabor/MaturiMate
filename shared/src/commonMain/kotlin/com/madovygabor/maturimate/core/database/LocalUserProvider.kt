@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlin.concurrent.Volatile
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -54,7 +55,9 @@ class LocalUserProvider(
 
     /** The current id, again after [adoptAccount]; it creates the guest id first if needed. */
     fun userIdFlow(dispatcher: CoroutineDispatcher): Flow<String> = flow {
-        userId()
+        // the first call writes the guest id: on the database's dispatcher, not on the collector's thread, where it could
+        // run at the same time as a save and fail with "cannot start a transaction within a transaction"
+        withContext(dispatcher) { userId() }
         emitAll(queries.selectLocalUser().asFlow().mapToOne(dispatcher).map { it.user_id })
     }.distinctUntilChanged()
 
@@ -74,7 +77,12 @@ class LocalUserProvider(
                 database.syncQueries.ensureSyncState(accountId)
                 database.syncQueries.setGuestMergePending(true)
             }
-            else -> queries.switchAccount(previousId = current, accountId = accountId)
+            else -> database.transaction {
+                queries.switchAccount(previousId = current, accountId = accountId)
+                // the old account's pull cursor would skip the new account's rows: its sync starts from the beginning
+                database.syncQueries.clearSyncState()
+                database.syncQueries.ensureSyncState(accountId)
+            }
         }
         cached = accountId
     }

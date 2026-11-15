@@ -35,8 +35,6 @@ sealed interface Route : NavKey {
         data object SignIn : Route // "Már van fiókom"
     }
     @Serializable
-    data class ExamWrite(val examId: String) : Route // Fullscreen exam writing screen
-    @Serializable
     data class Lesson(val unitId: Long) : Route // Fullscreen lesson, one page at a time
     @Serializable
     data class Test(val unitId: Long) : Route // Fullscreen test, one task at a time
@@ -76,7 +74,7 @@ sealed interface Route : NavKey {
             @Serializable
             data object History : Route // Every finished lesson and test, under day headings
             @Serializable
-            data object Answers : Route // The onboarding answers, until the settings screen (9.4)
+            data object Settings : Route // The settings: the onboarding answers, the account, the data
             @Serializable
             data object SignUp : Route // A guest creates an account, from the profile
             @Serializable

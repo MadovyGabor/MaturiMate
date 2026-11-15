@@ -18,7 +18,14 @@ import com.madovygabor.maturimate.features.auth.domain.AccountUser
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.AuthState
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.madovygabor.maturimate.core.database.LocalUserProvider
+import com.madovygabor.maturimate.core.database.foreignKeysOn
+import com.madovygabor.maturimate.database.user.UserDatabase
+import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
@@ -54,6 +61,7 @@ class SignInTest {
         val signInResult: OperationResult<Unit, AuthError> = OperationResult.Success(Unit),
         /** The answers to the new password, one per try; success once they are used up. */
         val passwordResults: MutableList<OperationResult<Unit, AuthError>> = mutableListOf(),
+        val resendResult: OperationResult<Unit, AuthError> = OperationResult.Success(Unit),
     ) : AuthRepository {
         var resent = false
         var signedOut = false
@@ -64,7 +72,7 @@ class SignInTest {
         override fun currentUser(): AccountUser? = null
         override suspend fun signUp(email: String, password: String) = ok
         override suspend fun confirmSignUp(email: String, code: String) = ok
-        override suspend fun resendSignUpCode(email: String) = ok.also { resent = true }
+        override suspend fun resendSignUpCode(email: String) = resendResult.also { resent = true }
         override suspend fun signIn(email: String, password: String) = signInResult
         override suspend fun signOut() = ok.also { signedOut = true }
         override suspend fun sendPasswordResetCode(email: String) = ok
@@ -78,14 +86,34 @@ class SignInTest {
     private class FakeSetup(val finished: Boolean, val profile: UserProfile? = null) : AccountSetup {
         override suspend fun completeSignUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> =
             OperationResult.Success(Unit)
-        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(finished, profile))
+        override suspend fun completeSignIn(): OperationResult<SignedInAccount, AuthError> = OperationResult.Success(SignedInAccount(finished, profile, isSetUp = finished))
+    }
+
+    private fun profiles(): UserProfileRepositoryImpl {
+        val database = UserDatabase(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) })
+        // the app's setup: one thread runs the database calls. With Unconfined the view model (on the main thread) and the
+        // test's save ran at the same time on one connection, and the read sometimes failed
+        return UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.IO.limitedParallelism(1))
+    }
+
+    // Decision 6: the screen warns only when this phone holds answers.
+    @Test
+    fun theStateTellsWhetherThisPhoneHoldsAnswers() = runBlocking {
+        val profiles = profiles()
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController(), profiles)
+        assertFalse(viewModel.state.value.hasLocalAnswers)
+
+        profiles.saveTeachingLanguage(TeachingLanguage.SK)
+
+        withTimeout(5_000) { viewModel.state.first { it.hasLocalAnswers } }
+        Unit
     }
 
     private suspend fun SignInViewModel.idle() = withTimeout(5_000) { state.first { !it.busy } }
 
     @Test
     fun signInLoadsTheAccountAndTellsWhetherItIsDone() = runBlocking {
-        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController())
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController(), profiles())
         viewModel.onEmailChanged("anna@example.com")
         viewModel.onPasswordChanged("Passw0rdA")
         val done = CompletableDeferred<Boolean>()
@@ -98,7 +126,7 @@ class SignInTest {
     @Test
     fun unconfirmedAccountAsksForTheCode() = runBlocking {
         val auth = FakeAuth(OperationResult.Error(AuthError.EMAIL_NOT_CONFIRMED))
-        val viewModel = SignInViewModel(auth, FakeSetup(finished = false), SnackbarController())
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = false), SnackbarController(), profiles())
         viewModel.onEmailChanged("anna@example.com")
         viewModel.onPasswordChanged("Passw0rdA")
 
@@ -112,10 +140,55 @@ class SignInTest {
         assertFalse(withTimeout(5_000) { done.await() })
     }
 
+    // The new code was asked for but its result was dropped: a refused e-mail (rate limit) went unnoticed.
+    @Test
+    fun aRefusedNewCodeIsShownAndTheCodeStepStays() = runBlocking {
+        val auth = FakeAuth(OperationResult.Error(AuthError.EMAIL_NOT_CONFIRMED), resendResult = OperationResult.Error(AuthError.TOO_MANY_REQUESTS))
+        val snackbar = SnackbarController()
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = false), snackbar, profiles())
+        viewModel.onEmailChanged("anna@example.com")
+        viewModel.onPasswordChanged("Passw0rdA")
+
+        viewModel.onSignIn { error("not signed in yet") }
+
+        assertEquals(AuthError.TOO_MANY_REQUESTS.toUiText(), withTimeout(5_000) { snackbar.events.first() }.message)
+        // a code sent a moment ago still works
+        assertEquals(SignInPhase.CONFIRM, viewModel.idle().phase)
+    }
+
+    // F6: while Google (the browser on desktop) is open the other buttons wait, and Google's answer is never dropped.
+    @Test
+    fun whileGoogleIsOpenTheOtherActionsWaitAndItsAnswerIsNeverDropped() = runBlocking {
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController(), profiles())
+        viewModel.onEmailChanged("anna@example.com")
+        viewModel.onPasswordChanged("Passw0rdA")
+
+        viewModel.onGoogle {}
+        assertTrue(viewModel.state.value.busy)
+        viewModel.onSignIn { error("the e-mail sign-in waits while Google is open") }
+        viewModel.onForgotPassword()
+        assertEquals(SignInPhase.FORM, viewModel.state.value.phase)
+
+        val done = CompletableDeferred<Boolean>()
+        viewModel.onGoogleSignedIn { done.complete(it.onboardingFinished) }
+        assertTrue(withTimeout(5_000) { done.await() })
+    }
+
+    @Test
+    fun aClosedOrFailedGoogleFreesTheButtons() {
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController(), profiles())
+        viewModel.onGoogle {}
+        viewModel.onGoogleClosed()
+        assertFalse(viewModel.state.value.busy)
+        viewModel.onGoogle {}
+        viewModel.onGoogleFailed(AuthError.UNKNOWN)
+        assertFalse(viewModel.state.value.busy)
+    }
+
     @Test
     fun forgottenPasswordIsResetWithTheCode() = runBlocking {
         val auth = FakeAuth()
-        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController())
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController(), profiles())
         viewModel.onForgotPassword()
         viewModel.onEmailChanged("anna@example.com")
         viewModel.onSendResetCode()
@@ -139,7 +212,7 @@ class SignInTest {
     @Test
     fun aRefusedNewPasswordCanBeRetriedWithoutANewCode() = runBlocking {
         val auth = FakeAuth(passwordResults = mutableListOf(OperationResult.Error(AuthError.SAME_PASSWORD)))
-        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController())
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController(), profiles())
         viewModel.onForgotPassword()
         viewModel.onEmailChanged("anna@example.com")
         viewModel.onSendResetCode()
@@ -162,7 +235,7 @@ class SignInTest {
     @Test
     fun leavingAfterAnAcceptedCodeSignsOutAgain() = runBlocking {
         val auth = FakeAuth(passwordResults = mutableListOf(OperationResult.Error(AuthError.NETWORK)))
-        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController())
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = true), SnackbarController(), profiles())
         viewModel.onForgotPassword()
         viewModel.onEmailChanged("anna@example.com")
         viewModel.onSendResetCode()
@@ -189,7 +262,7 @@ class SignInTest {
             timezone = "Europe/Bratislava",
             onboardingCompletedAt = null,
         )
-        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = false, profile = answers), SnackbarController())
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = false, profile = answers), SnackbarController(), profiles())
         viewModel.onEmailChanged("anna@example.com")
         viewModel.onPasswordChanged("Passw0rdA")
         val account = CompletableDeferred<SignedInAccount>()
@@ -201,7 +274,7 @@ class SignInTest {
 
     @Test
     fun backReturnsToTheFormBeforeLeaving() {
-        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController())
+        val viewModel = SignInViewModel(FakeAuth(), FakeSetup(finished = true), SnackbarController(), profiles())
         viewModel.onForgotPassword()
 
         assertTrue(viewModel.onBack())

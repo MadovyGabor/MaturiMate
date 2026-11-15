@@ -12,7 +12,11 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,6 +74,56 @@ class AppViewModelTest {
             repository.saveTeachingLanguage(TeachingLanguage.HU)
             assertEquals(TeachingLanguage.HU, viewModel.awaitState { it.language != null }.language, "run $it")
         }
+    }
+
+    // Decision 11: a new local user (an in-app sign-in adopts the account's id) is a change of the state
+    @Test
+    fun theUserIdIsPartOfTheState() = runBlocking {
+        val userId = MutableStateFlow("guest-1")
+        val viewModel = AppViewModel(repository, userId = userId)
+
+        assertEquals("guest-1", viewModel.awaitState { true }.userId)
+
+        userId.value = "account-7"
+        assertEquals("account-7", viewModel.awaitState { it.userId == "account-7" }.userId)
+    }
+
+    @Test
+    fun withoutAUserIdFlowTheUserIdIsNull() = runBlocking {
+        assertNull(AppViewModel(repository).awaitState { true }.userId)
+    }
+
+    // runCatching caught the CancellationException too: the cancelled job then looked as if it had finished
+    @Test
+    fun aCancelledRevokeStaysCancelled() = runBlocking {
+        val job = CompletableDeferred<Job>()
+        val viewModel = AppViewModel(repository, sessionRevoker = {
+            job.complete(currentCoroutineContext()[Job]!!)
+            throw CancellationException("cancelled")
+        })
+
+        viewModel.onForeground()
+
+        val revoking = withTimeout(5_000) { job.await() }
+        revoking.join()
+        assertEquals(true, revoking.isCancelled)
+    }
+
+    @Test
+    fun aRevokeThatFailsDoesNotStopTheApp() = runBlocking {
+        val job = CompletableDeferred<Job>()
+        val viewModel = AppViewModel(repository, sessionRevoker = {
+            job.complete(currentCoroutineContext()[Job]!!)
+            error("no network")
+        })
+
+        viewModel.onForeground()
+
+        val revoking = withTimeout(5_000) { job.await() }
+        revoking.join()
+        assertEquals(false, revoking.isCancelled)
+        // the state still follows the profile
+        assertEquals(AppState(language = null, onboardingCompleted = false), viewModel.awaitState { true })
     }
 
     @Test

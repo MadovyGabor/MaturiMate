@@ -8,7 +8,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.text.input.KeyboardType
+import com.madovygabor.maturimate.core.presentation.locale.LocalAppLocale
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppCheckboxRow
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppDividerWithText
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
@@ -28,7 +32,7 @@ import maturimate.shared.generated.resources.account_create
 import maturimate.shared.generated.resources.account_email
 import maturimate.shared.generated.resources.account_first_name
 import maturimate.shared.generated.resources.account_google
-import maturimate.shared.generated.resources.account_google_signed
+import maturimate.shared.generated.resources.account_signed_in_as
 import maturimate.shared.generated.resources.account_last_name
 import maturimate.shared.generated.resources.account_news
 import maturimate.shared.generated.resources.account_or_email
@@ -36,7 +40,10 @@ import maturimate.shared.generated.resources.account_password_hint
 import maturimate.shared.generated.resources.account_title
 import maturimate.shared.generated.resources.account_why
 import maturimate.shared.generated.resources.code_confirm
-import maturimate.shared.generated.resources.code_label
+import maturimate.shared.generated.resources.signup_app_code_sent
+import maturimate.shared.generated.resources.signup_app_code_title
+import maturimate.shared.generated.resources.signup_app_title
+import maturimate.shared.generated.resources.signup_app_why
 import maturimate.shared.generated.resources.code_resend
 import maturimate.shared.generated.resources.code_sent
 import maturimate.shared.generated.resources.code_title
@@ -60,7 +67,7 @@ fun AccountScreen(
 ) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.done) { if (state.done) onDone() }
-    val google = rememberGoogleSignIn(onSignedIn = viewModel::onGoogleSignedIn, onError = viewModel::onGoogleFailed)
+    val google = rememberGoogleSignIn(onSignedIn = viewModel::onGoogleSignedIn, onError = viewModel::onGoogleFailed, onClosed = viewModel::onGoogleClosed)
     AccountContent(
         state = state,
         role = role,
@@ -104,7 +111,8 @@ fun AccountContent(state: AccountUiState, role: UserRole?, actions: AccountActio
 
 @Composable
 private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountActions, inApp: Boolean) {
-    val create = OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = !state.busy)
+    val create = OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = !state.busy, loading = state.busy)
+    val idle = !state.busy
     OnboardingScaffold(
         // in the app the guest has looked around already: no "Körülnézek", and a plain back arrow instead of the steps
         actions = if (inApp) listOf(create)
@@ -113,10 +121,10 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
         progress = if (inApp) null else OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBack),
         onBack = if (inApp) actions.onBack else null,
     ) {
-        Text(stringResource(Res.string.account_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.account_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (state.googleEmail != null) {
-            Text(stringResource(Res.string.account_google_signed, state.googleEmail), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground)
+        Text(stringResource(if (inApp) Res.string.signup_app_title else Res.string.account_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+        Text(stringResource(if (inApp) Res.string.signup_app_why else Res.string.account_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (state.signedInEmail != null) {
+            Text(stringResource(Res.string.account_signed_in_as, state.signedInEmail), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground)
         } else {
             // Google comes first; the name and the consent follow on this screen
             AppButton(
@@ -124,29 +132,32 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
                 onClick = actions.onGoogle,
                 modifier = Modifier.fillMaxWidth(),
                 variant = AppButtonVariant.OUTLINED,
-                enabled = !state.busy,
+                enabled = idle,
             )
-            DividerWithText(stringResource(Res.string.account_or_email))
+            AppDividerWithText(stringResource(Res.string.account_or_email))
         }
-        AppTextField(
-            value = state.lastName,
-            onValueChange = { actions.onChanged(AccountField.LAST_NAME, it) },
-            label = stringResource(Res.string.account_last_name),
-            error = state.errors[AccountField.LAST_NAME]?.text(AccountField.LAST_NAME),
-        )
-        AppTextField(
-            value = state.firstName,
-            onValueChange = { actions.onChanged(AccountField.FIRST_NAME, it) },
-            label = stringResource(Res.string.account_first_name),
-            error = state.errors[AccountField.FIRST_NAME]?.text(AccountField.FIRST_NAME),
-        )
-        if (state.googleEmail == null) {
+        // the family name comes first in Hungarian, the first name in Slovak
+        val nameFields = listOf(AccountField.LAST_NAME, AccountField.FIRST_NAME).let { if (hungarianOrder()) it else it.reversed() }
+        for (field in nameFields) {
+            val last = field == AccountField.LAST_NAME
+            AppTextField(
+                value = if (last) state.lastName else state.firstName,
+                onValueChange = { actions.onChanged(field, it) },
+                label = stringResource(if (last) Res.string.account_last_name else Res.string.account_first_name),
+                error = state.errors[field]?.text(field),
+                enabled = idle,
+                contentType = if (last) ContentType.PersonLastName else ContentType.PersonFirstName,
+            )
+        }
+        if (state.signedInEmail == null) {
             AppTextField(
                 value = state.email,
                 onValueChange = { actions.onChanged(AccountField.EMAIL, it) },
                 label = stringResource(Res.string.account_email),
                 error = state.errors[AccountField.EMAIL]?.text(AccountField.EMAIL),
                 keyboardType = KeyboardType.Email,
+                enabled = idle,
+                contentType = ContentType.EmailAddress,
             )
             AppTextField(
                 value = state.password,
@@ -155,13 +166,15 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
                 helper = stringResource(Res.string.account_password_hint),
                 error = state.errors[AccountField.PASSWORD]?.text(AccountField.PASSWORD),
                 password = true,
+                enabled = idle,
+                contentType = ContentType.NewPassword,
             )
         }
-        CheckRow(
-            stringResource(Res.string.account_consent), state.consent, actions.onConsentChanged,
+        AppCheckboxRow(
+            stringResource(Res.string.account_consent), state.consent, actions.onConsentChanged, enabled = idle,
             error = stringResource(Res.string.account_consent_required).takeIf { state.consentMissing },
         )
-        CheckRow(stringResource(Res.string.account_news), state.news, actions.onNewsChanged)
+        AppCheckboxRow(stringResource(Res.string.account_news), state.news, actions.onNewsChanged, enabled = idle)
     }
 }
 
@@ -170,24 +183,27 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
 private fun CodeStep(state: AccountUiState, email: String, role: UserRole?, actions: AccountActions, inApp: Boolean) {
     OnboardingScaffold(
         actions = listOf(
-            OnboardingAction(stringResource(Res.string.code_confirm), actions.onConfirmCode, enabled = !state.busy),
+            OnboardingAction(stringResource(Res.string.code_confirm), actions.onConfirmCode, enabled = !state.busy, loading = state.busy),
             OnboardingAction(stringResource(Res.string.code_resend), actions.onResendCode, AppButtonVariant.TEXT, enabled = !state.busy),
         ),
         stackedActions = true,
         progress = if (inApp) null else OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBackToForm),
         onBack = if (inApp) actions.onBackToForm else null,
     ) {
-        Text(stringResource(Res.string.code_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(Res.string.code_sent, email), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        AppTextField(
-            value = state.code,
-            onValueChange = actions.onCodeChanged,
-            label = stringResource(Res.string.code_label),
+        CodeStepContent(
+            title = stringResource(if (inApp) Res.string.signup_app_code_title else Res.string.code_title),
+            sent = stringResource(if (inApp) Res.string.signup_app_code_sent else Res.string.code_sent, email),
+            code = state.code,
             error = state.codeError?.text(null),
-            keyboardType = KeyboardType.NumberPassword,
+            enabled = !state.busy,
+            onCodeChanged = actions.onCodeChanged,
         )
     }
 }
+
+/** True when the app language puts the family name first (Hungarian); Slovak puts the first name first. */
+@Composable
+internal fun hungarianOrder(): Boolean = LocalAppLocale.current.startsWith("hu", ignoreCase = true)
 
 @Composable
 @Preview

@@ -11,6 +11,12 @@ data class SignedInAccount(
     val onboardingFinished: Boolean,
     /** The answers on this phone after the sign-in, to continue the onboarding from. */
     val profile: UserProfile?,
+    /**
+     * The account finished its sign-up: the onboarding end AND an active TERMS consent (the rule of
+     * [RemoteProfile.isSetUp] and of the server's guard). A finished profile without TERMS (pushed by a sync before
+     * `save_sign_up` went through) is not set up: it still needs the account form and its consents.
+     */
+    val isSetUp: Boolean,
 )
 
 /** What happens on this phone and on the server after a sign-up or a sign-in. */

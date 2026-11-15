@@ -85,11 +85,12 @@ class RoleScreenTest {
             }
         }
 
-        onNodeWithText(stepLabel(2, 8)).assertExists()
-        onNodeWithText(text(Res.string.role_learner)).performClick()
+        // the JVM is the desktop: no reminder step, so one step less than on a phone (8, 7, 6)
         onNodeWithText(stepLabel(2, 7)).assertExists()
-        onNodeWithText(text(Res.string.role_teacher)).performClick()
+        onNodeWithText(text(Res.string.role_learner)).performClick()
         onNodeWithText(stepLabel(2, 6)).assertExists()
+        onNodeWithText(text(Res.string.role_teacher)).performClick()
+        onNodeWithText(stepLabel(2, 5)).assertExists()
     }
 
     /** Pictures at phone, tablet and desktop size, both themes and languages, into build/screenshots/role. */

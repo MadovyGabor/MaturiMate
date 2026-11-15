@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.reminder
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -7,6 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.madovygabor.maturimate.MainActivity
@@ -19,6 +21,10 @@ import com.madovygabor.maturimate.features.reminder.domain.ReminderScheduler
 import com.madovygabor.maturimate.features.userProfile.domain.ExamCalendar
 import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
 import com.madovygabor.maturimate.features.reminder.domain.chooseReminder
+import com.madovygabor.maturimate.features.reminder.domain.handleReminderAlarm
+import com.madovygabor.maturimate.features.reminder.domain.publicReminderMessage
+import com.madovygabor.maturimate.features.reminder.domain.reminderLanguageTag
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +33,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -48,28 +55,36 @@ class ReminderReceiver : BroadcastReceiver(), KoinComponent {
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                val profile = get<UserProfileRepository>().profile.first() ?: return@launch
-                val time = profile.reminderTime
-                if (!profile.reminderEnabled || time == null) return@launch
-                val tracker = get<StudyTracker>()
-                val reached = (tracker.today() as? OperationResult.Success)?.data?.reached == true
-                if (!reached) {
-                    val streak = (tracker.currentStreak() as? OperationResult.Success)?.data ?: 0
-                    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-                    val message = chooseReminder(
-                        streak = streak,
-                        hadStreak = tracker.hadStreak(),
-                        // the official date when it replaces the rule's (the same calendar as the home screen)
-                        daysToExam = ExamCalendar(get<ExamDateRepository>().dates.first()).effectiveDate(profile.graduationDate)?.let { today.daysUntil(it) },
-                        dayNumber = today.toEpochDays(),
-                    )
-                    show(context, profile.uiLanguage, message)
-                }
-                get<ReminderScheduler>().schedule(time)
+                var profile: UserProfile? = null
+                handleReminderAlarm(
+                    scheduler = get<ReminderScheduler>(),
+                    fallbackTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time,
+                    readTime = {
+                        profile = get<UserProfileRepository>().profile.first()
+                        profile?.takeIf { it.reminderEnabled }?.reminderTime
+                    },
+                    show = { profile?.let { showIfDue(context, it) } },
+                )
             } finally {
                 pending.finish()
             }
         }
+    }
+
+    /** Shows the notification unless the day's goal is already reached. */
+    private suspend fun showIfDue(context: Context, profile: UserProfile) {
+        val tracker = get<StudyTracker>()
+        if ((tracker.today() as? OperationResult.Success)?.data?.reached == true) return
+        val streak = (tracker.currentStreak() as? OperationResult.Success)?.data ?: 0
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val message = chooseReminder(
+            streak = streak,
+            hadStreak = tracker.hadStreak(),
+            // the official date when it replaces the rule's (the same calendar as the home screen)
+            daysToExam = ExamCalendar(get<ExamDateRepository>().dates.first()).effectiveDate(profile.graduationDate)?.let { today.daysUntil(it) },
+            dayNumber = today.toEpochDays(),
+        )
+        show(context, profile.uiLanguage, message)
     }
 
     /** The text of the message: the kind and the variant pick the resource, the number fills it in. */
@@ -93,24 +108,34 @@ class ReminderReceiver : BroadcastReceiver(), KoinComponent {
     }
 
     private fun show(context: Context, language: TeachingLanguage, message: ReminderMessage) {
-        // the text follows the language of the app, not the one of the phone
+        // the text follows the language of the app (its per-app language, else the profile's), not the one of the phone
         val configuration = Configuration(context.resources.configuration)
-        configuration.setLocale(Locale.forLanguageTag(if (language == TeachingLanguage.HU) "hu" else "sk"))
+        val appLocale = AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.toLanguageTag() }
+        configuration.setLocale(Locale.forLanguageTag(reminderLanguageTag(appLocale, language)))
         val texts = context.createConfigurationContext(configuration)
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, texts.getString(R.string.reminder_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { lockscreenVisibility = Notification.VISIBILITY_PRIVATE }
         )
         val open = PendingIntent.getActivity(
             context, 0,
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+        // on the lock screen only the name and a neutral line: no streak, no days to the exam
+        val publicVersion = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(texts.getString(R.string.app_name))
+            .setContentText(text(texts, publicReminderMessage()))
+            .build()
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(texts.getString(R.string.app_name))
             .setContentText(text(texts, message))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicVersion)
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()

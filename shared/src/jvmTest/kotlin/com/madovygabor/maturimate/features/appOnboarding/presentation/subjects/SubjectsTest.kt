@@ -20,10 +20,6 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.database.user.UserDatabase
-import com.madovygabor.maturimate.features.learning.domain.ContentRepository
-import com.madovygabor.maturimate.features.learning.domain.LearningError
-import com.madovygabor.maturimate.features.learning.domain.model.Subject
-import com.madovygabor.maturimate.features.learning.domain.model.Track
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
@@ -31,6 +27,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -55,6 +52,10 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class SubjectsTest {
 
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+
     private val defaultLocale: Locale = Locale.getDefault()
 
     @AfterTest
@@ -62,17 +63,11 @@ class SubjectsTest {
 
     private fun text(key: StringResource) = runBlocking { getString(key) }
 
-    /** Content with only the Hungarian subject installed, like the starter pack. */
-    private val content = object : ContentRepository by unsupported() {
-        override suspend fun subjects(): OperationResult<List<Subject>, LearningError> =
-            OperationResult.Success(listOf(Subject(1, "HU_MJL", "Magyar", "Maďarčina", Track.HU, null)))
-    }
-
     private fun repository(): UserProfileRepositoryImpl {
         val database = UserDatabase(
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
         )
-        return UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.Unconfined)
+        return UserProfileRepositoryImpl(database, LocalUserProvider(database), dbDispatcher)
     }
 
     private suspend fun SubjectsViewModel.loaded() = withTimeout(5_000) { state.first { it.items.isNotEmpty() } }
@@ -83,14 +78,12 @@ class SubjectsTest {
         repository.saveTeachingLanguage(TeachingLanguage.HU)
         repository.saveRole(UserRole.STUDENT)
 
-        val state = SubjectsViewModel(repository, content, SnackbarController()).loaded()
+        val state = SubjectsViewModel(repository, SnackbarController()).loaded()
 
         assertEquals(listOf(CatalogSubject.HUNGARIAN, CatalogSubject.SLOVAK_HU, CatalogSubject.ENGLISH_B1, CatalogSubject.MATHEMATICS), state.items.map { it.subject })
         assertEquals(listOf(false, false, true, false), state.items.map { it.asksLevel })
         assertEquals(listOf(true, true, true, false), state.items.map { it.selected })
         assertEquals(listOf(true, true, true, false), state.items.map { it.locked })
-        // only the Hungarian subject has content
-        assertEquals(listOf(true, false, false, false), state.items.map { it.ready })
         // English is chosen, so the level is needed first
         assertFalse(state.canContinue)
     }
@@ -101,7 +94,7 @@ class SubjectsTest {
         repository.saveTeachingLanguage(TeachingLanguage.SK)
         repository.saveRole(UserRole.STUDENT)
 
-        val state = SubjectsViewModel(repository, content, SnackbarController()).loaded()
+        val state = SubjectsViewModel(repository, SnackbarController()).loaded()
 
         assertEquals(listOf(CatalogSubject.SLOVAK, CatalogSubject.ENGLISH_B1, CatalogSubject.MATHEMATICS), state.items.map { it.subject })
     }
@@ -111,7 +104,7 @@ class SubjectsTest {
         val repository = repository()
         repository.saveTeachingLanguage(TeachingLanguage.HU)
         repository.saveRole(UserRole.TEACHER)
-        val viewModel = SubjectsViewModel(repository, content, SnackbarController())
+        val viewModel = SubjectsViewModel(repository, SnackbarController())
 
         val loaded = viewModel.loaded()
         assertTrue(loaded.items.none { it.selected || it.locked || it.asksLevel })
@@ -140,7 +133,7 @@ class SubjectsTest {
         val repository = repository()
         repository.saveTeachingLanguage(TeachingLanguage.HU)
         repository.saveRole(UserRole.LEARNER)
-        val viewModel = SubjectsViewModel(repository, content, SnackbarController())
+        val viewModel = SubjectsViewModel(repository, SnackbarController())
         viewModel.loaded()
 
         viewModel.onToggled(CatalogSubject.ENGLISH_B1)
@@ -158,7 +151,7 @@ class SubjectsTest {
         val repository = repository()
         repository.saveTeachingLanguage(TeachingLanguage.SK)
         repository.saveRole(UserRole.STUDENT)
-        val viewModel = SubjectsViewModel(repository, content, SnackbarController())
+        val viewModel = SubjectsViewModel(repository, SnackbarController())
         viewModel.loaded()
 
         viewModel.onToggled(CatalogSubject.SLOVAK)
@@ -173,7 +166,7 @@ class SubjectsTest {
         repository.saveRole(UserRole.LEARNER)
         repository.saveSubjects(listOf(UserSubject(6, compulsory = false)))
 
-        val state = SubjectsViewModel(repository, content, SnackbarController()).loaded()
+        val state = SubjectsViewModel(repository, SnackbarController()).loaded()
 
         assertEquals(listOf(CatalogSubject.ENGLISH_B1), state.items.filter { it.selected }.map { it.subject })
         assertEquals(LevelChoice.B2, state.level)
@@ -186,7 +179,7 @@ class SubjectsTest {
             SubjectsUiState(
                 role = UserRole.LEARNER,
                 items = (CatalogSubject.forLanguage(TeachingLanguage.HU) - CatalogSubject.ENGLISH_B2).map {
-                    SubjectItem(it, false, false, true, asksLevel = it.level != null)
+                    SubjectItem(it, false, false, asksLevel = it.level != null)
                 },
             )
         )
@@ -221,7 +214,7 @@ class SubjectsTest {
         val state = SubjectsUiState(
             role = UserRole.STUDENT,
             items = (CatalogSubject.forLanguage(TeachingLanguage.HU) - CatalogSubject.ENGLISH_B2).map {
-                SubjectItem(it, it.compulsory, it.compulsory, it == CatalogSubject.HUNGARIAN, asksLevel = it.level != null)
+                SubjectItem(it, it.compulsory, it.compulsory, asksLevel = it.level != null)
             },
             level = LevelChoice.UNKNOWN,
         )
@@ -240,10 +233,3 @@ class SubjectsTest {
         }
     }
 }
-
-/** A content repository whose calls fail, for tests that need only one of them. */
-private fun unsupported(): ContentRepository =
-    java.lang.reflect.Proxy.newProxyInstance(
-        ContentRepository::class.java.classLoader,
-        arrayOf(ContentRepository::class.java),
-    ) { _, method, _ -> throw UnsupportedOperationException(method.name) } as ContentRepository

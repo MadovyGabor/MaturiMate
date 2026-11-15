@@ -4,6 +4,7 @@ import com.madovygabor.maturimate.core.database.DatabaseDriverFactory
 import com.madovygabor.maturimate.features.reminder.domain.NoReminderScheduler
 import com.madovygabor.maturimate.features.reminder.domain.ReminderScheduler
 import com.madovygabor.maturimate.features.content.domain.NetworkState
+import com.madovygabor.maturimate.core.export.DesktopExportSaver
 import com.madovygabor.maturimate.features.auth.domain.ExportSaver
 import org.koin.dsl.module
 
@@ -16,10 +17,6 @@ actual val platformModule = module {
     single<ReminderScheduler> { NoReminderScheduler }
     // a computer's network is never treated as metered
     single<NetworkState> { NetworkState { false } }
-    // the copy of one's data goes into the home folder
-    single<ExportSaver> {
-        ExportSaver { name, text ->
-            runCatching { File(System.getProperty("user.home"), name).apply { writeText(text) }.absolutePath }.getOrNull()
-        }
-    }
+    // the copy of one's data goes where the user says (a save dialog)
+    single<ExportSaver> { DesktopExportSaver() }
 }

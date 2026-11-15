@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import com.madovygabor.maturimate.features.auth.presentation.AccountScreen
 import com.madovygabor.maturimate.features.auth.presentation.SignInScreen
 import kotlinx.serialization.modules.SerializersModule
@@ -30,7 +31,7 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
                 polymorphic(NavKey::class) {
                     subclass(Route.Main.Profile.Overview::class, Route.Main.Profile.Overview.serializer())
                     subclass(Route.Main.Profile.History::class, Route.Main.Profile.History.serializer())
-                    subclass(Route.Main.Profile.Answers::class, Route.Main.Profile.Answers.serializer())
+                    subclass(Route.Main.Profile.Settings::class, Route.Main.Profile.Settings.serializer())
                     subclass(Route.Main.Profile.SignUp::class, Route.Main.Profile.SignUp.serializer())
                     subclass(Route.Main.Profile.SignIn::class, Route.Main.Profile.SignIn.serializer())
                 }
@@ -42,7 +43,7 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
     remember(backStack) {
         // only the answers and the history: a sign-in that brings another language must not open the sign-in again
         val page = openPage.value
-        val reopen = page == Route.Main.Profile.Answers || page == Route.Main.Profile.History
+        val reopen = page == Route.Main.Profile.Settings || page == Route.Main.Profile.History
         if (reopen && backStack.lastOrNull() == Route.Main.Profile.Overview) backStack.add(page)
     }
     LaunchedEffect(backStack.lastOrNull()) { backStack.lastOrNull()?.let { openPage.value = it } }
@@ -62,20 +63,34 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
         entryProvider = entryProvider {
             entry<Route.Main.Profile.Overview> {
                 ProfileOverviewScreen(
-                    onSettings = { backStack.add(Route.Main.Profile.Answers) },
+                    onSettings = { backStack.add(Route.Main.Profile.Settings) },
                     onHistory = { backStack.add(Route.Main.Profile.History) },
                     onSignUp = { backStack.add(Route.Main.Profile.SignUp) },
                     onSignIn = { backStack.add(Route.Main.Profile.SignIn) },
                 )
             }
             entry<Route.Main.Profile.History> { HistoryScreen(onBack = back) }
-            entry<Route.Main.Profile.Answers> {
+            entry<Route.Main.Profile.Settings> {
                 SettingsScreen(onBack = back, onSignUp = { backStack.add(Route.Main.Profile.SignUp) }, onSignIn = { backStack.add(Route.Main.Profile.SignIn) })
             }
             // the account screens of the onboarding, without its steps and "Körülnézek"; the guest's rows move
             // to the account (LocalUserProvider.adoptAccount), and the profile then shows the name
             entry<Route.Main.Profile.SignUp> { AccountScreen(role = null, onBack = back, inApp = true, onDone = back) }
-            entry<Route.Main.Profile.SignIn> { SignInScreen(onBack = back, onSignedIn = { back() }) }
+            entry<Route.Main.Profile.SignIn> {
+                SignInScreen(
+                    onBack = back,
+                    onSignedIn = { account ->
+                        back()
+                        pageAfterSignIn(account)?.let { backStack.add(it) }
+                    },
+                )
+            }
         },
     )
 }
+
+/**
+ * Where a guest's sign-in from the profile goes on: back to the profile, or, for an account that is not set up (no
+ * profile, or a finished one without the TERMS consent), to the account form, which asks the name and the consents.
+ */
+internal fun pageAfterSignIn(account: SignedInAccount): NavKey? = if (account.isSetUp) null else Route.Main.Profile.SignUp

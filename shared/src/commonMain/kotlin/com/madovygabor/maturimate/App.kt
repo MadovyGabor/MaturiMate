@@ -11,6 +11,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSerializable
+import androidx.compose.runtime.setValue
+import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
+import kotlinx.serialization.PolymorphicSerializer
+import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.serializersConfig
+import com.madovygabor.maturimate.features.appOnboarding.presentation.rememberOnboardingNavState
 import androidx.navigation3.runtime.NavKey
 import androidx.compose.ui.Modifier
 import com.madovygabor.maturimate.core.presentation.AppLoadErrorScreen
@@ -25,6 +32,8 @@ import com.madovygabor.maturimate.core.presentation.utils.snackbar.MainScaffoldW
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.koin.compose.viewmodel.koinViewModel
 
+private val navKeyState = MutableStateSerializer(PolymorphicSerializer(NavKey::class))
+
 /**
  * The root Composable of the MaturiMate application.
  * Sets up the global theme, scaffold, the app language and the navigation entry point.
@@ -37,6 +46,14 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App(viewModel: AppViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsState()
     val failed by viewModel.failed.collectAsState()
+
+    // the open tab outlives the rebuild (so a language changed in the profile stays there), and the process: saved like the
+    // tabs of the main frame
+    val mainTab = rememberSerializable(configuration = serializersConfig, serializer = navKeyState) { mutableStateOf<NavKey>(Route.Main.Home) }
+    // and so does the open page of the profile tab (the settings, where the language is changed)
+    val profilePage = rememberSerializable(configuration = serializersConfig, serializer = navKeyState) { mutableStateOf<NavKey>(Route.Main.Profile.Overview) }
+    // the onboarding's back stack outlives the rebuild too: a language changed on the way back does not rebuild it
+    val onboardingState = rememberOnboardingNavState()
 
     // the sync runs when the app opens and when it comes back to the front (at most every five minutes)
     LifecycleResumeEffect(Unit) {
@@ -58,18 +75,24 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                     if (failed) AppLoadErrorScreen(onRetry = viewModel::retry, modifier = Modifier.systemPadding())
                     return@Box
                 }
-                // the open tab outlives the rebuild, so a language changed in the profile stays there
-                val mainTab = remember { mutableStateOf<NavKey>(Route.Main.Home) }
-                // and so does the open page of the profile tab (the answers, where the language is changed)
-                val profilePage = remember { mutableStateOf<NavKey>(Route.Main.Profile.Overview) }
+                // another user on this phone (an in-app sign-in, a sign-out): the app opens on the home screen
+                var knownUser by rememberSaveable { mutableStateOf<String?>(null) }
+                remember(appState.userId) {
+                    if (knownUser != null && knownUser != appState.userId) {
+                        mainTab.value = Route.Main.Home
+                        profilePage.value = Route.Main.Profile.Overview
+                    }
+                    knownUser = appState.userId
+                }
                 CompositionLocalProvider(LocalAppLocale provides appState.language?.name?.lowercase()) {
-                    key(appState.language, appState.onboardingCompleted) {
+                    key(appState.language, appState.onboardingCompleted, appState.userId) {
                         // Main navigation host that handles transitions between routes
                         NavigationRoute(
                             modifier = Modifier.systemPaddingExceptBottom(),
                             startRoute = if (appState.onboardingCompleted) Route.Main else Route.AppOnboarding,
                             mainTab = mainTab,
                             profilePage = profilePage,
+                            onboardingState = onboardingState,
                             appLanguage = appState.language,
                             onReadingChanged = viewModel::onReadingChanged,
                         )

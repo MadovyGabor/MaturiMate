@@ -9,6 +9,7 @@ import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
+import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +43,8 @@ data class SignInUiState(
     /** The reset code was accepted: only the new password is left, the code is not checked again. */
     val resetCodeVerified: Boolean = false,
     val busy: Boolean = false,
+    /** This phone holds answers of the onboarding (a school language is saved): an account's answers would replace them. */
+    val hasLocalAnswers: Boolean = false,
 )
 
 /**
@@ -52,17 +55,24 @@ class SignInViewModel(
     private val auth: AuthRepository,
     private val accountSetup: AccountSetup,
     private val snackbarController: SnackbarController,
+    private val profiles: UserProfileRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SignInUiState())
     val state: StateFlow<SignInUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            profiles.profile.collect { profile -> _state.update { it.copy(hasLocalAnswers = profile?.teachingLanguage != null) } }
+        }
+    }
 
     fun onEmailChanged(value: String) = _state.update { it.copy(email = value, emailError = null) }
     fun onPasswordChanged(value: String) = _state.update { it.copy(password = value, passwordError = null) }
     fun onNewPasswordChanged(value: String) = _state.update { it.copy(newPassword = value, passwordError = null) }
     fun onCodeChanged(value: String) = _state.update { it.copy(code = value.filter { c -> c.isDigit() }.take(AccountRules.CODE_LENGTH), codeError = null) }
 
-    fun onForgotPassword() = _state.update { it.copy(phase = SignInPhase.RESET_REQUEST, code = "", newPassword = "", resetCodeVerified = false) }
+    fun onForgotPassword() = if (_state.value.busy) Unit else _state.update { it.copy(phase = SignInPhase.RESET_REQUEST, code = "", newPassword = "", resetCodeVerified = false) }
 
     /** Back inside the screen; false when the form is shown and Back leaves the screen. */
     fun onBack(): Boolean {
@@ -87,8 +97,10 @@ class SignInViewModel(
                 is OperationResult.Success -> finish(onSignedIn)
                 is OperationResult.Error -> when (result.error) {
                     AuthError.EMAIL_NOT_CONFIRMED -> {
-                        auth.resendSignUpCode(current.email.trim())
+                        val resent = auth.resendSignUpCode(current.email.trim())
+                        // the code step opens anyway: a code sent a moment ago still works; a refused new one is said
                         _state.update { it.copy(phase = SignInPhase.CONFIRM, code = "") }
+                        if (resent is OperationResult.Error) showError(resent.error)
                     }
                     else -> showError(result.error)
                 }
@@ -150,9 +162,34 @@ class SignInViewModel(
     }
 
     /** Google answered: the account's profile comes to this phone. */
-    fun onGoogleSignedIn(onSignedIn: (SignedInAccount) -> Unit) = busy { finish(onSignedIn) }
+    fun onGoogleSignedIn(onSignedIn: (SignedInAccount) -> Unit) {
+        endGoogle()
+        busy { finish(onSignedIn) }
+    }
+
+    /** Google (the browser on desktop) is open: the screen is busy until exactly one of its callbacks comes. */
+    private var googleOpen = false
+
+    /** "Google": [start] opens it; the other buttons wait until onGoogleSignedIn, onGoogleFailed or onGoogleClosed. */
+    fun onGoogle(start: () -> Unit) {
+        if (_state.value.busy) return
+        googleOpen = true
+        _state.update { it.copy(busy = true) }
+        start()
+    }
+
+    /** Google's wait is over; its answer then runs even though the screen was busy waiting for it (never dropped). */
+    private fun endGoogle() {
+        if (!googleOpen) return
+        googleOpen = false
+        _state.update { it.copy(busy = false) }
+    }
+
+    /** The account picker was closed (Android): nothing happened. */
+    fun onGoogleClosed() = endGoogle()
 
     fun onGoogleFailed(error: AuthError) {
+        endGoogle()
         viewModelScope.launch { showError(error) }
     }
 

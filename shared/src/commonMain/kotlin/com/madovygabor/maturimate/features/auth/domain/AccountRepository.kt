@@ -23,7 +23,16 @@ data class RemoteProfile(
     val firstName: String,
     val lastName: String,
     val profile: UserProfile,
-)
+    /** Whether the account has an active (not withdrawn) TERMS consent: only `save_sign_up` stores it. */
+    val acceptedTerms: Boolean = false,
+) {
+    /**
+     * The account finished its sign-up: the onboarding end AND an active TERMS consent. A finished profile alone may come
+     * from a guest's sync before the sign-up was saved; such an account still needs `save_sign_up` (and its consents).
+     * The same rule as the server's guard in `save_sign_up` (migration 20261127120000).
+     */
+    val isSetUp: Boolean get() = profile.isOnboardingCompleted && acceptedTerms
+}
 
 /**
  * The signed-in account's own rows on the server (Supabase, row level security). Only the
@@ -53,9 +62,11 @@ interface AccountRepository {
 
     /**
      * Deletes the signed-in account on the server at once and for good (`delete_my_account`): the proof of the consents is
-     * kept in the archive, everything else of the user goes.
+     * kept in the archive, everything else of the user goes. The call goes out with [accessToken], the session of the proof
+     * (a password check or a fresh Google sign-in of the last minutes): the server deletes only for a sign-in of the last
+     * 5 minutes in that token, else [AuthError.PROOF_NEEDED] (migration 20261128120000).
      */
-    suspend fun deleteAccount(): OperationResult<Unit, AuthError> = OperationResult.Error(AuthError.UNKNOWN)
+    suspend fun deleteAccount(accessToken: String): OperationResult<Unit, AuthError> = OperationResult.Error(AuthError.UNKNOWN)
 
     /** A JSON copy of every row the server keeps about the signed-in user (`export_my_data`). */
     suspend fun exportMyData(): OperationResult<String, AuthError> = OperationResult.Error(AuthError.UNKNOWN)

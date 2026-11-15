@@ -68,10 +68,13 @@ fun appTypography(serif: FontFamily, sans: FontFamily) = Typography(
 data class ExtendedTypography(
     /** Lesson text and reading passages. */
     val reading: TextStyle,
+    /** The one-time code of an e-mail, in a field: monospaced and spaced so the digits are easy to compare. */
+    val code: TextStyle,
 )
 
-fun appExtendedTypography(serif: FontFamily) = ExtendedTypography(
+fun appExtendedTypography(serif: FontFamily, mono: FontFamily = FontFamily.Monospace) = ExtendedTypography(
     reading = style(serif, 18, 30, FontWeight.Normal),
+    code = style(mono, 22, 30, FontWeight.SemiBold, letterSpacing = 6.0),
 )
 
 val LocalExtendedTypography = staticCompositionLocalOf { appExtendedTypography(FontFamily.Serif) }

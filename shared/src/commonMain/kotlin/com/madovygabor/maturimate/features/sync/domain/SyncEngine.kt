@@ -7,6 +7,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.abs
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 /** Who is signed in on this phone, as the sync needs to know it. */
 interface SyncSession {
@@ -42,16 +46,54 @@ class SyncEngine(
     private val session: SyncSession,
     private val now: () -> Long,
     private val maxRounds: Int = DEFAULT_BATCH_ROUNDS,
+    private val timeSource: TimeSource = TimeSource.Monotonic,
 ) {
     private val mutex = Mutex()
     private var rerun = false
     private var batchRounds = maxRounds
 
+    /** Since when the sync is held ([hold]); null when it is not. */
+    @Volatile
+    private var heldSince: TimeMark? = null
+
+    /** A run was asked for while held: [release] runs it. */
+    @Volatile
+    private var askedWhileHeld = false
+
     private val _state = MutableStateFlow(SyncState())
     val state: StateFlow<SyncState> = _state.asStateFlow()
 
-    /** Runs the sync, or queues one more run when one is in progress. */
+    /**
+     * No run starts until [release]: while a sign-in that proves who the user is runs, another account's session can be
+     * this phone's for a moment, and nothing may go to the server or come from it under that session. A request meanwhile
+     * waits for the release. A hold nobody releases ends by itself after [MAX_HOLD], so the sync can never stay stopped.
+     */
+    fun hold() {
+        heldSince = timeSource.markNow()
+    }
+
+    /** Ends the [hold]; a run asked for meanwhile runs now. */
+    suspend fun release() {
+        heldSince = null
+        if (askedWhileHeld) {
+            askedWhileHeld = false
+            sync(SyncReason.FOREGROUND)
+        }
+    }
+
+    private fun isHeld(): Boolean {
+        val since = heldSince ?: return false
+        if (since.elapsedNow() < MAX_HOLD) return true
+        heldSince = null
+        return false
+    }
+
+    /** Runs the sync, or queues one more run when one is in progress (or the sync is held). */
     suspend fun sync(reason: SyncReason): SyncOutcome {
+        if (isHeld()) {
+            askedWhileHeld = true
+            return SyncOutcome.Queued
+        }
         if (!session.isSignedIn()) {
             _state.value = SyncState()
             return SyncOutcome.NotApplicable
@@ -119,8 +161,16 @@ class SyncEngine(
 
         while (true) {
             val pending = if (pullOnly) PendingChanges(SyncChanges(), null, false) else store.pending(since, full, batchRounds)
-            when (val result = repository.sync(cursor, deviceId, guestMerge, pending.changes)) {
+            // Every call is bound to this phone's account: the session may have changed since the run started (another
+            // account's sign-in), and the call goes out with whatever session is current. Then nothing is sent.
+            if (!session.isSignedIn()) return stopped()
+            val result = repository.sync(cursor, deviceId, guestMerge, pending.changes)
+            // ... and an answer that came back under another session is not applied (nor any page marked)
+            if (!session.isSignedIn()) return stopped()
+            when (result) {
                 is OperationResult.Error -> {
+                    // the server's own check of the same thing (the session is not this phone's account): ended the same way
+                    if (result.error == SyncError.WRONG_ACCOUNT) return stopped()
                     when {
                         result.error == SyncError.TOO_LARGE && !retriedLarge -> {
                             // the next call carries half as many rounds
@@ -162,8 +212,17 @@ class SyncEngine(
         return SyncOutcome.Done(releases)
     }
 
+    /** The session is no longer this phone's account: the run ends quietly, nothing applied, no failure stored. */
+    private fun stopped(): SyncOutcome {
+        _state.value = _state.value.copy(running = false)
+        return SyncOutcome.NotApplicable
+    }
+
     companion object {
         const val DEFAULT_BATCH_ROUNDS = 200
         const val CLOCK_SKEW_MS = 5L * 60 * 1000
+
+        /** The longest a [hold] lasts when nobody releases it (a flow that never called back). */
+        val MAX_HOLD: Duration = 10.minutes
     }
 }
