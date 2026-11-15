@@ -247,7 +247,7 @@ The system permission dialog itself is Android's and follows the phone's languag
 | `account_title` | Hozd létre a fiókodat | Vytvor si účet |
 | `account_why` | Így nem vész el a haladásod, és másik telefonon is folytathatod. | Tak o svoj pokrok neprídeš a môžeš pokračovať aj na inom telefóne. |
 | `account_google` | Folytatás Google-lel | Pokračovať cez Google |
-| `account_google_signed` | Google-fiókkal: %1$s | Účet Google: %1$s |
+| `account_signed_in_as` | Bejelentkezve: %1$s | Prihlásený účet: %1$s |
 | `account_or_email` | vagy e-maillel | alebo e-mailom |
 | `account_last_name` | Vezetéknév | Priezvisko |
 | `account_first_name` | Keresztnév | Meno |
