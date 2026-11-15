@@ -34,6 +34,12 @@ BEGIN
 END;
 $$;
 
+-- The token's sign-ins (GoTrue's `amr` claim): [method] that long [age] ago, for user [u]
+CREATE FUNCTION pg_temp.signed_in(u text, method text, age interval) RETURNS void LANGUAGE sql AS $$
+    SELECT set_config('request.jwt.claims', jsonb_build_object('sub', u, 'amr', jsonb_build_array(
+        jsonb_build_object('method', method, 'timestamp', extract(epoch FROM now() - age)::bigint)))::text, true)
+$$;
+
 -- ---- A writes and reads only their own rows -------------------------
 SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
 
@@ -172,7 +178,28 @@ DO $$ BEGIN
     END IF;
 END $$;
 
--- a retry (the answer got lost) replaces the answers and keeps one copy of each consent
+-- the guard (migration 20261127120000): a second sign-up of an account that is set up is refused, nothing changes
+DO $$ BEGIN
+    PERFORM save_sign_up('Imre', 'Kiss', 'SK', NULL, 'SK', 'Europe/Bratislava', 30::smallint,
+        false, NULL, 2::smallint, '[{"subject_id": 4, "source": "CHOSEN", "level": null}]'::jsonb,
+        ARRAY['TERMS', 'PRIVACY', 'AGE_16'], '1.0', now());
+    RAISE EXCEPTION 'FAIL: save_sign_up overwrote an account that is set up';
+EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+END $$;
+DO $$ BEGIN
+    IF (SELECT first_name FROM user_profile) IS DISTINCT FROM 'Béla'
+        OR (SELECT teaching_language FROM user_profile) IS DISTINCT FROM 'HU'
+        OR (SELECT daily_goal_minutes FROM user_settings) <> 10
+        OR (SELECT array_agg(role_id) FROM user_role) IS DISTINCT FROM ARRAY[1::smallint]
+        OR (SELECT count(*) FROM user_subject WHERE removed_at IS NULL) <> 2
+        OR (SELECT count(*) FROM user_consent) <> 3 THEN
+        RAISE EXCEPTION 'FAIL: a refused save_sign_up changed the account';
+    END IF;
+END $$;
+
+-- a sign-up that did not reach its end (no onboarding end on the server) may be sent again:
+-- a retry replaces the answers and keeps one copy of each consent
+UPDATE user_profile SET onboarding_completed_at = NULL;
 SELECT save_sign_up('Béla', 'Nagy', 'HU', DATE '2027-03-08', 'HU', 'Europe/Bratislava', 15::smallint,
     false, NULL, 2::smallint, '[{"subject_id": 4, "source": "CHOSEN", "level": null}]'::jsonb,
     ARRAY['TERMS', 'PRIVACY', 'AGE_16'], '1.0', now());
@@ -188,6 +215,7 @@ END $$;
 
 -- a withdrawn consent can be given again
 UPDATE user_consent SET withdrawn_at = now() + interval '1 minute' WHERE consent_type = 'TERMS';
+UPDATE user_profile SET onboarding_completed_at = NULL;
 SELECT save_sign_up('Béla', 'Nagy', 'HU', NULL, 'HU', 'Europe/Bratislava', 15::smallint,
     false, NULL, 2::smallint, '[]'::jsonb, ARRAY['TERMS'], '1.0', now());
 DO $$ BEGIN
@@ -197,6 +225,7 @@ DO $$ BEGIN
 END $$;
 
 -- the function cannot give a server role, and writes nothing of another user
+UPDATE user_profile SET onboarding_completed_at = NULL;
 DO $$ BEGIN
     PERFORM save_sign_up('Béla', 'Nagy', 'HU', NULL, 'HU', 'Europe/Bratislava', 15::smallint,
         false, NULL, 5::smallint, '[]'::jsonb, ARRAY[]::text[], '1.0', now());
@@ -207,6 +236,34 @@ SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
 DO $$ BEGIN
     IF (SELECT first_name FROM user_profile) IS DISTINCT FROM 'Anna' THEN
         RAISE EXCEPTION 'FAIL: save_sign_up of B changed A';
+    END IF;
+END $$;
+
+-- ---- save_sign_up guard: "set up" is the onboarding end AND an active TERMS consent ----------
+-- A guest's finished profile pushed by the sync before save_sign_up went through is not set up yet: the sign-up is
+-- still saved and its consents are stored. Once the TERMS consent is there, a second sign-up is refused.
+RESET ROLE;
+INSERT INTO auth.users (id) VALUES ('00000000-0000-0000-0000-0000000000f1');
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000f1');
+INSERT INTO user_profile (user_id, first_name, last_name, onboarding_completed_at)
+    VALUES ('00000000-0000-0000-0000-0000000000f1', '', '', now());
+SELECT save_sign_up('Fanni', 'Fehér', 'HU', NULL, 'HU', 'Europe/Bratislava', 10::smallint,
+    false, NULL, 1::smallint, '[]'::jsonb, ARRAY['TERMS', 'PRIVACY', 'AGE_16'], '1.0', now());
+DO $$ BEGIN
+    IF (SELECT first_name FROM user_profile) IS DISTINCT FROM 'Fanni'
+        OR (SELECT count(*) FROM user_consent WHERE withdrawn_at IS NULL) <> 3 THEN
+        RAISE EXCEPTION 'FAIL: a finished profile without the TERMS consent was not signed up';
+    END IF;
+END $$;
+DO $$ BEGIN
+    PERFORM save_sign_up('Imre', 'Kiss', 'SK', NULL, 'SK', 'Europe/Bratislava', 30::smallint,
+        false, NULL, 2::smallint, '[]'::jsonb, ARRAY['TERMS'], '1.0', now());
+    RAISE EXCEPTION 'FAIL: save_sign_up overwrote an account with a finished profile and the TERMS consent';
+EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+END $$;
+DO $$ BEGIN
+    IF (SELECT first_name FROM user_profile) IS DISTINCT FROM 'Fanni' THEN
+        RAISE EXCEPTION 'FAIL: a refused save_sign_up changed the account';
     END IF;
 END $$;
 
@@ -370,6 +427,8 @@ INSERT INTO user_consent (user_id, consent_type, document_version)
     VALUES ('00000000-0000-0000-0000-0000000000d1', 'TERMS', '1.0'),
            ('00000000-0000-0000-0000-0000000000d1', 'PRIVACY', '1.0');
 SELECT pg_temp.become('00000000-0000-0000-0000-0000000000d1');
+-- a password sign-in just now in the token: the proof the deletion needs (migration 20261128120000)
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d1', 'password', interval '0 seconds');
 -- without the Vault key nothing is deleted
 DO $$ BEGIN
     PERFORM delete_my_account();
@@ -385,9 +444,65 @@ DO $$ BEGIN
     END IF;
 END $$;
 INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('consent_hmac_key', 'test-key');
+
+-- the server's own check of the proof (migration 20261128120000): a token without a sign-in of the last 5 minutes
+-- deletes nothing, whatever the app asked before
+CREATE FUNCTION pg_temp.deletion_refused(what text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM delete_my_account();
+    RAISE EXCEPTION 'FAIL: the account was deleted with %', what;
+EXCEPTION WHEN insufficient_privilege THEN
+    IF SQLERRM <> 'recent_login_required' THEN
+        RAISE;
+    END IF;
+END;
+$$;
 SELECT pg_temp.become('00000000-0000-0000-0000-0000000000d1');
-SELECT delete_my_account();
+SELECT set_config('request.jwt.claims', '', true);
+SELECT pg_temp.deletion_refused('no amr in the token');
+SELECT set_config('request.jwt.claims', '{"sub": "00000000-0000-0000-0000-0000000000d1", "amr": "password"}', true);
+SELECT pg_temp.deletion_refused('an amr that is not a list');
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d1', 'password', interval '6 minutes');
+SELECT pg_temp.deletion_refused('a password sign-in 6 minutes ago');
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d1', 'oauth', interval '1 hour');
+SELECT pg_temp.deletion_refused('a Google sign-in an hour ago');
+-- a token refreshed just now keeps the old sign-in: the refresh itself is no proof
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d1', 'token_refresh', interval '0 seconds');
+SELECT pg_temp.deletion_refused('a token refresh');
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d1', 'recovery', interval '0 seconds');
+SELECT pg_temp.deletion_refused('a password reset link');
+-- an amr element that is not an object, and a timestamp sent as a string (GoTrue sends numbers)
+SELECT set_config('request.jwt.claims', '{"sub": "00000000-0000-0000-0000-0000000000d1", "amr": ["password"]}', true);
+SELECT pg_temp.deletion_refused('an amr element that is not an object');
+SELECT set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-0000-0000-0000000000d1', 'amr', jsonb_build_array(
+    jsonb_build_object('method', 'password', 'timestamp', extract(epoch FROM now())::bigint::text)))::text, true);
+SELECT pg_temp.deletion_refused('a timestamp sent as a string');
 RESET ROLE;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000d1')
+        OR (SELECT count(*) FROM consent_archive WHERE user_id = '00000000-0000-0000-0000-0000000000d1') <> 0 THEN
+        RAISE EXCEPTION 'FAIL: a deletion without a recent sign-in changed something';
+    END IF;
+END $$;
+
+-- a Google sign-in a minute ago (oauth, the fresh sign-in of an account without a password): the account goes
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000d1');
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d1', 'oauth', interval '1 minute');
+SELECT delete_my_account();
+SELECT set_config('request.jwt.claims', '', true);
+-- an e-mail code sign-in (otp) a minute ago proves it too
+RESET ROLE;
+INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-0000000000d2', 'otto@example.com');
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000d2');
+SELECT pg_temp.signed_in('00000000-0000-0000-0000-0000000000d2', 'otp', interval '1 minute');
+SELECT delete_my_account();
+SELECT set_config('request.jwt.claims', '', true);
+RESET ROLE;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000d2') THEN
+        RAISE EXCEPTION 'FAIL: an otp sign-in a minute ago did not delete the account';
+    END IF;
+END $$;
 DO $$ BEGIN
     -- the account and its rows are gone
     IF EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000d1')
@@ -407,6 +522,114 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ---- clean_up_empty_users: Auth users that never became an account (migration 20261128120000) --
+RESET ROLE;
+INSERT INTO auth.users (id, created_at, last_sign_in_at) VALUES
+    -- 8 days old, nothing of the app: goes
+    ('00000000-0000-0000-0000-0000000000a1', now() - interval '8 days', now() - interval '8 days'),
+    -- 8 days old with a profile: stays
+    ('00000000-0000-0000-0000-0000000000a2', now() - interval '8 days', NULL),
+    -- 8 days old with an active TERMS consent only: stays
+    ('00000000-0000-0000-0000-0000000000a3', now() - interval '8 days', NULL),
+    -- 2 days old, nothing yet (a sign-up in progress): stays
+    ('00000000-0000-0000-0000-0000000000a4', now() - interval '2 days', NULL),
+    -- 8 days old, nothing, but signed in yesterday: stays
+    ('00000000-0000-0000-0000-0000000000a5', now() - interval '8 days', now() - interval '1 day'),
+    -- 8 days old, nothing, but a session refreshed yesterday: stays
+    ('00000000-0000-0000-0000-0000000000a6', now() - interval '8 days', now() - interval '8 days'),
+    -- 8 days old with settings only / a role only / a streak only: stay
+    ('00000000-0000-0000-0000-0000000000a7', now() - interval '8 days', NULL),
+    ('00000000-0000-0000-0000-0000000000a8', now() - interval '8 days', NULL),
+    ('00000000-0000-0000-0000-0000000000a9', now() - interval '8 days', NULL),
+    -- 8 days old, nothing, its only session unused for 8 days: goes
+    ('00000000-0000-0000-0000-0000000000aa', now() - interval '8 days', now() - interval '8 days');
+INSERT INTO user_profile (user_id, first_name, last_name) VALUES ('00000000-0000-0000-0000-0000000000a2', 'P', 'P');
+INSERT INTO user_consent (user_id, consent_type, document_version) VALUES ('00000000-0000-0000-0000-0000000000a3', 'TERMS', '1.0');
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, refreshed_at) VALUES
+    ('00000000-0000-0000-0000-00000000005a', '00000000-0000-0000-0000-0000000000a6',
+     now() - interval '8 days', now() - interval '8 days', (now() - interval '1 day') AT TIME ZONE 'UTC'),
+    ('00000000-0000-0000-0000-00000000005b', '00000000-0000-0000-0000-0000000000aa',
+     now() - interval '8 days', now() - interval '8 days', NULL);
+INSERT INTO user_settings (user_id) VALUES ('00000000-0000-0000-0000-0000000000a7');
+INSERT INTO user_role (user_id, role_id) VALUES ('00000000-0000-0000-0000-0000000000a8', 1);
+INSERT INTO user_streak (user_id, current_streak, longest_streak, last_activity_date)
+    VALUES ('00000000-0000-0000-0000-0000000000a9', 1, 1, current_date);
+
+-- a signed-in user cannot run it
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000a4');
+DO $$ BEGIN
+    PERFORM clean_up_empty_users();
+    RAISE EXCEPTION 'FAIL: a signed-in user ran clean_up_empty_users';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+DO $$ BEGIN
+    PERFORM clean_up_empty_users(true);
+    RAISE EXCEPTION 'FAIL: a signed-in user ran the dry run of clean_up_empty_users';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+
+-- the server: the dry run counts and deletes nothing, the run deletes only the old empty user
+RESET ROLE;
+DO $$
+DECLARE
+    counted integer;
+    deleted integer;
+BEGIN
+    counted := clean_up_empty_users(true);
+    IF counted < 2 OR NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000a1') THEN
+        RAISE EXCEPTION 'FAIL: the dry run did not count the empty user, or deleted it (counted %)', counted;
+    END IF;
+    deleted := clean_up_empty_users();
+    IF deleted <> counted THEN
+        RAISE EXCEPTION 'FAIL: the run deleted % users, the dry run counted %', deleted, counted;
+    END IF;
+    IF EXISTS (SELECT 1 FROM auth.users WHERE id IN ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000aa')) THEN
+        RAISE EXCEPTION 'FAIL: an old empty user was not deleted';
+    END IF;
+    IF (SELECT count(*) FROM auth.users WHERE id IN ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000000a3',
+            '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a5', '00000000-0000-0000-0000-0000000000a6',
+            '00000000-0000-0000-0000-0000000000a7', '00000000-0000-0000-0000-0000000000a8', '00000000-0000-0000-0000-0000000000a9')) <> 8 THEN
+        RAISE EXCEPTION 'FAIL: the clean-up deleted a user with app rows, a new one, or one signed in or with a session used lately';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM user_profile WHERE user_id = '00000000-0000-0000-0000-0000000000a2')
+        OR NOT EXISTS (SELECT 1 FROM user_consent WHERE user_id = '00000000-0000-0000-0000-0000000000a3') THEN
+        RAISE EXCEPTION 'FAIL: the clean-up removed app rows';
+    END IF;
+    -- the users A, B and C of these tests are new: untouched
+    IF (SELECT count(*) FROM auth.users WHERE id IN ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b',
+            '00000000-0000-0000-0000-00000000000c')) <> 3 THEN
+        RAISE EXCEPTION 'FAIL: the clean-up deleted a user of these tests';
+    END IF;
+    -- a second dry run no longer counts the deleted one
+    IF EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-0000000000a1') OR clean_up_empty_users(true) <> 0 THEN
+        RAISE EXCEPTION 'FAIL: a second dry run still finds empty users';
+    END IF;
+END $$;
+
+-- every public table with a foreign key to auth.users is named in the clean-up: a new table that is not fails here
+DO $$
+DECLARE
+    def   text := pg_get_functiondef('public.clean_up_empty_users(boolean)'::regprocedure);
+    r     record;
+    seen  integer := 0;
+BEGIN
+    FOR r IN
+        SELECT DISTINCT cl.relname
+        FROM pg_constraint c
+        JOIN pg_class cl ON cl.oid = c.conrelid
+        JOIN pg_namespace n ON n.oid = cl.relnamespace
+        WHERE c.contype = 'f' AND c.confrelid = 'auth.users'::regclass AND n.nspname = 'public'
+    LOOP
+        seen := seen + 1;
+        IF position('public.' || r.relname || ' ' IN def) = 0 THEN
+            RAISE EXCEPTION 'FAIL: clean_up_empty_users does not look at public.%, which refers to auth.users', r.relname;
+        END IF;
+    END LOOP;
+    IF seen < 10 THEN
+        RAISE EXCEPTION 'FAIL: only % tables refer to auth.users: the check above found too few', seen;
+    END IF;
+END $$;
+
 -- ---- 12.1b: sync groundwork ------------------------------------------
 -- A marks a subject removed; the row stays, and a later save_sign_up brings it back with the same added_at
 SELECT pg_temp.become('00000000-0000-0000-0000-00000000000a');
@@ -417,6 +640,8 @@ DECLARE
 BEGIN
     SELECT subject_id, added_at INTO sid, before_added FROM user_subject LIMIT 1;
     UPDATE user_subject SET removed_at = now() WHERE subject_id = sid;
+    -- A finished the onboarding above; the guard would refuse a second sign-up of a set-up account
+    UPDATE user_profile SET onboarding_completed_at = NULL;
     PERFORM save_sign_up('A', 'A', 'HU', NULL, 'HU', 'Europe/Bratislava', 10::smallint, false, NULL, 1::smallint,
         jsonb_build_array(jsonb_build_object('subject_id', sid, 'source', 'CHOSEN', 'level', 'B2')),
         ARRAY[]::text[], '1.0', now());
@@ -500,7 +725,33 @@ DO $$ BEGIN
     RAISE EXCEPTION 'FAIL: anon called delete_my_account';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
+DO $$ BEGIN
+    PERFORM clean_up_empty_users();
+    RAISE EXCEPTION 'FAIL: anon called clean_up_empty_users';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
 
 RESET ROLE;
+
+-- ---- who may call the server's functions (the stand-in grants EXECUTE on new functions like Supabase) --
+DO $$ BEGIN
+    IF has_function_privilege('anon', 'public.clean_up_empty_users(boolean)', 'EXECUTE')
+        OR has_function_privilege('authenticated', 'public.clean_up_empty_users(boolean)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: the app''s roles may run clean_up_empty_users';
+    END IF;
+    IF has_function_privilege('anon', 'public.clean_up_logs()', 'EXECUTE')
+        OR has_function_privilege('authenticated', 'public.clean_up_logs()', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: the app''s roles may run clean_up_logs';
+    END IF;
+    IF has_function_privilege('anon', 'public.delete_my_account()', 'EXECUTE')
+        OR NOT has_function_privilege('authenticated', 'public.delete_my_account()', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: delete_my_account is open to anon or closed to signed-in users';
+    END IF;
+    IF has_function_privilege('anon', 'public.export_my_data()', 'EXECUTE')
+        OR has_function_privilege('anon', 'public.save_sign_up(text, text, text, date, text, text, smallint, boolean, time, smallint, jsonb, text[], text, timestamptz)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: anon may run export_my_data or save_sign_up';
+    END IF;
+END $$;
+
 SELECT 'RLS tests OK' AS result;
 ROLLBACK;

@@ -414,12 +414,55 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ---- 10b. every call names the account the phone means (migration 20261128120000) --------------------------------------
+-- The phone sends its account id (p_expected_user); a session of another account is refused with PT409 user_mismatch.
+SELECT pg_temp.become('00000000-0000-0000-0000-0000000000e2');
+DO $$
+DECLARE
+    res jsonb;
+BEGIN
+    -- the caller's own id: answered as before
+    res := sync_user_data(NULL, 'devB', false, '{}'::jsonb, p_expected_user => '00000000-0000-0000-0000-0000000000e2');
+    IF res ->> 'cursor' IS NULL THEN
+        RAISE EXCEPTION 'FAIL: a call naming the caller was not answered';
+    END IF;
+    -- no id (null): nothing is checked
+    res := sync_user_data(NULL, 'devB', false, '{}'::jsonb, p_expected_user => NULL::uuid);
+    IF res ->> 'cursor' IS NULL THEN
+        RAISE EXCEPTION 'FAIL: a call without an expected user was not answered';
+    END IF;
+    -- the old signature, for the app versions already installed, still works
+    res := sync_user_data(NULL, 'devB', false, '{}'::jsonb);
+    IF res ->> 'cursor' IS NULL THEN
+        RAISE EXCEPTION 'FAIL: the old signature of sync_user_data no longer answers';
+    END IF;
+    -- another account's id: refused before anything is read or written
+    BEGIN
+        PERFORM sync_user_data(NULL, 'devB', false, jsonb_build_object('settings', jsonb_build_object(
+                'ui_language', 'SK', 'daily_goal_minutes', 45, 'reminder_enabled', false, 'updated_at', pg_temp.ms(0))),
+            p_expected_user => '00000000-0000-0000-0000-0000000000e1');
+        RAISE EXCEPTION 'FAIL: a call meant for another account went through';
+    EXCEPTION WHEN SQLSTATE 'PT409' THEN
+        IF SQLERRM <> 'user_mismatch' THEN
+            RAISE;
+        END IF;
+    END;
+    IF EXISTS (SELECT 1 FROM user_settings WHERE daily_goal_minutes = 45) THEN
+        RAISE EXCEPTION 'FAIL: a refused call wrote the settings';
+    END IF;
+END $$;
+
 -- ---- 11. the function is for signed-in users only ----------------------------------------------------------------------
 RESET ROLE;
 SET LOCAL ROLE anon;
 DO $$ BEGIN
     PERFORM sync_user_data(NULL, 'x', false, '{}'::jsonb);
     RAISE EXCEPTION 'FAIL: anon called sync_user_data';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+DO $$ BEGIN
+    PERFORM sync_user_data(NULL, 'x', false, '{}'::jsonb, p_expected_user => NULL::uuid);
+    RAISE EXCEPTION 'FAIL: anon called sync_user_data with an expected user';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 DO $$ BEGIN
@@ -434,5 +477,22 @@ EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 
 RESET ROLE;
+
+-- ---- 12. who may call (the stand-in grants EXECUTE on new functions like Supabase) -----------------------------------------
+DO $$ BEGIN
+    IF has_function_privilege('anon', 'public.sync_user_data(text, text, boolean, jsonb, integer)', 'EXECUTE')
+        OR has_function_privilege('anon', 'public.sync_user_data(text, text, boolean, jsonb, uuid, integer)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: anon may run sync_user_data';
+    END IF;
+    IF NOT has_function_privilege('authenticated', 'public.sync_user_data(text, text, boolean, jsonb, uuid, integer)', 'EXECUTE')
+        OR NOT has_function_privilege('authenticated', 'public.sync_user_data(text, text, boolean, jsonb, integer)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: a signed-in user may not run sync_user_data';
+    END IF;
+    IF has_function_privilege('anon', 'public.reset_progress(timestamptz)', 'EXECUTE')
+        OR has_function_privilege('anon', 'public.register_content_download(smallint, smallint)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'FAIL: anon may run reset_progress or register_content_download';
+    END IF;
+END $$;
+
 SELECT 'sync tests OK' AS result;
 ROLLBACK;
