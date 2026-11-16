@@ -22,6 +22,7 @@ import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import com.madovygabor.maturimate.features.practice.domain.PracticeCatalog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -79,11 +80,14 @@ class PracticePickerViewModelTest {
         }
     }
 
-    private val content = ContentRepositoryImpl({ database }, Dispatchers.Unconfined)
+    // one thread at a time for the in-memory databases: the ViewModel works on the main dispatcher while the test
+    // polls, and with Dispatchers.Unconfined two threads shared one JDBC connection (flaky on a slow CI run)
+    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val content = ContentRepositoryImpl({ database }, dbDispatcher)
     private val userDatabase = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
     )
-    private val progress = ProgressRepositoryImpl(userDatabase, LocalUserProvider(userDatabase), Dispatchers.Unconfined)
+    private val progress = ProgressRepositoryImpl(userDatabase, LocalUserProvider(userDatabase), dbDispatcher)
     private val catalog = PracticeCatalog(content, progress)
 
     private fun <T> OperationResult<T, LearningError>.data(): T = when (this) {
