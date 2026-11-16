@@ -411,6 +411,7 @@
     <string name="settings_content_downloading">Letöltés…</string>
     <string name="settings_content_mobile">Letöltés mobilneten (%1$s MB)</string>
     <string name="settings_content_error">A letöltés nem sikerült. Koppints az újrapróbáláshoz.</string>
+    <string name="settings_content_install_error">A tartalmat nem sikerült telepíteni. A korábbi tartalom megmaradt.</string>
     <string name="settings_reset">Haladás újrakezdése</string>
     <string name="settings_reset_hint">A sorozat és a tanulási idő megmarad</string>
     <string name="settings_sign_out">Kijelentkezés</string>

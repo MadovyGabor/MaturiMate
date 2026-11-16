@@ -32,6 +32,8 @@ class InstalledContentPacks(private val provider: ContentDatabaseProvider) : Con
 
     override suspend fun applyPending(): Boolean = provider.applyPending()
 
+    override suspend fun installFailed(): Boolean = provider.installFailed()
+
     override suspend fun setReading(reading: Boolean) {
         provider.swapAllowed = !reading
         if (!reading) provider.applyPending()

@@ -427,6 +427,7 @@
     <string name="settings_content_downloading">Sťahuje sa…</string>
     <string name="settings_content_mobile">Stiahnuť cez mobilné dáta (%1$s MB)</string>
     <string name="settings_content_error">Sťahovanie zlyhalo. Ťukni a skús znova.</string>
+    <string name="settings_content_install_error">Obsah sa nepodarilo nainštalovať. Zostáva pôvodný obsah.</string>
     <string name="settings_reset">Začať pokrok odznova</string>
     <string name="settings_reset_hint">Séria a čas učenia zostanú</string>
     <string name="settings_sign_out">Odhlásiť sa</string>

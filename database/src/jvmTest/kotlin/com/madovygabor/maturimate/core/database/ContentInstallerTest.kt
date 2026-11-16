@@ -229,6 +229,166 @@ class ContentInstallerTest {
         assertEquals(listOf("pack 1", "old 2"), installedTitles())
     }
 
+    // ---- parts that clash (card 13) ------------------------------------------------------------------------------------
+
+    /** One subject of a synthetic content file: a root topic, a child topic, a lesson and a task of the child. */
+    private data class Tree(val subject: Long, val root: Long, val child: Long, val unit: Long)
+
+    private fun treeDb(vararg trees: Tree, label: String = "x", danglingChild: Boolean = false): ByteArray {
+        val file = File(work, "tree-${System.nanoTime()}.db")
+        JdbcSqliteDriver("jdbc:sqlite:${file.absolutePath}").use { driver ->
+            ContentDatabase.Schema.create(driver)
+            fun sql(text: String) = driver.execute(null, text, 0)
+            sql("INSERT INTO task_format VALUES (1, 'MC_SINGLE', 'Multiple choice', 'CHOICE', NULL)")
+            trees.forEach { t ->
+                val task = t.unit + 1000
+                sql("INSERT INTO subject VALUES (${t.subject}, 'S${t.subject}', 'hu', 'sk', 'HU', NULL)")
+                sql("INSERT INTO topic VALUES (${t.root}, ${t.subject}, NULL, '$label root ${t.subject}', NULL, 1, 1)")
+                val parent = if (danglingChild) 9999 else t.root
+                sql("INSERT INTO topic VALUES (${t.child}, NULL, $parent, '$label child ${t.subject}', NULL, 1, 1)")
+                sql("INSERT INTO learning_unit VALUES (${t.unit}, ${t.child}, 'SUMMARY', '$label unit', NULL, 1, 5, 10, 1, 1, 0)")
+                sql("INSERT INTO task VALUES ($task, ${t.child}, 1, 'q', NULL, 1, NULL, 1, 0)")
+                sql("INSERT INTO unit_task VALUES (${t.unit}, $task, 1, 1)")
+                sql("INSERT INTO task_option VALUES ($task, $task, 'ANSWER', 'A', 'a', NULL)")
+                sql("INSERT INTO task_key VALUES ($task, 1, NULL, $task)")
+            }
+            sql("PRAGMA user_version = ${ContentDatabase.Schema.version}")
+        }
+        return file.readBytes().also { file.delete() }
+    }
+
+    private fun installedIds(table: String, column: String): List<Long> =
+        JdbcSqliteRunner().queryStrings(File(dir, "content.db").absolutePath, "SELECT $column FROM $table ORDER BY $column").map { it.toLong() }
+
+    private fun assertInstalledFileIsConsistent() {
+        val path = File(dir, "content.db").absolutePath
+        assertEquals(listOf("ok"), JdbcSqliteRunner().queryStrings(path, "PRAGMA integrity_check"))
+        assertTrue(JdbcSqliteRunner().queryStrings(path, "PRAGMA foreign_key_check").isEmpty())
+    }
+
+    @Test
+    fun aFullPackReplacesABundledStarterOfTheSameSubjectEvenWhenTheirIdsClash() {
+        // the same subject in both, with different ids but the same position (root topic order 1): a blind merge of the
+        // starter drops its root topic and keeps its child topic and lesson, which then point at nothing
+        val starter = treeDb(Tree(1, 5, 6, 7), label = "starter")
+        installer.installIfNewer(starter, manifest(starter, 2000010101, ContentManifest.KIND_STARTER, listOf(1)))
+        val pack = treeDb(Tree(1, 10, 11, 12), label = "pack")
+        assertEquals(PackResult.Saved(1, 2026111402), installer.savePack(1, pack, manifest(pack, 2026111402, subjects = listOf(1))))
+
+        installer.rebuild()
+
+        assertInstalledFileIsConsistent()
+        assertEquals(listOf(10L, 11L), installedIds("topic", "topic_id"))
+        assertEquals(listOf(12L), installedIds("learning_unit", "learning_unit_id"))
+        assertEquals(listOf(1012L), installedIds("task", "task_id"))
+        assertEquals(ContentManifest.KIND_FULL, installer.installedManifest()?.kind)
+        assertEquals(2026111402, installer.installedManifest()?.contentVersion)
+        assertEquals(SubjectContent(ContentManifest.KIND_FULL, 2026111402), installer.installedSubject(1))
+        // the replaced starter is still a part on disk, and nothing waits for a build any more
+        assertFalse(installer.hasPendingParts())
+    }
+
+    @Test
+    fun partsWithDisjointSubjectsAreMerged() {
+        val starter = treeDb(Tree(2, 25, 26, 27), label = "starter")
+        installer.installIfNewer(starter, manifest(starter, 2000010101, ContentManifest.KIND_STARTER, listOf(2)))
+        val pack = treeDb(Tree(1, 10, 11, 12), label = "pack")
+        installer.savePack(1, pack, manifest(pack, 2026111402, subjects = listOf(1)))
+
+        installer.rebuild()
+
+        assertInstalledFileIsConsistent()
+        assertEquals(listOf(10L, 11L, 25L, 26L), installedIds("topic", "topic_id"))
+        assertEquals(listOf(12L, 27L), installedIds("learning_unit", "learning_unit_id"))
+        assertEquals(ContentManifest.KIND_FULL, installer.installedSubject(1)?.kind)
+        assertEquals(ContentManifest.KIND_STARTER, installer.installedSubject(2)?.kind)
+    }
+
+    @Test
+    fun aPartialOverlapKeepsTheNewPacksSubjectWholeAndTheRestOfTheOldPart() {
+        // the starter holds subjects 1 and 2, the pack only 1: subject 1 comes from the pack alone (the starter's rows of it
+        // are removed from the copy that is merged), subject 2 from the starter
+        val starter = treeDb(Tree(1, 5, 6, 7), Tree(2, 25, 26, 27), label = "starter")
+        installer.installIfNewer(starter, manifest(starter, 2000010101, ContentManifest.KIND_STARTER, listOf(1, 2)))
+        val pack = treeDb(Tree(1, 10, 11, 12), label = "pack")
+        installer.savePack(1, pack, manifest(pack, 2026111402, subjects = listOf(1)))
+
+        installer.rebuild()
+
+        assertInstalledFileIsConsistent()
+        assertEquals(listOf(10L, 11L, 25L, 26L), installedIds("topic", "topic_id"))
+        assertEquals(listOf(12L, 27L), installedIds("learning_unit", "learning_unit_id"))
+        assertEquals(listOf(1012L, 1027L), installedIds("task", "task_id"))
+        assertEquals(listOf(1012L, 1027L), installedIds("task_option", "option_id"))
+        assertEquals(listOf(1L, 2L), installedIds("subject", "subject_id"))
+        assertEquals(ContentManifest.KIND_FULL, installer.installedSubject(1)?.kind)
+        assertEquals(ContentManifest.KIND_STARTER, installer.installedSubject(2)?.kind)
+        assertEquals(ContentManifest.KIND_STARTER, installer.installedManifest()?.kind)
+        // the part on disk is untouched: the rows are removed only in the copy that is merged
+        assertTrue(File(dir, "parts/bundled.db").readBytes().contentEquals(starter))
+    }
+
+    @Test
+    fun aFailedBuildKeepsTheInstalledFileAndIsNotTriedAgainForTheSameParts() {
+        val starter = treeDb(Tree(1, 5, 6, 7), label = "starter")
+        installer.installIfNewer(starter, manifest(starter, 2000010101, ContentManifest.KIND_STARTER, listOf(1)))
+        val before = storage.databaseFile.readBytes()
+        // valid alone as far as the manifest goes, but its child topic points at a topic that does not exist
+        val broken = treeDb(Tree(1, 10, 11, 12), label = "pack", danglingChild = true)
+        installer.savePack(1, broken, manifest(broken, 2026111402, subjects = listOf(1)))
+        var attempts = 0
+
+        val first = installer.swapPending(beforeBuild = { attempts++ })
+        assertIs<SwapResult.Failed>(first)
+        assertTrue(first.reason.startsWith("foreign_key_check failed"), first.reason)
+        // counts per table only, never a row
+        assertTrue("topic=1" in first.reason, first.reason)
+        assertFalse("pack" in first.reason, first.reason)
+        assertTrue(storage.databaseFile.readBytes().contentEquals(before))
+        assertFalse(dir.listFiles()!!.any { it.name.endsWith(".tmp") })
+        assertTrue(installer.installFailed())
+
+        // the same parts again: not built again
+        assertEquals(SwapResult.Failed(first.reason, attempted = false), installer.swapPending(beforeBuild = { attempts++ }))
+        assertEquals(1, attempts)
+        assertTrue(storage.databaseFile.readBytes().contentEquals(before))
+
+        // a different version of the pack arrives: tried again, and it builds
+        val fixed = treeDb(Tree(1, 10, 11, 12), label = "pack")
+        installer.savePack(1, fixed, manifest(fixed, 2026111503, subjects = listOf(1)))
+        assertFalse(installer.installFailed())
+        assertEquals(SwapResult.Swapped, installer.swapPending(beforeBuild = { attempts++ }))
+        assertEquals(2, attempts)
+        assertFalse(installer.installFailed())
+        assertInstalledFileIsConsistent()
+        assertEquals(listOf(10L, 11L), installedIds("topic", "topic_id"))
+    }
+
+    @Test
+    fun aFailedBuildIsTriedAgainAtTheNextAppStart() {
+        val starter = treeDb(Tree(1, 5, 6, 7), label = "starter")
+        installer.installIfNewer(starter, manifest(starter, 2000010101, ContentManifest.KIND_STARTER, listOf(1)))
+        val broken = treeDb(Tree(1, 10, 11, 12), danglingChild = true)
+        installer.savePack(1, broken, manifest(broken, 2026111402, subjects = listOf(1)))
+        assertIs<SwapResult.Failed>(installer.swapPending())
+
+        // a new process: nothing is remembered, the build runs (and fails) once more
+        val restarted = ContentInstaller(FileContentStorage(dir, JdbcSqliteRunner()))
+        assertFalse(restarted.installFailed())
+        var attempts = 0
+        assertIs<SwapResult.Failed>(restarted.swapPending(beforeBuild = { attempts++ }))
+        assertEquals(1, attempts)
+    }
+
+    @Test
+    fun nothingPendingMeansNothingBuilt() {
+        val starter = treeDb(Tree(1, 5, 6, 7))
+        installer.installIfNewer(starter, manifest(starter, 2000010101, ContentManifest.KIND_STARTER, listOf(1)))
+        var attempts = 0
+        assertEquals(SwapResult.NothingPending, installer.swapPending(beforeBuild = { attempts++ }))
+        assertEquals(0, attempts)
+    }
+
     private fun assertFailsWithAny(block: () -> Unit) {
         val failed = runCatching(block).isFailure
         assertTrue(failed, "expected the build to fail")

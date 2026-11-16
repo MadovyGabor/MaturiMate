@@ -82,25 +82,32 @@ class ContentDatabaseProvider(private val driverFactory: DatabaseDriverFactory) 
     /**
      * Builds the installed file from the packs on disk and reopens it, when [swapAllowed]. The open file is closed first,
      * under the same lock as [read], so a read in progress finishes first and the next one opens the new file. Returns
-     * true when a swap happened; a failed build leaves the installed file as it was.
+     * true when a swap happened. A failed build leaves the installed file as it was and is not tried again for the same
+     * packs (see [installFailed]): the callers (every lesson that closes, every sync) cannot make it a loop.
      */
     suspend fun applyPending(): Boolean = mutex.withLock {
         if (!swapAllowed) return@withLock false
         withContext(Dispatchers.IO) {
-            if (!installer.hasPendingParts()) return@withContext false
-            val openDriver = driver
-            database = null
-            driver = null
-            openDriver?.close()
-            try {
-                installer.rebuild()
-                true
-            } catch (e: Exception) {
-                println("Content swap failed: ${e.message}")
-                false
+            val result = installer.swapPending(beforeBuild = {
+                val openDriver = driver
+                database = null
+                driver = null
+                openDriver?.close()
+            })
+            when (result) {
+                is SwapResult.Swapped -> true
+                is SwapResult.NothingPending -> false
+                is SwapResult.Failed -> {
+                    // the reason names the check and the tables, never a row; logged once, when the build really ran
+                    if (result.attempted) println("Content swap failed: ${result.reason}")
+                    false
+                }
             }
         }
     }
+
+    /** True when the packs on disk could not be built into the installed file (this run): the old content stays. */
+    suspend fun installFailed(): Boolean = mutex.withLock { withContext(Dispatchers.IO) { installer.installFailed() } }
 
     /** The kind and version of the installed content of a subject; null when it holds none. */
     fun installedSubject(subjectId: Long): SubjectContent? = installer.installedSubject(subjectId)

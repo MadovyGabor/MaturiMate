@@ -145,10 +145,12 @@ import maturimate.shared.generated.resources.settings_sync_waiting
 import maturimate.shared.generated.resources.settings_sync_waiting_rounds
 import org.jetbrains.compose.resources.pluralStringResource
 import com.madovygabor.maturimate.features.sync.domain.SyncState
+import com.madovygabor.maturimate.features.content.domain.ContentError
 import com.madovygabor.maturimate.features.content.domain.ContentUpdateState
 import maturimate.shared.generated.resources.settings_content_available
 import maturimate.shared.generated.resources.settings_content_downloading
 import maturimate.shared.generated.resources.settings_content_error
+import maturimate.shared.generated.resources.settings_content_install_error
 import maturimate.shared.generated.resources.settings_content_mobile
 import maturimate.shared.generated.resources.settings_content_up_to_date
 import kotlinx.datetime.LocalDate
@@ -552,6 +554,7 @@ private fun contentValue(content: ContentUpdateState): String {
     val megabytes = ((content.pendingBytes + 1024 * 1024 - 1) / (1024 * 1024)).toString()
     return when {
         content.downloading -> stringResource(Res.string.settings_content_downloading)
+        content.lastError == ContentError.INSTALL_FAILED -> stringResource(Res.string.settings_content_install_error)
         content.lastError != null -> stringResource(Res.string.settings_content_error)
         content.needsMobileData -> stringResource(Res.string.settings_content_mobile, megabytes)
         content.pending.isNotEmpty() -> stringResource(Res.string.settings_content_available, megabytes)

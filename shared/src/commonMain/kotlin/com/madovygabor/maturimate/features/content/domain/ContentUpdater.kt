@@ -42,6 +42,13 @@ interface ContentPacks {
 
     /** Swaps the downloaded packs in, when no lesson, test or round is open; true when it did. */
     suspend fun applyPending(): Boolean
+
+    /**
+     * True when the packs that are kept could not be built into the installed content (a pack that clashes with another
+     * part, a failed check): the installed content stays as it was, and the build is tried again only for another pack or
+     * version, or at the next start of the app.
+     */
+    suspend fun installFailed(): Boolean = false
 }
 
 /**
@@ -61,6 +68,8 @@ enum class ContentError : Error {
     LIMIT,
     /** The file that came is not the one the server announced (size or hash). */
     CORRUPT,
+    /** The packs came whole but could not be built into the installed content; the old content stays. */
+    INSTALL_FAILED,
     /** The link service is not set up in this build. */
     NOT_CONFIGURED,
     UNKNOWN,
@@ -189,7 +198,8 @@ class ContentUpdater(
         _state.value = ContentUpdateState(
             pending = pending,
             downloading = downloading,
-            lastError = error,
+            // a failed build of the kept packs is shown until another pack or version (or a restart) builds
+            lastError = error ?: if (packs.installFailed()) ContentError.INSTALL_FAILED else null,
             installedVersion = subjects.mapNotNull { packs.installedSubject(it)?.contentVersion }.maxOrNull(),
         )
     }

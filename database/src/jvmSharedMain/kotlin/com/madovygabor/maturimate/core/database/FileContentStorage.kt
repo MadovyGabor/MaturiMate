@@ -40,33 +40,95 @@ class FileContentStorage(private val dir: File, private val sqlite: SqliteRunner
         replace(File(partsDir, "$name.json"), manifestFile.readBytes())
     }
 
-    override fun installMerged(partNames: List<String>, manifestFor: (size: Long, sha256: String) -> String, stateJson: String) {
-        require(partNames.isNotEmpty()) { "nothing to build the content file from" }
+    override fun partSubjectIds(name: String): List<Long> =
+        runCatching {
+            sqlite.queryStrings(File(partsDir, "$name.db").absolutePath, "SELECT subject_id FROM subject").mapNotNull { it.toLongOrNull() }
+        }.getOrDefault(emptyList())
+
+    override fun installMerged(parts: List<MergePart>, manifestFor: (size: Long, sha256: String) -> String, stateJson: String) {
+        require(parts.isNotEmpty()) { "nothing to build the content file from" }
         dir.mkdirs()
         val temp = File(dir, "$CONTENT_DATABASE_NAME.tmp")
+        val copies = mutableListOf<File>()
         temp.delete()
-        // the first part is the base (its schema and user_version are already right); the others are merged in
-        File(partsDir, "${partNames.first()}.db").copyTo(temp, overwrite = true)
         try {
-            if (partNames.size > 1) {
-                val merge = partNames.drop(1).flatMapIndexed { i, name ->
-                    listOf("ATTACH DATABASE '${sqlPath(File(partsDir, "$name.db"))}' AS p$i") +
+            // the first part is the base (its schema and user_version are already right); the others are merged in
+            File(partsDir, "${parts.first().name}.db").copyTo(temp, overwrite = true)
+            removeSubjects(temp, parts.first().skipSubjects)
+            if (parts.size > 1) {
+                val merge = parts.drop(1).flatMapIndexed { i, part ->
+                    // the rows of the subjects another part covers are removed from a copy: the part on disk stays whole
+                    val source = if (part.skipSubjects.isEmpty()) File(partsDir, "${part.name}.db") else {
+                        File(dir, "merge-$i.tmp").also { copy ->
+                            copies += copy
+                            File(partsDir, "${part.name}.db").copyTo(copy, overwrite = true)
+                            removeSubjects(copy, part.skipSubjects)
+                        }
+                    }
+                    listOf("ATTACH DATABASE '${sqlPath(source)}' AS p$i") +
                         MERGED_TABLES.map { "INSERT OR IGNORE INTO main.$it SELECT * FROM p$i.$it" } +
                         "DETACH DATABASE p$i"
                 }
                 sqlite.execute(temp.absolutePath, merge)
             }
-            check(sqlite.queryStrings(temp.absolutePath, "PRAGMA integrity_check") == listOf("ok")) { "integrity_check failed" }
-            check(sqlite.queryStrings(temp.absolutePath, "PRAGMA foreign_key_check").isEmpty()) { "foreign_key_check failed" }
+            check(sqlite.queryStrings(temp.absolutePath, "PRAGMA integrity_check") == listOf("ok")) {
+                "integrity_check failed"
+            }
+            // only the table of every violation, counted: never a row of the content
+            val violations = sqlite.queryStrings(temp.absolutePath, "PRAGMA foreign_key_check")
+            check(violations.isEmpty()) {
+                "foreign_key_check failed (violations per table: " +
+                    violations.groupingBy { it }.eachCount().entries.sortedBy { it.key }.joinToString(", ") { "${it.key}=${it.value}" } + ")"
+            }
         } catch (e: Exception) {
             temp.delete()
             throw e
+        } finally {
+            copies.forEach { it.delete() }
         }
         val bytes = temp.readBytes()
         move(temp, databaseFile)
         // the manifest and the state go last: if the app stops in between, the next start builds again
         replace(manifestFile, manifestFor(bytes.size.toLong(), sha256(bytes)).encodeToByteArray())
         replace(stateFile, stateJson.encodeToByteArray())
+    }
+
+    /**
+     * Deletes everything of the subjects from a copy of a part (its topics down to the lessons and tasks). Foreign keys are
+     * off in the runner, so every table is cleared explicitly; a row of another subject that still points at a deleted
+     * one shows up in the foreign key check of the build, which then fails and leaves the installed file as it was.
+     */
+    private fun removeSubjects(file: File, subjects: List<Long>) {
+        if (subjects.isEmpty()) return
+        val ids = subjects.joinToString(",")
+        val topics = "SELECT id FROM skip_topic"
+        val units = "SELECT id FROM skip_unit"
+        val tasks = "SELECT id FROM skip_task"
+        sqlite.execute(
+            file.absolutePath,
+            listOf(
+                "CREATE TEMP TABLE skip_topic AS WITH RECURSIVE t(id) AS (SELECT topic_id FROM topic WHERE subject_id IN ($ids) " +
+                    "UNION SELECT c.topic_id FROM topic c JOIN t ON c.parent_topic_id = t.id) SELECT id FROM t",
+                "CREATE TEMP TABLE skip_unit AS SELECT learning_unit_id AS id FROM learning_unit WHERE topic_id IN ($topics)",
+                "CREATE TEMP TABLE skip_task AS SELECT task_id AS id FROM task WHERE topic_id IN ($topics)",
+                "DELETE FROM page_block WHERE learning_unit_id IN ($units)",
+                "DELETE FROM unit_page WHERE learning_unit_id IN ($units)",
+                "DELETE FROM unit_tag WHERE learning_unit_id IN ($units)",
+                "DELETE FROM unit_task WHERE learning_unit_id IN ($units) OR task_id IN ($tasks)",
+                "DELETE FROM task_tag WHERE task_id IN ($tasks)",
+                "DELETE FROM task_key WHERE task_id IN ($tasks)",
+                "DELETE FROM task_option WHERE task_id IN ($tasks)",
+                "DELETE FROM task_accepted_answer WHERE task_id IN ($tasks)",
+                "DELETE FROM task_attachment WHERE task_id IN ($tasks)",
+                "DELETE FROM learning_unit WHERE learning_unit_id IN ($units)",
+                "DELETE FROM task WHERE task_id IN ($tasks)",
+                "DELETE FROM topic WHERE topic_id IN ($topics)",
+                "DELETE FROM subject WHERE subject_id IN ($ids)",
+                "DROP TABLE skip_topic",
+                "DROP TABLE skip_unit",
+                "DROP TABLE skip_task",
+            ),
+        )
     }
 
     override fun sha256(bytes: ByteArray): String =
