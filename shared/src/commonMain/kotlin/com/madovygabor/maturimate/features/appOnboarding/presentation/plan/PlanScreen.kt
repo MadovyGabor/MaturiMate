@@ -21,37 +21,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.compose.ui.tooling.preview.Preview
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
+import com.madovygabor.maturimate.core.presentation.utils.longDate
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
-import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.DEFAULT_GOAL
-import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.hoursPerYear
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
+import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.hoursPerYear
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.hoursAndMinutes
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.label
-import com.madovygabor.maturimate.core.presentation.utils.longDate
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
-import com.madovygabor.maturimate.features.userProfile.domain.ExamCalendar
-import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
 import com.madovygabor.maturimate.features.userProfile.domain.StudyEstimate
-import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_next
 import maturimate.shared.generated.resources.goal_minutes
@@ -59,53 +46,16 @@ import maturimate.shared.generated.resources.plan_change_later
 import maturimate.shared.generated.resources.plan_daily_goal
 import maturimate.shared.generated.resources.plan_days
 import maturimate.shared.generated.resources.plan_exam_date
-import maturimate.shared.generated.resources.plan_student_week
 import maturimate.shared.generated.resources.plan_learner_year
 import maturimate.shared.generated.resources.plan_reminder
 import maturimate.shared.generated.resources.plan_student_total
+import maturimate.shared.generated.resources.plan_student_week
 import maturimate.shared.generated.resources.plan_title
 import maturimate.shared.generated.resources.plan_until_exam
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
-
-/** The answers turned into a plan (docs/onboarding/README.md, screen 8). */
-data class PlanUiState(
-    val role: UserRole? = null,
-    /** The exam date, days left and hours; students with an exam date only. */
-    val estimate: StudyEstimate? = null,
-    val dailyGoalMinutes: Int = DEFAULT_GOAL,
-    val subjects: List<CatalogSubject> = emptyList(),
-    /** The reminder time when the reminder is on. */
-    val reminder: LocalTime? = null,
-)
-
-/** Reads the saved answers for the plan; nothing is saved here. */
-@OptIn(ExperimentalTime::class)
-class PlanViewModel(
-    repository: UserProfileRepository,
-    /** The official exam dates; without them the plan counts to the rule's date. */
-    examDates: ExamDateRepository? = null,
-    today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
-) : ViewModel() {
-    val state: StateFlow<PlanUiState?> = combine(repository.profile, examDates?.dates ?: flowOf(emptyList())) { profile, dates ->
-            val minutes = profile?.dailyGoalMinutes ?: DEFAULT_GOAL
-            PlanUiState(
-                role = profile?.role,
-                estimate = profile?.graduationDate?.takeIf { profile.role == UserRole.STUDENT }
-                    ?.let { StudyEstimate.of(it, ExamCalendar(dates), today, minutes) },
-                dailyGoalMinutes = minutes,
-                subjects = profile?.subjects.orEmpty().mapNotNull { saved -> CatalogSubject.byId(saved.subjectId) },
-                reminder = profile?.reminderTime?.takeIf { profile.reminderEnabled },
-            )
-        }
-        .catch { emit(PlanUiState()) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-}
 
 /** The plan step: days until the exam, the daily goal, the subjects and the reminder. */
 @Composable

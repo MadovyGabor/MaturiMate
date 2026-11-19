@@ -28,11 +28,11 @@ sealed interface Route : NavKey {
         @Serializable
         data object Reminder : Route // Daily reminder
         @Serializable
-        data object Plan : Route // "A te terved" summary
+        data object Plan : Route // Your plan summary
         @Serializable
-        data object Account : Route // Account, or "Körülnézek" (last step)
+        data object Account : Route // Account creation or continue as guest (last step)
         @Serializable
-        data object SignIn : Route // "Már van fiókom"
+        data object SignIn : Route // Sign in to an existing account
     }
     @Serializable
     data class Lesson(val unitId: Long) : Route // Fullscreen lesson, one page at a time

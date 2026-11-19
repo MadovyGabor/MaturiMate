@@ -111,6 +111,7 @@ fun AppOnboardingNavigation(
             onboardingBackStack.clear()
             onboardingBackStack.addAll(initial)
             navState.seeded = true
+            true
         }
     }
     // the saved role, known with the first stack: the step count of the headers is right from the start
@@ -172,12 +173,12 @@ fun AppOnboardingNavigation(
                 ReminderScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.REMINDER, role) })
             }
 
-            // 8. "A te terved"
+            // 8. Your plan summary
             entry<Route.AppOnboarding.Plan> {
                 PlanScreen(role = role, onBack = back, onNext = { goNext(OnboardingStep.PLAN, role) })
             }
 
-            // "Már van fiókom": an account that finished the onboarding goes home by itself (its
+            // Sign in: an account that finished the onboarding goes home by itself (its
             // saved end rebuilds the app); otherwise the onboarding continues from its answers
             entry<Route.AppOnboarding.SignIn> {
                 SignInScreen(
@@ -193,7 +194,7 @@ fun AppOnboardingNavigation(
                 )
             }
 
-            // 9. Account, or "Körülnézek"; both finish the onboarding
+            // 9. Account creation or continue as guest; both finish the onboarding
             entry<Route.AppOnboarding.Account> {
                 AccountScreen(role = role, onBack = back)
             }
@@ -210,7 +211,7 @@ private fun OnboardingLoading() {
 }
 
 /**
- * Where "Már van fiókom" goes on after the sign-in. Null for a set-up account: its saved onboarding end takes the app
+ * Where the sign-in screen goes next after signing in. Null for a set-up account: its saved onboarding end takes the app
  * home by itself. An account that is not set up (no profile, or one without the TERMS consent) must give the consents in
  * the account form; the device is still the guest's, so the guest's answers lead there: straight to the account step
  * when every question is answered, otherwise on from the first open question (the onboarding ends at the account step).

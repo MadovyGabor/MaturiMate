@@ -2,7 +2,6 @@ package com.madovygabor.maturimate.features.auth.domain
 
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
-import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 /** What a user accepted at sign-up (`user_consent.consent_type`). */
@@ -38,7 +37,6 @@ data class RemoteProfile(
  * The signed-in account's own rows on the server (Supabase, row level security). Only the
  * account's profile, settings, role, subjects and consents; progress sync comes in Milestone 11.
  */
-@OptIn(ExperimentalTime::class)
 interface AccountRepository {
     /**
      * Writes everything a new account sends in one transaction on the server (`save_sign_up`):

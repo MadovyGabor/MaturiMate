@@ -12,7 +12,6 @@ import kotlin.time.Instant
  *
  * Each save writes one field, so the onboarding can save after every screen.
  */
-@OptIn(ExperimentalTime::class)
 interface UserProfileRepository {
     /** The profile, again after every change; null until the first answer is saved. */
     val profile: Flow<UserProfile?>

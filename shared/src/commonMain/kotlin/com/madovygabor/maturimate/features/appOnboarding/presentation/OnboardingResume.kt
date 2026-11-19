@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /**
  * The onboarding screens from the welcome screen up to the first unanswered question, so the
@@ -54,7 +53,6 @@ data class OnboardingResumeState(
  * Gives the onboarding navigation its first back stack from the saved answers, and finishes
  * the onboarding after the last step.
  */
-@OptIn(ExperimentalTime::class)
 class OnboardingNavigationViewModel(
     private val repository: UserProfileRepository,
     private val snackbarController: SnackbarController,

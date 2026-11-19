@@ -81,8 +81,12 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                     if (knownUser != null && knownUser != appState.userId) {
                         mainTab.value = Route.Main.Home
                         profilePage.value = Route.Main.Profile.Overview
+                        onboardingState.seeded = false
+                        onboardingState.backStack.clear()
+                        onboardingState.backStack.add(Route.AppOnboarding.Welcome)
                     }
                     knownUser = appState.userId
+                    appState.userId
                 }
                 CompositionLocalProvider(LocalAppLocale provides appState.language?.name?.lowercase()) {
                     key(appState.language, appState.onboardingCompleted, appState.userId) {
