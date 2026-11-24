@@ -21,12 +21,10 @@ import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import com.madovygabor.maturimate.features.practice.domain.PracticeCatalog
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.first
+import com.madovygabor.maturimate.testutil.awaitCondition
+import com.madovygabor.maturimate.testutil.awaitFirst
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -82,7 +80,7 @@ class PracticePickerViewModelTest {
 
     // one thread at a time for the in-memory databases: the ViewModel works on the main dispatcher while the test
     // polls, and with Dispatchers.Unconfined two threads shared one JDBC connection (flaky on a slow CI run)
-    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val dbDispatcher = testDbDispatcher()
     private val content = ContentRepositoryImpl({ database }, dbDispatcher)
     private val userDatabase = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
@@ -105,14 +103,14 @@ class PracticePickerViewModelTest {
     private suspend fun picker(): PracticePickerViewModel {
         finish(50, 51, 52, 60, 61, 80, 91)
         val viewModel = PracticePickerViewModel(catalog)
-        withTimeout(5_000) { viewModel.state.first { it is PickerUiState.Ready } }
+        viewModel.state.awaitFirst { it is PickerUiState.Ready }
         return viewModel
     }
 
     private val PracticePickerViewModel.ready get() = state.value as PickerUiState.Ready
 
     private suspend fun PracticePickerViewModel.counted(size: Int) =
-        withTimeout(5_000) { while (ready.poolSize != size) yield() }
+        awaitCondition { ready.poolSize == size }
 
     @Test
     fun thePickerStartsWithTheSubjectsClosedThePartsOpenAndNothingChosen() = runBlocking<Unit> {
@@ -242,7 +240,7 @@ class PracticePickerViewModelTest {
         viewModel.counted(3)
 
         viewModel.refresh()
-        withTimeout(5_000) { while (viewModel.ready.poolSize != 3) yield() }
+        awaitCondition { viewModel.ready.poolSize == 3 }
         assertEquals(setOf(11L), viewModel.ready.selected)
         assertEquals(setOf(1L), viewModel.ready.openSubjects)
         assertEquals(RoundLength.FIFTY, viewModel.ready.length)
@@ -267,7 +265,7 @@ class PracticePickerViewModelTest {
         // "Alakzatok" is not finished; its mistake counts all the same
         answerWrong(100, 101, 110)
         val viewModel = PracticePickerViewModel(catalog, com.madovygabor.maturimate.features.practice.domain.PracticeMode.MISTAKES)
-        withTimeout(5_000) { viewModel.state.first { it is PickerUiState.Ready } }
+        viewModel.state.awaitFirst { it is PickerUiState.Ready }
 
         val state = viewModel.ready
         assertTrue(state.mistakes)
@@ -285,7 +283,7 @@ class PracticePickerViewModelTest {
         answerWrong(100, 110)
         val tab = PracticeViewModel(catalog)
         tab.refresh()
-        assertEquals(2, (withTimeout(5_000) { tab.state.first { it is PracticeUiState.Ready } } as PracticeUiState.Ready).mistakes)
+        assertEquals(2, (tab.state.awaitFirst { it is PracticeUiState.Ready } as PracticeUiState.Ready).mistakes)
     }
 
     @Test
@@ -294,11 +292,11 @@ class PracticePickerViewModelTest {
         // only "Romantika" (a lesson, no task) is finished: nothing to practice yet
         finish(80)
         tab.refresh()
-        assertEquals(PracticeUiState.Ready(false), withTimeout(5_000) { tab.state.first { it is PracticeUiState.Ready } })
+        assertEquals(PracticeUiState.Ready(false), tab.state.awaitFirst { it is PracticeUiState.Ready })
 
         finish(91)
         tab.refresh()
-        withTimeout(5_000) { tab.state.first { it == PracticeUiState.Ready(true) } }
+        tab.state.awaitFirst { it == PracticeUiState.Ready(true) }
         assertIs<PracticeUiState.Ready>(tab.state.value)
     }
 }
