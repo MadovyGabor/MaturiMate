@@ -165,7 +165,9 @@ jobs:
         if: always()
         uses: mikepenz/action-junit-report@v6
         with:
-          check_name: "App: ${{ matrix.title }} tests"
+          check_name: "App: ${{ matrix.title }}"
+          annotate_only: true
+          job_name: "App: ${{ matrix.title }}"
           report_paths: shared/build/test-results/jvmTest/*.xml
           detailed_summary: true
           include_passed: true
