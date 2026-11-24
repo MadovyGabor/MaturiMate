@@ -13,6 +13,8 @@ data class BuiltPart(
     val kind: String,
     /** Empty for a full file written before packs existed: it holds every subject it contains. */
     @SerialName("subject_ids") val subjectIds: List<Long> = emptyList(),
+    /** The subjects of this part that an earlier (full) part covers: its rows of them are not in the installed file. */
+    @SerialName("replaced_subjects") val replacedSubjects: List<Long> = emptyList(),
 )
 
 /**
@@ -26,7 +28,7 @@ data class InstalledContent(val parts: List<BuiltPart>) {
     /** The kind and version of what the installed file holds for one subject; null when it holds nothing of it. */
     fun subject(subjectId: Long): SubjectContent? {
         val candidates = parts.mapNotNull { part ->
-            val holds = part.subjectIds.isEmpty() || subjectId in part.subjectIds
+            val holds = (part.subjectIds.isEmpty() || subjectId in part.subjectIds) && subjectId !in part.replacedSubjects
             if (holds) SubjectContent(part.kind, part.contentVersion) else null
         }
         // a full pack beats a starter whatever the versions; among equals the higher version

@@ -9,6 +9,17 @@ import com.madovygabor.maturimate.core.presentation.theme.Layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import maturimate.shared.generated.resources.Res
+import maturimate.shared.generated.resources.common_loading
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -47,16 +58,33 @@ fun AppButton(
     enabled: Boolean = true,
     /** A slimmer button for inside a card: [Layout.buttonCompactHeight] tall, still [Layout.touchTarget] to tap. */
     compact: Boolean = false,
+    /** Work is under way: a spinner before the text, and the button does not react (the text stays, so the width does not jump). */
+    loading: Boolean = false,
 ) {
     val layout = MaterialTheme.layout
     val sizedModifier = if (compact) {
         modifier.minimumInteractiveComponentSize().heightIn(min = layout.buttonCompactHeight)
     } else modifier.heightIn(min = layout.touchTarget)
     val padding = if (compact) PaddingValues(horizontal = MaterialTheme.spacing.space4) else ButtonDefaults.ContentPadding
-    val label = @Composable { Text(text, style = MaterialTheme.typography.labelLarge) }
+    val loadingText = if (loading) stringResource(Res.string.common_loading) else null
+    val label = @Composable {
+        Row(
+            modifier = Modifier.semantics { if (loadingText != null) stateDescription = loadingText },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2),
+        ) {
+            if (loading) CircularProgressIndicator(
+                modifier = Modifier.size(layout.iconSmall),
+                strokeWidth = layout.borderThick,
+                color = LocalContentColor.current,
+            )
+            Text(text, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+    val click: () -> Unit = if (loading) ({}) else onClick
     when (variant) {
         AppButtonVariant.FILLED -> Button(
-            onClick = onClick,
+            onClick = click,
             modifier = sizedModifier,
             enabled = enabled,
             shape = CircleShape,
@@ -68,7 +96,7 @@ fun AppButton(
             content = { label() },
         )
         AppButtonVariant.TONAL -> FilledTonalButton(
-            onClick = onClick,
+            onClick = click,
             modifier = sizedModifier,
             enabled = enabled,
             shape = CircleShape,
@@ -82,7 +110,7 @@ fun AppButton(
             content = { label() },
         )
         AppButtonVariant.OUTLINED -> OutlinedButton(
-            onClick = onClick,
+            onClick = click,
             modifier = sizedModifier,
             enabled = enabled,
             shape = CircleShape,
@@ -91,7 +119,7 @@ fun AppButton(
             content = { label() },
         )
         AppButtonVariant.TEXT -> TextButton(
-            onClick = onClick,
+            onClick = click,
             modifier = sizedModifier,
             enabled = enabled,
             shape = CircleShape,

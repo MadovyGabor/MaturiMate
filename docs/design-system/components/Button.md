@@ -12,3 +12,4 @@ Pill-shaped button in four variants. One `filled` main button per screen.
 - At least `touch-target` (48 dp) tall.
 - Compose: `AppButton` in `core/presentation/uiComponents/AppButton.kt`, with `AppButtonVariant.FILLED` (`Button`), `TONAL` (`FilledTonalButton`, first used by "Összes hiba" on the practice tab), `OUTLINED` (`OutlinedButton`) and `TEXT` (`TextButton`).
 - **Compact** (`compact = true`): 36 dp tall (`button-compact-height`) with 16 dp at the sides, for a button inside a card such as the guest card of the profile; the tap area stays 48 dp (`touch-target`).
+- **Loading** (`loading = true`): a spinner (`icon-small`, `border-thick` stroke, the text color) before the text while work is under way; the text stays, so the width does not jump. A loading button does not react to taps; screen readers hear "Betöltés…" (`common_loading`). Use it for the screen's main action together with disabling the fields (`enabled = !busy`).

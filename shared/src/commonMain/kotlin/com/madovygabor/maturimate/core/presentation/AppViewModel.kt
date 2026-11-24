@@ -9,7 +9,11 @@ import com.madovygabor.maturimate.features.content.domain.ContentSwapGate
 import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +32,11 @@ data class AppState(
     /** Null until the user picks a teaching language: the phone's language is used. */
     val language: TeachingLanguage?,
     val onboardingCompleted: Boolean,
+    /**
+     * Whose rows the phone holds: a guest id, or the account's after a sign-in (decision 11). A new id rebuilds the app
+     * on the home screen. Null while it is not followed (a test without a local user).
+     */
+    val userId: String? = null,
 )
 
 /**
@@ -42,6 +51,8 @@ class AppViewModel(
     private val syncTriggers: SyncTriggers? = null,
     private val sessionRevoker: SessionRevoker? = null,
     private val contentSwapGate: ContentSwapGate? = null,
+    /** The id of the local user (`LocalUserProvider.userIdFlow`); each new id is a new [AppState]. */
+    private val userId: Flow<String>? = null,
 ) : ViewModel() {
 
     init {
@@ -61,13 +72,13 @@ class AppViewModel(
      */
     val state: StateFlow<AppState?> = reload
         .flatMapLatest {
-            repository.profile
-                .map { profile ->
-                    AppState(
-                        language = profile?.uiLanguage?.takeIf { profile.teachingLanguage != null },
-                        onboardingCompleted = profile?.isOnboardingCompleted == true,
-                    )
-                }
+            combine(repository.profile, userId ?: flowOf(null)) { profile, userId ->
+                AppState(
+                    language = profile?.uiLanguage?.takeIf { profile.teachingLanguage != null },
+                    onboardingCompleted = profile?.isOnboardingCompleted == true,
+                    userId = userId,
+                )
+            }
                 .retryReads(retryDelaysMillis)
                 .onEach { _failed.value = false }
                 .catch { _failed.value = true }
@@ -85,7 +96,17 @@ class AppViewModel(
         // the sync runs at most every five minutes from here
         syncTriggers?.onForeground()
         // a sign-out made without a network is told to the server now, if the network is back
-        sessionRevoker?.let { viewModelScope.launch { runCatching { it.revokePending() } } }
+        sessionRevoker?.let {
+            viewModelScope.launch {
+                try {
+                    it.revokePending()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    // kept for the next time: the app does not depend on it
+                }
+            }
+        }
     }
 
     /** A lesson, a test or a practice round opened (true) or the last one closed (false). */

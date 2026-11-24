@@ -60,9 +60,6 @@
 
     <!-- Onboarding: exam date -->
     <string name="common_save">Mentés</string>
-    <string name="profile_title">Profilom</string>
-    <string name="profile_why">Koppints arra a válaszra, amit módosítanál.</string>
-    <string name="profile_reminder_off">Kikapcsolva</string>
     <string name="profile_not_set">Nincs beállítva</string>
     <string name="common_cancel">Mégse</string>
     <string name="common_ok">OK</string>
@@ -115,6 +112,9 @@
     <string name="reminder_why">Egy rövid értesítés a választott időben segít, hogy ne szakadjon meg a sorozatod.</string>
     <string name="reminder_time">Melyik időpontban?</string>
     <string name="reminder_permission_hint">A következő lépésben a telefon engedélyt kér az értesítésekhez.</string>
+    <string name="reminder_permission_denied">Engedély nélkül nem kapsz emlékeztetőt. Próbáld újra, vagy válaszd a „Most nem” lehetőséget.</string>
+    <string name="reminder_permission_blocked">Az értesítések ki vannak kapcsolva a telefon beállításaiban. Kapcsold be ott, vagy válaszd a „Most nem” lehetőséget.</string>
+    <string name="reminder_open_settings">Beállítások megnyitása</string>
     <string name="reminder_turn_on">Bekapcsolom</string>
     <string name="reminder_not_now">Most nem</string>
 
@@ -130,6 +130,12 @@
         <item quantity="one">Napi %1$d perccel ez körülbelül %2$d óra gyakorlás.</item>
         <item quantity="other">Napi %1$d perccel ez körülbelül %2$d óra gyakorlás.</item>
     </plurals>
+    <!-- %1$s: the exam date written out -->
+    <string name="plan_exam_date">Érettségi: %1$s</string>
+    <plurals name="plan_student_week">
+        <item quantity="one">Hetente körülbelül %1$d óra.</item>
+        <item quantity="other">Hetente körülbelül %1$d óra.</item>
+    </plurals>
     <string name="plan_daily_goal">Napi cél</string>
     <plurals name="plan_learner_year">
         <item quantity="one">Egy év alatt körülbelül %1$d óra.</item>
@@ -142,7 +148,7 @@
     <string name="account_title">Hozd létre a fiókodat</string>
     <string name="account_why">Így nem vész el a haladásod, és másik telefonon is folytathatod.</string>
     <string name="account_google">Folytatás Google-lel</string>
-    <string name="account_google_signed">Google-fiókkal: %1$s</string>
+    <string name="account_signed_in_as">Bejelentkezve: %1$s</string>
     <string name="account_or_email">vagy e-maillel</string>
     <string name="account_last_name">Vezetéknév</string>
     <string name="account_first_name">Keresztnév</string>
@@ -171,6 +177,7 @@
     <string name="error_same_password">Az új jelszó nem lehet ugyanaz, mint a régi.</string>
     <string name="error_too_many">Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.</string>
     <string name="error_unknown">Valami nem sikerült. Próbáld újra.</string>
+    <string name="error_session_expired">A bejelentkezésed lejárt. Jelentkezz ki, majd jelentkezz be újra.</string>
 
     <!-- Sign-in ("Már van fiókom") and forgotten password; the reset texts are new -->
     <string name="signin_title">Belépés</string>
@@ -300,7 +307,6 @@
     <string name="home_when_today">Ma</string>
     <string name="home_when_yesterday">Tegnap</string>
     <string name="home_activity_meta">%1$s · %2$s</string>
-    <string name="home_week_title">Ez a hét</string>
     <string name="home_day_1">H</string>
     <string name="home_day_2">K</string>
     <string name="home_day_3">Sze</string>
@@ -385,7 +391,7 @@
     <string name="settings_name">Név</string>
     <string name="settings_email">E-mail</string>
     <string name="settings_password">Jelszó megváltoztatása</string>
-    <string name="settings_password_hint">A régi és az új jelszóval</string>
+    <string name="settings_password_hint">A jelenlegi jelszóval és az e-mailben kapott kóddal</string>
     <string name="settings_no_account">Még nincs fiókod</string>
     <string name="settings_create_hint">Hogy a haladásod megmaradjon</string>
     <string name="settings_sign_in_hint">Bejelentkezés</string>
@@ -398,7 +404,6 @@
     <string name="settings_off">Kikapcsolva</string>
     <string name="settings_reminder_time">Időpont</string>
     <string name="settings_sync">Szinkronizálás</string>
-    <string name="settings_sync_hint">A haladásod a fiókodban</string>
     <string name="settings_content">Tartalom frissítése</string>
     <string name="settings_content_hint">Új leckék letöltése</string>
     <string name="settings_content_up_to_date">Naprakész · %1$s. verzió</string>
@@ -406,6 +411,7 @@
     <string name="settings_content_downloading">Letöltés…</string>
     <string name="settings_content_mobile">Letöltés mobilneten (%1$s MB)</string>
     <string name="settings_content_error">A letöltés nem sikerült. Koppints az újrapróbáláshoz.</string>
+    <string name="settings_content_install_error">A tartalmat nem sikerült telepíteni. A korábbi tartalom megmaradt.</string>
     <string name="settings_reset">Haladás újrakezdése</string>
     <string name="settings_reset_hint">A sorozat és a tanulási idő megmarad</string>
     <string name="settings_sign_out">Kijelentkezés</string>
@@ -438,12 +444,27 @@
     <string name="settings_sync_error">Nem sikerült. Koppints az újrapróbáláshoz.</string>
     <string name="sync_badge_description">A haladásod még nincs feltöltve. Koppints a részletekért.</string>
     <string name="settings_name_title">A neved</string>
-    <string name="settings_password_old">Régi jelszó</string>
     <string name="settings_password_new">Új jelszó</string>
-    <string name="settings_password_wrong">A régi jelszó nem jó.</string>
     <string name="settings_password_done">A jelszavad megváltozott.</string>
     <string name="settings_password_repeat">Új jelszó újra</string>
     <string name="settings_password_mismatch">A két új jelszó nem egyezik.</string>
+    <string name="settings_password_code_text">A jelszó megváltoztatásához küldünk egy 6 jegyű kódot ide: %1$s.</string>
+    <string name="settings_password_code_send">Kód küldése</string>
+    <string name="settings_name_done">A neved elmentve.</string>
+    <string name="settings_email_fixed">%1$s · a módosítás még nem érhető el</string>
+    <string name="settings_delete_word">TÖRLÉS</string>
+    <string name="settings_delete_word_prompt">A megerősítéshez írd be: %1$s.</string>
+    <string name="settings_delete_password">A fiókod jelszava</string>
+    <string name="settings_delete_google_text">A Google-lel létrehozott fiók törléséhez jelentkezz be újra Google-lel, ugyanazzal a fiókkal.</string>
+    <string name="settings_delete_google_confirm">Bejelentkezés és törlés</string>
+    <string name="settings_password_old">Jelenlegi jelszó</string>
+    <string name="settings_password_wrong">A jelszó nem jó.</string>
+    <string name="error_account_set_up">Ez a fiók már be van állítva. Lépj be vele a „Már van fiókom” gombbal.</string>
+    <string name="error_wrong_account">Ez egy másik fiók. Azzal a Google-fiókkal jelentkezz be, amelyiket törölni szeretnéd.</string>
+    <string name="error_proof_needed">A törléshez előbb igazold, hogy a fiók a tiéd.</string>
+    <string name="settings_export_save">Mentés fájlba</string>
+    <string name="settings_export_share">Megosztás</string>
+    <string name="settings_export_shared">Az adataid másolatát átadtuk megosztásra.</string>
 
     <!-- Tabs (9.5) -->
     <string name="nav_home">Kezdőlap</string>
@@ -527,4 +548,14 @@
         <item quantity="one">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
         <item quantity="other">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
     </plurals>
+    <string name="common_loading">Betöltés…</string>
+    <string name="password_show">Jelszó megjelenítése</string>
+    <string name="password_hide">Jelszó elrejtése</string>
+    <string name="signin_replace_title">Lecseréled a válaszaidat?</string>
+    <string name="signin_replace_text">Ezen a telefonon már megadtad a válaszaidat. A belépés után a fiókod válaszai váltják fel őket. A tantárgyak összeadódnak: a telefonon választottak és a fiókban lévők is megmaradnak.</string>
+    <string name="signin_replace_confirm">Csere és belépés</string>
+    <string name="signup_app_title">Mentsd el a haladásodat fiókba</string>
+    <string name="signup_app_why">Ebből a telefonból fiókot csinálunk: a haladásod elmentjük, és másik telefonon is folytathatod.</string>
+    <string name="signup_app_code_title">Erősítsd meg az e-mailt</string>
+    <string name="signup_app_code_sent">Elküldtük a 6 jegyű kódot ide: %1$s. A kód megadása után a haladásod a fiókodba kerül. Nézd meg a levélszemetet is.</string>
 </resources>

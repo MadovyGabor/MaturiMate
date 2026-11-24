@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation.language
 
 import androidx.lifecycle.viewModelScope
+import com.madovygabor.maturimate.core.presentation.utils.retryReads
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingQuestionViewModel
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
@@ -28,6 +29,7 @@ class LanguageViewModel(
     /** The role saved before, if the user came back here; it sets the number of steps. */
     val role: StateFlow<UserRole?> = repository.profile
         .map { it?.role }
+        .retryReads()
         .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

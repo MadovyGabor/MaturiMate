@@ -57,3 +57,5 @@ The restore itself, and its test, are in [restore.md](restore.md).
 
 Deleted accounts stay in the backups for up to 30 days, and the dump of `auth.users` holds e-mail addresses and password
 hashes: the files are encrypted and the key is only with the owner (step 15.3).
+
+On Android the phone's own cloud backup (Google) keeps a copy of the user database (progress and answers; not the session, not the content file). The notice says so (decision of 2026-11-14).

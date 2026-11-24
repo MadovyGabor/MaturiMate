@@ -1,5 +1,7 @@
 package com.madovygabor.maturimate.core.database
 
+import com.madovygabor.maturimate.testutil.awaitFirst
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.database.user.Attempt_answer
 import com.madovygabor.maturimate.database.user.UserDatabase
@@ -8,13 +10,10 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,6 +21,10 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LocalUserProviderTest {
+
+    // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
+    // test could use the one connection at the same time
+    private val dbDispatcher = testDbDispatcher()
 
     private val database = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY).also { UserDatabase.Schema.create(it) }
@@ -46,7 +49,7 @@ class LocalUserProviderTest {
     @Test
     fun adoptingAnAccountMovesEveryGuestRow() = runBlocking {
         val provider = LocalUserProvider(database) { "guest-1" }
-        val profiles = UserProfileRepositoryImpl(database, provider, Dispatchers.Unconfined)
+        val profiles = UserProfileRepositoryImpl(database, provider, dbDispatcher)
         profiles.saveTeachingLanguage(TeachingLanguage.HU)
         profiles.saveRole(UserRole.STUDENT)
         profiles.saveSubjects(listOf(UserSubject(1, compulsory = true)))
@@ -62,7 +65,7 @@ class LocalUserProviderTest {
         assertEquals(5L, database.activityQueries.selectActivity("account-1", "2026-10-31", "2026-10-31").executeAsOne().seconds_studied)
         assertNull(database.profileQueries.selectProfile("guest-1").executeAsOneOrNull())
         // the profile follows the new id
-        assertEquals(UserRole.STUDENT, withTimeout(5_000) { profiles.profile.first { it?.role != null } }?.role)
+        assertEquals(UserRole.STUDENT, profiles.profile.awaitFirst { it?.role != null }?.role)
     }
 
     @Test
@@ -95,7 +98,7 @@ class LocalUserProviderTest {
     @Test
     fun anotherAccountDoesNotGetThePreviousAccountsRows() = runBlocking {
         val provider = LocalUserProvider(database) { "guest-1" }
-        val profiles = UserProfileRepositoryImpl(database, provider, Dispatchers.Unconfined)
+        val profiles = UserProfileRepositoryImpl(database, provider, dbDispatcher)
         profiles.saveTeachingLanguage(TeachingLanguage.HU)
         provider.adoptAccount("account-a")
         database.activityQueries.addActivity("account-a", "2026-10-31", "device-1", 5, 3)
@@ -110,11 +113,27 @@ class LocalUserProviderTest {
         assertEquals(0, database.activityQueries.selectActivity("account-a", "2026-10-31", "2026-10-31").executeAsList().size)
     }
 
+    // A switch to another account used to keep the old account's sync state, so the new account pulled from the old cursor.
+    @Test
+    fun anotherAccountStartsWithItsOwnSyncState() = runBlocking {
+        val provider = LocalUserProvider(database) { "guest-1" }
+        provider.adoptAccount("account-a")
+        database.syncQueries.markSynced(cursor = "cursor-of-a", at = 1_000, rejected = 0)
+
+        provider.adoptAccount("account-b")
+
+        val state = database.syncQueries.selectSyncState().executeAsOne()
+        assertEquals("account-b", state.user_id)
+        assertNull(state.pull_cursor)
+        assertNull(state.last_success_at)
+        assertTrue(state.full_push_pending)
+    }
+
     // A save used to read the id before its transaction, so a sign-up moving the rows in between
     // made it write to the old guest id, where the answer was lost.
     @Test
     fun savesDuringASignUpEndUpUnderTheAccount() = runBlocking {
-        val dispatcher = Dispatchers.IO.limitedParallelism(1)
+        val dispatcher = testDbDispatcher()
         val provider = LocalUserProvider(database) { "guest-1" }
         val profiles = UserProfileRepositoryImpl(database, provider, dispatcher)
 

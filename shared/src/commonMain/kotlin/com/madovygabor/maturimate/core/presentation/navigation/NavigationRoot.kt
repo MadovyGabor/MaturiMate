@@ -19,7 +19,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.MainFrameNavigation
 import com.madovygabor.maturimate.features.appOnboarding.presentation.AppOnboardingNavigation
-import com.madovygabor.maturimate.features.examTaking.ExamWriteScreen
+import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingNavState
 import com.madovygabor.maturimate.features.learning.presentation.LessonScreen
 import com.madovygabor.maturimate.features.learning.presentation.TestScreen
 import com.madovygabor.maturimate.features.practice.presentation.PracticePickerScreen
@@ -37,6 +37,8 @@ fun NavigationRoute(
     mainTab: MutableState<NavKey>,
     /** The page the profile tab opens on; it follows the user too. */
     profilePage: MutableState<NavKey>,
+    /** The back stack of the onboarding, held above the rebuild after a new language. */
+    onboardingState: OnboardingNavState,
     /** The language the app is built with (`AppState.language`). */
     appLanguage: TeachingLanguage?,
     /** True while a lesson, a test or a practice round is open: the content file is not swapped under it. */
@@ -50,7 +52,6 @@ fun NavigationRoute(
                     // Root level routes
                     subclass(Route.Main::class, Route.Main.serializer())
                     subclass(Route.AppOnboarding::class, Route.AppOnboarding.serializer())
-                    subclass(Route.ExamWrite::class, Route.ExamWrite.serializer())
                     subclass(Route.Lesson::class, Route.Lesson.serializer())
                     subclass(Route.Test::class, Route.Test.serializer())
                     subclass(Route.PracticeRound::class, Route.PracticeRound.serializer())
@@ -88,7 +89,7 @@ fun NavigationRoute(
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
                 // finishing it saves the onboarding end; App then starts on Main
-                BottomInsetBox { AppOnboardingNavigation(appLanguage = appLanguage) }
+                BottomInsetBox { AppOnboardingNavigation(appLanguage = appLanguage, navState = onboardingState) }
             }
             // A test, one task at a time, without the navigation bar
             entry<Route.Test> { route ->
@@ -122,10 +123,6 @@ fun NavigationRoute(
                         onOpenTest = { rootBackStack.add(Route.Test(it)) },
                     )
                 }
-            }
-            //Fullscreen exam writing screen
-            entry<Route.ExamWrite> {
-                BottomInsetBox { ExamWriteScreen() }
             }
         }
     )

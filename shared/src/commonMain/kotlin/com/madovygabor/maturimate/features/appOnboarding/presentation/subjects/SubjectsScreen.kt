@@ -229,7 +229,7 @@ private fun SubjectsContentPreview() {
             state = SubjectsUiState(
                 role = UserRole.STUDENT,
                 items = (CatalogSubject.forLanguage(TeachingLanguage.HU) - CatalogSubject.ENGLISH_B2).map {
-                    SubjectItem(it, it.compulsory, it.compulsory, it == CatalogSubject.HUNGARIAN, asksLevel = it.level != null)
+                    SubjectItem(it, it.compulsory, it.compulsory, asksLevel = it.level != null)
                 },
                 level = LevelChoice.UNKNOWN,
             ),

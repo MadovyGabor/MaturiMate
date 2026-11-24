@@ -88,7 +88,7 @@ class DesignTokensSyncTest {
     fun everyTypeStyleMatchesTheCode() {
         val serif = FontFamily.Serif
         val sans = FontFamily.SansSerif
-        val families = mapOf("serif" to serif, "sans" to sans)
+        val families = mapOf("serif" to serif, "sans" to sans, "mono" to FontFamily.Monospace)
         val typography = appTypography(serif, sans)
         val codeStyles: Map<String, TextStyle> = mapOf(
             "display-large" to typography.displayLarge,
@@ -107,6 +107,7 @@ class DesignTokensSyncTest {
             "label-medium" to typography.labelMedium,
             "label-small" to typography.labelSmall,
             "reading" to appExtendedTypography(serif).reading,
+            "code" to appExtendedTypography(serif).code,
         )
 
         val groups = tokens().getValue("type").jsonObject.getValue("groups").jsonArray
@@ -166,6 +167,7 @@ class DesignTokensSyncTest {
             "breakpoint-expanded" to layout.breakpointExpanded.value,
             "content-max-width" to layout.contentMaxWidth.value,
             "side-panel-width" to layout.sidePanelWidth.value,
+            "rail-width" to layout.railWidth.value,
             "touch-target" to layout.touchTarget.value,
             "icon" to layout.icon.value,
             "icon-small" to layout.iconSmall.value,

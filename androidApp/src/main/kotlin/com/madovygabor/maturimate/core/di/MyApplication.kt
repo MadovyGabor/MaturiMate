@@ -1,6 +1,7 @@
 package com.madovygabor.maturimate.core.di
 
 import android.app.Application
+import com.madovygabor.maturimate.core.export.clearExportShareCache
 import com.madovygabor.maturimate.features.reminder.domain.ReminderScheduler
 import com.madovygabor.maturimate.features.reminder.domain.ReminderSync
 import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
@@ -24,6 +25,8 @@ class MyApplication : Application(), KoinComponent {
             androidContext(this@MyApplication)
             modules(module { single<ReminderScheduler> { AndroidReminderScheduler(androidContext()) } })
         }
+        // a share of the export leaves a copy of the data in the cache (older versions did too): it goes at every start
+        applicationScope.launch(Dispatchers.IO) { clearExportShareCache(this@MyApplication) }
         // plans the daily reminder, and again whenever the profile changes it (also after a restart of the phone)
         applicationScope.launch { get<ReminderSync>().run() }
         // uploads a settings change a few seconds after it was made

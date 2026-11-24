@@ -1,4 +1,6 @@
 
+> **Updated 2026-11-13:** Milestones 13 and 14 are merged into one: review, optimization and UI refinement are done slice by slice, in sixteen small slices ([review-slices.md](review-slices.md)), with a fixed order of nine steps ([review-procedure.md](review-procedure.md)). The old 14.1 to 14.5 are steps of every slice; the phone-test bugs (was 13.5) sit in the slices they belong to (S1 to S3); the former 13.1 to 13.4 are the closing round (S16).
+>
 > **Updated 2026-11-10:** Milestone 11 is the database review and freeze only (done); its steps are plain points 11.1 to 11.8 (were 11.1a to 11.1h). The open bugs from the phone tests (was 11.2) moved to 13.5, and 12.2 is gone from Milestone 12 because 11.8 did it. The "Was 11.x" notes on steps of Milestones 12 and 15 refer to the numbers of Milestone 11 before this change. The release key and Play Console, crash reports, the legal drafts and the Supabase operations (was 11.3 to 11.6) moved to the start of Milestone 15 (15.1 to 15.4), because they only matter when there is something to give to testers. The Play Console app is created already.
 >
 > **Updated 2026-11-06 (staged release):** the plan from Milestone 10 on is redrawn: Hungarian content first, then the groundwork (11), the sync and download (12), code review (13) and UI refinement (14), all before the alpha (15); then the closed beta (16), the other subjects as downloadable packs (17), the open beta (18) and the release in September 2027 (19). Steps of finished milestones keep their old numbers; each new step says "Was …". Reasons in [DECISIONS](../content/DECISIONS.md).
@@ -262,27 +264,72 @@ All of it before the alpha, so the testers use the real flow: sign-up, sync, dow
 
 ---
 
-## Milestone 13: Code review and optimization
+## Milestone 13: Review and refinement by feature slice
 
-Before the alpha, on the finished sync code.
+Branch: `chore/review-and-refinement`, one branch for the whole milestone; every slice is one or a few small commits with the slice in the scope (`fix(S3): …`, `refactor(S2): …`). Replaces the former Milestones 13 (code review and optimization) and 14 (UI refinement and animations), merged on 2026-11-13: the work is done slice by slice, so a screen and the code under it are opened once, not twice (see [DECISIONS](../content/DECISIONS.md) 2026-11-13). Before the alpha. **13.n is slice Sn** of the list below.
 
-* [ ] **13.1.** A manual and an AI review (`/code-review`) of the code module by module, with the bugs found fixed.
-* [ ] **13.2.** Optimization: database calls, recomposition, memory, start-up time.
-* [ ] **13.3. Tests:** Android device tests in CI (waiting for an emulator since 6a.5), a test that the phone database upgrades from the version of the alpha, the shared profile flow in the coverage.
-* [ ] **13.4.** Dead code and documentation check.
-* [ ] **13.5. Bug fixes from phone tests** *(was 11.2 and 12.1)*: after a change of the teaching language the subjects are not asked again; Google sign-in on desktop is not tried yet (it works on Android); sometimes the interface comes up in Slovak although the app language is Hungarian (seen on 2026-11-05, not every time).
+**The three documents of this milestone:**
+
+| Document | What it is |
+| :--- | :--- |
+| [review-slices.md](review-slices.md) | the owner's checklist: the slices in order, what each holds, ticked when done |
+| [review-procedure.md](review-procedure.md) | the nine steps of a slice, in two versions (A for screens, B for the backend) |
+| [review-checklist.md](review-checklist.md) | what to check and what good looks like: 15 groups (layers, smells, correctness, errors, concurrency, security, privacy, database, performance, UI, accessibility, texts, tests, file structure and tests layout, CI) and Part B, the security list of this app |
+
+**The nine steps of every slice:** 1 manual walkthrough (the owner), 2 AI code review, 3 fixes, 4 the owner reads the code, 5 UI design review, 6 UI polish and animations, 7 optimization, 8 final review, 9 close. The owner does 1 and 4 and picks what counts in 5; Claude does 2, 3, 5 to 8. As everywhere, the list of fixes and every move or split of files is agreed first (plan first, code second).
+
+**How it goes, in order:**
+
+1. Take the next slice of the list (the order is fixed: the frame and first use, the learning path, what is built on the learning data, the backend, the closing round).
+2. Run its nine steps; the notes of the slice go in `llm/outputs/refine-<slice>.md` (local).
+3. Close the slice: tests and CI green, coverage still at 80 %, the slice ticked in `review-slices.md` and below, committed.
+4. After each part, a **checkpoint**: the full test run and CI green, one walk through the whole app on a phone and on the desktop, `docs/ARCHITECTURE.md` and the roadmap brought up to date.
+
+**Preparation**
+
+* [ ] **13.0.** The owner decides what happens to Milestone 12's branch (`feat/sync-and-content`): merged into `main` first, so the pull request of this branch holds only the review work (this branch starts from it). The open steps of Milestone 12 (12.2 backup secrets and restore test, the migrations on the live project, the Vault secret, the manual two-device test) are needed before 13.13, not before.
+
+**Part 1: the frame and the first use**
+
+* [ ] **13.1. S1 App frame and start-up:** theme, navigation frame, start decision, app language, config; the Slovak-instead-of-Hungarian bug; the dead `ExamWriteScreen`. The screen checklist `docs/screen-checklist.md` (one row per screen: works, empty state, error state, phone and tablet and desktop, dark mode, accessibility, animation) is made here.
+* [ ] **13.2. S2 Onboarding questions:** welcome, language, role, subjects, date, goal, plan, resume; the bug "subjects not asked again after a language change".
+* [ ] **13.3. S3 Account:** sign-up, sign-in, forgotten password, the guest; Google sign-in on desktop.
+* [ ] **13.4. S4 Reminder:** the step, the notification, the permission, the Android receivers.
+* [ ] **13.5. S5 Settings:** the screen and its account actions.
+* [ ] **Checkpoint 1.**
+
+**Part 2: learning**
+
+* [ ] **13.6. S6 Subjects and the path.**
+* [ ] **13.7. S7 The lesson.**
+* [ ] **13.8. S8 The task formats.**
+* [ ] **13.9. S9 Test rounds and results** (S8 and S9 may be taken together).
+* [ ] **Checkpoint 2.**
+
+**Part 3: what is built on the learning data**
+
+* [ ] **13.10. S10 Practice.**
+* [ ] **13.11. S11 Home and the daily goal.**
+* [ ] **13.12. S12 Profile and history.**
+* [ ] **Checkpoint 3.**
+
+**Part 4: the backend (version B)**
+
+* [ ] **13.13. S13 Content download** (needs 13.0's open steps of Milestone 12).
+* [ ] **13.14. S14 Sync of the user data.**
+* [ ] **13.15. S15 Server security and account data.**
+* [ ] **Checkpoint 4.**
+
+**Closing**
+
+* [ ] **13.16. S16 Closing round:** what no slice owns (`database/`, `androidApp/`, `desktopApp/`, the tools, CI layout, dependencies, dead code, documentation); Android device tests in CI, the phone database upgrade test, the shared profile flow in the coverage, start-up on a weak phone. The 26 test files that still run their repositories on `Dispatchers.Unconfined` move to one single-thread database dispatcher, ideally in a shared test helper (found when `PracticePickerViewModelTest` timed out on CI on 2026-11-16; that file is fixed already).
+* [ ] **13.17. Milestone close:** every slice ticked, the screen checklist complete, the CI map up to date, coverage at 80 %, the documents match the code, `content/DECISIONS.md` has what was decided on the way; the pull request to `main`. Next: Milestone 15 (the alpha).
 
 ---
 
-## Milestone 14: UI refinement and animations
+## Milestone 14: *(merged into Milestone 13 on 2026-11-13)*
 
-Before the alpha. The screens were built quickly and work; here they get polished.
-
-* [ ] **14.1. Screen checklist:** `docs/screen-checklist.md`, one row per screen: works, empty state, error state, phone and tablet and desktop, dark mode, accessibility, animation.
-* [ ] **14.2.** Refinement screen by screen against the design system: spacing, type, states.
-* [ ] **14.3.** Animations. *Was 12.2.*
-* [ ] **14.4.** Accessibility checks. *Was 12.2.*
-* [ ] **14.5.** Review of the Slovak and Hungarian texts. *Was 12.3.*
+UI refinement, animations, accessibility checks and the review of the texts (the former 14.1 to 14.5) are steps 5 and 6 of every slice of Milestone 13; the screen checklist is made in 13.1. The number stays so the later milestones keep theirs.
 
 ---
 
@@ -338,6 +385,7 @@ Target: September 2027, for the school year of the next graduates. (The students
 ## Milestone 20: Other platforms
 
 * [ ] **20.1. Platforms:** desktop (a target already exists), then iOS, then web. *Was 13.4.*
+* [ ] **20.2. Known bugs on other platforms:** the list per platform is in [known-platform-issues.md](known-platform-issues.md). The first one to fix is **D1: desktop session tokens in plain text** (use the operating system's credential store). The Android and cross-platform entries are checked again before the alpha (Milestone 15).
 
 ---
 

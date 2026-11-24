@@ -16,19 +16,15 @@ import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceChip
-import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.appOnboarding.presentation.LocalEditingAnswer
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import com.madovygabor.maturimate.features.appOnboarding.presentation.nextLabel
-import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingQuestionViewModel
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.QuestionUiState
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
-import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
-import kotlinx.coroutines.flow.first
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.goal_minutes
 import maturimate.shared.generated.resources.goal_title
@@ -39,23 +35,6 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-
-/** The daily goals offered, in minutes; [DEFAULT_GOAL] is preselected. */
-val GOAL_OPTIONS = listOf(5, 10, 15, 20)
-const val DEFAULT_GOAL = 10
-
-/** Practice in a year at this daily goal, in whole hours. */
-fun hoursPerYear(minutesPerDay: Int): Int = (minutesPerDay * 365 + 30) / 60
-
-/** The daily goal question (students and learners); 10 minutes is preselected. */
-class GoalViewModel(
-    repository: UserProfileRepository,
-    snackbarController: SnackbarController,
-) : OnboardingQuestionViewModel<Int>(
-    snackbarController,
-    load = { repository.profile.first()?.dailyGoalMinutes ?: DEFAULT_GOAL },
-    save = repository::saveDailyGoal,
-)
 
 /** The daily goal step: how many minutes a day, with what that means in a year. */
 @Composable

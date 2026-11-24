@@ -17,17 +17,33 @@ interface ContentStorage {
 
     fun partNames(): List<String>
 
+    /** The ids of the subjects a part really holds (its `subject` rows); empty when the file cannot be read. */
+    fun partSubjectIds(name: String): List<Long>
+
     /** Keeps the file installed before parts existed as the part [name], so the next build does not lose it. */
     fun adoptInstalledAsPart(name: String)
 
     /**
-     * Builds the installed file from the parts, the first part as the base and the others merged in without overwriting,
-     * checks it, and moves it over the installed file in one step. The manifest ([manifestFor] gets the size and hash of
-     * the new file) and then the state are written last. On any failure the installed file stays as it was.
+     * Builds the installed file from the parts, the first part as the base and the others merged in without overwriting
+     * (the rows of [MergePart.skipSubjects] are left out of a part), checks it, and moves it over the installed file in one
+     * step. The manifest ([manifestFor] gets the size and hash of the new file) and then the state are written last. On
+     * any failure the installed file stays as it was; the message names the check and the tables, never a row.
      */
-    fun installMerged(partNames: List<String>, manifestFor: (size: Long, sha256: String) -> String, stateJson: String)
+    fun installMerged(parts: List<MergePart>, manifestFor: (size: Long, sha256: String) -> String, stateJson: String)
 
     fun sha256(bytes: ByteArray): String
+}
+
+/** One part of a build: its name, and the subjects of it that another part covers, so its rows of them are not merged. */
+data class MergePart(val name: String, val skipSubjects: List<Long> = emptyList())
+
+/** What [ContentInstaller.swapPending] did. */
+sealed interface SwapResult {
+    data object NothingPending : SwapResult
+    data object Swapped : SwapResult
+
+    /** The build failed ([attempted]) or was not tried because it failed before for exactly these parts. */
+    data class Failed(val reason: String, val attempted: Boolean = true) : SwapResult
 }
 
 sealed interface ContentInstallResult {
@@ -108,6 +124,8 @@ class ContentInstaller(
             rebuild()
             ContentInstallResult.Installed(manifest.contentVersion)
         } catch (e: Exception) {
+            // not tried again for these parts by the next swap
+            rememberFailure(partsSignature(), e.message ?: e::class.simpleName.orEmpty())
             ContentInstallResult.Rejected("cannot build the content file: ${e.message}")
         }
     }
@@ -140,24 +158,84 @@ class ContentInstaller(
         return if (built == null) onDisk.keys.any { it != BUNDLED } else onDisk != built
     }
 
-    /** Builds the installed file from the parts on disk and moves it in place. Throws when the result is not valid. */
+    /**
+     * Names the parts on disk: name, version and hash of each. A failed build is remembered for exactly this string, so
+     * a different pack or version tries again.
+     */
+    fun partsSignature(): String = storage.partNames().sorted().joinToString("|") { name ->
+        val manifest = storage.readPartManifest(name)?.let { runCatching { ContentManifest.fromJson(it) }.getOrNull() }
+        "$name:${manifest?.contentVersion}:${manifest?.sha256}"
+    }
+
+    @Volatile
+    private var failedSignature: String? = null
+
+    @Volatile
+    private var failedReason: String? = null
+
+    /** True when the build of exactly the parts on disk failed (in this process): the installed file is the old one. */
+    fun installFailed(): Boolean = failedSignature != null && failedSignature == partsSignature()
+
+    /**
+     * Builds the pending parts into the installed file. A build that failed is not tried again for the same parts (name,
+     * version and hash): it is tried again when a different pack or version arrives, or at the next start of the app.
+     * [beforeBuild] runs right before a build starts (the provider closes the open file there); it does not run when
+     * nothing is pending or when the build is skipped.
+     */
+    fun swapPending(beforeBuild: () -> Unit = {}): SwapResult {
+        if (!hasPendingParts()) return SwapResult.NothingPending
+        val signature = partsSignature()
+        if (signature == failedSignature) return SwapResult.Failed(failedReason ?: "the build failed before", attempted = false)
+        beforeBuild()
+        return try {
+            rebuild()
+            failedSignature = null
+            failedReason = null
+            SwapResult.Swapped
+        } catch (e: Exception) {
+            rememberFailure(signature, e.message ?: e::class.simpleName.orEmpty())
+        }
+    }
+
+    private fun rememberFailure(signature: String, reason: String): SwapResult.Failed {
+        failedSignature = signature
+        failedReason = reason
+        return SwapResult.Failed(reason)
+    }
+
+    /**
+     * Builds the installed file from the parts on disk and moves it in place. Throws when the result is not valid.
+     *
+     * The downloaded packs come first (they win), the bundled file last. A part whose subjects are all covered by a full
+     * part before it is replaced by it: it is not merged at all, so a bundled starter (or a test file) can never put rows
+     * next to a downloaded pack's. A part that covers some subjects of its own that the earlier parts do not is merged
+     * without the rows of the subjects they cover. Parts of different subjects are merged as they are.
+     */
     fun rebuild() {
         adoptLegacy()
-        // downloaded packs first (they win), the bundled file last
         val names = storage.partNames().sortedWith(compareBy({ it == BUNDLED }, { it }))
+        val covered = mutableSetOf<Long>()
+        val mergeParts = mutableListOf<MergePart>()
         val parts = names.map { name ->
             val manifest = ContentManifest.fromJson(storage.readPartManifest(name)!!)
-            BuiltPart(name, manifest.contentVersion, manifest.sha256, manifest.kind, manifest.subjectIds)
+            // a full file written before packs existed has no subject ids: what it really holds is read from it
+            val holds = manifest.subjectIds.ifEmpty { storage.partSubjectIds(name) }
+            val overlap = holds.filter { it in covered }.distinct().sorted()
+            val replaced = holds.isNotEmpty() && overlap.size == holds.distinct().size
+            if (!replaced) mergeParts += MergePart(name, overlap)
+            if (manifest.kind == ContentManifest.KIND_FULL) covered += holds
+            BuiltPart(name, manifest.contentVersion, manifest.sha256, manifest.kind, manifest.subjectIds, replacedSubjects = overlap)
         }
         val state = InstalledContent(parts)
-        val subjects = parts.flatMap { it.subjectIds }.distinct().sorted()
+        val used = parts.filter { part -> mergeParts.any { it.name == part.name } }
+        val subjects = used.flatMap { it.subjectIds }.distinct().sorted()
         // starter while some subject has no full pack (a full file without subject ids holds every subject)
-        val allFull = parts.any { it.kind == ContentManifest.KIND_FULL && it.subjectIds.isEmpty() } ||
+        val allFull = used.any { it.kind == ContentManifest.KIND_FULL && it.subjectIds.isEmpty() } ||
             subjects.all { state.subject(it)?.kind == ContentManifest.KIND_FULL }
         val kind = if (allFull) ContentManifest.KIND_FULL else ContentManifest.KIND_STARTER
-        val version = parts.maxOf { it.contentVersion }
+        val version = used.maxOf { it.contentVersion }
         storage.installMerged(
-            names,
+            mergeParts,
             manifestFor = { size, sha ->
                 ContentManifest(version, schemaVersion, CONTENT_DATABASE_NAME, size, sha, kind, subjects).toJson()
             },

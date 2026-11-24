@@ -65,6 +65,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import org.koin.core.module.dsl.bind
 import com.madovygabor.maturimate.features.auth.data.PendingRevocation
+import com.madovygabor.maturimate.features.auth.data.SettingsPendingTokenStore
 import com.madovygabor.maturimate.core.config.ContentConfig
 import com.madovygabor.maturimate.features.content.data.AccessTokens
 import com.madovygabor.maturimate.features.content.data.SupabaseAccessTokens
@@ -72,6 +73,7 @@ import com.madovygabor.maturimate.features.content.data.WorkerPackSource
 import com.madovygabor.maturimate.features.content.domain.ContentUpdater
 import com.madovygabor.maturimate.features.content.domain.NetworkState
 import io.ktor.client.HttpClient
+import com.madovygabor.maturimate.features.auth.domain.SignInsInFlight
 import com.madovygabor.maturimate.features.sync.data.SupabaseSyncRepository
 import com.madovygabor.maturimate.features.userProfile.data.ExamDateRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
@@ -174,10 +176,14 @@ val sharedModule = module {
 
     // Supabase: accounts (sign-up, sign-in, password reset)
     single { createAppSupabaseClient() }
-    single<AuthRepository> { AuthRepositoryImpl(get<SupabaseClient>().auth) }
+    single<AuthRepository> {
+        val profiles = get<UserProfileRepository>()
+        // the app language goes with a sign-up, for the language of the e-mail ("hu" or "sk")
+        AuthRepositoryImpl(get<SupabaseClient>().auth, appLanguage = { profiles.profile.first()?.uiLanguage?.name?.lowercase() })
+    }
     single<AccountRepository> { SupabaseAccountRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
     // The sync of the account's data with Supabase (a guest has nothing to sync)
-    single<SyncRepository> { SupabaseSyncRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest) }
+    single<SyncRepository> { SupabaseSyncRepository(get<SupabaseClient>().auth, get<SupabaseClient>().postgrest, get(), get(USER_DATABASE)) }
     single<SyncStore> { SyncStoreImpl(get(), get(), get(USER_DATABASE)) }
     single<SyncSession> { SyncSessionImpl(get<SupabaseClient>().auth, get(), get(USER_DATABASE)) }
     single { SyncEngine(get(), get(), get(), now = { Clock.System.now().toEpochMilliseconds() }) }
@@ -203,8 +209,20 @@ val sharedModule = module {
         )
     }
     single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE), sync = get()) }
-    single { PendingRevocation(get(), get(), get(USER_DATABASE)) } binds arrayOf(SessionRevoker::class)
-    single<AccountSettings> { AccountSettingsImpl(get(), get(), get(), get(USER_DATABASE), sync = get(), revocation = get(), account = get(), exportSaver = getOrNull()) }
+    single { PendingRevocation(get(), get(), get(USER_DATABASE), SettingsPendingTokenStore()) }
+    // At every opening: a session of another account left on this account's phone (a deletion proof that never finished)
+    // is ended first, then the sessions waiting to be ended are told to the server.
+    single<SessionRevoker> {
+        val settings = get<AccountSettings>()
+        val pending = get<PendingRevocation>()
+        SessionRevoker {
+            settings.endForeignSession()
+            pending.revokePending()
+        }
+    }
+    // the browser sign-ins in flight (desktop Google): a cancelled deletion proof waits for them
+    single { SignInsInFlight() }
+    single<AccountSettings> { AccountSettingsImpl(get(), get(), get(), get(USER_DATABASE), sync = get(), revocation = get(), account = get(), exportSaver = getOrNull(), signIns = get()) }
 
     // UI Controllers
 
@@ -217,6 +235,8 @@ val sharedModule = module {
             get(), syncTriggers = getOrNull(), sessionRevoker = getOrNull(),
             // a screen test without the content database has none
             contentSwapGate = runCatching { get<ContentSwapGate>() }.getOrNull(),
+            // the whole app is rebuilt on the home screen when another user takes the phone (decision 11)
+            userId = get<LocalUserProvider>().userIdFlow(get(USER_DATABASE)),
         )
     }
     viewModelOf(::OnboardingNavigationViewModel)
@@ -226,10 +246,15 @@ val sharedModule = module {
     viewModel { DateViewModel(get(), get()) }
     viewModelOf(::GoalViewModel)
     viewModelOf(::ReminderViewModel)
-    viewModel { PlanViewModel(get()) }
-    viewModelOf(::AccountViewModel)
+    viewModel { PlanViewModel(get(), getOrNull()) }
+    viewModel { AccountViewModel(get(), get(), get(), get(), now = { Clock.System.now() }) }
     viewModelOf(::SignInViewModel)
-    viewModel { SettingsViewModel(get(), auth = get(), accountSettings = get(), progress = get(), syncEngine = getOrNull(), syncTriggers = getOrNull(), contentUpdater = runCatching { get<ContentUpdater>() }.getOrNull()) }
+    viewModel {
+        SettingsViewModel(
+            get(), auth = get(), accountSettings = get(), progress = get(), snackbar = get(), examDates = get(),
+            syncEngine = getOrNull(), syncTriggers = getOrNull(), contentUpdater = runCatching { get<ContentUpdater>() }.getOrNull(),
+        )
+    }
     viewModel { ProfileOverviewViewModel(get(), getOrNull<SyncEngine>()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { SubjectListViewModel(get(), get()) }

@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /**
  * The onboarding screens from the welcome screen up to the first unanswered question, so the
@@ -43,6 +42,8 @@ data class OnboardingResumeState(
     val language: TeachingLanguage?,
     /** True when the profile could not be read: the welcome screen, whatever the language. */
     val fallback: Boolean = false,
+    /** The saved role, for the step count of the headers: known with the first stack, so no screen starts with the long path. */
+    val role: UserRole? = null,
 ) {
     /** Whether this stack belongs to the profile the app was built with, in [appLanguage]. */
     fun matches(appLanguage: TeachingLanguage?): Boolean = fallback || language == appLanguage
@@ -52,7 +53,6 @@ data class OnboardingResumeState(
  * Gives the onboarding navigation its first back stack from the saved answers, and finishes
  * the onboarding after the last step.
  */
-@OptIn(ExperimentalTime::class)
 class OnboardingNavigationViewModel(
     private val repository: UserProfileRepository,
     private val snackbarController: SnackbarController,
@@ -68,17 +68,11 @@ class OnboardingNavigationViewModel(
             OnboardingResumeState(
                 backStack = onboardingBackStack(profile),
                 language = profile?.uiLanguage?.takeIf { profile.teachingLanguage != null },
+                role = profile?.role,
             )
         }
         .retryReads()
         .catch { emit(OnboardingResumeState(listOf(Route.AppOnboarding.Welcome), language = null, fallback = true)) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-
-    /** The saved role, for the steps after the role question. */
-    val role: StateFlow<UserRole?> = repository.profile
-        .map { it?.role }
-        .retryReads()
-        .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Marks the onboarding as finished; the app then shows the home screen. A failed save says so. */

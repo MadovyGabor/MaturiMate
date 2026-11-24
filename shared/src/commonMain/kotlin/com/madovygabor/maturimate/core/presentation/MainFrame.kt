@@ -18,13 +18,16 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.LocalBottomBarHeight
 import androidx.navigation3.runtime.NavKey
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.navigation.MainFrame.TOP_LEVEL_NAVBAR_DESTINATIONS
-import com.madovygabor.maturimate.core.presentation.utils.LayoutConstants
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +44,7 @@ fun MainFrame(
 
     BoxWithConstraints {
         // Determine if the device is considered a desktop based on maxWidth
-        val isDesktop = maxWidth > LayoutConstants.DesktopThreshold
+        val isDesktop = maxWidth > MaterialTheme.layout.breakpointMedium
         // a tablet keeps the tabs in the middle of the rail; a wide window starts them at the top
         val railAtTop = maxWidth >= MaterialTheme.layout.breakpointExpanded
 
@@ -50,7 +53,7 @@ fun MainFrame(
             // Desktop navigation side bar
             Row(Modifier.fillMaxSize().systemBottomPadding()) {
                 NavigationRail(
-                    modifier = Modifier.width(100.dp),
+                    modifier = Modifier.width(MaterialTheme.layout.railWidth),
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     header = { /* Application logo */ }
                 ) {
@@ -90,10 +93,16 @@ fun MainFrame(
             }
         } else {
 
+            // the snackbar of the app sits above the bar: it reads the bar's height, and the bar is gone when this layout is
+            val bottomBarHeight = LocalBottomBarHeight.current
+            val density = LocalDensity.current
+            DisposableEffect(bottomBarHeight) { onDispose { bottomBarHeight.value = 0.dp } }
+
             // Mobile bottom navigation bar
             Scaffold(
                 bottomBar = {
                     NavigationBar(
+                        modifier = Modifier.onSizeChanged { bottomBarHeight.value = with(density) { it.height.toDp() } },
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ) {
                         // Dynamically create navigation items from the TOP_LEVEL_NAVBAR_DESTINATIONS map

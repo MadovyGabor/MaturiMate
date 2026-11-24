@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.features.appOnboarding.presentation
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.madovygabor.maturimate.core.presentation.navigation.Route
+import com.madovygabor.maturimate.core.presentation.remindersAvailable
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import maturimate.shared.generated.resources.Res
@@ -32,12 +33,17 @@ enum class OnboardingStep(val label: StringResource) {
 /**
  * The steps the user goes through (docs/onboarding/README.md, section 5): learners have no
  * exam date, teachers neither an exam date nor a daily goal. Until the role is chosen this is
- * the student's path, the longest one, as in the prototype.
+ * the student's path, the longest one, as in the prototype. Without a reminder on the platform ([reminder] false: the
+ * desktop app) there is no reminder step either, so nothing saves a reminder that never comes, and the headers count
+ * one step less.
  */
-fun onboardingSteps(role: UserRole? = null): List<OnboardingStep> = when (role) {
-    UserRole.STUDENT, null -> OnboardingStep.entries
-    UserRole.LEARNER -> OnboardingStep.entries - OnboardingStep.DATE
-    UserRole.TEACHER -> OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL
+fun onboardingSteps(role: UserRole? = null, reminder: Boolean = remindersAvailable): List<OnboardingStep> {
+    val steps = when (role) {
+        UserRole.STUDENT, null -> OnboardingStep.entries
+        UserRole.LEARNER -> OnboardingStep.entries - OnboardingStep.DATE
+        UserRole.TEACHER -> OnboardingStep.entries - OnboardingStep.DATE - OnboardingStep.GOAL
+    }
+    return if (reminder) steps else steps - OnboardingStep.REMINDER
 }
 
 /** The screen of a step. */
@@ -54,9 +60,11 @@ val OnboardingStep.route: Route
     }
 
 /** The screen after [step] for this role; null after the last step. */
-fun nextRoute(step: OnboardingStep, role: UserRole?): Route? {
-    val steps = onboardingSteps(role)
-    return steps.getOrNull(steps.indexOf(step) + 1)?.route
+fun nextRoute(step: OnboardingStep, role: UserRole?, reminder: Boolean = remindersAvailable): Route? {
+    // counted on the full path, so a step the platform hides still has its place
+    val after = onboardingSteps(role, reminder = true).dropWhile { it != step }.drop(1)
+    val shown = onboardingSteps(role, reminder)
+    return after.firstOrNull { it in shown }?.route
 }
 
 /**

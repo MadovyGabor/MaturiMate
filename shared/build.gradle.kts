@@ -60,6 +60,7 @@ kotlin {
             implementation(libs.supabase.auth)
             implementation(libs.supabase.compose.auth)
             implementation(libs.supabase.postgrest)
+            implementation(libs.multiplatform.settings.no.arg)
             // the download of the content packs (the engine is the one of the Supabase client)
             implementation(libs.ktor.client.core)
 
@@ -72,6 +73,10 @@ kotlin {
             //Koin Android
             implementation(libs.koin.android)
 
+            // per-app language, and the file picker of the data export
+            implementation(libs.androidx.appcompat)
+            implementation(libs.androidx.activity.compose)
+
             // HTTP engine of the Supabase client
             implementation(libs.ktor.client.okhttp)
 
@@ -80,6 +85,8 @@ kotlin {
         jvmMain.dependencies {
             // HTTP engine of the Supabase client
             implementation(libs.ktor.client.okhttp)
+            // the desktop Google sign-in's own loopback receiver (GoogleSignIn.jvm.kt); used directly, so declared here
+            implementation(libs.ktor.server.cio)
         }
 
         commonTest.dependencies {
@@ -104,6 +111,49 @@ dependencies {
 // Test classes run in several JVMs at once; each JVM still runs its classes one after another
 tasks.withType<Test>().configureEach {
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+}
+
+// Test groups for CI: ./gradlew :shared:jvmTest -PtestGroup=<name> runs one group; no property runs everything.
+// THE table (group -> test class patterns). The group "other" is not listed: it is every test that is in no
+// listed group, so a new test can never fall out of all groups. Keep the names in step with .github/workflows/ci.yml.
+val testGroups: Map<String, List<String>> = mapOf(
+    "frame" to listOf("com.madovygabor.maturimate.core.*"),
+    "onboarding" to listOf("com.madovygabor.maturimate.features.appOnboarding.*"),
+    "auth" to listOf("com.madovygabor.maturimate.features.auth.*"),
+    "settings" to listOf(
+        "com.madovygabor.maturimate.features.profileDetails.presentation.Settings*",
+        "com.madovygabor.maturimate.features.profileDetails.presentation.ProfileSignInNavigationTest",
+    ),
+    "reminder" to listOf("com.madovygabor.maturimate.features.reminder.*"),
+    "profile" to listOf("com.madovygabor.maturimate.features.userProfile.*"),
+)
+val otherGroup = "other"
+
+providers.gradleProperty("testGroup").orNull?.let { group ->
+    if (group != otherGroup && group !in testGroups) {
+        throw GradleException(
+            "Unknown -PtestGroup='$group'. Known groups: ${(testGroups.keys + otherGroup).joinToString()}"
+        )
+    }
+    tasks.withType<Test>().configureEach {
+        filter {
+            if (group == otherGroup) {
+                testGroups.values.flatten().forEach { excludeTestsMatching(it) }
+            } else {
+                testGroups.getValue(group).forEach { includeTestsMatching(it) }
+            }
+        }
+        // A group that selects no test fails the build, so a wrong pattern is never a silent green
+        var executed = 0L
+        afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ descriptor, result ->
+            if (descriptor.parent == null) executed = result.testCount
+        }))
+        doLast {
+            if (executed == 0L) {
+                throw GradleException("Test group '$group' selected no tests: check the table testGroups in shared/build.gradle.kts")
+            }
+        }
+    }
 }
 
 // Test coverage (./gradlew :shared:koverLog, :shared:koverHtmlReport). Generated code, Composable functions and previews is left out.

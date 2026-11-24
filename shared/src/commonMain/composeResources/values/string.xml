@@ -62,9 +62,6 @@
 
     <!-- Onboarding: exam date -->
     <string name="common_save">Uložiť</string>
-    <string name="profile_title">Môj profil</string>
-    <string name="profile_why">Ťukni na odpoveď, ktorú chceš zmeniť.</string>
-    <string name="profile_reminder_off">Vypnutá</string>
     <string name="profile_not_set">Nenastavené</string>
     <string name="common_cancel">Zrušiť</string>
     <string name="common_ok">OK</string>
@@ -121,6 +118,9 @@
     <string name="reminder_why">Krátke upozornenie vo zvolenom čase ti pomôže udržať sériu.</string>
     <string name="reminder_time">V akom čase?</string>
     <string name="reminder_permission_hint">V ďalšom kroku ťa telefón požiada o povolenie upozornení.</string>
+    <string name="reminder_permission_denied">Bez povolenia ti upozornenie nepríde. Skús to znova, alebo zvoľ „Teraz nie“.</string>
+    <string name="reminder_permission_blocked">Upozornenia sú v nastaveniach telefónu vypnuté. Zapni ich tam, alebo zvoľ „Teraz nie“.</string>
+    <string name="reminder_open_settings">Otvoriť nastavenia</string>
     <string name="reminder_turn_on">Zapnúť</string>
     <string name="reminder_not_now">Teraz nie</string>
 
@@ -138,6 +138,13 @@
         <item quantity="few">Pri %1$d minútach denne je to približne %2$d hodiny precvičovania.</item>
         <item quantity="other">Pri %1$d minútach denne je to približne %2$d hodín precvičovania.</item>
     </plurals>
+    <!-- %1$s: the exam date written out -->
+    <string name="plan_exam_date">Maturita: %1$s</string>
+    <plurals name="plan_student_week">
+        <item quantity="one">Týždenne približne %1$d hodina.</item>
+        <item quantity="few">Týždenne približne %1$d hodiny.</item>
+        <item quantity="other">Týždenne približne %1$d hodín.</item>
+    </plurals>
     <string name="plan_daily_goal">Denný cieľ</string>
     <plurals name="plan_learner_year">
         <item quantity="one">Za rok približne %1$d hodina.</item>
@@ -151,7 +158,7 @@
     <string name="account_title">Vytvor si účet</string>
     <string name="account_why">Tak o svoj pokrok neprídeš a môžeš pokračovať aj na inom telefóne.</string>
     <string name="account_google">Pokračovať cez Google</string>
-    <string name="account_google_signed">Účet Google: %1$s</string>
+    <string name="account_signed_in_as">Prihlásený účet: %1$s</string>
     <string name="account_or_email">alebo e-mailom</string>
     <string name="account_last_name">Priezvisko</string>
     <string name="account_first_name">Meno</string>
@@ -180,6 +187,7 @@
     <string name="error_same_password">Nové heslo nemôže byť rovnaké ako staré.</string>
     <string name="error_too_many">Príliš veľa pokusov. Chvíľu počkaj a skús to znova.</string>
     <string name="error_unknown">Niečo sa nepodarilo. Skús to znova.</string>
+    <string name="error_session_expired">Tvoje prihlásenie vypršalo. Odhlás sa a prihlás sa znova.</string>
 
     <!-- Sign-in ("Už mám účet") and forgotten password; the reset texts are new -->
     <string name="signin_title">Prihlásenie</string>
@@ -310,7 +318,6 @@
     <string name="home_when_today">Dnes</string>
     <string name="home_when_yesterday">Včera</string>
     <string name="home_activity_meta">%1$s · %2$s</string>
-    <string name="home_week_title">Tento týždeň</string>
     <string name="home_day_1">Po</string>
     <string name="home_day_2">Ut</string>
     <string name="home_day_3">St</string>
@@ -400,7 +407,7 @@
     <string name="settings_name">Meno</string>
     <string name="settings_email">E-mail</string>
     <string name="settings_password">Zmena hesla</string>
-    <string name="settings_password_hint">Starým a novým heslom</string>
+    <string name="settings_password_hint">So súčasným heslom a kódom z e-mailu</string>
     <string name="settings_no_account">Zatiaľ nemáš účet</string>
     <string name="settings_create_hint">Aby tvoj pokrok zostal</string>
     <string name="settings_sign_in_hint">Prihlásenie</string>
@@ -413,7 +420,6 @@
     <string name="settings_off">Vypnutá</string>
     <string name="settings_reminder_time">Čas</string>
     <string name="settings_sync">Synchronizácia</string>
-    <string name="settings_sync_hint">Tvoj pokrok v tvojom účte</string>
     <string name="settings_content">Aktualizácia obsahu</string>
     <string name="settings_content_hint">Stiahnutie nových lekcií</string>
     <string name="settings_content_up_to_date">Aktuálne · verzia %1$s</string>
@@ -421,6 +427,7 @@
     <string name="settings_content_downloading">Sťahuje sa…</string>
     <string name="settings_content_mobile">Stiahnuť cez mobilné dáta (%1$s MB)</string>
     <string name="settings_content_error">Sťahovanie zlyhalo. Ťukni a skús znova.</string>
+    <string name="settings_content_install_error">Obsah sa nepodarilo nainštalovať. Zostáva pôvodný obsah.</string>
     <string name="settings_reset">Začať pokrok odznova</string>
     <string name="settings_reset_hint">Séria a čas učenia zostanú</string>
     <string name="settings_sign_out">Odhlásiť sa</string>
@@ -454,12 +461,27 @@
     <string name="settings_sync_error">Nepodarilo sa. Ťukni a skús znova.</string>
     <string name="sync_badge_description">Tvoj pokrok ešte nie je odoslaný. Ťukni pre podrobnosti.</string>
     <string name="settings_name_title">Tvoje meno</string>
-    <string name="settings_password_old">Staré heslo</string>
     <string name="settings_password_new">Nové heslo</string>
-    <string name="settings_password_wrong">Staré heslo nie je správne.</string>
     <string name="settings_password_done">Tvoje heslo sa zmenilo.</string>
     <string name="settings_password_repeat">Nové heslo znova</string>
     <string name="settings_password_mismatch">Dve nové heslá sa nezhodujú.</string>
+    <string name="settings_password_code_text">Na zmenu hesla ti pošleme 6-miestny kód na adresu %1$s.</string>
+    <string name="settings_password_code_send">Poslať kód</string>
+    <string name="settings_name_done">Meno uložené.</string>
+    <string name="settings_email_fixed">%1$s · zmena zatiaľ nie je možná</string>
+    <string name="settings_delete_word">ZMAZAŤ</string>
+    <string name="settings_delete_word_prompt">Na potvrdenie napíš slovo %1$s.</string>
+    <string name="settings_delete_password">Heslo tvojho účtu</string>
+    <string name="settings_delete_google_text">Na zmazanie účtu vytvoreného cez Google sa znova prihlás cez Google tým istým účtom.</string>
+    <string name="settings_delete_google_confirm">Prihlásiť sa a zmazať</string>
+    <string name="settings_password_old">Súčasné heslo</string>
+    <string name="settings_password_wrong">Heslo nie je správne.</string>
+    <string name="error_account_set_up">Tento účet je už nastavený. Prihlás sa doň cez „Už mám účet“.</string>
+    <string name="error_wrong_account">Toto je iný účet. Prihlás sa cez Google tým účtom, ktorý chceš zmazať.</string>
+    <string name="error_proof_needed">Pred zmazaním najprv potvrď, že účet patrí tebe.</string>
+    <string name="settings_export_save">Uložiť do súboru</string>
+    <string name="settings_export_share">Zdieľať</string>
+    <string name="settings_export_shared">Kópia údajov je odovzdaná na zdieľanie.</string>
 
     <!-- Tabs (9.5) -->
     <string name="nav_home">Domov</string>
@@ -550,4 +572,14 @@
         <item quantity="few">Keď si hotovú tému nevidel aspoň %1$d dni, ponúkneme ti ju tu na zopakovanie.</item>
         <item quantity="other">Keď si hotovú tému nevidel aspoň %1$d dní, ponúkneme ti ju tu na zopakovanie.</item>
     </plurals>
+    <string name="common_loading">Načítava sa…</string>
+    <string name="password_show">Zobraziť heslo</string>
+    <string name="password_hide">Skryť heslo</string>
+    <string name="signin_replace_title">Nahradiť tvoje odpovede?</string>
+    <string name="signin_replace_text">Na tomto telefóne už máš odpovede z úvodu. Po prihlásení ich nahradia odpovede z tvojho účtu. Predmety sa spoja: zostanú tie z tohto telefónu aj tie z účtu.</string>
+    <string name="signin_replace_confirm">Nahradiť a prihlásiť</string>
+    <string name="signup_app_title">Ulož svoj pokrok do účtu</string>
+    <string name="signup_app_why">Z tohto telefónu urobíme tvoj účet: pokrok sa uloží a môžeš pokračovať aj na inom telefóne.</string>
+    <string name="signup_app_code_title">Potvrď e-mail</string>
+    <string name="signup_app_code_sent">Poslali sme 6-miestny kód na adresu %1$s. Po jeho zadaní sa tvoj pokrok uloží do účtu. Pozri aj priečinok so spamom.</string>
 </resources>

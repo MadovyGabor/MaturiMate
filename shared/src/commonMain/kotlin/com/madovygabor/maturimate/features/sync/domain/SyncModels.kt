@@ -156,6 +156,11 @@ enum class SyncError : Error {
     TOO_LARGE,
     /** The cursor is older than a year: pull everything again. */
     CURSOR_TOO_OLD,
+    /**
+     * The server's session is not the account this phone named (`user_mismatch`, migration 20261128120000): the run ends
+     * like the phone's own check of the session, nothing applied and no failure stored.
+     */
+    WRONG_ACCOUNT,
     SERVER,
     UNKNOWN,
 }

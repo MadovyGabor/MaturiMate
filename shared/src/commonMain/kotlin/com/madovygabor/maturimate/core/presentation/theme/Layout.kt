@@ -20,6 +20,8 @@ data class Layout(
     val contentMaxWidth: Dp = 560.dp,
     /** Width of the side panel in the two-pane layout. */
     val sidePanelWidth: Dp = 360.dp,
+    /** Width of the navigation rail on a tablet or desktop. */
+    val railWidth: Dp = 100.dp,
     /** Smallest height of anything tappable. */
     val touchTarget: Dp = 48.dp,
     /** Icons (Material Symbols Rounded). */

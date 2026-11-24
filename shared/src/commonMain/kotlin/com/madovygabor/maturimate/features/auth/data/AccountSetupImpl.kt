@@ -7,6 +7,7 @@ import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.ConsentType
+import com.madovygabor.maturimate.features.auth.domain.RemoteProfile
 import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import com.madovygabor.maturimate.features.sync.domain.SyncEngine
 import com.madovygabor.maturimate.features.sync.domain.SyncOutcome
@@ -47,7 +48,27 @@ class AccountSetupImpl(
 
     private suspend fun signUp(firstName: String, lastName: String, marketing: Boolean, finishedAt: Instant): OperationResult<Unit, AuthError> {
         val accountId = auth.currentUser()?.id ?: return OperationResult.Error(AuthError.INVALID_CREDENTIALS)
-        adopt(accountId)
+        // A session restored on this phone (or a Google account used before) may belong to an account that is set up
+        // already: the form must never overwrite its profile, settings and role. It becomes a sign-in instead, and the
+        // account's answers come to this phone. Without an answer from the server nothing is sent (the server refuses
+        // such an overwrite too: migration 20261127120000). "Set up" is the onboarding end AND an active TERMS consent
+        // (RemoteProfile.isSetUp), the same rule as the server's guard.
+        val existing = when (val result = account.downloadProfile()) {
+            is OperationResult.Success -> result.data
+            is OperationResult.Error -> return OperationResult.Error(result.error)
+        }
+        if (existing?.isSetUp == true) {
+            return when (val signedIn = signInSetUp(accountId, existing)) {
+                is OperationResult.Success -> OperationResult.Success(Unit)
+                is OperationResult.Error -> OperationResult.Error(signedIn.error)
+            }
+        }
+        // A guest's answers go to the server BEFORE the phone becomes the account's: while the phone is a guest's no sync
+        // can run, so nothing of it can reach the account before save_sign_up and its consents; when the save fails,
+        // nothing is adopted. A phone that is an account's already (this one after an earlier try, or another one, whose
+        // rows the adoption removes) adopts first, so another account's local profile is never sent.
+        val guest = localUser.isGuest()
+        if (!guest) adopt(accountId)
         if (profiles.saveNames(firstName, lastName) is OperationResult.Error) return OperationResult.Error(AuthError.UNKNOWN)
         val profile = profiles.profile.first() ?: return OperationResult.Error(AuthError.UNKNOWN)
         val consents = setOf(ConsentType.TERMS, ConsentType.PRIVACY, ConsentType.AGE_16) +
@@ -57,6 +78,7 @@ class AccountSetupImpl(
         // one transaction on the server: all of it is saved, or nothing
         val saved = account.saveSignUp(profile, firstName, lastName, consents, onboardingEnd)
         if (saved is OperationResult.Error) return saved
+        if (guest) adopt(accountId)
         // last: finishing the onboarding takes the app to the home screen
         if (profile.onboardingCompletedAt == null && profiles.completeOnboarding(finishedAt) is OperationResult.Error) {
             return OperationResult.Error(AuthError.UNKNOWN)
@@ -64,20 +86,35 @@ class AccountSetupImpl(
         return OperationResult.Success(Unit)
     }
 
+    /**
+     * A read-only check comes first: whether the account is set up (the onboarding end AND an active TERMS consent,
+     * RemoteProfile.isSetUp). Only a set-up account takes this phone over (adopt, then the sync or the profile download).
+     * An account that is not set up changes nothing: the phone stays the guest's (no adopt, no sync, no write), and the
+     * account form's sign-up saves the guest's answers first and adopts after. Its partly answered server profile, if
+     * any, is not brought here; the guest's answers win through save_sign_up. When the check fails, nothing is done.
+     */
     private suspend fun signIn(): OperationResult<SignedInAccount, AuthError> {
         val accountId = auth.currentUser()?.id ?: return OperationResult.Error(AuthError.INVALID_CREDENTIALS)
-        adopt(accountId)
-        if (sync != null) return signInWithSync(sync)
         val remote = when (val result = account.downloadProfile()) {
             is OperationResult.Success -> result.data
             is OperationResult.Error -> return OperationResult.Error(result.error)
         }
-        if (remote != null && (!write(remote.profile) || profiles.saveNames(remote.firstName, remote.lastName) is OperationResult.Error)) {
+        if (remote == null || !remote.isSetUp) {
+            val local = profiles.profile.first()
+            return OperationResult.Success(SignedInAccount(onboardingFinished = local?.isOnboardingCompleted == true, profile = local, isSetUp = false))
+        }
+        return signInSetUp(accountId, remote)
+    }
+
+    /** The set-up account [remote] takes this phone over: adopt, then its data comes by the sync or by the download. */
+    private suspend fun signInSetUp(accountId: String, remote: RemoteProfile): OperationResult<SignedInAccount, AuthError> {
+        adopt(accountId)
+        if (sync != null) return signInWithSync(sync)
+        if (!write(remote.profile) || profiles.saveNames(remote.firstName, remote.lastName) is OperationResult.Error) {
             return OperationResult.Error(AuthError.UNKNOWN)
         }
-        // read after the writes, so the onboarding continues from these answers and not from older ones
-        val local = profiles.profile.first()
-        return OperationResult.Success(SignedInAccount(remote?.profile?.isOnboardingCompleted == true, local))
+        // read after the writes, so the answers are these and not older ones
+        return OperationResult.Success(SignedInAccount(onboardingFinished = true, profile = profiles.profile.first(), isSetUp = true))
     }
 
     /**
@@ -88,9 +125,8 @@ class AccountSetupImpl(
     private suspend fun signInWithSync(sync: SyncEngine): OperationResult<SignedInAccount, AuthError> {
         val outcome = sync.sync(SyncReason.AFTER_SIGN_IN)
         if (outcome is SyncOutcome.Failed) return OperationResult.Error(AuthError.NETWORK)
-        // read after the sync, so the onboarding continues from the account's answers
-        val local = profiles.profile.first()
-        return OperationResult.Success(SignedInAccount(local?.isOnboardingCompleted == true, local))
+        // read after the sync, so the answers are the account's
+        return OperationResult.Success(SignedInAccount(onboardingFinished = true, profile = profiles.profile.first(), isSetUp = true))
     }
 
     private fun adopt(accountId: String) = localUser.adoptAccount(accountId)

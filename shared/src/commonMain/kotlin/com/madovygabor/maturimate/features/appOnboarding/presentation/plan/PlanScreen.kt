@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,85 +21,41 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.compose.ui.tooling.preview.Preview
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.spacing
+import com.madovygabor.maturimate.core.presentation.utils.longDate
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
-import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.DEFAULT_GOAL
-import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.hoursPerYear
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingScaffold
+import com.madovygabor.maturimate.features.appOnboarding.presentation.goal.hoursPerYear
 import com.madovygabor.maturimate.features.appOnboarding.presentation.onboardingSteps
 import com.madovygabor.maturimate.features.appOnboarding.presentation.reminder.hoursAndMinutes
 import com.madovygabor.maturimate.features.appOnboarding.presentation.subjects.label
 import com.madovygabor.maturimate.features.userProfile.domain.CatalogSubject
-import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
+import com.madovygabor.maturimate.features.userProfile.domain.StudyEstimate
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.daysUntil
-import kotlinx.datetime.todayIn
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_next
 import maturimate.shared.generated.resources.goal_minutes
 import maturimate.shared.generated.resources.plan_change_later
 import maturimate.shared.generated.resources.plan_daily_goal
 import maturimate.shared.generated.resources.plan_days
+import maturimate.shared.generated.resources.plan_exam_date
 import maturimate.shared.generated.resources.plan_learner_year
 import maturimate.shared.generated.resources.plan_reminder
 import maturimate.shared.generated.resources.plan_student_total
+import maturimate.shared.generated.resources.plan_student_week
 import maturimate.shared.generated.resources.plan_title
 import maturimate.shared.generated.resources.plan_until_exam
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
-
-/** The answers turned into a plan (docs/onboarding/README.md, screen 8). */
-data class PlanUiState(
-    val role: UserRole? = null,
-    /** Days until the exam; students only. */
-    val daysLeft: Int? = null,
-    val dailyGoalMinutes: Int = DEFAULT_GOAL,
-    val subjects: List<CatalogSubject> = emptyList(),
-    /** The reminder time when the reminder is on. */
-    val reminder: LocalTime? = null,
-) {
-    /** Practice until the exam at the daily goal, in whole hours. */
-    val hoursUntilExam: Int? get() = daysLeft?.let { (it * dailyGoalMinutes + 30) / 60 }
-}
-
-/** Reads the saved answers for the plan; nothing is saved here. */
-@OptIn(ExperimentalTime::class)
-class PlanViewModel(
-    repository: UserProfileRepository,
-    today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
-) : ViewModel() {
-    val state: StateFlow<PlanUiState?> = repository.profile
-        .map { profile ->
-            PlanUiState(
-                role = profile?.role,
-                daysLeft = profile?.graduationDate?.takeIf { profile.role == UserRole.STUDENT }?.let { today.daysUntil(it).coerceAtLeast(0) },
-                dailyGoalMinutes = profile?.dailyGoalMinutes ?: DEFAULT_GOAL,
-                subjects = profile?.subjects.orEmpty().mapNotNull { saved -> CatalogSubject.byId(saved.subjectId) },
-                reminder = profile?.reminderTime?.takeIf { profile.reminderEnabled },
-            )
-        }
-        .catch { emit(PlanUiState()) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-}
 
 /** The plan step: days until the exam, the daily goal, the subjects and the reminder. */
 @Composable
@@ -120,13 +78,18 @@ fun PlanContent(state: PlanUiState, onBack: () -> Unit, onNext: () -> Unit) {
         Text(stringResource(Res.string.plan_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
         val minutes = state.dailyGoalMinutes
         when (state.role) {
-            UserRole.STUDENT -> state.daysLeft?.let { days ->
-                val hours = state.hoursUntilExam ?: 0
+            UserRole.STUDENT -> state.estimate?.let { estimate ->
+                val days = estimate.daysLeft
+                val hours = estimate.totalHours
                 PlanCard(
                     label = stringResource(Res.string.plan_until_exam),
                     value = pluralStringResource(Res.plurals.plan_days, days, days),
                     note = pluralStringResource(Res.plurals.plan_student_total, hours, minutes, hours),
                 )
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2)) {
+                    Fact(Icons.Rounded.CalendarMonth, stringResource(Res.string.plan_exam_date, longDate(estimate.examDate)))
+                    Fact(Icons.Rounded.Schedule, pluralStringResource(Res.plurals.plan_student_week, estimate.hoursPerWeek, estimate.hoursPerWeek))
+                }
             }
             UserRole.LEARNER -> {
                 val hours = hoursPerYear(minutes)
@@ -194,7 +157,7 @@ private fun PlanContentPreview() {
     AppTheme(darkTheme = false) {
         PlanContent(
             PlanUiState(
-                role = UserRole.STUDENT, daysLeft = 135, dailyGoalMinutes = 10,
+                role = UserRole.STUDENT, estimate = StudyEstimate(LocalDate(2027, 3, 15), 135, 23, 1), dailyGoalMinutes = 10,
                 subjects = listOf(CatalogSubject.HUNGARIAN, CatalogSubject.ENGLISH_B2),
                 reminder = LocalTime(18, 0),
             ),

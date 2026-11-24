@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.features.reminder.domain
 
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -18,5 +19,12 @@ class ReminderSync(
             .map { if (it?.reminderEnabled == true) it.reminderTime else null }
             .distinctUntilChanged()
             .collect { time -> if (time == null) scheduler.cancel() else scheduler.schedule(time) }
+    }
+
+    /** Plans the reminder once from the profile as it is now (after a restart of the phone), and returns. */
+    suspend fun planNow() {
+        val profile = profile.profile.first()
+        val time = if (profile?.reminderEnabled == true) profile.reminderTime else null
+        if (time == null) scheduler.cancel() else scheduler.schedule(time)
     }
 }

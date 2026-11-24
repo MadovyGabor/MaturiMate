@@ -12,8 +12,22 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.exceptions.HttpRequestException
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestRestException
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.rpc
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.content.TextContent
+import io.ktor.http.isSuccess
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -79,6 +93,14 @@ class SupabaseAccountRepository(
             .decodeSingleOrNull<SettingsRow>()
         val roles = postgrest.from("user_role").select { filter { eq("user_id", userId) } }.decodeList<RoleRow>()
         val subjects = postgrest.from("user_subject").select { filter { eq("user_id", userId) } }.decodeList<SubjectRow>()
+        // an active TERMS consent: only save_sign_up stores it, so it tells a finished sign-up from a synced guest profile
+        val terms = postgrest.from("user_consent").select(Columns.list("consent_type")) {
+            filter {
+                eq("user_id", userId)
+                eq("consent_type", "TERMS")
+                exact("withdrawn_at", null)
+            }
+        }.decodeList<ConsentRow>()
         RemoteProfile(
             firstName = profile.firstName,
             lastName = profile.lastName,
@@ -96,12 +118,27 @@ class SupabaseAccountRepository(
                 // Postgres returns "18:00:00"
                 reminderTime = parseOrNull(settings?.reminderTime, LocalTime::parse),
             ),
+            acceptedTerms = terms.isNotEmpty(),
         )
     }
 
-    override suspend fun deleteAccount() = call {
+    override suspend fun deleteAccount(accessToken: String) = call {
         userId()
-        postgrest.rpc("delete_my_account")
+        // A plain POST to the function, not postgrest.rpc: that always sends the phone's session, and the server wants the
+        // proof's own fresh one (a sign-in of the last 5 minutes in its token, migration 20261128120000). The plain client
+        // adds the project's API key; the token is set here and never logged.
+        val client = auth.supabaseClient
+        val response = client.httpClient.request("${client.supabaseHttpUrl}/rest/v1/rpc/delete_my_account") {
+            method = HttpMethod.Post
+            bearerAuth(accessToken)
+            setBody(TextContent("{}", ContentType.Application.Json))
+        }
+        if (!response.status.isSuccess()) {
+            val message = runCatching {
+                (Json.parseToJsonElement(response.bodyAsText()).jsonObject["message"] as? JsonPrimitive)?.contentOrNull
+            }.getOrNull()
+            throw DeletionRefused(response.status.value, message)
+        }
         Unit
     }
 
@@ -118,10 +155,32 @@ class SupabaseAccountRepository(
             throw e
         } catch (e: HttpRequestException) {
             OperationResult.Error(AuthError.NETWORK)
+        } catch (e: DeletionRefused) {
+            OperationResult.Error(
+                when {
+                    // the server's own check of the proof: no sign-in of the last minutes in the token
+                    e.serverMessage == RECENT_LOGIN_REQUIRED -> AuthError.PROOF_NEEDED
+                    e.status == 401 -> AuthError.SESSION_EXPIRED
+                    else -> AuthError.UNKNOWN
+                }
+            )
         } catch (e: NotSignedIn) {
-            OperationResult.Error(AuthError.INVALID_CREDENTIALS)
+            // no session on this phone (nothing was typed, so never "wrong password"): the user has to sign in again
+            OperationResult.Error(AuthError.SESSION_EXPIRED)
+        } catch (e: PostgrestRestException) {
+            OperationResult.Error(
+                when {
+                    // the guard of save_sign_up (migration 20261127120000): the account is set up already, nothing written
+                    e.code == ACCOUNT_SET_UP_CODE || (e.statusCode == 409 && e.error == ACCOUNT_SET_UP_MESSAGE) -> AuthError.ACCOUNT_ALREADY_SET_UP
+                    e.statusCode == 401 -> AuthError.SESSION_EXPIRED
+                    else -> AuthError.UNKNOWN
+                }
+            )
+        } catch (e: RestException) {
+            // 401: the session's token is expired or revoked; the user has to sign in again
+            OperationResult.Error(if (e.statusCode == 401) AuthError.SESSION_EXPIRED else AuthError.UNKNOWN)
         } catch (e: Exception) {
-            // RestException, and rows this version cannot decode
+            // rows this version cannot decode
             OperationResult.Error(AuthError.UNKNOWN)
         }
 
@@ -133,9 +192,19 @@ class SupabaseAccountRepository(
 
     private class NotSignedIn : Exception()
 
+    /** The server refused the deletion ([status], PostgREST's message); carries no token. */
+    private class DeletionRefused(val status: Int, val serverMessage: String?) : Exception()
+
     companion object {
         /** Version of the terms and the privacy notice the consents refer to. */
         const val DOCUMENT_VERSION = "1.0"
+
+        /** The SQLSTATE and the message `save_sign_up` refuses a set-up account with (PostgREST answers 409). */
+        private const val ACCOUNT_SET_UP_CODE = "PT409"
+        private const val ACCOUNT_SET_UP_MESSAGE = "account_already_set_up"
+
+        /** The message `delete_my_account` refuses a token without a recent sign-in with (migration 20261128120000). */
+        private const val RECENT_LOGIN_REQUIRED = "recent_login_required"
     }
 }
 
@@ -157,6 +226,11 @@ private data class SettingsRow(
     @SerialName("daily_goal_minutes") val dailyGoalMinutes: Int? = null,
     @SerialName("reminder_enabled") val reminderEnabled: Boolean = false,
     @SerialName("reminder_time") val reminderTime: String? = null,
+)
+
+@Serializable
+private data class ConsentRow(
+    @SerialName("consent_type") val consentType: String,
 )
 
 @Serializable

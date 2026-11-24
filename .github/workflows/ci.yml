@@ -126,8 +126,72 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  app:
-    name: App (tests and desktop build)
+  # The app's tests, split into groups that run side by side (a red group names the broken part).
+  # The groups and their test packages are the table testGroups in shared/build.gradle.kts;
+  # "other" is every test that is in no named group. No test is retried: a red test is a real finding.
+  app-tests:
+    name: "App: ${{ matrix.title }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { group: frame, title: Frame }
+          - { group: onboarding, title: Onboarding }
+          - { group: auth, title: Auth }
+          - { group: settings, title: Settings }
+          - { group: reminder, title: Reminder }
+          - { group: profile, title: Profile }
+          - { group: other, title: Other }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+
+      # Bundle the made-up test content, so the app's content provider test runs too (every group, for simplicity)
+      - name: Bundle test content
+        run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentKind=starter -PcontentVersion=2000010101
+
+      - name: Tests
+        env:
+          GROUP: ${{ matrix.group }}
+        run: ./gradlew :shared:jvmTest "-PtestGroup=$GROUP"
+
+      - name: Test report
+        if: always()
+        uses: mikepenz/action-junit-report@v6
+        with:
+          check_name: "App: ${{ matrix.title }}"
+          annotate_only: true
+          job_name: "App: ${{ matrix.title }}"
+          report_paths: shared/build/test-results/jvmTest/*.xml
+          detailed_summary: true
+          include_passed: true
+          require_tests: true
+
+      - name: Group table
+        if: always()
+        env:
+          TITLE: ${{ matrix.title }}
+        run: python3 .github/scripts/junit_summary.py group "$TITLE" shared/build/test-results/jvmTest
+
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-${{ matrix.group }}
+          path: shared/build/test-results/jvmTest/*.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  # The whole suite once more: coverage (80 %) and the test count that ci-result compares with the
+  # sum of the groups
+  coverage:
+    name: "App: Coverage"
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -138,28 +202,36 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
 
-      # Bundle the made-up test content, so the app's content provider test runs too
       - name: Bundle test content
         run: ./gradlew :tools:content-pipeline:bundleContent -PcontentDir=tools/content-pipeline/src/test/resources/content-valid -PcontentKind=starter -PcontentVersion=2000010101
 
-      - name: Tests
-        run: ./gradlew :shared:jvmTest
-
-      # line coverage in the log and the run summary; fails under 80 %
-      - name: Coverage
+      # runs every test, then the line coverage in the log and the run summary; fails under 80 %
+      - name: Tests and coverage
         run: |
           ./gradlew :shared:koverLog :shared:koverVerify --console=plain | tee kover.txt
           grep "line coverage" kover.txt | sed 's/^/App: /' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Test report
+      - name: Upload JUnit results
         if: always()
-        uses: mikepenz/action-junit-report@v6
+        uses: actions/upload-artifact@v7
         with:
-          check_name: App tests
-          report_paths: shared/build/test-results/jvmTest/*.xml
-          detailed_summary: true
-          include_passed: true
-          require_tests: true
+          name: junit-whole
+          path: shared/build/test-results/jvmTest/*.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  # The desktop jar is its own job, so a failed build and a failed test are different red marks
+  desktop-build:
+    name: "App: Desktop build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Build desktop
         run: ./gradlew :desktopApp:jar
@@ -179,3 +251,39 @@ jobs:
 
       - name: Build Android
         run: ./gradlew :androidApp:assembleDebug
+
+  # The one status check to require on GitHub: green only when every job above passed and the
+  # groups together ran exactly the tests of the whole suite
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [database, content-pipeline, worker, app-tests, coverage, desktop-build, android]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: junit-*
+          path: results
+
+      # Every failed test of every group, with its message, as annotations on this job: the same view
+      # as in the group jobs, in one place (the whole-suite copy is left out, it would list them twice)
+      - name: Failed tests of all groups
+        if: always()
+        uses: mikepenz/action-junit-report@v6
+        with:
+          check_name: CI result
+          job_name: CI result
+          annotate_only: true
+          report_paths: |
+            results/junit-*/*.xml
+            !results/junit-whole/*.xml
+          require_tests: false
+
+      - name: Result table
+        if: always()
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python3 .github/scripts/junit_summary.py total results --whole results/junit-whole

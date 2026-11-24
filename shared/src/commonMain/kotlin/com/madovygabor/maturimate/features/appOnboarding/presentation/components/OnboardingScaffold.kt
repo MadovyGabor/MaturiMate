@@ -53,6 +53,8 @@ data class OnboardingAction(
     val onClick: () -> Unit,
     val variant: AppButtonVariant = AppButtonVariant.FILLED,
     val enabled: Boolean = true,
+    /** Work is under way: the button shows a spinner. */
+    val loading: Boolean = false,
 )
 
 /**
@@ -154,6 +156,7 @@ private fun ActionButton(action: OnboardingAction, modifier: Modifier) {
         modifier = modifier,
         variant = action.variant,
         enabled = action.enabled,
+        loading = action.loading,
     )
 }
 

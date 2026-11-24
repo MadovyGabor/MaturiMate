@@ -35,6 +35,7 @@ class ContentUpdaterTest {
         var swapAllowed = true
         var swaps = 0
         var reject = false
+        var failed = false
         override fun installedSubject(subjectId: Long) = installed[subjectId]
         override fun availableSubject(subjectId: Long) = waiting[subjectId] ?: installed[subjectId]
         override suspend fun savePack(release: ContentRelease, bytes: ByteArray): PackSaveResult {
@@ -43,6 +44,7 @@ class ContentUpdaterTest {
             waiting[release.subjectId] = SubjectContentInfo(isStarter = false, contentVersion = release.contentVersion)
             return PackSaveResult.SAVED
         }
+        override suspend fun installFailed() = failed
         override suspend fun applyPending(): Boolean {
             if (!swapAllowed) return false
             swaps++
@@ -158,6 +160,32 @@ class ContentUpdaterTest {
         packs.reject = true
         updater.updateNow()
         assertEquals(ContentError.CORRUPT, updater.state.value.lastError)
+    }
+
+    @Test
+    fun aFailedBuildOfTheKeptPacksIsShownAndGoesWhenABuildWorks() = runBlocking {
+        val packs = FakePacks()
+        packs.failed = true
+        val updater = updater(packs)
+
+        updater.onReleases(listOf(release(1)))
+        assertEquals(ContentError.INSTALL_FAILED, updater.state.value.lastError)
+
+        // nothing new to download: the state keeps saying it, and nothing is built over and over by the updater
+        updater.onReleases(listOf(release(1)))
+        assertEquals(ContentError.INSTALL_FAILED, updater.state.value.lastError)
+        assertEquals(listOf(1L), downloads)
+
+        // a download error is the more useful message while it lasts
+        failWith = ContentError.NETWORK
+        updater.onReleases(listOf(release(1, 2026120101)))
+        assertEquals(ContentError.NETWORK, updater.state.value.lastError)
+
+        // another version builds: the error goes
+        failWith = null
+        packs.failed = false
+        updater.updateNow()
+        assertEquals(null, updater.state.value.lastError)
     }
 
     // ---- the Worker client -------------------------------------------------------------------------------------------

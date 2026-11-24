@@ -33,7 +33,7 @@ A change starts in `tokens.json`. The Compose theme (`shared/.../core/presentati
 ## Typography
 
 - Two families: **Literata** (serif) for headings and reading, **Manrope** (sans) for the interface. Both cover Hungarian (ő, ű) and Slovak (č, ľ, ô, ŕ).
-- `headline-medium` for onboarding questions, `headline-small` for lesson titles, `reading` for lesson text.
+- `headline-medium` for onboarding questions, `headline-small` for lesson titles, `reading` for lesson text, `code` (system monospace, spaced) for the 6-digit e-mail code.
 - Buttons and chips: `label-large`. Metadata ("4 PERC OLVASÁS"): `label-small`, all caps, with a little letter spacing.
 - A `reading` line is at most about 65 characters. On tablet and desktop the text is centered instead of stretching.
 
@@ -59,7 +59,7 @@ A change starts in `tokens.json`. The Compose theme (`shared/.../core/presentati
 
 - Each color token is the `ColorScheme` field of the same name in camelCase: `primary-container` → `primaryContainer`, `on-surface-variant` → `onSurfaceVariant`. The `background` value also goes into `surface`.
 - `brand-gold`, the `success` family and `focus-ring` are not M3 roles. They go into an `ExtendedColors` class provided through a `CompositionLocal`.
-- Type styles are the `Typography` fields of the same name (`headline-medium` → `headlineMedium`). `reading` is an extension.
+- Type styles are the `Typography` fields of the same name (`headline-medium` → `headlineMedium`). `reading` and `code` are extensions (`MaterialTheme.extendedTypography`).
 - Radii are the `extraSmall`, `small`, `medium`, `large` and `extraLarge` fields of `Shapes` (`radius-xs` to `radius-xl`). `radius-full` (pill) is set by the components that use it.
 - Spacing steps are `MaterialTheme.spacing` (`space-4` → `spacing.space4`).
 - Layout values (window breakpoints, column and side panel widths, touch target, logo sizes) are `MaterialTheme.layout` (`breakpoint-medium` → `layout.breakpointMedium`).
