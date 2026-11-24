@@ -159,10 +159,15 @@ The aim: a red mark in GitHub tells at once **which part** broke, and the same p
 | Database (SQLDelight) | the database module's tests, coverage (80 %) | `./gradlew :database:jvmTest` |
 | Content pipeline (validator, exporter, PostgreSQL importer) | **the server SQL tests too** (all migrations, `rls_test.sql`, `sync_test.sql`), then the pipeline's tests, on a throwaway PostgreSQL 16 | `psql` over `supabase/` files; `./gradlew :tools:content-pipeline:test` |
 | Worker (content link) | `npm ci`, typecheck, tests of `workers/content-link` | `npm run typecheck`, `npm test` in that folder |
-| App (tests and desktop build) | bundles made-up test content, the app's tests, coverage (80 %), the desktop jar | `./gradlew :shared:jvmTest`, `:desktopApp:jar` |
+| App: Frame, Onboarding, Auth, Settings, Reminder, Profile, Other (seven parallel jobs) | bundles made-up test content, then the app's tests of that group (the table `testGroups` in `shared/build.gradle.kts`) | `./gradlew :shared:jvmTest -PtestGroup=<group>` |
+| App: Coverage | bundles made-up test content, the whole suite once, coverage (80 %); its test count is compared with the sum of the groups | `./gradlew :shared:koverVerify` |
+| App: Desktop build | the desktop jar | `./gradlew :desktopApp:jar` |
 | Android build | the debug APK | `./gradlew :androidApp:assembleDebug` |
+| CI result | green only when every job above passed and the groups ran exactly the tests of the whole suite; the single check meant to be required | none (reads the other jobs) |
 
-The test results of the first two and of the App job are published as separate checks (*Database tests*, *Content pipeline tests*, *App tests*) and as tables in the run summary; coverage lines go to the summary. `backup.yml` is separate.
+The test results of the first two and of the App group jobs are published as separate checks (*Database tests*, *Content pipeline tests*, *App: <group> tests*; the report check carries "tests" so it does not share a name with its job) and as tables in the run summary; coverage lines go to the summary. `backup.yml` is separate.
+
+**Do not make "CI result" a required check yet.** Pushes that change only documentation start no run (paths-ignore in `ci.yml`), so a required check would wait forever on them. Solve that case first (for example an always-running tiny workflow, or path filtering inside the jobs); not solved yet.
 
 **What to check and tidy**
 
