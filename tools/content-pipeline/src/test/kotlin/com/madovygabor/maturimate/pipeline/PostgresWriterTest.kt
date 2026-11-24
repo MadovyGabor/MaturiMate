@@ -132,6 +132,149 @@ class PostgresWriterTest {
         assertEquals(0, count("SELECT count(*) FROM task"))
     }
 
+    @Test
+    fun reorderedLearningUnitsDoNotCollide() {
+        val content = ContentLoader(fixture).load()
+        import(content)
+
+        val swapped = content.copy(
+            summaries = content.summaries.map {
+                if (it.learningUnitId == 100L) it.copy(sortOrder = 2) else it
+            },
+            practices = content.practices.map {
+                if (it.file.learningUnitId == 101L) it.copy(file = it.file.copy(sortOrder = 1)) else it
+            },
+        )
+
+        val report = import(swapped)
+
+        assertEquals(mapOf("learning_unit" to 2), report.updated)
+        assertEquals(2, count("SELECT sort_order FROM learning_unit WHERE learning_unit_id = 100"))
+        assertEquals(1, count("SELECT sort_order FROM learning_unit WHERE learning_unit_id = 101"))
+        assertIdempotent(swapped)
+    }
+
+    @Test
+    fun shiftedLearningUnitOrdersDoNotCollide() {
+        val content = ContentLoader(fixture).load()
+        val extra = content.summaries.first { it.learningUnitId == 100L }
+            .copy(learningUnitId = 103L, title = "Extra", sortOrder = 3)
+        val initial = content.copy(summaries = content.summaries + extra)
+        import(initial)
+
+        val shifted = initial.copy(
+            summaries = initial.summaries.map {
+                when (it.learningUnitId) {
+                    100L -> it.copy(sortOrder = 2)
+                    103L -> it.copy(sortOrder = 1)
+                    else -> it
+                }
+            },
+            practices = initial.practices.map {
+                if (it.file.learningUnitId == 101L) it.copy(file = it.file.copy(sortOrder = 3)) else it
+            },
+        )
+
+        val report = import(shifted)
+
+        assertEquals(mapOf("learning_unit" to 3), report.updated)
+        assertEquals(2, count("SELECT sort_order FROM learning_unit WHERE learning_unit_id = 100"))
+        assertEquals(3, count("SELECT sort_order FROM learning_unit WHERE learning_unit_id = 101"))
+        assertEquals(1, count("SELECT sort_order FROM learning_unit WHERE learning_unit_id = 103"))
+        assertIdempotent(shifted)
+    }
+
+    @Test
+    fun removedLearningUnitFreesSortOrderForNewUnit() {
+        val content = ContentLoader(fixture).load()
+        import(content)
+
+        val replacement = content.summaries.first { it.learningUnitId == 100L }
+            .copy(learningUnitId = 104L, title = "Új összefoglaló", sortOrder = 1)
+        val replaced = content.copy(
+            summaries = content.summaries.filterNot { it.learningUnitId == 100L } + replacement,
+        )
+
+        val report = import(replaced)
+
+        assertEquals(1, report.inserted["learning_unit"])
+        assertEquals(1, report.deactivated["learning_unit"])
+        assertTrue("learning_unit" !in report.updated, "updated: ${report.updated}")
+        assertEquals(
+            1,
+            count("SELECT count(*) FROM learning_unit WHERE learning_unit_id = 100 AND NOT is_published AND sort_order < 0"),
+        )
+        assertEquals(
+            1,
+            count("SELECT count(*) FROM learning_unit WHERE learning_unit_id = 104 AND is_published AND sort_order = 1"),
+        )
+        assertIdempotent(replaced)
+    }
+
+    @Test
+    fun reorderedTopicsDoNotCollide() {
+        val content = ContentLoader(fixture).load()
+        val rootTemplate = content.topics.first { it.file.topicId == 10L }
+        val childTemplate = content.topics.first { it.file.topicId == 11L }
+        val extraRoot = rootTemplate.copy(file = rootTemplate.file.copy(topicId = 20L, title = "Másik főtéma", orderIndex = 2))
+        val extraChild = childTemplate.copy(file = childTemplate.file.copy(topicId = 12L, title = "Másik altéma", orderIndex = 2))
+        val initial = content.copy(topics = content.topics + extraRoot + extraChild)
+        import(initial)
+
+        val swapped = initial.copy(
+            topics = initial.topics.map { topic ->
+                when (topic.file.topicId) {
+                    10L, 11L -> topic.copy(file = topic.file.copy(orderIndex = 2))
+                    20L, 12L -> topic.copy(file = topic.file.copy(orderIndex = 1))
+                    else -> topic
+                }
+            },
+        )
+
+        val report = import(swapped)
+
+        assertEquals(mapOf("topic" to 4), report.updated)
+        assertEquals(2, count("SELECT order_index FROM topic WHERE topic_id = 10"))
+        assertEquals(1, count("SELECT order_index FROM topic WHERE topic_id = 20"))
+        assertEquals(2, count("SELECT order_index FROM topic WHERE topic_id = 11"))
+        assertEquals(1, count("SELECT order_index FROM topic WHERE topic_id = 12"))
+        assertIdempotent(swapped)
+    }
+
+    @Test
+    fun removedTopicFreesOrderIndexForNewTopic() {
+        val content = ContentLoader(fixture).load()
+        val childTemplate = content.topics.first { it.file.topicId == 11L }
+        val extraChild = childTemplate.copy(file = childTemplate.file.copy(topicId = 12L, title = "Régi altéma", orderIndex = 2))
+        val initial = content.copy(topics = content.topics + extraChild)
+        import(initial)
+
+        val replacement = childTemplate.copy(file = childTemplate.file.copy(topicId = 13L, title = "Új altéma", orderIndex = 2))
+        val replaced = content.copy(topics = content.topics + replacement)
+
+        val report = import(replaced)
+
+        assertEquals(1, report.inserted["topic"])
+        assertEquals(1, report.deactivated["topic"])
+        assertTrue("topic" !in report.updated, "updated: ${report.updated}")
+        assertEquals(
+            1,
+            count("SELECT count(*) FROM topic WHERE topic_id = 12 AND NOT is_published AND order_index < 0"),
+        )
+        assertEquals(
+            1,
+            count("SELECT count(*) FROM topic WHERE topic_id = 13 AND is_published AND order_index = 2"),
+        )
+        assertIdempotent(replaced)
+    }
+
+    private fun assertIdempotent(content: ContentSet) {
+        val report = import(content)
+        assertTrue(report.inserted.isEmpty(), "inserted: ${report.inserted}")
+        assertTrue(report.updated.isEmpty(), "updated: ${report.updated}")
+        assertTrue(report.deactivated.values.all { it == 0 }, "deactivated: ${report.deactivated}")
+    }
+
     private fun String.replaceDatabase(name: String): String {
         val uri = URI(this)
         return URI(uri.scheme, uri.rawUserInfo, uri.host, uri.port, "/$name", null, null).toString()

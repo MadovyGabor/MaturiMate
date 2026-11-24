@@ -99,6 +99,26 @@ class PostgresWriter(private val connection: Connection) {
             }
         }
 
+        parkConflictingOrders(
+            table = "topic",
+            idColumn = "topic_id",
+            orderColumn = "order_index",
+            groupColumns = listOf("subject_id", "parent_topic_id"),
+            incoming = content.topics.associate {
+                it.file.topicId to (listOf(it.subjectId, it.parentTopicId) to it.file.orderIndex)
+            },
+        )
+        parkConflictingOrders(
+            table = "learning_unit",
+            idColumn = "learning_unit_id",
+            orderColumn = "sort_order",
+            groupColumns = listOf("topic_id"),
+            incoming = (
+                content.summaries.map { it.learningUnitId to (listOf<Long?>(it.topicId) to it.sortOrder) } +
+                    content.practices.map { it.file.learningUnitId to (listOf<Long?>(it.topicId) to it.file.sortOrder) }
+                ).toMap(),
+        )
+
         t.inOrder.forEach { flush(it) }
 
         val deactivated = mapOf(
@@ -189,6 +209,70 @@ class PostgresWriter(private val connection: Connection) {
             it.setArray(1, connection.createArrayOf("bigint", keep.toTypedArray()))
             it.executeUpdate()
         }
+
+    /**
+     * Moves rows out of positive order slots before upserting so immediate UNIQUE constraints
+     * (`uq_learning_unit_order`, `uq_topic_parent_order`, `uq_topic_root_order`) do not fail mid-update:
+     * - Missing rows (not in [incoming]) with non-negative or colliding order are permanently parked at
+     *   distinct negative values so retired rows never block future imports.
+     * - Active rows whose group or order changed are temporarily parked at distinct negative values and
+     *   restored by [flush]. Unchanged rows are untouched so re-running the import reports zero updates.
+     */
+    private fun parkConflictingOrders(
+        table: String,
+        idColumn: String,
+        orderColumn: String,
+        groupColumns: List<String>,
+        incoming: Map<Long, Pair<List<Long?>, Int>>,
+    ) {
+        val existing = mutableListOf<Triple<Long, List<Long?>, Int>>()
+        val selectCols = (listOf(idColumn) + groupColumns + orderColumn).joinToString()
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT $selectCols FROM $table").use { rs ->
+                while (rs.next()) {
+                    val id = rs.getLong(1)
+                    val group = groupColumns.indices.map { i -> (rs.getObject(i + 2) as Number?)?.toLong() }
+                    val order = rs.getInt(groupColumns.size + 2)
+                    existing += Triple(id, group, order)
+                }
+            }
+        }
+        if (existing.isEmpty()) return
+
+        val incomingSlots = incoming.values.toHashSet()
+        val nextNegativeByGroup = existing
+            .groupBy { it.second }
+            .mapValuesTo(mutableMapOf()) { (_, rows) -> minOf(0, rows.minOf { it.third }) }
+
+        val toPark = mutableListOf<Pair<Long, Int>>()
+        for ((id, group, order) in existing) {
+            val target = incoming[id]
+            val needsParking = if (target == null) {
+                order >= 0 || (group to order) in incomingSlots
+            } else {
+                (group != target.first || order != target.second) &&
+                    (order >= 0 || (group to order) in incomingSlots)
+            }
+            if (needsParking) {
+                val parked = nextNegativeByGroup.getValue(group) - 1
+                check(parked >= Short.MIN_VALUE) { "$table $group ran out of negative $orderColumn slots" }
+                nextNegativeByGroup[group] = parked
+                toPark += id to parked
+            }
+        }
+        if (toPark.isEmpty()) return
+
+        connection.prepareStatement("UPDATE $table SET $orderColumn = ? WHERE $idColumn = ?").use { statement ->
+            toPark.chunked(CHUNK).forEach { chunk ->
+                chunk.forEach { (id, parkedOrder) ->
+                    statement.setInt(1, parkedOrder)
+                    statement.setLong(2, id)
+                    statement.addBatch()
+                }
+                statement.executeBatch()
+            }
+        }
+    }
 
     /** Ids were inserted explicitly, so the identity sequences must continue after the highest id. */
     private fun resetIdentitySequences() {
