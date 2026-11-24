@@ -1,5 +1,7 @@
 package com.madovygabor.maturimate.core.database
 
+import com.madovygabor.maturimate.testutil.awaitFirst
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.database.user.Attempt_answer
 import com.madovygabor.maturimate.database.user.UserDatabase
@@ -8,13 +10,10 @@ import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -25,7 +24,7 @@ class LocalUserProviderTest {
 
     // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
     // test could use the one connection at the same time
-    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val dbDispatcher = testDbDispatcher()
 
     private val database = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY).also { UserDatabase.Schema.create(it) }
@@ -66,7 +65,7 @@ class LocalUserProviderTest {
         assertEquals(5L, database.activityQueries.selectActivity("account-1", "2026-10-31", "2026-10-31").executeAsOne().seconds_studied)
         assertNull(database.profileQueries.selectProfile("guest-1").executeAsOneOrNull())
         // the profile follows the new id
-        assertEquals(UserRole.STUDENT, withTimeout(5_000) { profiles.profile.first { it?.role != null } }?.role)
+        assertEquals(UserRole.STUDENT, profiles.profile.awaitFirst { it?.role != null }?.role)
     }
 
     @Test
@@ -134,7 +133,7 @@ class LocalUserProviderTest {
     // made it write to the old guest id, where the answer was lost.
     @Test
     fun savesDuringASignUpEndUpUnderTheAccount() = runBlocking {
-        val dispatcher = Dispatchers.IO.limitedParallelism(1)
+        val dispatcher = testDbDispatcher()
         val provider = LocalUserProvider(database) { "guest-1" }
         val profiles = UserProfileRepositoryImpl(database, provider, dispatcher)
 

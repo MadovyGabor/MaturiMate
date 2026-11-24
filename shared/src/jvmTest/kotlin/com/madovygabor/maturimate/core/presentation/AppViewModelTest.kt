@@ -1,5 +1,8 @@
 package com.madovygabor.maturimate.core.presentation
 
+import com.madovygabor.maturimate.testutil.awaitFirst
+import com.madovygabor.maturimate.testutil.awaitWithin
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.core.database.LocalUserProvider
 import com.madovygabor.maturimate.core.database.foreignKeysOn
@@ -14,16 +17,13 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlin.test.Test
@@ -39,12 +39,12 @@ class AppViewModelTest {
     // the app's setup: one dispatcher that runs one database call at a time (AppModul)
     private fun newRepository(): UserProfileRepositoryImpl {
         val database = UserDatabase(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) })
-        return UserProfileRepositoryImpl(database, LocalUserProvider(database), Dispatchers.IO.limitedParallelism(1))
+        return UserProfileRepositoryImpl(database, LocalUserProvider(database), testDbDispatcher())
     }
 
     private val repository = newRepository()
 
-    private suspend fun AppViewModel.awaitState(check: (AppState) -> Boolean) = withTimeout(5_000) { state.first { it != null && check(it) } }!!
+    private suspend fun AppViewModel.awaitState(check: (AppState) -> Boolean) = state.awaitFirst { it != null && check(it) }!!
 
     @Test
     fun newUserStartsTheOnboardingInThePhonesLanguage() = runBlocking {
@@ -104,7 +104,7 @@ class AppViewModelTest {
 
         viewModel.onForeground()
 
-        val revoking = withTimeout(5_000) { job.await() }
+        val revoking = job.awaitWithin()
         revoking.join()
         assertEquals(true, revoking.isCancelled)
     }
@@ -119,7 +119,7 @@ class AppViewModelTest {
 
         viewModel.onForeground()
 
-        val revoking = withTimeout(5_000) { job.await() }
+        val revoking = job.awaitWithin()
         revoking.join()
         assertEquals(false, revoking.isCancelled)
         // the state still follows the profile
@@ -139,7 +139,7 @@ class AppViewModelTest {
         val repository = FailingProfile(failures = 3, profile = finished)
         val viewModel = AppViewModel(repository, retryDelaysMillis = listOf(1L))
 
-        withTimeout(5_000) { viewModel.failed.first { it } }
+        viewModel.failed.awaitFirst { it }
         // never the onboarding for a user who may have finished it
         assertNull(viewModel.state.value)
 

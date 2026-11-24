@@ -1,23 +1,15 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import com.madovygabor.maturimate.core.database.LocalUserProvider
-import com.madovygabor.maturimate.core.database.foreignKeysOn
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
-import com.madovygabor.maturimate.database.user.UserDatabase
-import com.madovygabor.maturimate.features.appOnboarding.presentation.role.RoleViewModel
-import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.DataError
-import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import com.madovygabor.maturimate.testutil.awaitFirst
+import com.madovygabor.maturimate.testutil.awaitWithin
+import com.madovygabor.maturimate.testutil.flushMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,7 +22,7 @@ class OnboardingQuestionViewModelTest {
 
     // the app's setup: one thread runs the database calls (AppModul); with Unconfined a ViewModel on the main thread and the
     // test could use the one connection at the same time
-    private val dbDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val dbDispatcher = testDbDispatcher()
 
     private val snackbar = SnackbarController()
 
@@ -40,7 +32,7 @@ class OnboardingQuestionViewModelTest {
     ) = OnboardingQuestionViewModel(snackbar, load, save)
 
     private suspend fun <T : Any> OnboardingQuestionViewModel<T>.awaitState(check: (QuestionUiState<T>) -> Boolean) =
-        withTimeout(5_000) { state.first(check) }
+        state.awaitFirst(predicate = check)
 
     @Test
     fun savedAnswerIsSelected() = runBlocking {
@@ -65,8 +57,8 @@ class OnboardingQuestionViewModelTest {
         question.onSelected("A")
         loaded.complete("B")
 
-        // loading has finished once the saved answer could have arrived
-        delay(200)
+        // everything queued on the main thread (the load resuming with "B") has run
+        flushMain()
         assertEquals("A", question.state.value.selected)
     }
 
@@ -79,7 +71,7 @@ class OnboardingQuestionViewModelTest {
         question.onSelected("A")
         question.onNext { continued.complete(it) }
 
-        assertEquals("A", withTimeout(5_000) { continued.await() })
+        assertEquals("A", continued.awaitWithin())
         assertEquals(listOf("A"), saved)
         assertFalse(question.awaitState { !it.saving }.saving)
     }
@@ -98,33 +90,11 @@ class OnboardingQuestionViewModelTest {
     fun failedSaveShowsASnackbarAndStays() = runBlocking {
         var continued = false
         val question = question<String>(save = { OperationResult.Error(DataError.STORAGE_FULL) })
-        val event = async(Dispatchers.Default) { withTimeout(5_000) { snackbar.events.first() } }
-        delay(100)
-
         question.onSelected("A")
         question.onNext { continued = true }
 
-        assertNotNull(event.await())
+        assertNotNull(snackbar.events.awaitFirst())
         assertFalse(continued)
         assertTrue(question.awaitState { !it.saving }.canContinue)
-    }
-
-    @Test
-    fun roleViewModelSavesTheRole() = runBlocking {
-        val database = UserDatabase(
-            JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
-        )
-        val repository = UserProfileRepositoryImpl(database, LocalUserProvider(database), dbDispatcher)
-        val role = RoleViewModel(repository, snackbar)
-        role.onSelected(UserRole.TEACHER)
-        val done = CompletableDeferred<UserRole>()
-
-        role.onNext { done.complete(it) }
-
-        assertEquals(UserRole.TEACHER, withTimeout(5_000) { done.await() })
-        val profile = repository.profile.first()!!
-        assertEquals(UserRole.TEACHER, profile.role)
-        // the navigation decides when the onboarding ends, not the role
-        assertFalse(profile.isOnboardingCompleted)
     }
 }

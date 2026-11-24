@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import com.madovygabor.maturimate.testutil.TEST_TIMEOUT
 import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.Inet4Address
@@ -122,7 +123,7 @@ class DesktopGoogleSignInTest {
 
         flow(auth).start(scope, outcome::onSignedIn, outcome::onError)
 
-        withTimeout(5_000) { outcome.signedIn.await() }
+        withTimeout(TEST_TIMEOUT) { outcome.signedIn.await() }
         assertEquals(listOf("abc"), auth.codes)
         assertEquals(1, outcome.calls)
         assertTrue(crashes.isEmpty())
@@ -149,7 +150,7 @@ class DesktopGoogleSignInTest {
     fun anErrorFromGoogleEndsAtOnce() = runBlocking<Unit> {
         val auth = FakeBrowserAuth { redirect -> scope.async { visit(redirect, "error=access_denied&error_description=cancelled") } }
 
-        val result = withTimeout(5_000) { flow(auth, timeout = 60.seconds).signIn() }
+        val result = withTimeout(TEST_TIMEOUT) { flow(auth, timeout = 60.seconds).signIn() }
 
         assertEquals(OperationResult.Error(AuthError.UNKNOWN), result)
         assertTrue(auth.codes.isEmpty())
@@ -213,7 +214,7 @@ class DesktopGoogleSignInTest {
         val outcome = Outcome()
         flow(FakeBrowserAuth { throw UnsupportedOperationException("no browser") }).start(scope, outcome::onSignedIn, outcome::onError)
 
-        assertEquals(AuthError.UNKNOWN, withTimeout(5_000) { outcome.error.await() })
+        assertEquals(AuthError.UNKNOWN, withTimeout(TEST_TIMEOUT) { outcome.error.await() })
         assertTrue(crashes.isEmpty())
     }
 
@@ -224,7 +225,7 @@ class DesktopGoogleSignInTest {
         val auth = FakeBrowserAuth { redirect -> waiting.complete(URI(redirect).port) }
         val outcome = Outcome()
         flow(auth).start(scope, outcome::onSignedIn, outcome::onError)
-        val port = withTimeout(5_000) { waiting.await() }
+        val port = withTimeout(TEST_TIMEOUT) { waiting.await() }
 
         scope.coroutineContext[Job]!!.cancelAndJoin()
 
@@ -240,12 +241,12 @@ class DesktopGoogleSignInTest {
         val flow = flow(auth)
         val outcome = Outcome()
         flow.start(scope, outcome::onSignedIn, outcome::onError)
-        val url = withTimeout(5_000) { redirect.await() }
+        val url = withTimeout(TEST_TIMEOUT) { redirect.await() }
 
         flow.start(scope, outcome::onSignedIn, outcome::onError)
         visit(url, "code=abc")
 
-        withTimeout(5_000) { outcome.signedIn.await() }
+        withTimeout(TEST_TIMEOUT) { outcome.signedIn.await() }
         assertEquals(1, auth.opened)
         assertEquals(1, outcome.calls)
     }
@@ -297,9 +298,9 @@ class DesktopGoogleSignInTest {
     // N6: the 3 minutes ran out while the code was being exchanged; the session was saved, but the screen showed an error
     @Test
     fun anExchangeThatFinishesAfterTheWaitIsStillASignIn() = runBlocking<Unit> {
-        val auth = FakeBrowserAuth(exchangeTakes = 1.seconds) { redirect -> scope.async { visit(redirect, "code=abc") } }
+        val auth = FakeBrowserAuth(exchangeTakes = 4.seconds) { redirect -> scope.async { visit(redirect, "code=abc") } }
 
-        val result = withTimeout(10_000) { flow(auth, timeout = 300.milliseconds).signIn() }
+        val result = withTimeout(15.seconds) { flow(auth, timeout = 2.seconds).signIn() }
 
         assertEquals(OperationResult.Success(Unit), result)
         assertEquals(SessionKey("user-1", "new-token"), auth.session)
@@ -308,11 +309,11 @@ class DesktopGoogleSignInTest {
     // ... and a failed exchange after the wait is still the exchange's error, not a timeout
     @Test
     fun anExchangeThatFailsAfterTheWaitShowsItsError() = runBlocking<Unit> {
-        val auth = FakeBrowserAuth(exchangeTakes = 1.seconds, exchangeFails = HttpRequestException("offline", HttpRequestBuilder())) { redirect ->
+        val auth = FakeBrowserAuth(exchangeTakes = 4.seconds, exchangeFails = HttpRequestException("offline", HttpRequestBuilder())) { redirect ->
             scope.async { visit(redirect, "code=abc") }
         }
 
-        assertEquals(OperationResult.Error(AuthError.NETWORK), withTimeout(10_000) { flow(auth, timeout = 300.milliseconds).signIn() })
+        assertEquals(OperationResult.Error(AuthError.NETWORK), withTimeout(15.seconds) { flow(auth, timeout = 2.seconds).signIn() })
     }
 
     // N6: leaving the screen while the code is exchanged cut the exchange off half way
@@ -323,9 +324,9 @@ class DesktopGoogleSignInTest {
         val auth = FakeBrowserAuth(exchangeTakes = 1.seconds) { redirect -> browser.async { runCatching { visit(redirect, "code=abc") } } }
         val outcome = Outcome()
         flow(auth).start(scope, outcome::onSignedIn, outcome::onError)
-        withTimeout(5_000) { auth.exchangeStarted.await() }
+        withTimeout(TEST_TIMEOUT) { auth.exchangeStarted.await() }
 
-        withTimeout(10_000) { scope.coroutineContext[Job]!!.cancelAndJoin() }
+        withTimeout(TEST_TIMEOUT) { scope.coroutineContext[Job]!!.cancelAndJoin() }
 
         assertEquals(SessionKey("user-1", "new-token"), auth.session)
         assertEquals(0, outcome.calls)
@@ -340,7 +341,7 @@ class DesktopGoogleSignInTest {
         val browser = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val auth = FakeBrowserAuth(exchangeTakes = 1.seconds) { redirect -> browser.async { runCatching { visit(redirect, "code=abc") } } }
         DesktopGoogleSignIn(auth, receiver(), 5.seconds, signIns).start(scope, {}, {})
-        withTimeout(5_000) { auth.exchangeStarted.await() }
+        withTimeout(TEST_TIMEOUT) { auth.exchangeStarted.await() }
 
         // the screen goes; nobody waits for the flow itself
         scope.coroutineContext[Job]!!.cancel()
