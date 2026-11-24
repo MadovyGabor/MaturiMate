@@ -21,10 +21,10 @@ import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgress
 import com.madovygabor.maturimate.features.learning.domain.model.UnitProgressStatus
 import com.madovygabor.maturimate.features.practice.domain.PracticeCatalog
-import com.madovygabor.maturimate.testutil.awaitCondition
 import com.madovygabor.maturimate.testutil.awaitFirst
+import com.madovygabor.maturimate.testutil.runOnMain
 import com.madovygabor.maturimate.testutil.testDbDispatcher
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -78,14 +78,16 @@ class PracticePickerViewModelTest {
         }
     }
 
-    // one thread at a time for the in-memory databases: the ViewModel works on the main dispatcher while the test
-    // polls, and with Dispatchers.Unconfined two threads shared one JDBC connection (flaky on a slow CI run)
+    // One thread at a time for the in-memory databases: every read and write of both databases (after the setup above)
+    // goes through this dispatcher. The test bodies run on the main thread (runOnMain), like the app's calls to a
+    // ViewModel: called from the test thread, toggle() raced with the ViewModel's first load, whose count of the empty
+    // selection cancelled the count just launched (flaky on CI; llm/outputs/practice-picker-flaky-test.md).
     private val dbDispatcher = testDbDispatcher()
     private val content = ContentRepositoryImpl({ database }, dbDispatcher)
     private val userDatabase = UserDatabase(
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
     )
-    private val progress = ProgressRepositoryImpl(userDatabase, LocalUserProvider(userDatabase), dbDispatcher)
+    private val progress = ProgressRepositoryImpl(userDatabase, LocalUserProvider(userDatabase), dbDispatcher, now = { Instant.fromEpochMilliseconds(5) })
     private val catalog = PracticeCatalog(content, progress)
 
     private fun <T> OperationResult<T, LearningError>.data(): T = when (this) {
@@ -93,7 +95,7 @@ class PracticePickerViewModelTest {
         is OperationResult.Error -> fail("expected success, got $error")
     }
 
-    private fun finish(vararg units: Long) = runBlocking {
+    private suspend fun finish(vararg units: Long) {
         units.forEach {
             progress.saveUnitProgress(UnitProgress(it, UnitProgressStatus.COMPLETED, Instant.fromEpochMilliseconds(1), Instant.fromEpochMilliseconds(2))).data()
         }
@@ -109,11 +111,13 @@ class PracticePickerViewModelTest {
 
     private val PracticePickerViewModel.ready get() = state.value as PickerUiState.Ready
 
-    private suspend fun PracticePickerViewModel.counted(size: Int) =
-        awaitCondition { ready.poolSize == size }
+    /** Waits until the count of the selection is [size] (the count runs on the database thread, then on the main thread). */
+    private suspend fun PracticePickerViewModel.counted(size: Int) {
+        state.awaitFirst { it is PickerUiState.Ready && it.poolSize == size }
+    }
 
     @Test
-    fun thePickerStartsWithTheSubjectsClosedThePartsOpenAndNothingChosen() = runBlocking<Unit> {
+    fun thePickerStartsWithTheSubjectsClosedThePartsOpenAndNothingChosen() = runOnMain {
         val state = picker().ready
         assertEquals(listOf("Nyelvtan", "Irodalom", "Szövegértés"), state.subjects.single().parts.map { it.topic.title })
         assertTrue(state.openSubjects.isEmpty())
@@ -125,7 +129,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun aTopicIsChosenAndItsPartShowsItPartly() = runBlocking<Unit> {
+    fun aTopicIsChosenAndItsPartShowsItPartly() = runOnMain {
         val viewModel = picker()
         viewModel.toggle(listOf(11))
         viewModel.counted(3)
@@ -140,7 +144,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun aPartIsChosenWholeAndClearedWhole() = runBlocking<Unit> {
+    fun aPartIsChosenWholeAndClearedWhole() = runOnMain {
         val viewModel = picker()
         viewModel.toggle(listOf(11))
         viewModel.toggle(listOf(11, 12)) // partly chosen: the tick chooses all
@@ -154,7 +158,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun aSubjectChoosesEveryFinishedTopicWithTasks() = runBlocking<Unit> {
+    fun aSubjectChoosesEveryFinishedTopicWithTasks() = runOnMain {
         val viewModel = picker()
         val subjectLeaves = viewModel.ready.subjects.single().parts.flatMap { it.leafIds }
         // "Romantika" is finished but has no task, "Realizmus" is not finished: neither can be chosen
@@ -166,14 +170,14 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun nothingToChooseChangesNothing() = runBlocking<Unit> {
+    fun nothingToChooseChangesNothing() = runOnMain {
         val viewModel = picker()
         viewModel.toggle(emptyList())
         assertTrue(viewModel.ready.selected.isEmpty())
     }
 
     @Test
-    fun theLengthOfTheRoundIsAtMostTheTasksChosen() = runBlocking<Unit> {
+    fun theLengthOfTheRoundIsAtMostTheTasksChosen() = runOnMain {
         val viewModel = picker()
         viewModel.toggle(listOf(11, 12, 30))
         viewModel.counted(6)
@@ -188,7 +192,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun theCustomLengthIsANumberFromOneTo999() = runBlocking<Unit> {
+    fun theCustomLengthIsANumberFromOneTo999() = runOnMain {
         val viewModel = picker()
         viewModel.toggle(listOf(11, 12, 30))
         viewModel.counted(6)
@@ -219,7 +223,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun subjectsAndPartsFoldAndUnfold() = runBlocking<Unit> {
+    fun subjectsAndPartsFoldAndUnfold() = runOnMain {
         val viewModel = picker()
         viewModel.foldSubject(1)
         assertEquals(setOf(1L), viewModel.ready.openSubjects)
@@ -232,23 +236,28 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun aRefreshKeepsTheChoiceAndTheFolds() = runBlocking<Unit> {
+    fun aRefreshKeepsTheChoiceAndTheFolds() = runOnMain {
         val viewModel = picker()
         viewModel.toggle(listOf(11))
         viewModel.foldSubject(1)
         viewModel.selectLength(RoundLength.FIFTY)
         viewModel.counted(3)
 
+        // a new task in "Szóképek": the count after the refresh shows that the refresh ran with the choice kept
+        withContext(dbDispatcher) {
+            database.taskQueries.insert(Task(103, 11, 1, "Kérdés", null, 1, null, true, 0))
+            database.learningUnitQueries.insertUnitTask(Unit_task(52, 103, 3, true))
+        }
         viewModel.refresh()
-        awaitCondition { viewModel.ready.poolSize == 3 }
+        viewModel.counted(4)
         assertEquals(setOf(11L), viewModel.ready.selected)
         assertEquals(setOf(1L), viewModel.ready.openSubjects)
         assertEquals(RoundLength.FIFTY, viewModel.ready.length)
     }
 
     /** A wrong answer to each of [tasks] (a mistake each), as a practice round. */
-    private fun answerWrong(vararg tasks: Long) = runBlocking {
-        val recorder = com.madovygabor.maturimate.features.learning.domain.TestRecorder(progress)
+    private suspend fun answerWrong(vararg tasks: Long) {
+        val recorder = com.madovygabor.maturimate.features.learning.domain.TestRecorder(progress, now = { Instant.fromEpochMilliseconds(5) })
         val attempt = recorder.startPractice(com.madovygabor.maturimate.features.learning.domain.model.AttemptType.FREE_PRACTICE).data()
         for (id in tasks) progress.recordAnswer(
             com.madovygabor.maturimate.features.learning.domain.model.AttemptAnswer(attempt, id, false, 0, 1, Instant.fromEpochMilliseconds(5), "1=B")
@@ -261,7 +270,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun inMistakeModeTheTopicsWithMistakesCanBeChosenFinishedOrNot() = runBlocking<Unit> {
+    fun inMistakeModeTheTopicsWithMistakesCanBeChosenFinishedOrNot() = runOnMain {
         // "Alakzatok" is not finished; its mistake counts all the same
         answerWrong(100, 101, 110)
         val viewModel = PracticePickerViewModel(catalog, com.madovygabor.maturimate.features.practice.domain.PracticeMode.MISTAKES)
@@ -279,7 +288,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun theTabCountsTheMistakes() = runBlocking<Unit> {
+    fun theTabCountsTheMistakes() = runOnMain {
         answerWrong(100, 110)
         val tab = PracticeViewModel(catalog)
         tab.refresh()
@@ -287,7 +296,7 @@ class PracticePickerViewModelTest {
     }
 
     @Test
-    fun theTabOffersPracticeOnlyAfterAFinishedTopicWithTasks() = runBlocking<Unit> {
+    fun theTabOffersPracticeOnlyAfterAFinishedTopicWithTasks() = runOnMain {
         val tab = PracticeViewModel(catalog)
         // only "Romantika" (a lesson, no task) is finished: nothing to practice yet
         finish(80)
