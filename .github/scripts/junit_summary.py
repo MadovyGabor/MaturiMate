@@ -99,6 +99,9 @@ def total(root, whole_dir):
         if r["failures"]:
             lines.append("| &nbsp;&nbsp;failed: " + "<br>".join(f"`{md(n)}`" for n in r["failures"]) + " | | | | |")
             problems.append(f"Group {name}: {r['failed']} failed test(s).")
+            for n in r["failures"]:
+                # the plain log of the job says what failed (the table goes to the run summary)
+                print(f"::error title=Failed test in group {name}::{n}".replace("\r", " ").replace("\n", " "))
         if r["files"] == 0:
             problems.append(f"Group {name}: no test results.")
         for b in r["bad"]:
@@ -133,6 +136,8 @@ def total(root, whole_dir):
     else:
         lines.append(":white_check_mark: All jobs passed.")
     emit("\n".join(lines) + "\n")
+    for p in problems:
+        print(f"::error title=CI failed::{p}".replace("\r", " ").replace("\n", " "))
     return 1 if problems else 0
 
 

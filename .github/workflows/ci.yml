@@ -268,6 +268,20 @@ jobs:
           pattern: junit-*
           path: results
 
+      # Every failed test of every group, with its message, as annotations on this job: the same view
+      # as in the group jobs, in one place (the whole-suite copy is left out, it would list them twice)
+      - name: Failed tests of all groups
+        if: always()
+        uses: mikepenz/action-junit-report@v6
+        with:
+          check_name: CI result
+          job_name: CI result
+          annotate_only: true
+          report_paths: |
+            results/junit-*/*.xml
+            !results/junit-whole/*.xml
+          require_tests: false
+
       - name: Result table
         if: always()
         env:
