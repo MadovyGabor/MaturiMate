@@ -43,6 +43,8 @@ fun NavigationRoute(
     appLanguage: TeachingLanguage?,
     /** True while a lesson, a test or a practice round is open: the content file is not swapped under it. */
     onReadingChanged: (Boolean) -> Unit = {},
+    /** The first screen (home, or the onboarding with its saved answers) is built: the splash screen can go. */
+    onStartReady: () -> Unit = {},
 ){
 
     val rootBackStack = rememberNavBackStack(
@@ -67,7 +69,11 @@ fun NavigationRoute(
     val reading = rootBackStack.any { it is Route.Lesson || it is Route.Test || it is Route.PracticeRound }
     LaunchedEffect(reading) { onReadingChanged(reading) }
 
+    val transitions = rememberNavTransitions()
     NavDisplay(
+        transitionSpec = transitions.forward(),
+        popTransitionSpec = transitions.back(),
+        predictivePopTransitionSpec = transitions.predictiveBack(),
         modifier = modifier,
         backStack = rootBackStack,
         entryDecorators = listOf(
@@ -77,6 +83,7 @@ fun NavigationRoute(
         entryProvider = entryProvider {
             //The main application content with bottom navigation
             entry<Route.Main> {
+                LaunchedEffect(Unit) { onStartReady() }
                 MainFrameNavigation(mainTab = mainTab, profilePage = profilePage, onOpenLesson = { rootBackStack.add(Route.Lesson(it)) },
                     onOpenTest = { rootBackStack.add(Route.Test(it)) },
                     onOpenPracticePicker = { mistakes -> rootBackStack.add(Route.PracticePicker(mistakes)) },
@@ -89,7 +96,7 @@ fun NavigationRoute(
             //Initial Setup Screen for first-time users
             entry<Route.AppOnboarding> {
                 // finishing it saves the onboarding end; App then starts on Main
-                BottomInsetBox { AppOnboardingNavigation(appLanguage = appLanguage, navState = onboardingState) }
+                BottomInsetBox { AppOnboardingNavigation(appLanguage = appLanguage, navState = onboardingState, onReady = onStartReady) }
             }
             // A test, one task at a time, without the navigation bar
             entry<Route.Test> { route ->

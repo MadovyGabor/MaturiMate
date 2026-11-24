@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.auth.domain.AccountRules
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
@@ -122,7 +123,7 @@ class AccountViewModel(
 
     private fun askForConsent() {
         _state.update { it.copy(consentMissing = true) }
-        viewModelScope.launch { snackbarController.showSnackbar(message = UiText.StringRes(Res.string.account_consent_required)) }
+        viewModelScope.launch { snackbarController.showSnackbar(message = UiText.StringRes(Res.string.account_consent_required), kind = SnackbarKind.ERROR) }
     }
 
     fun onNewsChanged(value: Boolean) = _state.update { it.copy(news = value) }
@@ -245,7 +246,7 @@ class AccountViewModel(
                 _state.update { it.copy(signedInEmail = null) }
             }
             val result = profiles.completeOnboarding(now())
-            if (result is OperationResult.Error) snackbarController.showSnackbar(message = result.error.toUiText())
+            if (result is OperationResult.Error) snackbarController.showSnackbar(message = result.error.toUiText(), kind = SnackbarKind.ERROR)
         }
     }
 
@@ -273,5 +274,5 @@ class AccountViewModel(
         }
     }
 
-    private suspend fun showError(error: AuthError) = snackbarController.showSnackbar(message = error.toUiText())
+    private suspend fun showError(error: AuthError) = snackbarController.showSnackbar(message = error.toUiText(), kind = SnackbarKind.ERROR)
 }

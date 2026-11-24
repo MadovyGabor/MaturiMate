@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
 import com.madovygabor.maturimate.features.userProfile.domain.DataError
 import com.madovygabor.maturimate.core.presentation.utils.readOrNull
@@ -58,7 +59,7 @@ open class OnboardingQuestionViewModel<T : Any>(
         viewModelScope.launch {
             when (val result = save(answer)) {
                 is OperationResult.Success -> onSaved(answer)
-                is OperationResult.Error -> snackbarController.showSnackbar(message = result.error.toUiText())
+                is OperationResult.Error -> snackbarController.showSnackbar(message = result.error.toUiText(), kind = SnackbarKind.ERROR)
             }
             _state.update { it.copy(saving = false) }
         }

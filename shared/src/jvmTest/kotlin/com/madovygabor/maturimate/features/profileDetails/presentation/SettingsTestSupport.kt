@@ -2,6 +2,7 @@ package com.madovygabor.maturimate.features.profileDetails.presentation
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.madovygabor.maturimate.core.database.LocalUserProvider
@@ -165,6 +166,9 @@ abstract class SettingsTestBase {
 
     internal fun ComposeUiTest.waitForText(text: String) =
         waitUntil(timeoutMillis = TEST_TIMEOUT.inWholeMilliseconds) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+
+    internal fun ComposeUiTest.waitForContentDescription(text: String) =
+        waitUntil(timeoutMillis = TEST_TIMEOUT.inWholeMilliseconds) { onAllNodesWithContentDescription(text).fetchSemanticsNodes().isNotEmpty() }
 
     internal fun said(res: org.jetbrains.compose.resources.StringResource, vararg args: Any) = UiText.StringRes(res, arrayOf(*args))
 }

@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
+import com.madovygabor.maturimate.core.presentation.navigation.rememberNavTransitions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -218,7 +219,11 @@ fun SettingsScreen(
         null
     }
 
+    val transitions = rememberNavTransitions()
     NavDisplay(
+        transitionSpec = transitions.forward(),
+        popTransitionSpec = transitions.back(),
+        predictivePopTransitionSpec = transitions.predictiveBack(),
         backStack = backStack,
         onBack = done,
         entryDecorators = listOf(

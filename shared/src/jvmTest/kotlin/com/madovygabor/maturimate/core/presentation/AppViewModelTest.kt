@@ -54,6 +54,18 @@ class AppViewModelTest {
     }
 
     @Test
+    fun theStartIsNotReadyUntilTheScreenSaysSo() = runBlocking {
+        val viewModel = AppViewModel(repository)
+        viewModel.awaitState { true }
+
+        // the profile is read, but the splash screen stays until the first screen is built
+        assertEquals(false, viewModel.startReady.value)
+
+        viewModel.onStartReady()
+        assertEquals(true, viewModel.startReady.value)
+    }
+
+    @Test
     fun teachingLanguageSetsTheAppLanguageAndTheEndGoesHome() = runBlocking {
         val viewModel = AppViewModel(repository)
 

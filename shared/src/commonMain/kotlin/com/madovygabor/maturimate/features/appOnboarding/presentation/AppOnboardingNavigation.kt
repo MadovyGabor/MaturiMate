@@ -1,11 +1,12 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation
 
+import com.madovygabor.maturimate.core.presentation.navigation.rememberNavTransitions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -14,7 +15,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavBackStack
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -67,6 +67,9 @@ private val onboardingSerializers = SavedStateConfiguration {
 @Stable
 class OnboardingNavState(val backStack: NavBackStack<NavKey>, seeded: MutableState<Boolean>) {
     var seeded: Boolean by seeded
+
+    /** The saved role, once known: the headers' step count does not wait for it again after a rebuild. */
+    var role: UserRole? by mutableStateOf(null)
 }
 
 @Composable
@@ -90,6 +93,8 @@ fun AppOnboardingNavigation(
     /** The back stack, held by the caller above the rebuild after a new language. */
     navState: OnboardingNavState = rememberOnboardingNavState(),
     navigationViewModel: OnboardingNavigationViewModel = koinViewModel(),
+    /** Called when the saved answers are read and the first screen is built: the splash screen can go. */
+    onReady: () -> Unit = {},
 ) {
     // The first back stack comes from the saved answers, so the onboarding continues where it
     // stopped; after a new language it waits for the stack of that profile, not the one before.
@@ -97,11 +102,11 @@ fun AppOnboardingNavigation(
     val resume by navigationViewModel.resume.collectAsState()
     val current = resume
     val onboardingBackStack = navState.backStack
-    if (current == null) {
-        OnboardingLoading()
-        return
-    }
     if (!navState.seeded) {
+        if (current == null) {
+            OnboardingLoading()
+            return
+        }
         val initial = current.takeIf { it.matches(appLanguage) }?.backStack
         if (initial == null) {
             OnboardingLoading()
@@ -114,10 +119,18 @@ fun AppOnboardingNavigation(
             true
         }
     }
-    // the saved role, known with the first stack: the step count of the headers is right from the start
-    val role = current.role
+    // The saved role, known with the first stack: the step count of the headers is right from the start. It is kept in
+    // [navState], above the rebuild that a new app language causes, so after that rebuild the screen is built at once
+    // and does not wait for the profile to be read again (on a slow phone that was a blank screen for seconds).
+    current?.let { navState.role = it.role }
+    val role = current?.role ?: navState.role
+    LaunchedEffect(Unit) { onReady() }
 
+    val transitions = rememberNavTransitions()
     NavDisplay(
+        transitionSpec = transitions.forward(),
+        popTransitionSpec = transitions.back(),
+        predictivePopTransitionSpec = transitions.predictiveBack(),
         backStack = onboardingBackStack,
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
@@ -202,12 +215,14 @@ fun AppOnboardingNavigation(
     )
 }
 
-/** A plain screen while the saved answers are read: the stack of the onboarding is not known before. */
+/**
+ * A plain screen, the color of the app, while the saved answers are read: the stack of the onboarding is not known
+ * before. It has no spinner: it is on screen for a moment only (after a new app language), and a spinner flashing
+ * there looked like a loading screen of its own.
+ */
 @Composable
 private fun OnboardingLoading() {
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
 }
 
 /**

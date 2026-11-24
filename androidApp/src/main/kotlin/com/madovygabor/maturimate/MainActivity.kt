@@ -41,9 +41,10 @@ class MainActivity : AppCompatActivity() {
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
 
-        // Keep the splash screen until the profile has been read (App picks the start screen from it),
-        // or until it is clear that it cannot be read and App shows the error screen
-        splashScreen.setKeepOnScreenCondition { appViewModel.state.value == null && !appViewModel.failed.value }
+        // Keep the splash screen until the profile has been read (App picks the start screen from it) and that start screen
+        // is built (the home screen, or the onboarding with its saved answers), so no loading screen of the app follows it.
+        // It also goes when it is clear that the profile cannot be read and App shows the error screen.
+        splashScreen.setKeepOnScreenCondition { !appViewModel.failed.value && !appViewModel.startReady.value }
 
         setContent {
             App(appViewModel)

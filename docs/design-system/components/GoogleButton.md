@@ -1,0 +1,11 @@
+# GoogleButton
+
+The "Continue with Google" button of the account and sign-in screens. Its look is Google's, so it does not follow the app palette.
+
+- **The caller provides:** the text in the app language (`account_google`: "Folytatás Google-lel" / "Pokračovať cez Google"), the click handler, and whether it is enabled.
+- **What was used from the Google branding guidelines** ("Sign in with Google", the neutral button): the four-color "G" mark unchanged (drawn from Google's published 24 by 24 vector in the 24 dp icon slot, never recolored or cropped); the light theme has a white fill (`google-button-container` #ffffff), a 1 dp gray outline (`google-button-outline` #747775) and near-black text (`google-button-content` #1f1f1f); the dark theme has a #131314 fill, a #8e918f outline and #e3e3e3 text; the mark first, then the text, `space-3` apart, the content centered; a pill shape (the guidelines allow a round button); the text starts with "Continue with" in the language of the app. All of these are tokens in `tokens.json` (the `google-*` colors).
+- **Where the app differs from the guidelines (on purpose):** the text uses `label-large` (Manrope) instead of Google Sans Medium 14/20, so the button looks like the other buttons of the app; the button is `touch-target` (48 dp) tall instead of 40 dp. Checked against developers.google.com/identity/branding-guidelines on 2026-11-25 (colors, outline, "G" unchanged, allowed texts, pill shape allowed). The guidelines give 12 px left of the mark and 10 px right of it; the app uses `space-4` and `space-3` for consistency. Compare again before the store release, they change.
+- **Disabled** (while another request runs): `surface-container-highest` fill and `on-surface-variant` text, like `AppButton`; the mark keeps its colors.
+- **Press:** it shrinks to `press-scale` and comes back, like every button.
+- **Accessibility:** a button with the text as its name; the "G" is decoration (no description). Contrast of the text on the fill: about 16:1 (light) and 14:1 (dark).
+- Compose: `AppGoogleButton` in `core/presentation/uiComponents/AppGoogleButton.kt` (a `Surface` with `onClick`, so the role is Button). What the button does (the sign-in) is not part of it: the screen gives `onClick`.

@@ -1,6 +1,9 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.runtime.remember
+import com.madovygabor.maturimate.core.presentation.theme.pressScale
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
@@ -45,7 +48,7 @@ enum class AppButtonVariant {
 }
 
 /**
- * Pill-shaped button of the design system (docs/design-system/components/Button.md).
+ * Pill-shaped button of the design system (docs/design-system/components/Button.md). A press shrinks it a little (`press-scale`).
  *
  * @param text A verb that says what happens: "Tovább", "Kezdjük".
  */
@@ -62,9 +65,11 @@ fun AppButton(
     loading: Boolean = false,
 ) {
     val layout = MaterialTheme.layout
+    val source = remember { MutableInteractionSource() }
+    val base = modifier.pressScale(source)
     val sizedModifier = if (compact) {
-        modifier.minimumInteractiveComponentSize().heightIn(min = layout.buttonCompactHeight)
-    } else modifier.heightIn(min = layout.touchTarget)
+        base.minimumInteractiveComponentSize().heightIn(min = layout.buttonCompactHeight)
+    } else base.heightIn(min = layout.touchTarget)
     val padding = if (compact) PaddingValues(horizontal = MaterialTheme.spacing.space4) else ButtonDefaults.ContentPadding
     val loadingText = if (loading) stringResource(Res.string.common_loading) else null
     val label = @Composable {
@@ -86,6 +91,7 @@ fun AppButton(
         AppButtonVariant.FILLED -> Button(
             onClick = click,
             modifier = sizedModifier,
+            interactionSource = source,
             enabled = enabled,
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
@@ -98,6 +104,7 @@ fun AppButton(
         AppButtonVariant.TONAL -> FilledTonalButton(
             onClick = click,
             modifier = sizedModifier,
+            interactionSource = source,
             enabled = enabled,
             shape = CircleShape,
             colors = ButtonDefaults.filledTonalButtonColors(
@@ -112,6 +119,7 @@ fun AppButton(
         AppButtonVariant.OUTLINED -> OutlinedButton(
             onClick = click,
             modifier = sizedModifier,
+            interactionSource = source,
             enabled = enabled,
             shape = CircleShape,
             border = BorderStroke(MaterialTheme.layout.borderThin, MaterialTheme.colorScheme.outline),
@@ -121,6 +129,7 @@ fun AppButton(
         AppButtonVariant.TEXT -> TextButton(
             onClick = click,
             modifier = sizedModifier,
+            interactionSource = source,
             enabled = enabled,
             shape = CircleShape,
             contentPadding = padding,

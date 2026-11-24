@@ -99,6 +99,7 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                             onboardingState = onboardingState,
                             appLanguage = appState.language,
                             onReadingChanged = viewModel::onReadingChanged,
+                            onStartReady = viewModel::onStartReady,
                         )
                     }
                 }

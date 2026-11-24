@@ -6,6 +6,7 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.NotificationPermissionResult
 import com.madovygabor.maturimate.core.presentation.utils.readOrNull
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,7 +74,7 @@ class ReminderViewModel(
         viewModelScope.launch {
             when (val result = repository.saveReminder(enabled, _state.value.time)) {
                 is OperationResult.Success -> onSaved()
-                is OperationResult.Error -> snackbarController.showSnackbar(message = result.error.toUiText())
+                is OperationResult.Error -> snackbarController.showSnackbar(message = result.error.toUiText(), kind = SnackbarKind.ERROR)
             }
             _state.update { it.copy(saving = false) }
         }

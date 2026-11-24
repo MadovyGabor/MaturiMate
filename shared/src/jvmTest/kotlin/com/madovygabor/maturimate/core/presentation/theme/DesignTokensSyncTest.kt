@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.presentation.theme
 
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -65,6 +66,13 @@ class DesignTokensSyncTest {
         "success-container" to (extendedColorsLight.successContainer to extendedColorsDark.successContainer),
         "on-success-container" to (extendedColorsLight.onSuccessContainer to extendedColorsDark.onSuccessContainer),
         "focus-ring" to (extendedColorsLight.focusRing to extendedColorsDark.focusRing),
+        "google-button-container" to (extendedColorsLight.googleButtonContainer to extendedColorsDark.googleButtonContainer),
+        "google-button-content" to (extendedColorsLight.googleButtonContent to extendedColorsDark.googleButtonContent),
+        "google-button-outline" to (extendedColorsLight.googleButtonOutline to extendedColorsDark.googleButtonOutline),
+        "google-blue" to (extendedColorsLight.googleBlue to extendedColorsDark.googleBlue),
+        "google-green" to (extendedColorsLight.googleGreen to extendedColorsDark.googleGreen),
+        "google-yellow" to (extendedColorsLight.googleYellow to extendedColorsDark.googleYellow),
+        "google-red" to (extendedColorsLight.googleRed to extendedColorsDark.googleRed),
     )
 
     @Test
@@ -195,11 +203,49 @@ class DesignTokensSyncTest {
             "gap-slot-min-width" to layout.gapSlotMinWidth.value,
             "gap-field-width" to layout.gapFieldWidth.value,
             "gap-slot-height" to layout.gapSlotHeight.value,
+            "code-box-height" to layout.codeBoxHeight.value,
+            "code-box-max-width" to layout.codeBoxMaxWidth.value,
         )
 
         val values = tokenList("layout")
         assertEquals(values.keys, codeLayout.keys, "Layout names in tokens.json and in the code differ")
         values.forEach { (name, token) -> assertEquals(token.px("value"), codeLayout.getValue(name), name) }
+    }
+
+    @Test
+    fun everyMotionValueMatchesTheCode() {
+        val motion = Motion()
+        val codeMotion = mapOf(
+            "duration-short" to motion.durationShort.toFloat(),
+            "duration-medium" to motion.durationMedium.toFloat(),
+            "stagger-step" to motion.staggerStep.toFloat(),
+            "slide-offset" to motion.slideOffset.value,
+            "press-scale" to motion.pressScale,
+        )
+        val values = tokenList("motion")
+        assertEquals(values.keys - "easing-standard", codeMotion.keys, "Motion names in tokens.json and in the code differ")
+        values.filterKeys { it != "easing-standard" }.forEach { (name, token) ->
+            val raw = token.getValue("value").jsonPrimitive.content.removeSuffix("ms").removeSuffix("px")
+            assertEquals(raw.toFloat(), codeMotion.getValue(name), name)
+        }
+
+        // the one easing curve: cubic-bezier(a, b, c, d) of the token is the curve of the code
+        val (a, b, c, d) = Regex("cubic-bezier\\(([^)]*)\\)")
+            .find(values.getValue("easing-standard").getValue("value").jsonPrimitive.content)!!.groupValues[1]
+            .split(",").map { it.trim().toFloat() }
+        val expected = CubicBezierEasing(a, b, c, d)
+        for (t in listOf(0f, 0.1f, 0.25f, 0.5f, 0.75f, 0.9f, 1f)) {
+            assertEquals(expected.transform(t), motion.easing.transform(t), 0.0001f, "easing at $t")
+        }
+    }
+
+    @Test
+    fun theReducedMotionRuleOfTheTokensIsWhatTheCodeDoes() {
+        val rule = tokens().getValue("motion").jsonObject.getValue("reducedMotion").jsonObject
+        assertEquals(0, rule.getValue("durationScale").jsonPrimitive.int)
+        val reduced = Motion(reduced = true)
+        assertEquals(0, reduced.duration(reduced.durationShort))
+        assertEquals(0, reduced.duration(reduced.durationMedium))
     }
 
     private fun tokenList(family: String): Map<String, JsonObject> =

@@ -6,5 +6,6 @@ One answer from a short list, shown as a card: a badge, a title, a one-line desc
 - Default: `surface-container-lowest` background, `border-thin` `outline` border; the badge is `surface-container-high` with `on-surface-variant` text; the mark is an empty `outline` circle.
 - Selected: `primary-container` background, `border-thick` `primary` border, `on-primary-container` text; the badge is `primary` with `on-primary` text; the mark is a filled `primary` circle with a check. The state is never shown by color alone.
 - `radius-lg` corners, at least `choice-card-min-height` (64 dp) tall, badge `badge` (44 dp) with `radius-md`. Cards are `space-3` apart.
+- Choosing a card fades its colors and border over `duration-short` (the check appears with a fade); a press shrinks it to `press-scale`. With reduced motion both are instant.
 - Title `title-medium`, description `body-small`.
 - Compose: `AppChoiceCard` in `core/presentation/uiComponents/AppChoiceCard.kt`; a group of cards sits in a `selectableGroup()`, each card is a radio button for accessibility.

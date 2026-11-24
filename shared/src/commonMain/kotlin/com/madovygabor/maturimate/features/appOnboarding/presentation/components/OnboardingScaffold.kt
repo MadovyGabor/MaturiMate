@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,11 +29,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.madovygabor.maturimate.core.presentation.systemPadding
 import com.madovygabor.maturimate.core.presentation.theme.layout
+import com.madovygabor.maturimate.core.presentation.theme.motion
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
@@ -65,7 +72,9 @@ data class OnboardingAction(
  * @param actions The buttons at the bottom, the main one first.
  * @param stackedActions True: the buttons fill the width, one under the other, at every size
  *   (welcome, account). False: from `breakpoint-medium` they sit in a row on the right.
- * @param progress Shows the back button, the step count and the step list; null on the welcome screen.
+ * @param centered The content is centered in the free height (the welcome screen); it still scrolls when it does not fit.
+ * @param progress Shows the back button, the step count and the step list; null on the welcome screen. On arriving, the
+ *   progress bar and the step list move on from the previous step (`duration-medium`).
  * @param onBack A back button without a step count, for screens outside the steps (sign-in).
  * @param content The screen's own content, scrolled when it does not fit.
  */
@@ -74,6 +83,7 @@ fun OnboardingScaffold(
     actions: List<OnboardingAction>,
     modifier: Modifier = Modifier,
     stackedActions: Boolean = false,
+    centered: Boolean = false,
     progress: OnboardingProgress? = null,
     onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -94,10 +104,10 @@ fun OnboardingScaffold(
             Row(Modifier.fillMaxSize()) {
                 SidePanel(progress, Modifier.width(layout.sidePanelWidth).fillMaxHeight())
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                MainColumn(wide = true, actions, stackedActions, progress, onBack, content)
+                MainColumn(wide = true, actions, stackedActions, centered, progress, onBack, content)
             }
         } else {
-            MainColumn(wide, actions, stackedActions, progress, onBack, content)
+            MainColumn(wide, actions, stackedActions, centered, progress, onBack, content)
         }
     }
 }
@@ -107,6 +117,7 @@ private fun MainColumn(
     wide: Boolean,
     actions: List<OnboardingAction>,
     stackedActions: Boolean,
+    centered: Boolean,
     progress: OnboardingProgress?,
     onBack: (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit,
@@ -125,15 +136,27 @@ private fun MainColumn(
         } else if (onBack != null) {
             Row(headerModifier) { BackButton(onBack) }
         }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .then(columnModifier)
-                .padding(horizontal = sideMargin, vertical = if (wide) spacing.space8 else spacing.space4),
-            verticalArrangement = Arrangement.spacedBy(spacing.space4),
-            content = content,
-        )
+        val contentPadding = Modifier.padding(horizontal = sideMargin, vertical = if (wide) spacing.space8 else spacing.space4)
+        if (centered) {
+            // the scrolling column is as tall as its content, so the box around it can center it
+            Box(Modifier.weight(1f).then(columnModifier), contentAlignment = Alignment.Center) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()).then(contentPadding),
+                    verticalArrangement = Arrangement.spacedBy(spacing.space4),
+                    content = content,
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .then(columnModifier)
+                    .then(contentPadding),
+                verticalArrangement = Arrangement.spacedBy(spacing.space4),
+                content = content,
+            )
+        }
         val actionsModifier = columnModifier.padding(start = sideMargin, end = sideMargin, top = spacing.space3, bottom = spacing.space6)
         if (stackedActions || !wide) {
             Column(actionsModifier, verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
@@ -189,7 +212,7 @@ private fun StepHeader(progress: OnboardingProgress, modifier: Modifier) {
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AppProgressBar(fraction = progress.number.toFloat() / progress.steps.size)
+            AppProgressBar(fraction = rememberArrivingStep(progress.number).toFloat() / progress.steps.size)
         }
     }
 }
@@ -233,15 +256,23 @@ private fun StepList(progress: OnboardingProgress) {
     val colors = MaterialTheme.colorScheme
     val layout = MaterialTheme.layout
     val spacing = MaterialTheme.spacing
+    val motion = MaterialTheme.motion
+    val colorSpec = motion.spec<Color>(motion.durationMedium)
+    // arriving at a step, the list moves on from the previous one: the old one empties, the new one fills
+    val shown = rememberArrivingStep(progress.number)
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
         progress.steps.forEachIndexed { index, step ->
             val number = index + 1
-            val done = number < progress.number
-            val current = number == progress.number
-            val stepColor = if (current) colors.onPrimaryContainer else colors.onSurfaceVariant
+            val done = number < shown
+            val current = number == shown
+            val stepColor by animateColorAsState(if (current) colors.onPrimaryContainer else colors.onSurfaceVariant, colorSpec, label = "stepColor")
+            val rowColor by animateColorAsState(if (current) colors.primaryContainer else Color.Transparent, colorSpec, label = "stepRow")
+            val dotColor by animateColorAsState(if (done) colors.primary else Color.Transparent, colorSpec, label = "stepDot")
+            val dotContent by animateColorAsState(if (done) colors.onPrimary else stepColor, colorSpec, label = "stepDotContent")
+            val dotBorder by animateColorAsState(if (done) Color.Transparent else if (current) stepColor else colors.outline, colorSpec, label = "stepDotBorder")
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = if (current) colors.primaryContainer else Color.Transparent,
+                color = rowColor,
                 contentColor = stepColor,
             ) {
                 Row(
@@ -252,9 +283,9 @@ private fun StepList(progress: OnboardingProgress) {
                     Surface(
                         modifier = Modifier.size(layout.stepDot),
                         shape = CircleShape,
-                        color = if (done) colors.primary else Color.Transparent,
-                        contentColor = if (done) colors.onPrimary else stepColor,
-                        border = if (done) null else BorderStroke(layout.borderThick, if (current) stepColor else colors.outline),
+                        color = dotColor,
+                        contentColor = dotContent,
+                        border = if (done) null else BorderStroke(layout.borderThick, dotBorder),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (done) {
@@ -269,4 +300,15 @@ private fun StepList(progress: OnboardingProgress) {
             }
         }
     }
+}
+
+/**
+ * The step to show: on arriving, the one before [number] for one frame, then [number], so the progress bar and the
+ * step list animate from the previous step to this one instead of appearing finished. The first step has none before it.
+ */
+@Composable
+private fun rememberArrivingStep(number: Int): Int {
+    var arrived by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { arrived = true }
+    return if (arrived || number <= 1) number else number - 1
 }

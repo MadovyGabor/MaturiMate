@@ -48,17 +48,26 @@ A change starts in `tokens.json`. The Compose theme (`shared/.../core/presentati
 - Material Symbols, **Rounded** style, 24 dp, in the color of the surrounding text.
 - Do not redraw or recolor the logo. Both files are in `shared/src/commonMain/composeResources/drawable/`: `logoTransparent.png` on the light cream background, and `logo.png` (the logo on its own cream square) as a rounded tile on dark surfaces. The `AppLogo` component chooses by the theme in effect.
 
+## Motion
+
+Restrained: short, one easing curve everywhere, a soft fade with a small slide. No springs, no big movement. The values are the `motion` group of [tokens.json](tokens.json): `duration-short` 200 ms (a reaction: a selection, a press, something leaving), `duration-medium` 300 ms (something arriving: a screen, a message, the progress bar), `stagger-step` 60 ms (the parts of an entrance), `easing-standard` cubic-bezier(0.2, 0, 0, 1), `slide-offset` 24 dp, `press-scale` 0.97.
+
+- **Screens:** every `NavDisplay` takes its transitions from `rememberNavTransitions()` (`core/presentation/navigation/NavTransitions.kt`): `forward()` and `back()` fade with a slide of `slide-offset` from the side, `tabs()` (the destinations of the bottom bar, which are siblings) fades with a lift of half the offset and no direction. One shared set, so the app moves in one way; the Learning navigation can take the same set.
+- **Components:** the progress bar fills to a new value over `duration-medium`; the onboarding progress bar and step list move on from the previous step when a step opens; a choice card, a choice chip and the code boxes fade their colors and border over `duration-short`; every button, chip and card shrinks to `press-scale` while pressed (`Modifier.pressScale`); the welcome screen and the snackbar come in with `Modifier.entrance`.
+- **Reduced motion:** when the system turns animations off (Android: "Remove animations", or the animator duration scale 0; desktop: start with `-Dmaturimate.reducedMotion=true`), every duration is 0 (`reducedMotion` in the tokens): a change is instant, nothing fades, slides or scales. The state still changes. Code asks `MaterialTheme.motion.spec(...)` for every animation, so the rule is kept in one place.
+- A screen never writes a duration, an offset or a scale itself.
+
 ## Accessibility
 
 - Every text has at least 4.5:1 contrast on its background, in both themes. Borders, icons and the focus ring have at least 3:1. The measured values are in [screens.html](screens.html).
 - Known exception: in the light theme the `brand-gold` progress fill has only 1.4:1 against its empty track. A gold progress bar therefore always shows its value as text too ("7 / 10 perc").
 - Keyboard focus is a 2px `focus-ring` outline, 2px away from the element.
-- Animations respect the reduced-motion setting.
+- Animations respect the reduced-motion setting (see Motion).
 
 ## Mapping to Compose
 
 - Each color token is the `ColorScheme` field of the same name in camelCase: `primary-container` → `primaryContainer`, `on-surface-variant` → `onSurfaceVariant`. The `background` value also goes into `surface`.
-- `brand-gold`, the `success` family and `focus-ring` are not M3 roles. They go into an `ExtendedColors` class provided through a `CompositionLocal`.
+- `brand-gold`, the `success` family, `focus-ring` and the `google-*` colors (the Google button and its "G") are not M3 roles. They go into an `ExtendedColors` class provided through a `CompositionLocal`.
 - Type styles are the `Typography` fields of the same name (`headline-medium` → `headlineMedium`). `reading` and `code` are extensions (`MaterialTheme.extendedTypography`).
 - Radii are the `extraSmall`, `small`, `medium`, `large` and `extraLarge` fields of `Shapes` (`radius-xs` to `radius-xl`). `radius-full` (pill) is set by the components that use it.
 - Spacing steps are `MaterialTheme.spacing` (`space-4` → `spacing.space4`).

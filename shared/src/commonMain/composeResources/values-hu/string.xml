@@ -2,9 +2,12 @@
     <string name="app_name">MaturiMate</string>
 
     <!-- Onboarding: welcome (docs/onboarding/README.md) -->
-    <string name="welcome_tagline">Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul.</string>
+    <string name="welcome_tagline">Rövid leckék és gyakorlás az érettségiig.</string>
     <string name="welcome_start">Kezdjük</string>
     <string name="welcome_have_account">Már van fiókom</string>
+    <string name="welcome_headline">Az érettségi, apró lépésekben.</string>
+    <string name="welcome_point_daily">Napi néhány perc</string>
+    <string name="welcome_point_offline">Internet nélkül is</string>
     <string name="onboarding_side_tagline">Rövid leckék és gyakorlás az érettségiig.</string>
 
     <!-- Onboarding: common -->
@@ -120,15 +123,29 @@
 
     <!-- Onboarding: your plan -->
     <string name="plan_title">A te terved</string>
+    <!-- the plan: a big number with its unit and a short label -->
+    <plurals name="plan_days_unit">
+        <item quantity="one">nap</item>
+        <item quantity="other">nap</item>
+    </plurals>
+    <plurals name="plan_hours_unit">
+        <item quantity="one">óra</item>
+        <item quantity="other">óra</item>
+    </plurals>
+    <plurals name="plan_minutes_unit">
+        <item quantity="one">perc</item>
+        <item quantity="other">perc</item>
+    </plurals>
+    <string name="plan_total_label">Gyakorlás összesen</string>
+    <string name="plan_year_label">Egy év alatt</string>
+    <plurals name="plan_student_daily">
+        <item quantity="one">Napi %1$d perc</item>
+        <item quantity="other">Napi %1$d perc</item>
+    </plurals>
     <string name="plan_until_exam">Érettségiig</string>
     <plurals name="plan_days">
         <item quantity="one">%1$d nap</item>
         <item quantity="other">%1$d nap</item>
-    </plurals>
-    <!-- the quantity is the hours (%2$d) -->
-    <plurals name="plan_student_total">
-        <item quantity="one">Napi %1$d perccel ez körülbelül %2$d óra gyakorlás.</item>
-        <item quantity="other">Napi %1$d perccel ez körülbelül %2$d óra gyakorlás.</item>
     </plurals>
     <!-- %1$s: the exam date written out -->
     <string name="plan_exam_date">Érettségi: %1$s</string>
@@ -137,10 +154,6 @@
         <item quantity="other">Hetente körülbelül %1$d óra.</item>
     </plurals>
     <string name="plan_daily_goal">Napi cél</string>
-    <plurals name="plan_learner_year">
-        <item quantity="one">Egy év alatt körülbelül %1$d óra.</item>
-        <item quantity="other">Egy év alatt körülbelül %1$d óra.</item>
-    </plurals>
     <string name="plan_reminder">Emlékeztető minden nap %1$s-kor</string>
     <string name="plan_change_later">Mindent módosíthatsz később a profilodban.</string>
 
@@ -163,6 +176,8 @@
     <string name="code_title">Írd be a kódot</string>
     <string name="code_sent">Elküldtük a 6 jegyű kódot ide: %1$s. Nézd meg a levélszemetet is.</string>
     <string name="code_label">6 jegyű kód</string>
+    <!-- the state of the code field for a screen reader: %1$d digits typed of %2$d -->
+    <string name="code_field_state">%1$d / %2$d jegy beírva</string>
     <string name="code_confirm">Megerősítés</string>
     <string name="code_resend">Új kódot kérek</string>
     <string name="error_last_name_empty">Add meg a vezetékneved.</string>
@@ -549,6 +564,9 @@
         <item quantity="other">Ha egy kész témát %1$d napnál régebben láttál, itt ajánljuk átismétlésre.</item>
     </plurals>
     <string name="common_loading">Betöltés…</string>
+    <!-- the icon of a message: what kind of message it is, for a screen reader -->
+    <string name="snackbar_success">Kész</string>
+    <string name="snackbar_error">Hiba</string>
     <string name="password_show">Jelszó megjelenítése</string>
     <string name="password_hide">Jelszó elrejtése</string>
     <string name="signin_replace_title">Lecseréled a válaszaidat?</string>

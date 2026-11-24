@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.core.presentation.navigation.MainFrame
 
+import com.madovygabor.maturimate.core.presentation.navigation.rememberNavTransitions
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -70,7 +71,10 @@ fun MainFrameNavigation(
         },
         content = {
             // Display the current navigation entries based on the navigation state
+            val transitions = rememberNavTransitions()
             NavDisplay(
+                transitionSpec = transitions.tabs(),
+                popTransitionSpec = transitions.tabs(),
                 modifier = Modifier
                     .fillMaxSize(),
                 onBack = navigator::goBack,

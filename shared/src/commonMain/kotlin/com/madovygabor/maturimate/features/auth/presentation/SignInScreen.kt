@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppGoogleButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTextField
 import com.madovygabor.maturimate.features.appOnboarding.presentation.components.OnboardingAction
@@ -130,11 +131,10 @@ fun SignInContent(state: SignInUiState, actions: SignInActions, confirmReplace: 
             SignInPhase.FORM -> {
                 Text(stringResource(title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
                 Text(stringResource(Res.string.signin_why), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                AppButton(
+                AppGoogleButton(
                     text = stringResource(Res.string.account_google),
                     onClick = guarded(actions.onGoogle),
                     modifier = Modifier.fillMaxWidth(),
-                    variant = AppButtonVariant.OUTLINED,
                     enabled = idle,
                 )
                 AppDividerWithText(stringResource(Res.string.account_or_email))

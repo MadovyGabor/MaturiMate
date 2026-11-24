@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.StringResource
 import com.madovygabor.maturimate.core.presentation.utils.UiText
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.auth.presentation.toUiText
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.error_io
@@ -176,7 +177,7 @@ class SettingsViewModel(
     /** The app's labels in [language]; the app is rebuilt in it. A failed save is said in a snackbar. */
     fun setAppLanguage(language: TeachingLanguage) {
         viewModelScope.launch {
-            if (repository.saveUiLanguage(language) is OperationResult.Error) say(Res.string.error_io)
+            if (repository.saveUiLanguage(language) is OperationResult.Error) sayError(Res.string.error_io)
         }
     }
 
@@ -188,7 +189,7 @@ class SettingsViewModel(
     fun setSchoolLanguage(language: TeachingLanguage, onChanged: () -> Unit) {
         if (state.value?.profile?.teachingLanguage == language) return
         viewModelScope.launch {
-            if (repository.saveSchoolLanguage(language) is OperationResult.Error) say(Res.string.error_io) else onChanged()
+            if (repository.saveSchoolLanguage(language) is OperationResult.Error) sayError(Res.string.error_io) else onChanged()
         }
     }
 
@@ -307,7 +308,7 @@ class SettingsViewModel(
                 share -> say(Res.string.settings_export_shared)
                 result.data.isNotEmpty() -> say(Res.string.settings_export_done, result.data)
             }
-            is OperationResult.Error -> snackbar.showSnackbar(result.error.toUiText())
+            is OperationResult.Error -> snackbar.showSnackbar(result.error.toUiText(), kind = SnackbarKind.ERROR)
         }
     }
 
@@ -363,8 +364,14 @@ class SettingsViewModel(
         _dialogs.update { if (it.dialog == dialog) SettingsDialogState() else it }
     }
 
+    /** A message that says something worked (saved, done): the green one. */
     private suspend fun say(message: StringResource, vararg args: Any) {
-        snackbar.showSnackbar(UiText.StringRes(message, arrayOf(*args)))
+        snackbar.showSnackbar(UiText.StringRes(message, arrayOf(*args)), kind = SnackbarKind.SUCCESS)
+    }
+
+    /** A message that says something failed: the red one. */
+    private suspend fun sayError(message: StringResource) {
+        snackbar.showSnackbar(UiText.StringRes(message), kind = SnackbarKind.ERROR)
     }
 
     /** One change of the account at a time. */
@@ -384,7 +391,7 @@ class SettingsViewModel(
         val profile = state.value?.profile ?: return false
         if (enabled && profile.reminderTime == null) return false
         viewModelScope.launch {
-            if (repository.saveReminder(enabled, profile.reminderTime) is OperationResult.Error) say(Res.string.error_io)
+            if (repository.saveReminder(enabled, profile.reminderTime) is OperationResult.Error) sayError(Res.string.error_io)
         }
         return true
     }

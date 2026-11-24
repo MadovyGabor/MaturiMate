@@ -45,7 +45,7 @@ data class Layout(
     /** Border of a selected card or option. */
     val borderThick: Dp = 2.dp,
     /** Logo on the welcome screen. */
-    val logoLarge: Dp = 168.dp,
+    val logoLarge: Dp = 120.dp,
     /** Logo in the side panel. */
     val logoSmall: Dp = 52.dp,
     /** Thickness of the vertical line of a learning path. */
@@ -76,6 +76,10 @@ data class Layout(
     val gapFieldWidth: Dp = 128.dp,
     /** Height of a gap in a sentence, filled from a list or by typing. */
     val gapSlotHeight: Dp = 40.dp,
+    /** Height of one box of the 6-digit code field. */
+    val codeBoxHeight: Dp = 64.dp,
+    /** Widest box of the 6-digit code field; the six boxes share the row and shrink on a narrow phone. */
+    val codeBoxMaxWidth: Dp = 56.dp,
 )
 
 private val AppLayout = Layout()

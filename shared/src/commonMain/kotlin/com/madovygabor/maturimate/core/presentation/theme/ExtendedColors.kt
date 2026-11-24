@@ -20,6 +20,15 @@ data class ExtendedColors(
     val successContainer: Color,
     val onSuccessContainer: Color,
     val focusRing: Color,
+    /** The Google sign-in button, as the Google branding guidelines give it. */
+    val googleButtonContainer: Color,
+    val googleButtonContent: Color,
+    val googleButtonOutline: Color,
+    /** The four colors of the Google "G" mark. */
+    val googleBlue: Color,
+    val googleGreen: Color,
+    val googleYellow: Color,
+    val googleRed: Color,
 )
 
 val extendedColorsLight = ExtendedColors(
@@ -30,6 +39,13 @@ val extendedColorsLight = ExtendedColors(
     successContainer = Color(0xFFCDEBC9),
     onSuccessContainer = Color(0xFF0F2A14),
     focusRing = Color(0xFF7B5800),
+    googleButtonContainer = Color(0xFFFFFFFF),
+    googleButtonContent = Color(0xFF1F1F1F),
+    googleButtonOutline = Color(0xFF747775),
+    googleBlue = Color(0xFF4285F4),
+    googleGreen = Color(0xFF34A853),
+    googleYellow = Color(0xFFFBBC05),
+    googleRed = Color(0xFFEA4335),
 )
 
 val extendedColorsDark = ExtendedColors(
@@ -40,6 +56,13 @@ val extendedColorsDark = ExtendedColors(
     successContainer = Color(0xFF1F5128),
     onSuccessContainer = Color(0xFFCDEBC9),
     focusRing = Color(0xFFF4C04E),
+    googleButtonContainer = Color(0xFF131314),
+    googleButtonContent = Color(0xFFE3E3E3),
+    googleButtonOutline = Color(0xFF8E918F),
+    googleBlue = Color(0xFF4285F4),
+    googleGreen = Color(0xFF34A853),
+    googleYellow = Color(0xFFFBBC05),
+    googleRed = Color(0xFFEA4335),
 )
 
 val LocalExtendedColors = staticCompositionLocalOf { extendedColorsLight }

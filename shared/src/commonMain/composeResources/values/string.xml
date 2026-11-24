@@ -4,9 +4,12 @@
     <string name="app_name">MaturiMate</string>
 
     <!-- Onboarding: welcome (docs/onboarding/README.md) -->
-    <string name="welcome_tagline">Krátke lekcie a precvičovanie až do maturity, po maďarsky aj po slovensky.</string>
+    <string name="welcome_tagline">Krátke lekcie a precvičovanie až do maturity.</string>
     <string name="welcome_start">Začnime</string>
     <string name="welcome_have_account">Už mám účet</string>
+    <string name="welcome_headline">Maturita po malých krokoch.</string>
+    <string name="welcome_point_daily">Pár minút denne</string>
+    <string name="welcome_point_offline">Aj bez internetu</string>
     <string name="onboarding_side_tagline">Krátke lekcie a precvičovanie až do maturity.</string>
 
     <!-- Onboarding: common -->
@@ -126,17 +129,34 @@
 
     <!-- Onboarding: your plan -->
     <string name="plan_title">Tvoj plán</string>
+    <!-- the plan: a big number with its unit and a short label -->
+    <plurals name="plan_days_unit">
+        <item quantity="one">deň</item>
+        <item quantity="few">dni</item>
+        <item quantity="other">dní</item>
+    </plurals>
+    <plurals name="plan_hours_unit">
+        <item quantity="one">hodina</item>
+        <item quantity="few">hodiny</item>
+        <item quantity="other">hodín</item>
+    </plurals>
+    <plurals name="plan_minutes_unit">
+        <item quantity="one">minúta</item>
+        <item quantity="few">minúty</item>
+        <item quantity="other">minút</item>
+    </plurals>
+    <string name="plan_total_label">Cvičenie spolu</string>
+    <string name="plan_year_label">Za rok</string>
+    <plurals name="plan_student_daily">
+        <item quantity="one">%1$d minúta denne</item>
+        <item quantity="few">%1$d minúty denne</item>
+        <item quantity="other">%1$d minút denne</item>
+    </plurals>
     <string name="plan_until_exam">Do maturity</string>
     <plurals name="plan_days">
         <item quantity="one">%1$d deň</item>
         <item quantity="few">%1$d dni</item>
         <item quantity="other">%1$d dní</item>
-    </plurals>
-    <!-- the quantity is the hours (%2$d); the goals are 5 to 20 minutes -->
-    <plurals name="plan_student_total">
-        <item quantity="one">Pri %1$d minútach denne je to približne %2$d hodina precvičovania.</item>
-        <item quantity="few">Pri %1$d minútach denne je to približne %2$d hodiny precvičovania.</item>
-        <item quantity="other">Pri %1$d minútach denne je to približne %2$d hodín precvičovania.</item>
     </plurals>
     <!-- %1$s: the exam date written out -->
     <string name="plan_exam_date">Maturita: %1$s</string>
@@ -146,11 +166,6 @@
         <item quantity="other">Týždenne približne %1$d hodín.</item>
     </plurals>
     <string name="plan_daily_goal">Denný cieľ</string>
-    <plurals name="plan_learner_year">
-        <item quantity="one">Za rok približne %1$d hodina.</item>
-        <item quantity="few">Za rok približne %1$d hodiny.</item>
-        <item quantity="other">Za rok približne %1$d hodín.</item>
-    </plurals>
     <string name="plan_reminder">Pripomienka každý deň o %1$s</string>
     <string name="plan_change_later">Všetko môžeš neskôr zmeniť vo svojom profile.</string>
 
@@ -173,6 +188,8 @@
     <string name="code_title">Zadaj kód</string>
     <string name="code_sent">Poslali sme 6-miestny kód na adresu %1$s. Pozri aj priečinok so spamom.</string>
     <string name="code_label">6-miestny kód</string>
+    <!-- the state of the code field for a screen reader: %1$d digits typed of %2$d -->
+    <string name="code_field_state">Zadaných %1$d z %2$d číslic</string>
     <string name="code_confirm">Potvrdiť</string>
     <string name="code_resend">Poslať nový kód</string>
     <string name="error_last_name_empty">Zadaj priezvisko.</string>
@@ -573,6 +590,9 @@
         <item quantity="other">Keď si hotovú tému nevidel aspoň %1$d dní, ponúkneme ti ju tu na zopakovanie.</item>
     </plurals>
     <string name="common_loading">Načítava sa…</string>
+    <!-- the icon of a message: what kind of message it is, for a screen reader -->
+    <string name="snackbar_success">Hotovo</string>
+    <string name="snackbar_error">Chyba</string>
     <string name="password_show">Zobraziť heslo</string>
     <string name="password_hide">Skryť heslo</string>
     <string name="signin_replace_title">Nahradiť tvoje odpovede?</string>

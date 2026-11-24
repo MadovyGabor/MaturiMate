@@ -15,6 +15,7 @@ import com.madovygabor.maturimate.core.presentation.uiComponents.AppCheckboxRow
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppDividerWithText
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButton
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppGoogleButton
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppButtonVariant
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTextField
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingProgress
@@ -127,11 +128,10 @@ private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountAct
             Text(stringResource(Res.string.account_signed_in_as, state.signedInEmail), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground)
         } else {
             // Google comes first; the name and the consent follow on this screen
-            AppButton(
+            AppGoogleButton(
                 text = stringResource(Res.string.account_google),
                 onClick = actions.onGoogle,
                 modifier = Modifier.fillMaxWidth(),
-                variant = AppButtonVariant.OUTLINED,
                 enabled = idle,
             )
             AppDividerWithText(stringResource(Res.string.account_or_email))

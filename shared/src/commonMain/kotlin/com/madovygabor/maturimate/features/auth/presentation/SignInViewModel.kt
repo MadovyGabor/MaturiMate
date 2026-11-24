@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.auth.domain.AccountRules
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AuthError
@@ -212,5 +213,5 @@ class SignInViewModel(
         }
     }
 
-    private suspend fun showError(error: AuthError) = snackbarController.showSnackbar(message = error.toUiText())
+    private suspend fun showError(error: AuthError) = snackbarController.showSnackbar(message = error.toUiText(), kind = SnackbarKind.ERROR)
 }

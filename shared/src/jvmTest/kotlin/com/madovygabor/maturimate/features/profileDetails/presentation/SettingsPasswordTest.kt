@@ -5,7 +5,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
@@ -38,11 +40,11 @@ class SettingsPasswordTest : SettingsTestBase() {
         onNodeWithText("Jelszó megváltoztatása").performClick()
         // step 1: the code goes to the e-mail address
         onNodeWithText("Kód küldése").performClick()
-        waitForText("6 jegyű kód")
+        waitForContentDescription("6 jegyű kód")
         assertEquals(1, account.codesSent)
         // step 2: the code, the current password and the new one twice; Save waits for all of them
         onNodeWithText("Mentés").assertIsNotEnabled()
-        onNodeWithText("6 jegyű kód").performTextInput("123456")
+        onNodeWithContentDescription("6 jegyű kód").performTextInput("123456")
         onNodeWithText("Jelenlegi jelszó").performTextInput("Old12345")
         onNodeWithText("Új jelszó").performTextInput("New12345")
         onNodeWithText("Új jelszó újra").performTextInput("New12399")
@@ -67,7 +69,7 @@ class SettingsPasswordTest : SettingsTestBase() {
         fillThePasswordDialog()
 
         waitForText("Hibás vagy lejárt kód. Ellenőrizd, vagy kérj újat.")
-        onAllNodesWithText("6 jegyű kód").assertCountEquals(1)
+        onAllNodesWithContentDescription("6 jegyű kód").assertCountEquals(1)
     }
 
     // Card 11: a wrong current password is said at its own field, in words of the settings (not "wrong e-mail or password").
@@ -100,8 +102,8 @@ class SettingsPasswordTest : SettingsTestBase() {
         waitForText("Jelszó megváltoztatása")
         onNodeWithText("Jelszó megváltoztatása").performClick()
         onNodeWithText("Kód küldése").performClick()
-        waitForText("6 jegyű kód")
-        onNodeWithText("6 jegyű kód").performTextInput("000000")
+        waitForContentDescription("6 jegyű kód")
+        onNodeWithContentDescription("6 jegyű kód").performTextInput("000000")
         onNodeWithText("Jelenlegi jelszó").performTextInput("Old12345")
         onNodeWithText("Új jelszó").performTextInput("New12345")
         onNodeWithText("Új jelszó újra").performTextInput("New12345")
@@ -119,7 +121,7 @@ class SettingsPasswordTest : SettingsTestBase() {
             }
         }
 
-        onNodeWithText("6 jegyű kód").performTextInput("123456")
+        onNodeWithContentDescription("6 jegyű kód").performTextInput("123456")
         onNodeWithText("Jelenlegi jelszó").performTextInput("Old12345")
         onNodeWithText("Új jelszó").performTextInput("New12345")
         onNodeWithText("Új jelszó újra").performTextInput("New12345")

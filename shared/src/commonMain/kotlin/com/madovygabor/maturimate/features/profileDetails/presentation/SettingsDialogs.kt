@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import com.madovygabor.maturimate.core.presentation.theme.spacing
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppCodeField
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppTextField
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.presentation.toUiText
@@ -177,11 +178,10 @@ internal fun PasswordDialog(
                     PasswordStep.SEND -> Text(stringResource(Res.string.settings_password_code_text, email), style = MaterialTheme.typography.bodyMedium)
                     PasswordStep.FORM -> {
                         Text(stringResource(Res.string.code_sent, email), style = MaterialTheme.typography.bodyMedium)
-                        AppTextField(
+                        AppCodeField(
                             value = code,
                             onValueChange = { code = it; typed(it) },
                             label = stringResource(Res.string.code_label),
-                            code = true,
                             imeAction = ImeAction.Next,
                             error = if (codeError) error?.toUiText()?.asString() else null,
                         )

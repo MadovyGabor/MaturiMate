@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.layout
@@ -41,14 +43,16 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.common_next
-import maturimate.shared.generated.resources.goal_minutes
 import maturimate.shared.generated.resources.plan_change_later
 import maturimate.shared.generated.resources.plan_daily_goal
-import maturimate.shared.generated.resources.plan_days
+import maturimate.shared.generated.resources.plan_days_unit
+import maturimate.shared.generated.resources.plan_hours_unit
+import maturimate.shared.generated.resources.plan_minutes_unit
+import maturimate.shared.generated.resources.plan_student_daily
+import maturimate.shared.generated.resources.plan_total_label
+import maturimate.shared.generated.resources.plan_year_label
 import maturimate.shared.generated.resources.plan_exam_date
-import maturimate.shared.generated.resources.plan_learner_year
 import maturimate.shared.generated.resources.plan_reminder
-import maturimate.shared.generated.resources.plan_student_total
 import maturimate.shared.generated.resources.plan_student_week
 import maturimate.shared.generated.resources.plan_title
 import maturimate.shared.generated.resources.plan_until_exam
@@ -81,22 +85,22 @@ fun PlanContent(state: PlanUiState, onBack: () -> Unit, onNext: () -> Unit) {
             UserRole.STUDENT -> state.estimate?.let { estimate ->
                 val days = estimate.daysLeft
                 val hours = estimate.totalHours
+                // the two big numbers: the days until the exam and all the practice on the way; the rest is smaller
                 PlanCard(
-                    label = stringResource(Res.string.plan_until_exam),
-                    value = pluralStringResource(Res.plurals.plan_days, days, days),
-                    note = pluralStringResource(Res.plurals.plan_student_total, hours, minutes, hours),
+                    first = PlanNumber(stringResource(Res.string.plan_until_exam), days, pluralStringResource(Res.plurals.plan_days_unit, days)),
+                    second = PlanNumber(stringResource(Res.string.plan_total_label), hours, pluralStringResource(Res.plurals.plan_hours_unit, hours)),
+                    date = stringResource(Res.string.plan_exam_date, longDate(estimate.examDate)),
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2)) {
-                    Fact(Icons.Rounded.CalendarMonth, stringResource(Res.string.plan_exam_date, longDate(estimate.examDate)))
+                    Fact(Icons.Rounded.Timer, pluralStringResource(Res.plurals.plan_student_daily, minutes, minutes))
                     Fact(Icons.Rounded.Schedule, pluralStringResource(Res.plurals.plan_student_week, estimate.hoursPerWeek, estimate.hoursPerWeek))
                 }
             }
             UserRole.LEARNER -> {
                 val hours = hoursPerYear(minutes)
                 PlanCard(
-                    label = stringResource(Res.string.plan_daily_goal),
-                    value = pluralStringResource(Res.plurals.goal_minutes, minutes, minutes),
-                    note = pluralStringResource(Res.plurals.plan_learner_year, hours, hours),
+                    first = PlanNumber(stringResource(Res.string.plan_daily_goal), minutes, pluralStringResource(Res.plurals.plan_minutes_unit, minutes)),
+                    second = PlanNumber(stringResource(Res.string.plan_year_label), hours, pluralStringResource(Res.plurals.plan_hours_unit, hours)),
                 )
             }
             else -> Unit
@@ -111,9 +115,12 @@ fun PlanContent(state: PlanUiState, onBack: () -> Unit, onNext: () -> Unit) {
     }
 }
 
-/** The plan's main number, for example the days until the exam. */
+/** One of the big numbers of the plan: [number] with its [unit] and a short [label], for example 104, "nap", "Érettségiig". */
+private data class PlanNumber(val label: String, val number: Int, val unit: String)
+
+/** The plan's main numbers side by side, with the exam [date] under them when there is one. */
 @Composable
-private fun PlanCard(label: String, value: String, note: String) {
+private fun PlanCard(first: PlanNumber, second: PlanNumber, date: String? = null) {
     val spacing = MaterialTheme.spacing
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -122,11 +129,33 @@ private fun PlanCard(label: String, value: String, note: String) {
     ) {
         Column(
             modifier = Modifier.padding(spacing.space4),
-            verticalArrangement = Arrangement.spacedBy(spacing.space1),
+            verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
-            Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onBackground)
-            Text(note, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.space4)) {
+                BigNumber(first, Modifier.weight(1f))
+                BigNumber(second, Modifier.weight(1f))
+            }
+            if (date != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+                ) {
+                    Icon(Icons.Rounded.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(MaterialTheme.layout.iconSmall))
+                    Text(date, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground)
+                }
+            }
+        }
+    }
+}
+
+/** A big number with its unit next to it on one baseline, and the label above; read as one phrase by a screen reader. */
+@Composable
+private fun BigNumber(value: PlanNumber, modifier: Modifier) {
+    Column(modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space1)) {
+        Text(value.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space2)) {
+            Text(value.number.toString(), modifier = Modifier.alignByBaseline(), style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.onBackground)
+            Text(value.unit, modifier = Modifier.alignByBaseline(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

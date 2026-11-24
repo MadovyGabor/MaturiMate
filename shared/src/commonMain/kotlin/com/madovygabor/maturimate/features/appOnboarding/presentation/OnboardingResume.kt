@@ -6,6 +6,7 @@ import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.utils.retryReads
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
+import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.appOnboarding.presentation.profileSetup.error.toUiText
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
@@ -79,7 +80,7 @@ class OnboardingNavigationViewModel(
     fun finish() {
         viewModelScope.launch {
             val result = repository.completeOnboarding(Clock.System.now())
-            if (result is OperationResult.Error) snackbarController.showSnackbar(message = result.error.toUiText())
+            if (result is OperationResult.Error) snackbarController.showSnackbar(message = result.error.toUiText(), kind = SnackbarKind.ERROR)
         }
     }
 }

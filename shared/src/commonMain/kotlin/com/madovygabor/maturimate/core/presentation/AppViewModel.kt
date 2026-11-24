@@ -86,6 +86,19 @@ class AppViewModel(
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    private val _startReady = MutableStateFlow(false)
+
+    /**
+     * True once the first screen is known and built: the home screen, or the onboarding with its saved answers read.
+     * The Android splash screen stays until then, so the app does not show a loading screen of its own after it.
+     */
+    val startReady: StateFlow<Boolean> = _startReady.asStateFlow()
+
+    /** The start screen is ready to be shown (see [startReady]). */
+    fun onStartReady() {
+        _startReady.value = true
+    }
+
     fun retry() {
         _failed.value = false
         reload.update { it + 1 }

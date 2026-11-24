@@ -20,11 +20,13 @@ class SnackbarController {
      * Emits a new snackbar event.
      * @param message The localized [UiText] to display.
      * @param action Optional [SnackbarAction] for interaction.
+     * @param kind [SnackbarKind.SUCCESS] for something that worked, [SnackbarKind.ERROR] for a failure; the default is plain.
      */
     suspend fun showSnackbar(
         message: UiText,
-        action: SnackbarAction? = null
+        action: SnackbarAction? = null,
+        kind: SnackbarKind = SnackbarKind.INFO,
     ) {
-        _events.send(SnackbarEvent(message, action))
+        _events.send(SnackbarEvent(message, action, kind))
     }
 }

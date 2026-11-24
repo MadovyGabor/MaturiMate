@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
+import com.madovygabor.maturimate.core.presentation.navigation.rememberNavTransitions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -53,7 +54,11 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
     }
     val back: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
 
+    val transitions = rememberNavTransitions()
     NavDisplay(
+        transitionSpec = transitions.forward(),
+        popTransitionSpec = transitions.back(),
+        predictivePopTransitionSpec = transitions.predictiveBack(),
         backStack = backStack,
         onBack = back,
         entryDecorators = listOf(

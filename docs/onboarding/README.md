@@ -147,7 +147,7 @@ Step names in the step list of the two-pane layout:
 
 | Key | Hungarian | Slovak |
 | :--- | :--- | :--- |
-| `welcome_tagline` | Rövid leckék és gyakorlás az érettségiig, magyarul és szlovákul. | Krátke lekcie a precvičovanie až do maturity, po maďarsky aj po slovensky. |
+| `welcome_tagline` | Rövid leckék és gyakorlás az érettségiig. | Krátke lekcie a precvičovanie až do maturity. |
 | `welcome_start` | Kezdjük | Začnime |
 | `welcome_have_account` | Már van fiókom | Už mám účet |
 | `onboarding_side_tagline` | Rövid leckék és gyakorlás az érettségiig. | Krátke lekcie a precvičovanie až do maturity. |

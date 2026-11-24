@@ -7,6 +7,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppSnackbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
@@ -33,6 +35,16 @@ class BottomBarHeight {
 /** The [BottomBarHeight] of the app: provided by [MainScaffoldWrapper], set by the main frame. */
 val LocalBottomBarHeight = compositionLocalOf { BottomBarHeight() }
 
+/** What the host shows: the text, the action and the [kind] that [AppSnackbar] turns into color and icon. */
+class AppSnackbarVisuals(
+    override val message: String,
+    override val actionLabel: String?,
+    val kind: SnackbarKind,
+    override val duration: SnackbarDuration = SnackbarDuration.Short,
+) : SnackbarVisuals {
+    override val withDismissAction: Boolean = false
+}
+
 /**
  * A root-level wrapper that provides a global [Scaffold] with [SnackbarHost] support.
  * It listens to the [SnackbarController] and manages the visibility of snackbars.
@@ -47,9 +59,11 @@ fun MainScaffoldWrapper(content: @Composable (PaddingValues) -> Unit) {
         snackbarController.events.collect { event ->
             // Use the suspend version of asString for non-composable context
             val result = snackbarHostState.showSnackbar(
-                message = event.message.asStringSuspend(),
-                actionLabel = event.action?.name,
-                duration = SnackbarDuration.Short
+                AppSnackbarVisuals(
+                    message = event.message.asStringSuspend(),
+                    actionLabel = event.action?.name,
+                    kind = event.kind,
+                )
             )
             // Handle action click
             if (result == SnackbarResult.ActionPerformed) {
@@ -66,6 +80,7 @@ fun MainScaffoldWrapper(content: @Composable (PaddingValues) -> Unit) {
                     hostState = snackbarHostState,
                     // above the bottom bar of the main frame, if it is on screen
                     modifier = Modifier.padding(bottom = bottomBar.value),
+                    snackbar = { data -> AppSnackbar(data) },
                 )
             },
             content = content

@@ -2,7 +2,7 @@ package com.madovygabor.maturimate.features.auth.presentation
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.MaterialTheme
-import com.madovygabor.maturimate.core.presentation.uiComponents.AppTextField
+import com.madovygabor.maturimate.core.presentation.uiComponents.AppCodeField
 import maturimate.shared.generated.resources.code_label
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,13 +31,12 @@ fun ColumnScope.CodeStepContent(
 ) {
     if (title != null) Text(title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
     Text(sent, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    AppTextField(
+    AppCodeField(
         value = code,
         onValueChange = onCodeChanged,
         label = stringResource(Res.string.code_label),
         error = error,
         enabled = enabled,
-        code = true,
     )
 }
 

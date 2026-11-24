@@ -3,6 +3,8 @@ package com.madovygabor.maturimate.features.appOnboarding.presentation
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.captureToImage
@@ -84,7 +86,8 @@ class WelcomeScreenTest {
             for ((name, size) in sizes) for (dark in listOf(false, true)) {
                 runDesktopComposeUiTest(size.first, size.second) {
                     setContent { AppTheme(darkTheme = dark) { WelcomeScreen(onStart = {}, onHaveAccount = {}) } }
-                    onNodeWithText(text(Res.string.welcome_tagline)).assertIsDisplayed()
+                    // at desktop width the side panel shows the same line too, so there may be two
+                    onAllNodesWithText(text(Res.string.welcome_tagline)).onFirst().assertIsDisplayed()
                     val image = onRoot().captureToImage().toAwtImage()
                     val file = File(dir, "welcome-$language-$name-${if (dark) "dark" else "light"}.png")
                     ImageIO.write(image, "png", file)
