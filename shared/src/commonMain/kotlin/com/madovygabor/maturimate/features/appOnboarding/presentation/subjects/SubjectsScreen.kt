@@ -57,6 +57,7 @@ import maturimate.shared.generated.resources.subjects_title_student
 import maturimate.shared.generated.resources.subjects_title_teacher
 import maturimate.shared.generated.resources.subjects_why_other
 import maturimate.shared.generated.resources.subjects_why_student
+import maturimate.shared.generated.resources.subjects_why_teacher
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -103,7 +104,11 @@ fun SubjectsContent(
         UserRole.LEARNER -> Res.string.subjects_title_learner
         else -> Res.string.subjects_title_student
     }
-    val why = if (state.role == UserRole.STUDENT) Res.string.subjects_why_student else Res.string.subjects_why_other
+    val why = when (state.role) {
+        UserRole.STUDENT -> Res.string.subjects_why_student
+        UserRole.TEACHER -> Res.string.subjects_why_teacher
+        else -> Res.string.subjects_why_other
+    }
     OnboardingScaffold(
         actions = listOf(OnboardingAction(stringResource(nextLabel(LocalEditingAnswer.current)), onNext, enabled = state.canContinue)),
         progress = OnboardingProgress(OnboardingStep.SUBJECTS, onboardingSteps(state.role), onBack),

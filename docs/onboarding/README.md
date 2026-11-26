@@ -185,6 +185,7 @@ Step names in the step list of the two-pane layout:
 | `subjects_title_teacher` | Mit tanítasz? | Čo učíš? |
 | `subjects_why_student` | A kötelező tantárgyakat már kijelöltük. Ha mást is választasz, jelöld be. | Povinné predmety sme už označili. Ak si vyberáš aj ďalšie, označ ich. |
 | `subjects_why_other` | Jelöld be, ami érdekel. Többet is választhatsz. | Označ, čo ťa zaujíma. Môžeš vybrať aj viac. |
+| `subjects_why_teacher` | Jelöld be, amit tanítasz. Többet is választhatsz. | Označ, čo učíš. Môžeš vybrať aj viac. |
 | `subjects_compulsory` | Kötelező | Povinný |
 | `subjects_coming_soon` | Hamarosan | Čoskoro |
 | `subjects_english_level` | Milyen szinten? | Na akej úrovni? |

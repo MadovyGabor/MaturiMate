@@ -316,7 +316,7 @@ Branch: `chore/review-and-refinement`, one branch for the whole milestone; every
 **Part 4: the backend (version B)**
 
 * [ ] **13.13. S13 Content download** (needs 13.0's open steps of Milestone 12).
-* [ ] **13.14. S14 Sync of the user data.**
+* [ ] **13.14. S14 Sync of the user data.** Check in it: signing in to a set-up account must replace the guest's answers with the account's, not merge them. `signInWithSync` adopts the account id and then syncs (`AFTER_SIGN_IN`); how the sync treats guest rows and account rows (by `updated_at`?) is not verified. The fallback `AccountSetupImpl.write` keeps the guest's subjects when the account has none (`profile.subjects.isNotEmpty()`); a set-up account always has subjects, so it is a rare edge, to be made a plain replace. Also: `saveRole` removes the subjects on a real role change, like the language change does (added 2026-11-26).
 * [ ] **13.15. S15 Server security and account data.**
 * [ ] **Checkpoint 4.**
 

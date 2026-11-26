@@ -48,6 +48,7 @@
     <string name="subjects_title_teacher">Mit tanítasz?</string>
     <string name="subjects_why_student">A kötelező tantárgyakat már kijelöltük. Ha mást is választasz, jelöld be.</string>
     <string name="subjects_why_other">Jelöld be, ami érdekel. Többet is választhatsz.</string>
+    <string name="subjects_why_teacher">Jelöld be, amit tanítasz. Többet is választhatsz.</string>
     <string name="subjects_compulsory">Kötelező</string>
     <string name="subjects_coming_soon">Hamarosan</string>
     <string name="subjects_english_level">Milyen szinten?</string>

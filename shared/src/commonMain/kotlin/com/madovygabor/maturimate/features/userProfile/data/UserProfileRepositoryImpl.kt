@@ -91,7 +91,15 @@ class UserProfileRepositoryImpl(
         queries.updateUiLanguage(language.name, userId)
     }
 
+    /**
+     * The subjects offered depend on the role too (a teacher gets the subjects of both school languages, a student only
+     * the compulsory ones of the own school), so a real change of the role removes the subjects the same way a change of
+     * the language does. The role is only set in the onboarding, where the subjects step follows and asks again. A first
+     * role (none stored yet) or the same role leaves the subjects alone.
+     */
     override suspend fun saveRole(role: UserRole) = save { userId ->
+        val stored = queries.selectRoles(userId).executeAsList().firstNotNullOfOrNull { UserRole.fromId(it.role_id) }
+        if (stored != null && stored != role) queries.deleteSubjects(userId)
         queries.deleteOnboardingRoles(userId)
         queries.insertRole(User_role(userId, role.id, now().toEpochMilliseconds()))
     }

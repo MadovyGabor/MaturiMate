@@ -230,6 +230,35 @@ class UserProfileRepositoryImplTest {
     }
 
     @Test
+    fun aRealRoleChangeRemovesTheSubjectsAndTheRemovalSyncs() = runBlocking {
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+        repository.saveRole(UserRole.TEACHER).ok()
+        saveTwoSubjects()
+        driver.execute(null, "UPDATE user_subject SET updated_at = 1", 0)
+
+        repository.saveRole(UserRole.STUDENT).ok()
+
+        assertEquals(UserRole.STUDENT, current().role)
+        assertEquals(emptyList(), current().subjects)
+        val changed = database.syncQueries.selectChangedSubjects("guest-1", 1).executeAsList()
+        assertEquals(listOf(1L, 4L), changed.map { it.subject_id }.sorted())
+        assertTrue(changed.all { it.removed_at != null })
+    }
+
+    @Test
+    fun theSameRoleKeepsTheSubjects() = runBlocking {
+        repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
+        repository.saveRole(UserRole.STUDENT).ok()
+        saveTwoSubjects()
+        driver.execute(null, "UPDATE user_subject SET updated_at = 1", 0)
+
+        repository.saveRole(UserRole.STUDENT).ok()
+
+        assertEquals(listOf(1L, 4L), current().subjects.map { it.subjectId })
+        assertTrue(database.syncQueries.selectChangedSubjects("guest-1", 1).executeAsList().isEmpty())
+    }
+
+    @Test
     fun valuesTheAppCannotReadFallBackInsteadOfFailingTheProfile() = runBlocking {
         repository.saveTeachingLanguage(TeachingLanguage.SK).ok()
         repository.saveSubjects(listOf(UserSubject(3, compulsory = true, level = SubjectLevel.B2))).ok()

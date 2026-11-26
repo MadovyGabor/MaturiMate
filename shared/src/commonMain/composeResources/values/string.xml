@@ -50,6 +50,7 @@
     <string name="subjects_title_teacher">Čo učíš?</string>
     <string name="subjects_why_student">Povinné predmety sme už označili. Ak si vyberáš aj ďalšie, označ ich.</string>
     <string name="subjects_why_other">Označ, čo ťa zaujíma. Môžeš vybrať aj viac.</string>
+    <string name="subjects_why_teacher">Označ, čo učíš. Môžeš vybrať aj viac.</string>
     <string name="subjects_compulsory">Povinný</string>
     <string name="subjects_coming_soon">Čoskoro</string>
     <string name="subjects_english_level">Na akej úrovni?</string>
