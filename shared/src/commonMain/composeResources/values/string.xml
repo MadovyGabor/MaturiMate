@@ -180,6 +180,10 @@
     <string name="account_first_name">Meno</string>
     <string name="account_email">E-mailová adresa</string>
     <string name="signin_password">Heslo</string>
+    <string name="account_password_repeat">Heslo ešte raz</string>
+    <string name="account_password_rule_length">8+ znakov</string>
+    <string name="account_password_rule_case">malé a veľké písmeno</string>
+    <string name="account_password_rule_digit">číslica</string>
     <string name="account_password_hint">Aspoň 8 znakov, s malým a veľkým písmenom a číslicou.</string>
     <string name="account_consent">Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov.</string>
     <string name="account_consent_required">Ak chceš pokračovať, prijmi podmienky a zásady ochrany súkromia.</string>
@@ -196,6 +200,8 @@
     <string name="error_last_name_empty">Zadaj priezvisko.</string>
     <string name="error_first_name_empty">Zadaj meno.</string>
     <string name="error_email_invalid">Toto nevyzerá ako e-mailová adresa. Skontroluj ju.</string>
+    <string name="error_passwords_differ">Heslá sa nezhodujú.</string>
+    <string name="error_google_no_account">K tomuto Google účtu ešte nemáš účet. Najprv sa zaregistruj.</string>
     <string name="error_password_weak">Heslo musí mať aspoň 8 znakov a obsahovať malé a veľké písmeno a číslicu.</string>
     <string name="error_email_taken">S týmto e-mailom už účet existuje. Prihlás sa.</string>
     <string name="error_network">Nie si pripojený na internet. Skús to znova, keď budeš online.</string>

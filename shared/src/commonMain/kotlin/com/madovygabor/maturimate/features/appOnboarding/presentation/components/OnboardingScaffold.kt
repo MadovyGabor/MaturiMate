@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import com.madovygabor.maturimate.core.presentation.systemPadding
 import com.madovygabor.maturimate.core.presentation.theme.layout
 import com.madovygabor.maturimate.core.presentation.theme.motion
@@ -96,7 +101,10 @@ fun OnboardingScaffold(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .systemPadding(),
+            .systemPadding()
+            // the keyboard takes its height off the screen: the scrolling form shrinks with it, so the field being typed in,
+            // the fields below it and the buttons stay reachable (edge-to-edge windows are not resized by the system)
+            .imePadding(),
     ) {
         val layout = MaterialTheme.layout
         val wide = maxWidth >= layout.breakpointMedium
@@ -126,6 +134,22 @@ private fun MainColumn(
     val layout = MaterialTheme.layout
     val sideMargin = if (wide) spacing.space6 else spacing.space4
     val columnModifier = Modifier.widthIn(max = layout.contentMaxWidth).fillMaxWidth()
+    // With the keyboard open the buttons do not ride up on top of it, where they would take a third of the little room left
+    // for the form: they follow the last field instead, at the end of the scrolling form (as in the big apps), and the
+    // form gets the whole height above the keyboard. Without the keyboard they stay at the bottom edge.
+    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0 && !centered
+    val actionsBlock: @Composable (Modifier) -> Unit = { modifier ->
+        if (stackedActions || !wide) {
+            Column(modifier, verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+                actions.forEach { ActionButton(it, Modifier.fillMaxWidth()) }
+            }
+        } else {
+            // main action on the right, as in the prototype
+            Row(modifier, horizontalArrangement = Arrangement.spacedBy(spacing.space2, Alignment.End)) {
+                actions.asReversed().forEach { ActionButton(it, Modifier.widthIn(min = layout.buttonMinWidth)) }
+            }
+        }
+    }
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -147,26 +171,23 @@ private fun MainColumn(
                 )
             }
         } else {
+            val scroll = rememberScrollState()
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scroll)
                     .then(columnModifier)
                     .then(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(spacing.space4),
-                content = content,
-            )
+            ) {
+                content()
+                if (keyboardOpen) actionsBlock(Modifier.fillMaxWidth().padding(top = spacing.space2))
+            }
+            // content runs on under the buttons: a thin line shows that the form goes on, so a half-hidden line does not look cut off
+            if (scroll.canScrollForward && !keyboardOpen) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
-        val actionsModifier = columnModifier.padding(start = sideMargin, end = sideMargin, top = spacing.space3, bottom = spacing.space6)
-        if (stackedActions || !wide) {
-            Column(actionsModifier, verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
-                actions.forEach { ActionButton(it, Modifier.fillMaxWidth()) }
-            }
-        } else {
-            // main action on the right, as in the prototype
-            Row(actionsModifier, horizontalArrangement = Arrangement.spacedBy(spacing.space2, Alignment.End)) {
-                actions.asReversed().forEach { ActionButton(it, Modifier.widthIn(min = layout.buttonMinWidth)) }
-            }
+        if (!keyboardOpen) {
+            actionsBlock(columnModifier.padding(start = sideMargin, end = sideMargin, top = spacing.space3, bottom = spacing.space3))
         }
     }
 }

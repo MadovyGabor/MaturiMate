@@ -110,8 +110,9 @@ class AuthFormsTest {
                         AppTheme(darkTheme = false) { AccountContent(AccountUiState(), UserRole.STUDENT, AccountActions()) }
                     }
                 }
-                val last = onAllNodesWithText(text(Res.string.account_last_name))[0].getBoundsInRoot().top
-                val first = onAllNodesWithText(text(Res.string.account_first_name))[0].getBoundsInRoot().top
+                // the two name fields share a row: the order is the order from the left
+                val last = onAllNodesWithText(text(Res.string.account_last_name))[0].getBoundsInRoot().left
+                val first = onAllNodesWithText(text(Res.string.account_first_name))[0].getBoundsInRoot().left
                 assertEquals(lastFirst, last < first, "name order for $tag")
             }
         }

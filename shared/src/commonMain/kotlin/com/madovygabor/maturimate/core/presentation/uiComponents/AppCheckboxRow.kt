@@ -47,7 +47,7 @@ fun AppCheckboxRow(
                 enabled = enabled,
                 colors = CheckboxDefaults.colors(uncheckedColor = MaterialTheme.colorScheme.outline),
             )
-            Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
         }
         if (error != null) Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
     }

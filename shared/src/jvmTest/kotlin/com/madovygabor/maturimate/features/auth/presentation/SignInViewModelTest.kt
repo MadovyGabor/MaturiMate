@@ -7,6 +7,7 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.auth.domain.SignedInAccount
 import androidx.compose.ui.test.ExperimentalTestApi
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.core.presentation.utils.UiText
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.features.auth.domain.AccountSetup
 import com.madovygabor.maturimate.features.auth.domain.AccountUser
@@ -25,6 +26,8 @@ import kotlinx.coroutines.runBlocking
 import com.madovygabor.maturimate.testutil.awaitCondition
 import com.madovygabor.maturimate.testutil.awaitFirst
 import com.madovygabor.maturimate.testutil.awaitWithin
+import maturimate.shared.generated.resources.Res
+import maturimate.shared.generated.resources.error_google_no_account
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -150,6 +153,22 @@ class SignInViewModelTest {
         val done = CompletableDeferred<Boolean>()
         viewModel.onGoogleSignedIn { done.complete(it.onboardingFinished) }
         assertTrue(done.awaitWithin())
+    }
+
+    // A Google account that never signed up here has a session after Google answers, but no profile and no consent:
+    // "Már van fiókom" signs it out again and says so, and nothing goes on.
+    @Test
+    fun aGoogleAccountThatNeverSignedUpIsSignedOutAndToldToSignUp() = runBlocking {
+        val auth = FakeAuth()
+        val snackbar = SnackbarController()
+        val viewModel = SignInViewModel(auth, FakeSetup(finished = false), snackbar, profiles())
+
+        viewModel.onGoogleSignedIn { error("an account that is not set up must not go on") }
+        viewModel.idle()
+
+        assertTrue(auth.signedOut)
+        assertEquals(UiText.StringRes(Res.string.error_google_no_account), snackbar.events.awaitFirst().message)
+        assertFalse(viewModel.state.value.busy)
     }
 
     @Test

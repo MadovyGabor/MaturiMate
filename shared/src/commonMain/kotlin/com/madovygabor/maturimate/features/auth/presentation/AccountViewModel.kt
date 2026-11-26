@@ -23,16 +23,18 @@ import kotlin.time.Instant
 import kotlin.time.ExperimentalTime
 
 /** A field of the account form. */
-enum class AccountField { LAST_NAME, FIRST_NAME, EMAIL, PASSWORD }
+enum class AccountField { LAST_NAME, FIRST_NAME, EMAIL, PASSWORD, PASSWORD_REPEAT }
 
 /** What is wrong with a field; the screen turns it into a sentence. */
-enum class FieldError { EMPTY, EMAIL_INVALID, PASSWORD_WEAK, EMAIL_TAKEN, CODE_INVALID }
+enum class FieldError { EMPTY, EMAIL_INVALID, PASSWORD_WEAK, EMAIL_TAKEN, CODE_INVALID, PASSWORDS_DIFFER }
 
 data class AccountUiState(
     val lastName: String = "",
     val firstName: String = "",
     val email: String = "",
     val password: String = "",
+    /** The password typed a second time: a typo in a hidden field is caught before the account is made. */
+    val passwordRepeat: String = "",
     val consent: Boolean = false,
     /** Shown after a try to go on without the required consent. */
     val consentMissing: Boolean = false,
@@ -95,7 +97,8 @@ class AccountViewModel(
                 AccountField.LAST_NAME -> it.copy(lastName = value, errors = cleared)
                 AccountField.FIRST_NAME -> it.copy(firstName = value, errors = cleared)
                 AccountField.EMAIL -> it.copy(email = value, errors = cleared)
-                AccountField.PASSWORD -> it.copy(password = value, errors = cleared)
+                AccountField.PASSWORD -> it.copy(password = value, errors = cleared - AccountField.PASSWORD_REPEAT)
+                AccountField.PASSWORD_REPEAT -> it.copy(passwordRepeat = value, errors = cleared)
             }
         }
     }
@@ -141,6 +144,8 @@ class AccountViewModel(
             if (current.signedInEmail == null) {
                 if (!AccountRules.isEmail(current.email)) put(AccountField.EMAIL, FieldError.EMAIL_INVALID)
                 if (!AccountRules.isStrongPassword(current.password)) put(AccountField.PASSWORD, FieldError.PASSWORD_WEAK)
+                // only once the password itself is fine: a weak one is the first thing to fix
+                else if (current.password != current.passwordRepeat) put(AccountField.PASSWORD_REPEAT, FieldError.PASSWORDS_DIFFER)
             }
         }
         _state.update { it.copy(errors = errors) }

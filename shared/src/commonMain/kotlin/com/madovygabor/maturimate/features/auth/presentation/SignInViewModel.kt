@@ -3,6 +3,7 @@ package com.madovygabor.maturimate.features.auth.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madovygabor.maturimate.core.domain.error.OperationResult
+import com.madovygabor.maturimate.core.presentation.utils.UiText
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController
 import com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarKind
 import com.madovygabor.maturimate.features.auth.domain.AccountRules
@@ -16,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import maturimate.shared.generated.resources.Res
+import maturimate.shared.generated.resources.error_google_no_account
 
 /** The parts of the sign-in screen. */
 enum class SignInPhase {
@@ -162,10 +165,27 @@ class SignInViewModel(
         }
     }
 
-    /** Google answered: the account's profile comes to this phone. */
+    /**
+     * Google answered: the account's profile comes to this phone. Google makes a session for any Google account, also one
+     * that never signed up here; "Már van fiókom" must not let that one in with a profile of nothing. It is signed out again
+     * (this phone stays the guest's, nothing changed) and told to sign up first. The e-mail sign-in has no such case: a
+     * password only exists for an account that was made here, and one left halfway goes on to finish its form.
+     */
     fun onGoogleSignedIn(onSignedIn: (SignedInAccount) -> Unit) {
         endGoogle()
-        busy { finish(onSignedIn) }
+        busy {
+            when (val result = accountSetup.completeSignIn()) {
+                is OperationResult.Success ->
+                    if (result.data.isSetUp) onSignedIn(result.data) else rejectUnknownGoogleAccount()
+                is OperationResult.Error -> showError(result.error)
+            }
+        }
+    }
+
+    private suspend fun rejectUnknownGoogleAccount() {
+        // without a network the session is removed from this phone only; it runs out on the server by itself
+        if (auth.signOut() is OperationResult.Error) auth.clearLocalSession()
+        snackbarController.showSnackbar(message = UiText.StringRes(Res.string.error_google_no_account), kind = SnackbarKind.ERROR)
     }
 
     /** Google (the browser on desktop) is open: the screen is busy until exactly one of its callbacks comes. */

@@ -255,6 +255,8 @@ The system permission dialog itself is Android's and follows the phone's languag
 | `account_email` | E-mail cím | E-mailová adresa |
 | `signin_password` (label) | Jelszó | Heslo |
 | `account_password_hint` (under the field; replaces `account_password`) | Legalább 8 karakter, kis- és nagybetűvel és számmal. | Aspoň 8 znakov, s malým a veľkým písmenom a číslicou. |
+| `account_password_repeat` (second password field, same eye button) | Jelszó még egyszer | Heslo ešte raz |
+| `account_password_rule_length`, `_case`, `_digit` (three marks under the password field, ticked live as each part of the rule is met; replace the hint on this screen) | 8+ karakter · kis- és nagybetű · szám | 8+ znakov · malé a veľké písmeno · číslica |
 | `account_consent` | Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót. | Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov. |
 | `account_news` | Kérek híreket és újdonságokat e-mailben. | Chcem dostávať novinky e-mailom. |
 | `account_create` | Fiók létrehozása | Vytvoriť účet |
@@ -263,6 +265,8 @@ The system permission dialog itself is Android's and follows the phone's languag
 | `error_first_name_empty` | Add meg a keresztneved. | Zadaj meno. |
 | `error_email_invalid` | Ez nem tűnik e-mail címnek. Ellenőrizd. | Toto nevyzerá ako e-mailová adresa. Skontroluj ju. |
 | `error_password_weak` | A jelszó legalább 8 karakter legyen, és tartalmazzon kisbetűt, nagybetűt és számot. | Heslo musí mať aspoň 8 znakov a obsahovať malé a veľké písmeno a číslicu. |
+| `error_passwords_differ` (under the second field; checked once the first is strong enough) | A két jelszó nem egyezik. | Heslá sa nezhodujú. |
+| `error_google_no_account` ("Már van fiókom" with a Google account that never signed up here: it is signed out again and nothing goes on) | Ehhez a Google-fiókhoz még nincs fiókod. Először regisztrálj. | K tomuto Google účtu ešte nemáš účet. Najprv sa zaregistruj. |
 | `error_email_taken` | Ezzel az e-mail címmel már van fiók. Lépj be helyette. | S týmto e-mailom už účet existuje. Prihlás sa. |
 | `error_network` | Nincs internetkapcsolat. Próbáld újra, ha újra van net. | Nie si pripojený na internet. Skús to znova, keď budeš online. |
 

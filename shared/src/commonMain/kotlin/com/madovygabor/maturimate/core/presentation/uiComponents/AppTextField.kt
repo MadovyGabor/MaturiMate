@@ -38,7 +38,8 @@ import org.jetbrains.compose.resources.stringResource
  *
  * @param label The label on the border; null for a field whose label sits above it.
  * @param error What is wrong and what to do; shown instead of [helper] and marks the field.
- * @param password Hides the characters; a trailing button shows or hides them.
+ * @param password Hides the characters; a trailing button shows or hides them ([passwordShown] and
+ *   [onPasswordShownChange] let two fields share that state).
  * @param contentType What the field holds, for autofill and the password manager (e-mail, password, new password).
  * @param code A one-time code: number keyboard, the monospaced `code` style, and the one-time-code content type.
  * @param correct For an answer field after checking: true is shown green, false red (with [readOnly]); null is a normal field.
@@ -64,8 +65,16 @@ fun AppTextField(
     imeAction: ImeAction = ImeAction.Default,
     /** Runs when the action key is pressed; null keeps the keyboard's own behaviour (Next moves the focus). */
     onImeAction: (() -> Unit)? = null,
+    /**
+     * Whether the password is shown, when the caller holds that state so that two fields (a password and its repeat) share
+     * one eye button; null: the field keeps it itself.
+     */
+    passwordShown: Boolean? = null,
+    onPasswordShownChange: ((Boolean) -> Unit)? = null,
 ) {
-    var shown by rememberSaveable { mutableStateOf(false) }
+    var ownShown by rememberSaveable { mutableStateOf(false) }
+    val shown = passwordShown ?: ownShown
+    val toggleShown = { if (onPasswordShownChange != null) onPasswordShownChange(!shown) else ownShown = !shown }
     val colors = MaterialTheme.colorScheme
     val extended = MaterialTheme.extendedColors
     val support = error ?: helper
@@ -85,7 +94,7 @@ fun AppTextField(
         readOnly = readOnly,
         trailingIcon = if (password) {
             {
-                IconButton(onClick = { shown = !shown }, enabled = enabled) {
+                IconButton(onClick = toggleShown, enabled = enabled) {
                     Icon(
                         imageVector = if (shown) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                         contentDescription = stringResource(if (shown) Res.string.password_hide else Res.string.password_show),

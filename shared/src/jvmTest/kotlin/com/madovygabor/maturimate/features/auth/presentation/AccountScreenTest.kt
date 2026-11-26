@@ -76,6 +76,14 @@ class AccountScreenTest {
         onNodeWithText(text(Res.string.account_browse)).assertExists()
     }
 
+    // after Google the account is signed in and only the name and the consents are left: "Körülnézek" would sign it out again
+    @Test
+    fun aSignedInAccountHasNoLookAroundButton() = runComposeUiTest {
+        setContent { AppTheme(darkTheme = false) { AccountContent(AccountUiState(signedInEmail = "anna@example.com"), UserRole.STUDENT, AccountActions()) } }
+        onNodeWithText(text(Res.string.account_create)).assertExists()
+        onAllNodesWithText(text(Res.string.account_browse)).assertCountEquals(0)
+    }
+
     /** Pictures of the form and the code step, both themes and languages, into build/screenshots/account. */
     @Test
     fun rendersAtEverySizeAndTheme() {

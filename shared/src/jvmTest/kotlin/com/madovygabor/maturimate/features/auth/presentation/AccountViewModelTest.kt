@@ -101,11 +101,12 @@ class AccountViewModelTest {
 
     private suspend fun AccountViewModel.idle() = state.awaitFirst { !it.busy }
 
-    private fun AccountViewModel.fill(email: String = "anna@example.com", password: String = "Passw0rdA") {
+    private fun AccountViewModel.fill(email: String = "anna@example.com", password: String = "Passw0rdA", repeat: String = password) {
         onChanged(AccountField.LAST_NAME, "Kovács")
         onChanged(AccountField.FIRST_NAME, "Anna")
         onChanged(AccountField.EMAIL, email)
         onChanged(AccountField.PASSWORD, password)
+        onChanged(AccountField.PASSWORD_REPEAT, repeat)
         onConsentChanged(true)
     }
 
@@ -122,6 +123,24 @@ class AccountViewModelTest {
             viewModel.state.value.errors,
         )
         assertNull(auth.signedUp)
+    }
+
+    @Test
+    fun aRepeatThatDiffersIsMarkedAndNothingIsSent() = runBlocking {
+        val auth = FakeAuth()
+        val viewModel = viewModel(auth)
+        viewModel.fill(repeat = "Passw0rdB")
+
+        viewModel.onCreateAccount()
+
+        assertEquals(mapOf(AccountField.PASSWORD_REPEAT to FieldError.PASSWORDS_DIFFER), viewModel.state.value.errors)
+        assertNull(auth.signedUp)
+
+        // typing the repeat again clears the mark, and the matching form goes on
+        viewModel.onChanged(AccountField.PASSWORD_REPEAT, "Passw0rdA")
+        assertEquals(emptyMap(), viewModel.state.value.errors)
+        viewModel.onCreateAccount()
+        assertEquals("anna@example.com", viewModel.idle().codeSentTo)
     }
 
     @Test

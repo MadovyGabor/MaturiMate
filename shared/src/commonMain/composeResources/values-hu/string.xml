@@ -168,6 +168,10 @@
     <string name="account_first_name">Keresztnév</string>
     <string name="account_email">E-mail cím</string>
     <string name="signin_password">Jelszó</string>
+    <string name="account_password_repeat">Jelszó még egyszer</string>
+    <string name="account_password_rule_length">8+ karakter</string>
+    <string name="account_password_rule_case">kis- és nagybetű</string>
+    <string name="account_password_rule_digit">szám</string>
     <string name="account_password_hint">Legalább 8 karakter, kis- és nagybetűvel és számmal.</string>
     <string name="account_consent">Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót.</string>
     <string name="account_consent_required">A folytatáshoz fogadd el a feltételeket és az adatvédelmi tájékoztatót.</string>
@@ -184,6 +188,8 @@
     <string name="error_last_name_empty">Add meg a vezetékneved.</string>
     <string name="error_first_name_empty">Add meg a keresztneved.</string>
     <string name="error_email_invalid">Ez nem tűnik e-mail címnek. Ellenőrizd.</string>
+    <string name="error_passwords_differ">A két jelszó nem egyezik.</string>
+    <string name="error_google_no_account">Ehhez a Google-fiókhoz még nincs fiókod. Először regisztrálj.</string>
     <string name="error_password_weak">A jelszó legalább 8 karakter legyen, és tartalmazzon kisbetűt, nagybetűt és számot.</string>
     <string name="error_email_taken">Ezzel az e-mail címmel már van fiók. Lépj be helyette.</string>
     <string name="error_network">Nincs internetkapcsolat. Próbáld újra, ha újra van net.</string>

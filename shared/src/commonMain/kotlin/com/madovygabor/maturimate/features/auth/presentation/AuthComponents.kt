@@ -13,6 +13,7 @@ import maturimate.shared.generated.resources.error_first_name_empty
 import maturimate.shared.generated.resources.error_last_name_empty
 import maturimate.shared.generated.resources.error_code_invalid
 import maturimate.shared.generated.resources.error_password_weak
+import maturimate.shared.generated.resources.error_passwords_differ
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -50,4 +51,5 @@ private fun FieldError.resource(field: AccountField?): StringResource = when (th
     FieldError.PASSWORD_WEAK -> Res.string.error_password_weak
     FieldError.EMAIL_TAKEN -> Res.string.error_email_taken
     FieldError.CODE_INVALID -> Res.string.error_code_invalid
+    FieldError.PASSWORDS_DIFFER -> Res.string.error_passwords_differ
 }

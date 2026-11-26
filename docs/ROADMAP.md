@@ -350,7 +350,7 @@ About 20 acquaintances, several devices, the Hungarian subject, with sync and do
 
 ## Milestone 16: Closed beta
 
-* [ ] **16.1.** Legal review of the terms of use and the privacy notice, with real document versions instead of "1.0". *Was part of 12.6.*
+* [ ] **16.1.** Legal review of the terms of use and the privacy notice, with real document versions instead of "1.0". The account form's consent text ("súhlasím s podmienkami … a so zásadami …") is plain text until the documents have an address: then the two phrases become links (the onboarding design asks for links; found in the UI review of 2026-11-26). *Was part of 12.6.*
 * [ ] **16.2.** Closed beta of the Hungarian subject: more people, the full flow. *Was 12.4.*
 * [ ] **16.3.** Fixes from the beta and a second manual pass.
 
