@@ -8,7 +8,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.madovygabor.maturimate.MainActivity
@@ -108,10 +107,9 @@ class ReminderReceiver : BroadcastReceiver(), KoinComponent {
     }
 
     private fun show(context: Context, language: TeachingLanguage, message: ReminderMessage) {
-        // the text follows the language of the app (its per-app language, else the profile's), not the one of the phone
+        // the text follows the language saved in the profile, not the one of the phone
         val configuration = Configuration(context.resources.configuration)
-        val appLocale = AppCompatDelegate.getApplicationLocales().let { if (it.isEmpty) null else it[0]?.toLanguageTag() }
-        configuration.setLocale(Locale.forLanguageTag(reminderLanguageTag(appLocale, language)))
+        configuration.setLocale(Locale.forLanguageTag(reminderLanguageTag(language)))
         val texts = context.createConfigurationContext(configuration)
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

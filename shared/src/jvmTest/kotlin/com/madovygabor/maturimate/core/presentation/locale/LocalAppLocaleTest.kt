@@ -7,6 +7,7 @@ import java.util.Locale
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** The app language sets the platform locale, which Compose resources read their texts in. */
 @OptIn(ExperimentalTestApi::class)
@@ -38,5 +39,12 @@ class LocalAppLocaleTest {
         waitForIdle()
 
         assertEquals(phone, Locale.getDefault())
+    }
+
+    @Test
+    fun applyAppLocaleImmediatelyUpdatesPlatformLocaleAndDesktopRebuildsTree() {
+        assertTrue(LocalAppLocale.rebuildsTreeOnChange)
+        applyAppLocaleImmediately("hu")
+        assertEquals("hu", Locale.getDefault().language)
     }
 }

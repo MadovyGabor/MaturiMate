@@ -50,8 +50,6 @@ android {
 dependencies {
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
-    // AppCompatActivity: the per-app language works on every Android version through it
-    implementation(libs.androidx.appcompat)
     implementation(libs.kotlinx.datetime)
 
     //Koin Android

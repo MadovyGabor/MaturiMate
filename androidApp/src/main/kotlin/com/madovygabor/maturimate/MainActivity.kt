@@ -1,24 +1,25 @@
 package com.madovygabor.maturimate
 
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.madovygabor.maturimate.core.export.ExportPicker
 import com.madovygabor.maturimate.core.presentation.AppViewModel
+import com.madovygabor.maturimate.core.presentation.locale.reapplyAppLocale
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
  * The main entry point for the Android application.
- * This class handles Android-specific initializations like Edge-to-Edge and the Native Splash Screen.
- * It is an AppCompatActivity so the per-app language ([androidx.appcompat.app.AppCompatDelegate.setApplicationLocales])
- * works on every Android version.
+ * This class handles Android-specific initializations like Edge-to-Edge and the Native Splash Screen,
+ * and keeps the in-app locale applied across system configuration changes and foreground resumes.
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     // Passed to App(), so the splash screen and the UI wait for the same first profile read
     private val appViewModel: AppViewModel by viewModel()
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
-        // Initialize the Android SplashScreen API (before super: it swaps the launch theme for the AppCompat one)
+        // Initialize the Android SplashScreen API (before super: it swaps the launch theme)
         val splashScreen = installSplashScreen()
 
         super.onCreate(savedInstanceState)
@@ -49,5 +50,15 @@ class MainActivity : AppCompatActivity() {
         setContent {
             App(appViewModel)
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        reapplyAppLocale()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        reapplyAppLocale()
     }
 }

@@ -8,7 +8,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.madovygabor.maturimate.core.presentation.locale.KeepLocaleWhile
+import com.madovygabor.maturimate.core.presentation.locale.applyAppLocaleImmediately
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.core.presentation.theme.spacing
 import com.madovygabor.maturimate.core.presentation.uiComponents.AppChoiceCard
@@ -47,13 +53,37 @@ fun LanguageScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val role by viewModel.role.collectAsState()
-    LanguageContent(
-        state = state,
-        role = role,
-        onSelected = viewModel::onSelected,
-        onBack = onBack,
-        onNext = { viewModel.onNext { onNext(role) } },
-    )
+    var exiting by remember { mutableStateOf(false) }
+    var frozenState by remember { mutableStateOf(state) }
+    var frozenRole by remember { mutableStateOf(role) }
+    if (!exiting) {
+        // While the answer is being saved the button keeps its normal look: the view model sets `saving` at once, and
+        // a button that dims for the length of the save and then moves on was the flicker left on this screen. A second
+        // tap is ignored by the view model anyway.
+        frozenState = state.copy(saving = false)
+        frozenRole = role
+    }
+    val currentOnBack by rememberUpdatedState(onBack)
+    val currentOnNext by rememberUpdatedState(onNext)
+    val goBack = remember { { currentOnBack() } }
+    val submit = remember(viewModel) {
+        {
+            viewModel.onNext { chosen ->
+                exiting = true
+                applyAppLocaleImmediately(chosen.name.lowercase())
+                currentOnNext(frozenRole)
+            }
+        }
+    }
+    KeepLocaleWhile(exiting) {
+        LanguageContent(
+            state = frozenState,
+            role = frozenRole,
+            onSelected = viewModel::onSelected,
+            onBack = goBack,
+            onNext = submit,
+        )
+    }
 }
 
 @Composable

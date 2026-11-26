@@ -73,8 +73,7 @@ kotlin {
             //Koin Android
             implementation(libs.koin.android)
 
-            // per-app language, and the file picker of the data export
-            implementation(libs.androidx.appcompat)
+            // the file picker of the data export
             implementation(libs.androidx.activity.compose)
 
             // HTTP engine of the Supabase client

@@ -48,14 +48,7 @@ suspend fun handleReminderAlarm(
 fun publicReminderMessage(): ReminderMessage = ReminderMessage(ReminderKind.PLAIN, variant = 0, number = null)
 
 /**
- * The language tag of the texts of the notification: the per-app language when the app has one (the language the app
- * itself shows), otherwise the language saved in the profile.
+ * The language tag of the texts of the notification: the language saved in the profile.
  */
-fun reminderLanguageTag(appLocaleTag: String?, profileLanguage: TeachingLanguage): String {
-    val app = appLocaleTag?.substringBefore('-')?.lowercase()
-    return when {
-        app == "hu" || app == "sk" -> app
-        profileLanguage == TeachingLanguage.HU -> "hu"
-        else -> "sk"
-    }
-}
+fun reminderLanguageTag(profileLanguage: TeachingLanguage): String =
+    if (profileLanguage == TeachingLanguage.HU) "hu" else "sk"

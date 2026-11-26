@@ -38,9 +38,10 @@ private val navKeyState = MutableStateSerializer(PolymorphicSerializer(NavKey::c
  * The root Composable of the MaturiMate application.
  * Sets up the global theme, scaffold, the app language and the navigation entry point.
  *
- * The language and the start screen come from the saved profile. When either changes
- * (a teaching language is picked, the onboarding is finished), the screens are built
- * again in the new language, and the onboarding continues from the saved answers.
+ * The language and the start screen come from the saved profile. On platforms where
+ * [LocalAppLocale.rebuildsTreeOnChange] is true (desktop), a language change rebuilds the
+ * screens via `key(...)`; on Android, `LocalConfiguration` updates them in place without
+ * tearing down the navigation stack or interrupting transitions.
  */
 @Composable
 fun App(viewModel: AppViewModel = koinViewModel()) {
@@ -89,7 +90,11 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
                     appState.userId
                 }
                 CompositionLocalProvider(LocalAppLocale provides appState.language?.name?.lowercase()) {
-                    key(appState.language, appState.onboardingCompleted, appState.userId) {
+                    key(
+                        if (LocalAppLocale.rebuildsTreeOnChange) appState.language else null,
+                        appState.onboardingCompleted,
+                        appState.userId,
+                    ) {
                         // Main navigation host that handles transitions between routes
                         NavigationRoute(
                             modifier = Modifier.systemPaddingExceptBottom(),

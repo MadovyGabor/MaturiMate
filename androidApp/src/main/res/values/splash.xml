@@ -8,9 +8,9 @@
         <item name="postSplashScreenTheme">@style/Theme.App.Main</item>
     </style>
 
-    <!-- The theme of the activity after the splash screen. Its window background is the app background too, so the moment
-         the activity is rebuilt (a new app language) shows the cream paper and not a black or white frame. -->
-    <style name="Theme.App.Main" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!-- The theme of the activity after the splash screen. Its window background is the app background too, so no black
+         or white frame shows while the first Compose frame is drawn. -->
+    <style name="Theme.App.Main" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">#FCF8F1</item>
     </style>
 

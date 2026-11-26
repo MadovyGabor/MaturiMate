@@ -169,14 +169,9 @@ class ReminderSchedulerTest {
     }
 
     @Test
-    fun theNotificationFollowsTheAppLanguageNotThePhone() {
-        // the per-app language wins, also with a region
-        assertEquals("hu", reminderLanguageTag("hu-HU", TeachingLanguage.SK))
-        assertEquals("sk", reminderLanguageTag("sk", TeachingLanguage.HU))
-        // no per-app language, or one the app does not have: the profile's
-        assertEquals("hu", reminderLanguageTag(null, TeachingLanguage.HU))
-        assertEquals("sk", reminderLanguageTag("en-US", TeachingLanguage.SK))
-        assertEquals("sk", reminderLanguageTag(null, TeachingLanguage.SK))
+    fun theNotificationFollowsTheProfileLanguageNotThePhone() {
+        assertEquals("hu", reminderLanguageTag(TeachingLanguage.HU))
+        assertEquals("sk", reminderLanguageTag(TeachingLanguage.SK))
     }
 
     // ---- the permission ----

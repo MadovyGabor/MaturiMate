@@ -50,11 +50,6 @@ Only unit tests and the compile run for the desktop target so far, and the manua
 
 ## Android
 
-### A1. The app language change rebuilds the activity (accepted)
-
-- **What:** the language is the AppCompat per-app locale. Changing it, and the first launch of a Hungarian profile on a phone in another language, recreates the activity. The tab and the profile page are kept (`rememberSerializable`).
-- **Unverified on a device:** the language stays Hungarian after the background, a font size change and a rotation; on Android 12 and older it survives a process kill (the `autoStoreLocales` service).
-
 ### A2. The native Google picker cannot preselect an account (open, server fix pending)
 
 - **What:** for the account deletion the user signs in with Google again. If they pick a Google account that has no MaturiMate account, Supabase first creates an empty user, then the app rejects it and ends that session.
@@ -69,7 +64,6 @@ Only unit tests and the compile run for the desktop target so far, and the manua
 
 - **What:** the receiver re-plans the next day whatever happens and works with a 7-second limit. Not yet run on a device: battery saver, a permission blocked for good (the settings hint), the lock screen showing only the neutral text, the notification language on a phone in another language, a phone restart and an app update re-planning the alarm.
 - **Note:** a channel the phone already had may keep its old lock-screen visibility; the notification's own setting applies.
-- **Note:** `AppCompatDelegate.getApplicationLocales()` can be empty in a receiver on Android 13 and newer when no activity is alive; the profile's app language is the fallback.
 
 ### A5. Export and share (unverified on devices)
 

@@ -11,6 +11,8 @@ actual object LocalAppLocale {
     // the system's locale, kept so "no app language" can go back to it
     private val systemDefault: Locale = Locale.getDefault()
 
+    actual val rebuildsTreeOnChange: Boolean = true
+
     actual val current: String
         @Composable get() = LocalLocaleTag.current
 
@@ -20,4 +22,13 @@ actual object LocalAppLocale {
         Locale.setDefault(locale)
         return LocalLocaleTag provides locale.toLanguageTag()
     }
+}
+
+actual fun applyAppLocaleImmediately(languageTag: String) {
+    Locale.setDefault(Locale.forLanguageTag(languageTag))
+}
+
+@Composable
+actual fun KeepLocaleWhile(hold: Boolean, content: @Composable () -> Unit) {
+    content()
 }

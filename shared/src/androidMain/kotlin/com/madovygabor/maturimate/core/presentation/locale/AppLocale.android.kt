@@ -1,36 +1,79 @@
 package com.madovygabor.maturimate.core.presentation.locale
 
-import androidx.appcompat.app.AppCompatDelegate
+import android.content.res.Configuration
+import android.os.LocaleList
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidedValue
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.core.os.LocaleListCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
 import java.util.Locale
 
+@Volatile
+private var activeAppLocale: String? = null
+
 /**
- * The app language is the system's per-app language ([AppCompatDelegate.setApplicationLocales]): the platform keeps it
- * across configuration changes and restarts, and the activity is rebuilt when it changes. Nothing sets the JVM default
- * locale while composing, so a configuration change cannot bring back the phone's language.
+ * The app language is applied in-process via [LocaleList.setDefault] + [LocalConfiguration]
+ * override, without Activity recreation or `AppCompatDelegate.setApplicationLocales`.
+ * [MainActivity] calls [reapplyAppLocale] on configuration changes and resume so the system
+ * cannot reset the process default locale behind our back.
  */
 actual object LocalAppLocale {
-    private val LocalLocaleTag = staticCompositionLocalOf { Locale.getDefault().toLanguageTag() }
+    actual val rebuildsTreeOnChange: Boolean = false
 
     actual val current: String
-        @Composable get() = LocalLocaleTag.current
+        @Composable get() = LocalConfiguration.current.locales[0]?.toLanguageTag() ?: Locale.getDefault().toLanguageTag()
 
     @Composable
     actual infix fun provides(value: String?): ProvidedValue<*> {
-        // after the composition, not in it; null keeps the language the app already has
-        SideEffect { if (value != null) applyAppLanguage(value) }
-        return LocalLocaleTag provides (value ?: Locale.getDefault().toLanguageTag())
+        val base = LocalConfiguration.current
+        if (value == null) {
+            if (activeAppLocale != null) {
+                activeAppLocale = null
+                if (!base.locales.isEmpty) {
+                    LocaleList.setDefault(base.locales)
+                    Locale.setDefault(base.locales[0])
+                }
+            }
+            return LocalConfiguration provides base
+        }
+        activeAppLocale = value
+        val locale = Locale.forLanguageTag(value)
+        applyProcessLocale(locale)
+        val overridden = remember(base, value) {
+            Configuration(base).apply {
+                setLocales(LocaleList(locale))
+                setLayoutDirection(locale)
+            }
+        }
+        return LocalConfiguration provides overridden
     }
 }
 
-/** Sets the per-app language; does nothing when it is already that one (a change rebuilds the activity). */
-internal fun applyAppLanguage(languageTag: String) {
-    val wanted = LocaleListCompat.forLanguageTags(languageTag)
-    if (AppCompatDelegate.getApplicationLocales().toLanguageTags() != wanted.toLanguageTags()) {
-        AppCompatDelegate.setApplicationLocales(wanted)
+actual fun applyAppLocaleImmediately(languageTag: String) {
+    activeAppLocale = languageTag
+    applyProcessLocale(Locale.forLanguageTag(languageTag))
+}
+
+@Composable
+actual fun KeepLocaleWhile(hold: Boolean, content: @Composable () -> Unit) {
+    val current = LocalConfiguration.current
+    var held by remember { mutableStateOf(current) }
+    if (!hold) held = current
+    CompositionLocalProvider(LocalConfiguration provides held, content = content)
+}
+
+/** Reapplies the active in-app locale after system configuration changes or returning to foreground. */
+fun reapplyAppLocale() {
+    activeAppLocale?.let { applyProcessLocale(Locale.forLanguageTag(it)) }
+}
+
+private fun applyProcessLocale(locale: Locale) {
+    if (Locale.getDefault().language != locale.language) {
+        LocaleList.setDefault(LocaleList(locale))
+        Locale.setDefault(locale)
     }
 }
