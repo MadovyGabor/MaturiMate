@@ -18,14 +18,19 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -45,14 +50,33 @@ class UserProfileRepositoryImpl(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val timeZone: () -> String = { TimeZone.currentSystemDefault().id },
     private val now: () -> Instant = { Clock.System.now() },
+    private val shareScope: CoroutineScope? = null,
 ) : UserProfileRepository {
 
     private val queries get() = database.profileQueries
 
-    // follows the local user, so the profile moves along when a guest signs up or signs in
+    // follows the local user, so the profile moves along when a guest signs up or signs in;
+    // when shareScope is provided, all active collectors share one SQLDelight subscription
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val profile: Flow<UserProfile?> = localUser.userIdFlow(dispatcher).flatMapLatest { userId -> profileOf(userId) }
-        .flowOn(dispatcher)
+    private fun coldProfile(): Flow<UserProfile?> =
+        localUser.userIdFlow(dispatcher).flatMapLatest { userId -> profileOf(userId) }.flowOn(dispatcher)
+
+    override val profile: Flow<UserProfile?> = if (shareScope == null) {
+        coldProfile()
+    } else {
+        coldProfile()
+            .map { Result.success(it) }
+            .catch { e ->
+                if (e is CancellationException) throw e
+                emit(Result.failure(e))
+            }
+            .shareIn(
+                shareScope,
+                SharingStarted.WhileSubscribed(stopTimeoutMillis = 0L, replayExpirationMillis = 0L),
+                replay = 1,
+            )
+            .map { it.getOrThrow() }
+    }
 
     private fun profileOf(userId: String): Flow<UserProfile?> = flow {
         val profileRow = queries.selectUserProfile(userId).asFlow().mapToOneOrNull(dispatcher)

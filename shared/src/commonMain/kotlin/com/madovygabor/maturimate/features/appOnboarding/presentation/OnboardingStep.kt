@@ -1,5 +1,6 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.madovygabor.maturimate.core.presentation.navigation.Route
 import com.madovygabor.maturimate.core.presentation.remindersAvailable
@@ -81,6 +82,7 @@ fun OnboardingStep.isAnswered(profile: UserProfile): Boolean = when (this) {
 }
 
 /** Where the user is in the onboarding, for the step header and the step list. */
+@Immutable
 data class OnboardingProgress(
     val current: OnboardingStep,
     val steps: List<OnboardingStep> = onboardingSteps(),

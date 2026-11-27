@@ -1,12 +1,13 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -21,6 +22,8 @@ import com.madovygabor.maturimate.core.presentation.theme.motion
  * then always show the value as text too, because gold on the light track has low contrast.
  *
  * A new [fraction] fills (or empties) the bar over `duration-medium`; with reduced motion it jumps.
+ * When [initialFraction] differs from [fraction], the bar starts there and animates on arrival
+ * without triggering an extra composition of the caller.
  *
  * @param fraction From 0 to 1.
  */
@@ -29,15 +32,21 @@ fun AppProgressBar(
     fraction: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    initialFraction: Float = fraction,
 ) {
     val motion = MaterialTheme.motion
-    val shown by animateFloatAsState(
-        targetValue = fraction.coerceIn(0f, 1f),
-        animationSpec = motion.spec(motion.durationMedium),
-        label = "progress",
-    )
+    val target = fraction.coerceIn(0f, 1f)
+    val start = if (motion.reduced) target else initialFraction.coerceIn(0f, 1f)
+    val shown = remember { Animatable(start) }
+    LaunchedEffect(target, motion.reduced) {
+        if (motion.reduced) {
+            shown.snapTo(target)
+        } else if (shown.value != target) {
+            shown.animateTo(target, motion.spec(motion.durationMedium))
+        }
+    }
     LinearProgressIndicator(
-        progress = { shown },
+        progress = { shown.value },
         modifier = modifier.fillMaxWidth().height(MaterialTheme.layout.progressBarHeight),
         color = color,
         trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,

@@ -110,6 +110,7 @@ expect val platformModule : org.koin.core.module.Module
 
 /** The dispatcher of the user database (see [sharedModule]). */
 private val USER_DATABASE = named("userDatabase")
+private val APP_SCOPE = named("appScope")
 
 /**
  * Shared dependencies for all platforms.
@@ -171,8 +172,11 @@ val sharedModule = module {
     // The official exam dates the sync brings
     single<ExamDateRepository> { ExamDateRepositoryImpl(get(), get(USER_DATABASE)) }
 
+    // Application-wide scope for shared flows and background triggers
+    single(APP_SCOPE) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+
     // Profile and settings of the local user
-    single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE)) }
+    single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get(), get(USER_DATABASE), shareScope = get(APP_SCOPE)) }
 
     // Supabase: accounts (sign-up, sign-in, password reset)
     single { createAppSupabaseClient() }
@@ -190,7 +194,7 @@ val sharedModule = module {
     // When the sync runs; started by the app (run) and by the screens
     single {
         SyncTriggers(
-            get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default), now = { Clock.System.now().toEpochMilliseconds() },
+            { get<SyncEngine>() }, get(), get(APP_SCOPE), now = { Clock.System.now().toEpochMilliseconds() },
             // the releases of the server: the content of the chosen subjects is downloaded when newer
             afterSync = { releases -> get<ContentUpdater>().onReleases(releases) },
         )
@@ -213,11 +217,9 @@ val sharedModule = module {
     // At every opening: a session of another account left on this account's phone (a deletion proof that never finished)
     // is ended first, then the sessions waiting to be ended are told to the server.
     single<SessionRevoker> {
-        val settings = get<AccountSettings>()
-        val pending = get<PendingRevocation>()
         SessionRevoker {
-            settings.endForeignSession()
-            pending.revokePending()
+            get<AccountSettings>().endForeignSession()
+            get<PendingRevocation>().revokePending()
         }
     }
     // the browser sign-ins in flight (desktop Google): a cancelled deletion proof waits for them

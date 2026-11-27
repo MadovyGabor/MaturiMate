@@ -61,9 +61,8 @@ fun SignInScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val google = rememberGoogleSignIn(onSignedIn = { viewModel.onGoogleSignedIn(onSignedIn) }, onError = viewModel::onGoogleFailed, onClosed = viewModel::onGoogleClosed)
-    SignInContent(
-        state = state,
-        actions = SignInActions(
+    val actions = remember(viewModel, google, onSignedIn, onBack) {
+        SignInActions(
             onEmailChanged = viewModel::onEmailChanged,
             onPasswordChanged = viewModel::onPasswordChanged,
             onNewPasswordChanged = viewModel::onNewPasswordChanged,
@@ -75,7 +74,11 @@ fun SignInScreen(
             onSendResetCode = viewModel::onSendResetCode,
             onResetPassword = { viewModel.onResetPassword(onSignedIn) },
             onBack = { if (!viewModel.onBack()) onBack() },
-        ),
+        )
+    }
+    SignInContent(
+        state = state,
+        actions = actions,
         confirmReplace = confirmReplace,
     )
 }

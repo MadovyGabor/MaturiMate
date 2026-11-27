@@ -10,6 +10,8 @@ import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import com.madovygabor.maturimate.features.userProfile.domain.TeachingLanguage
 import com.madovygabor.maturimate.features.userProfile.domain.UserProfileRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -53,6 +55,7 @@ class AppViewModel(
     private val contentSwapGate: ContentSwapGate? = null,
     /** The id of the local user (`LocalUserProvider.userIdFlow`); each new id is a new [AppState]. */
     private val userId: Flow<String>? = null,
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     init {
@@ -110,7 +113,7 @@ class AppViewModel(
         syncTriggers?.onForeground()
         // a sign-out made without a network is told to the server now, if the network is back
         sessionRevoker?.let {
-            viewModelScope.launch {
+            viewModelScope.launch(backgroundDispatcher) {
                 try {
                     it.revokePending()
                 } catch (e: CancellationException) {

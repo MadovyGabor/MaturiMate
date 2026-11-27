@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class SyncTriggers(
-    private val engine: SyncEngine,
+    private val engineProvider: () -> SyncEngine,
     private val profile: UserProfileRepository,
     private val scope: CoroutineScope,
     private val now: () -> Long,
@@ -33,6 +33,15 @@ class SyncTriggers(
     /** Called with the content releases of the server after a run that went through (the content download). */
     private val afterSync: suspend (List<ContentRelease>) -> Unit = {},
 ) {
+    constructor(
+        engine: SyncEngine,
+        profile: UserProfileRepository,
+        scope: CoroutineScope,
+        now: () -> Long,
+        minGap: Duration = 5.minutes,
+        settingsDelay: Duration = 3.seconds,
+        afterSync: suspend (List<ContentRelease>) -> Unit = {},
+    ) : this({ engine }, profile, scope, now, minGap, settingsDelay, afterSync)
     /** When the last opening or foreground run started; a run that found nobody signed in does not count. */
     @Volatile
     private var lastStart: Long? = null
@@ -71,6 +80,7 @@ class SyncTriggers(
         val started = now()
         lastStart = started
         scope.launch {
+            val engine = engineProvider()
             // the state shows the round that waits right away, before the upload
             engine.refresh()
             val outcome = engine.sync(reason)

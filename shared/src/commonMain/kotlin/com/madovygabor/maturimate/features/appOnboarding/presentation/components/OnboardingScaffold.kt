@@ -1,7 +1,9 @@
 package com.madovygabor.maturimate.features.appOnboarding.presentation.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollState
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +62,7 @@ import maturimate.shared.generated.resources.onboarding_step
 import org.jetbrains.compose.resources.stringResource
 
 /** A button at the bottom of an onboarding screen. */
+@Immutable
 data class OnboardingAction(
     val text: String,
     val onClick: () -> Unit,
@@ -137,7 +140,11 @@ private fun MainColumn(
     // With the keyboard open the buttons do not ride up on top of it, where they would take a third of the little room left
     // for the form: they follow the last field instead, at the end of the scrolling form (as in the big apps), and the
     // form gets the whole height above the keyboard. Without the keyboard they stay at the bottom edge.
-    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0 && !centered
+    val density = LocalDensity.current
+    val ime = WindowInsets.ime
+    val keyboardOpen by remember(centered, density, ime) {
+        derivedStateOf { !centered && ime.getBottom(density) > 0 }
+    }
     val actionsBlock: @Composable (Modifier) -> Unit = { modifier ->
         if (stackedActions || !wide) {
             Column(modifier, verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
@@ -184,12 +191,18 @@ private fun MainColumn(
                 if (keyboardOpen) actionsBlock(Modifier.fillMaxWidth().padding(top = spacing.space2))
             }
             // content runs on under the buttons: a thin line shows that the form goes on, so a half-hidden line does not look cut off
-            if (scroll.canScrollForward && !keyboardOpen) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            ScrollBottomDivider(scroll, visible = !keyboardOpen)
         }
         if (!keyboardOpen) {
             actionsBlock(columnModifier.padding(start = sideMargin, end = sideMargin, top = spacing.space3, bottom = spacing.space3))
         }
     }
+}
+
+@Composable
+private fun ScrollBottomDivider(scroll: ScrollState, visible: Boolean) {
+    val show by remember(scroll, visible) { derivedStateOf { visible && scroll.canScrollForward } }
+    if (show) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
@@ -233,7 +246,11 @@ private fun StepHeader(progress: OnboardingProgress, modifier: Modifier) {
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AppProgressBar(fraction = rememberArrivingStep(progress.number).toFloat() / progress.steps.size)
+            val startStep = (progress.number - 1).coerceAtLeast(1)
+            AppProgressBar(
+                fraction = progress.number.toFloat() / progress.steps.size,
+                initialFraction = startStep.toFloat() / progress.steps.size,
+            )
         }
     }
 }
@@ -306,7 +323,7 @@ private fun StepList(progress: OnboardingProgress) {
                         shape = CircleShape,
                         color = dotColor,
                         contentColor = dotContent,
-                        border = if (done) null else BorderStroke(layout.borderThick, dotBorder),
+                        border = if (done) null else androidx.compose.foundation.BorderStroke(layout.borderThick, dotBorder),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (done) {

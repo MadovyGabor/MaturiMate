@@ -32,11 +32,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -171,8 +176,9 @@ private fun CodeBox(digit: String, active: Boolean, error: Boolean, enabled: Boo
     val colors = MaterialTheme.colorScheme
     val layout = MaterialTheme.layout
     val motion = MaterialTheme.motion
+    val shape = MaterialTheme.shapes.medium
     val highlighted = active || error
-    val borderColor by animateColorAsState(
+    val borderColor = animateColorAsState(
         targetValue = when {
             error -> colors.error
             active -> colors.primary
@@ -181,18 +187,32 @@ private fun CodeBox(digit: String, active: Boolean, error: Boolean, enabled: Boo
         animationSpec = motion.spec(motion.durationShort),
         label = "codeBoxBorder",
     )
-    val borderWidth by animateDpAsState(
+    val borderWidth = animateDpAsState(
         targetValue = if (highlighted) layout.borderThick else layout.borderThin,
         animationSpec = motion.spec(motion.durationShort),
         label = "codeBoxBorderWidth",
     )
     Box(modifier.widthIn(max = layout.codeBoxMaxWidth), contentAlignment = Alignment.Center) {
         Surface(
-            modifier = Modifier.fillMaxWidth().height(layout.codeBoxHeight),
-            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(layout.codeBoxHeight)
+                .drawWithContent {
+                    drawContent()
+                    val strokePx = borderWidth.value.toPx()
+                    val cornerPx = shape.topStart.toPx(size, this)
+                    val half = strokePx / 2f
+                    drawRoundRect(
+                        color = borderColor.value,
+                        topLeft = Offset(half, half),
+                        size = Size(size.width - strokePx, size.height - strokePx),
+                        cornerRadius = CornerRadius((cornerPx - half).coerceAtLeast(0f)),
+                        style = Stroke(width = strokePx),
+                    )
+                },
+            shape = shape,
             color = if (enabled) colors.surfaceContainerLowest else colors.surfaceContainerHigh,
             contentColor = colors.onBackground,
-            border = BorderStroke(borderWidth, borderColor),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(

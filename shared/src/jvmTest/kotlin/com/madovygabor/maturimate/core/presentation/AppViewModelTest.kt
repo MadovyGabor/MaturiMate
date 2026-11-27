@@ -160,6 +160,25 @@ class AppViewModelTest {
         assertEquals(false, viewModel.failed.value)
     }
 
+    @Test
+    fun sessionRevokerRunsOnlyWhenForegrounded() = runBlocking {
+        var calls = 0
+        val done = CompletableDeferred<Unit>()
+        val viewModel = AppViewModel(
+            repository,
+            sessionRevoker = {
+                calls++
+                done.complete(Unit)
+            },
+        )
+        viewModel.awaitState { true }
+        assertEquals(0, calls)
+
+        viewModel.onForeground()
+        done.awaitWithin()
+        assertEquals(1, calls)
+    }
+
     private val finished = UserProfile(
         teachingLanguage = TeachingLanguage.HU,
         role = UserRole.STUDENT,

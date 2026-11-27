@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,10 +90,8 @@ fun AccountScreen(
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.done) { if (state.done) onDone() }
     val google = rememberGoogleSignIn(onSignedIn = viewModel::onGoogleSignedIn, onError = viewModel::onGoogleFailed, onClosed = viewModel::onGoogleClosed)
-    AccountContent(
-        state = state,
-        role = role,
-        actions = AccountActions(
+    val actions = remember(viewModel, google, onBack) {
+        AccountActions(
             onChanged = viewModel::onChanged,
             onConsentChanged = viewModel::onConsentChanged,
             onNewsChanged = viewModel::onNewsChanged,
@@ -104,7 +103,12 @@ fun AccountScreen(
             onResendCode = viewModel::onResendCode,
             onBackToForm = viewModel::onBackToForm,
             onBack = onBack,
-        ),
+        )
+    }
+    AccountContent(
+        state = state,
+        role = role,
+        actions = actions,
         inApp = inApp,
     )
 }
@@ -132,15 +136,24 @@ fun AccountContent(state: AccountUiState, role: UserRole?, actions: AccountActio
 
 @Composable
 private fun FormStep(state: AccountUiState, role: UserRole?, actions: AccountActions, inApp: Boolean) {
-    val create = OnboardingAction(stringResource(Res.string.account_create), actions.onCreate, enabled = !state.busy, loading = state.busy)
+    val createLabel = stringResource(Res.string.account_create)
+    val browseLabel = stringResource(Res.string.account_browse)
     val idle = !state.busy
+    val hasSignedInEmail = state.signedInEmail != null
+    val scaffoldActions = remember(createLabel, browseLabel, idle, inApp, hasSignedInEmail, actions) {
+        val create = OnboardingAction(createLabel, actions.onCreate, enabled = idle, loading = !idle)
+        if (inApp || hasSignedInEmail) listOf(create)
+        else listOf(create, OnboardingAction(browseLabel, actions.onBrowse, AppButtonVariant.TEXT, enabled = idle))
+    }
+    val progress = remember(inApp, role, actions.onBack) {
+        if (inApp) null else OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBack)
+    }
     OnboardingScaffold(
         // in the app the guest has looked around already: no "Körülnézek", and a plain back arrow instead of the steps.
         // A signed-in account (Google) is on the way to its sign-up: "Körülnézek" would sign it out again, so it is not offered.
-        actions = if (inApp || state.signedInEmail != null) listOf(create)
-        else listOf(create, OnboardingAction(stringResource(Res.string.account_browse), actions.onBrowse, AppButtonVariant.TEXT, enabled = !state.busy)),
+        actions = scaffoldActions,
         stackedActions = true,
-        progress = if (inApp) null else OnboardingProgress(OnboardingStep.ACCOUNT, onboardingSteps(role), actions.onBack),
+        progress = progress,
         onBack = if (inApp) actions.onBack else null,
     ) {
         Text(stringResource(if (inApp) Res.string.signup_app_title else Res.string.account_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)

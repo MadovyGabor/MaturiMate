@@ -1,11 +1,10 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -18,18 +17,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import com.madovygabor.maturimate.core.presentation.theme.layout
@@ -60,78 +65,106 @@ fun AppChoiceCard(
     val layout = MaterialTheme.layout
     val spacing = MaterialTheme.spacing
     val motion = MaterialTheme.motion
+    val cardShape = MaterialTheme.shapes.large
+    val badgeShape = MaterialTheme.shapes.medium
     val colorSpec = motion.spec<Color>(motion.durationShort)
     val source = remember { MutableInteractionSource() }
-    val container by animateColorAsState(if (selected) colors.primaryContainer else colors.surfaceContainerLowest, colorSpec, label = "container")
-    val content by animateColorAsState(if (selected) colors.onPrimaryContainer else colors.onBackground, colorSpec, label = "content")
-    val descriptionColor by animateColorAsState(if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant, colorSpec, label = "description")
-    val borderColor by animateColorAsState(if (selected) colors.primary else colors.outline, colorSpec, label = "borderColor")
-    val borderWidth by animateDpAsState(if (selected) layout.borderThick else layout.borderThin, motion.spec(motion.durationShort), label = "borderWidth")
-    val badgeContainer by animateColorAsState(if (selected) colors.primary else colors.surfaceContainerHigh, colorSpec, label = "badge")
-    val badgeContent by animateColorAsState(if (selected) colors.onPrimary else colors.onSurfaceVariant, colorSpec, label = "badgeContent")
-    val markColor by animateColorAsState(if (selected) colors.primary else colors.surfaceContainerLowest, colorSpec, label = "mark")
-    Surface(
+    val container = animateColorAsState(if (selected) colors.primaryContainer else colors.surfaceContainerLowest, colorSpec, label = "container")
+    val content = animateColorAsState(if (selected) colors.onPrimaryContainer else colors.onBackground, colorSpec, label = "content")
+    val descriptionColor = animateColorAsState(if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant, colorSpec, label = "description")
+    val borderColor = animateColorAsState(if (selected) colors.primary else colors.outline, colorSpec, label = "borderColor")
+    val borderWidth = animateDpAsState(if (selected) layout.borderThick else layout.borderThin, motion.spec(motion.durationShort), label = "borderWidth")
+    val badgeContainer = animateColorAsState(if (selected) colors.primary else colors.surfaceContainerHigh, colorSpec, label = "badge")
+    val badgeContent = animateColorAsState(if (selected) colors.onPrimary else colors.onSurfaceVariant, colorSpec, label = "badgeContent")
+    val markColor = animateColorAsState(if (selected) colors.primary else colors.surfaceContainerLowest, colorSpec, label = "mark")
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .pressScale(source)
             .heightIn(min = layout.choiceCardMinHeight)
-            .selectable(selected = selected, interactionSource = source, indication = LocalIndication.current, onClick = onClick, role = Role.RadioButton),
-        shape = MaterialTheme.shapes.large,
-        color = container,
-        contentColor = content,
-        border = BorderStroke(borderWidth, borderColor),
+            .clip(cardShape)
+            .drawBehind { drawRect(container.value) }
+            .selectable(selected = selected, interactionSource = source, indication = LocalIndication.current, onClick = onClick, role = Role.RadioButton)
+            .drawWithContent {
+                drawContent()
+                val strokePx = borderWidth.value.toPx()
+                val cornerPx = cardShape.topStart.toPx(size, this)
+                val half = strokePx / 2f
+                drawRoundRect(
+                    color = borderColor.value,
+                    topLeft = Offset(half, half),
+                    size = Size(size.width - strokePx, size.height - strokePx),
+                    cornerRadius = CornerRadius((cornerPx - half).coerceAtLeast(0f)),
+                    style = Stroke(width = strokePx),
+                )
+            },
+        contentAlignment = Alignment.CenterStart,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = spacing.space4, vertical = spacing.space3),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(spacing.space3),
         ) {
-            Surface(
-                modifier = Modifier.size(layout.badge),
-                shape = MaterialTheme.shapes.medium,
-                color = badgeContainer,
-                contentColor = badgeContent,
+            Box(
+                modifier = Modifier
+                    .size(layout.badge)
+                    .clip(badgeShape)
+                    .drawBehind { drawRect(badgeContainer.value) },
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (badgeIcon != null) {
-                        Icon(badgeIcon, contentDescription = null, modifier = Modifier.size(layout.icon))
-                    } else if (badge != null) {
-                        Text(badge, style = MaterialTheme.typography.titleSmall)
-                    }
+                if (badgeIcon != null) {
+                    AnimatedTintedIcon(badgeIcon, badgeContent, Modifier.size(layout.icon))
+                } else if (badge != null) {
+                    BasicText(badge, style = MaterialTheme.typography.titleSmall, color = { badgeContent.value })
                 }
             }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(spacing.space1),
             ) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                BasicText(title, style = MaterialTheme.typography.titleMedium, color = { content.value })
                 // an empty description leaves only the title (the language choice of the settings)
                 if (description.isNotEmpty()) {
-                    Text(
+                    BasicText(
                         description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = descriptionColor,
+                        color = { descriptionColor.value },
                     )
                 }
             }
             // the mark shows the choice by shape as well as by color
-            Surface(
-                modifier = Modifier.size(layout.icon),
-                shape = CircleShape,
-                color = markColor,
-                contentColor = colors.onPrimary,
-                border = if (selected) null else BorderStroke(layout.borderThick, colors.outline),
+            Box(
+                modifier = Modifier
+                    .size(layout.icon)
+                    .clip(CircleShape)
+                    .drawBehind {
+                        drawCircle(markColor.value)
+                        if (!selected) {
+                            val strokePx = layout.borderThick.toPx()
+                            drawCircle(
+                                color = colors.outline,
+                                radius = (size.minDimension - strokePx) / 2f,
+                                style = Stroke(width = strokePx),
+                            )
+                        }
+                    },
+                contentAlignment = Alignment.Center,
             ) {
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = selected,
                     enter = fadeIn(motion.spec(motion.durationShort)),
                     exit = fadeOut(motion.spec(motion.durationShort)),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(layout.iconSmall))
+                        Icon(Icons.Rounded.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(layout.iconSmall))
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun AnimatedTintedIcon(icon: ImageVector, tint: State<Color>, modifier: Modifier) {
+    Icon(icon, contentDescription = null, tint = tint.value, modifier = modifier)
 }

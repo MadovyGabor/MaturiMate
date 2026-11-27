@@ -12,8 +12,12 @@ import com.madovygabor.maturimate.features.userProfile.domain.UserProfile
 import com.madovygabor.maturimate.features.userProfile.domain.SubjectLevel
 import com.madovygabor.maturimate.features.userProfile.domain.UserRole
 import com.madovygabor.maturimate.features.userProfile.domain.UserSubject
+import com.madovygabor.maturimate.testutil.testDbDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -288,5 +292,32 @@ class UserProfileRepositoryImplTest {
         assertFalse(current().reminderEnabled)
         // the time is kept to offer it again
         assertEquals(LocalTime(7, 30), current().reminderTime)
+    }
+
+    @Test
+    fun sharedProfileDeliversUpdatesAndAccountSwitchesToAllCollectors() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val shared = UserProfileRepositoryImpl(
+                database, localUser, testDbDispatcher(),
+                timeZone = { "Europe/Budapest" },
+                now = { Instant.fromEpochMilliseconds(7_000) },
+                shareScope = scope,
+            )
+            shared.saveDailyGoal(10).ok()
+            val firstGoal = async { shared.profile.first { it?.dailyGoalMinutes == 15 } }
+            val secondGoal = async { shared.profile.first { it?.dailyGoalMinutes == 15 } }
+
+            shared.saveDailyGoal(15).ok()
+
+            assertEquals(15, withTimeout(5_000) { firstGoal.await() }?.dailyGoalMinutes)
+            assertEquals(15, withTimeout(5_000) { secondGoal.await() }?.dailyGoalMinutes)
+
+            localUser.adoptAccount("account-42")
+            val switched = withTimeout(5_000) { shared.profile.first { it?.dailyGoalMinutes == 15 } }
+            assertEquals(15, switched?.dailyGoalMinutes)
+        } finally {
+            scope.cancel()
+        }
     }
 }

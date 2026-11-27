@@ -85,14 +85,15 @@ expect fun rememberReducedMotion(): Boolean
 fun Modifier.pressScale(source: InteractionSource): Modifier {
     val motion = MaterialTheme.motion
     val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(
+    val scale = animateFloatAsState(
         targetValue = if (pressed) motion.pressScale else 1f,
         animationSpec = motion.spec(motion.durationShort),
         label = "pressScale",
     )
     return graphicsLayer {
-        scaleX = scale
-        scaleY = scale
+        val s = scale.value
+        scaleX = s
+        scaleY = s
     }
 }
 
