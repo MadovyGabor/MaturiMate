@@ -18,26 +18,9 @@ val DESKTOP_AUTH_TIMEOUT: Duration = 3.minutes
 /** The longest the exchange of a code that came in may take; it runs to its end even when [DESKTOP_AUTH_TIMEOUT] is up. */
 val DESKTOP_AUTH_EXCHANGE_LIMIT: Duration = 30.seconds
 
-/** The pages the browser shows at the end of the sign-in: the app's own, in Slovak and Hungarian (jvmMain resources). */
-private const val SIGN_IN_DONE_PAGE = "/auth/sign-in-done.html"
-private const val SIGN_IN_FAILED_PAGE = "/auth/sign-in-failed.html"
-
 /**
  * Nothing to set on desktop: the Google sign-in does not use the library's callback server (`signInWith`), which listened
  * on every network interface and accepted tokens in the query. The app's own receiver does it instead
  * (features/auth/presentation/GoogleSignIn.jvm.kt): loopback only, the PKCE code only.
  */
 actual fun AuthConfig.platformAuthConfig() = Unit
-
-/** The page after a successful sign-in; a bare page with the app's name if it is missing. */
-internal fun signInDonePage(): String = page(SIGN_IN_DONE_PAGE)
-
-/** The page after a refused or failed sign-in: back to the app, try again. */
-internal fun signInFailedPage(): String = page(SIGN_IN_FAILED_PAGE)
-
-private fun page(path: String): String =
-    DesktopAuthPage::class.java.getResource(path)?.readText(Charsets.UTF_8)
-        ?: "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>MaturiMate</title></head><body><h1>MaturiMate</h1></body></html>"
-
-/** Only an anchor for the resource lookup. */
-private object DesktopAuthPage

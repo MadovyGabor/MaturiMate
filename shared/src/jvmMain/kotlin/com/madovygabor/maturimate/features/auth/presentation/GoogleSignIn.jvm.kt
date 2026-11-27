@@ -11,6 +11,8 @@ import com.madovygabor.maturimate.core.network.DESKTOP_AUTH_EXCHANGE_LIMIT
 import com.madovygabor.maturimate.core.network.DESKTOP_AUTH_TIMEOUT
 import com.madovygabor.maturimate.core.network.signInDonePage
 import com.madovygabor.maturimate.core.network.signInFailedPage
+import com.madovygabor.maturimate.core.network.warmUpDesktopAuthPages
+import com.madovygabor.maturimate.core.presentation.locale.LocalAppLocale
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.SignInsInFlight
 import io.github.jan.supabase.SupabaseClient
@@ -20,6 +22,7 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.withCharset
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.path
@@ -58,10 +61,15 @@ actual fun rememberGoogleSignIn(onSignedIn: () -> Unit, onError: (AuthError) -> 
     val scope = rememberCoroutineScope()
     val signedIn by rememberUpdatedState(onSignedIn)
     val failed by rememberUpdatedState(onError)
+    val languageTag by rememberUpdatedState(LocalAppLocale.current)
     // the app's one tracker (AppModul), so a cancelled deletion proof can wait for a late exchange
     val signIns = remember { getKoin().getOrNull<SignInsInFlight>() ?: SignInsInFlight() }
     val flow = remember(client, accountHint) {
-        DesktopGoogleSignIn(SupabaseBrowserAuth(client.auth, accountHint), LoopbackCallback(DESKTOP_AUTH_CALLBACK_PORT), signIns = signIns)
+        DesktopGoogleSignIn(
+            SupabaseBrowserAuth(client.auth, accountHint),
+            LoopbackCallback(DESKTOP_AUTH_CALLBACK_PORT, language = { languageTag }),
+            signIns = signIns,
+        )
     }
     // leaving the screen cancels the wait (the scope ends) without a callback: the open flow then reports onClosed
     val open = rememberOpenGoogleFlow(onClosed)
@@ -145,6 +153,7 @@ internal class LoopbackCallback(
     private val port: Int,
     private val host: String = LOOPBACK,
     private val exchangeLimit: Duration = DESKTOP_AUTH_EXCHANGE_LIMIT,
+    private val language: () -> String = { java.util.Locale.getDefault().toLanguageTag() },
 ) {
 
     /** The address the server listened on in the last [receive], as `host:port`; for the tests. */
@@ -171,14 +180,14 @@ internal class LoopbackCallback(
                         // any other path (the root, a guessed secret, the favicon): as if nothing were here
                         !sameText(call.request.path(), path) -> call.respond(HttpStatusCode.NotFound)
                         parameters["error"] != null && taken.compareAndSet(false, true) -> {
-                            call.respondText(signInFailedPage(), ContentType.Text.Html)
+                            call.respondText(signInFailedPage(language()), ContentType.Text.Html.withCharset(Charsets.UTF_8))
                             outcome.complete(CallbackOutcome.Refused)
                         }
                         code != null && taken.compareAndSet(false, true) -> {
                             exchanging.set(true)
                             if (closing.get()) {
                                 outcome.complete(CallbackOutcome.TimedOut)
-                                call.respondText(signInFailedPage(), ContentType.Text.Html)
+                                call.respondText(signInFailedPage(language()), ContentType.Text.Html.withCharset(Charsets.UTF_8))
                                 return@get
                             }
                             // bounded, and not cut off by the end of the wait or of the screen (the server stops only after it)
@@ -194,7 +203,8 @@ internal class LoopbackCallback(
                             }
                             // the outcome first: the page below can fail (the browser went away) without losing it
                             outcome.complete(result)
-                            call.respondText(if (result is CallbackOutcome.SignedIn) signInDonePage() else signInFailedPage(), ContentType.Text.Html)
+                            val page = if (result is CallbackOutcome.SignedIn) signInDonePage(language()) else signInFailedPage(language())
+                            call.respondText(page, ContentType.Text.Html.withCharset(Charsets.UTF_8))
                         }
                         // tokens in the query (the implicit flow), a second code: not taken
                         else -> call.respond(HttpStatusCode.NotFound)
@@ -202,6 +212,8 @@ internal class LoopbackCallback(
                 }
             }
         }
+        // the pages embed the app's fonts and logo: read them now, not after the outcome (the server stops soon after it)
+        withContext(Dispatchers.IO) { warmUpDesktopAuthPages() }
         server.startSuspend(wait = false)
         try {
             val connector = server.engine.resolvedConnectors().first()

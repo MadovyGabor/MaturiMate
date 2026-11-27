@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!-- MaturiMate auth e-mail (confirm-signup). Pasted into Supabase: Authentication, Emails. Colours from
+     docs/design-system/tokens.json (light by default; dark when the mail client is in dark mode). See README.md. -->
+<html lang="{{ if eq .Data.lang "sk" }}sk{{ else }}hu{{ end }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>{{ if eq .Data.lang "sk" }}MaturiMate – potvrdzovací kód{{ else }}MaturiMate – megerősítő kód{{ end }}</title>
+  <style>
+    @media (prefers-color-scheme: dark) {
+      body, .mm-page { background-color: #17130e !important; }
+      .mm-card { background-color: #241e17 !important; }
+      .mm-text { color: #ece1d4 !important; }
+      .mm-muted { color: #d3c4ad !important; }
+      .mm-primary { color: #f4c04e !important; }
+      .mm-code-box { background-color: #5c4300 !important; }
+      .mm-code { color: #ffde9c !important; }
+      .mm-rule { border-color: #4f4537 !important; }
+    }
+    @media (max-width: 480px) {
+      .mm-card-pad { padding: 32px 20px !important; }
+      .mm-code { font-size: 30px !important; letter-spacing: 6px !important; }
+    }
+  </style>
+</head>
+<body class="mm-page" style="margin:0; padding:0; background-color:#f2ebdf; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="mm-page" style="background-color:#f2ebdf;">
+    <tr>
+      <td align="center" style="padding:32px 16px 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:520px;">
+          <!-- header: the wordmark above the card -->
+          <tr>
+            <td align="center" style="padding:0 0 24px 0;">
+              <!-- LOGO: later (an image could go left of the wordmark) -->
+              <span class="mm-text" style="font-family:Literata, Georgia, 'Times New Roman', serif; font-size:28px; line-height:36px; font-weight:600; color:#211b13;">Maturi</span><span class="mm-primary" style="font-family:Literata, Georgia, 'Times New Roman', serif; font-size:28px; line-height:36px; font-weight:600; color:#7b5800;">Mate</span>
+            </td>
+          </tr>
+          <!-- the card -->
+          <tr>
+            <td class="mm-card mm-card-pad" align="center" style="background-color:#ffffff; border-radius:16px; padding:40px 40px 32px 40px; text-align:center;">
+              <p class="mm-primary" style="margin:0 0 12px 0; font-family:Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:16px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#7b5800;">{{ if eq .Data.lang "sk" }}Potvrdenie účtu{{ else }}Fiók megerősítése{{ end }}</p>
+              <h1 class="mm-text" style="margin:0 0 12px 0; font-family:Literata, Georgia, 'Times New Roman', serif; font-size:28px; line-height:36px; font-weight:600; color:#211b13;">{{ if eq .Data.lang "sk" }}Zadaj kód{{ else }}Írd be a kódot{{ end }}</h1>
+              <p class="mm-muted" style="margin:0 0 28px 0; font-family:Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:16px; line-height:24px; color:#4f4537;">{{ if eq .Data.lang "sk" }}Týmto kódom potvrdíš svoj účet v aplikácii MaturiMate.{{ else }}Ezzel a kóddal erősítheted meg a fiókodat a MaturiMate alkalmazásban.{{ end }}</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 16px 0;">
+                <tr>
+                  <td align="center" class="mm-code-box" style="background-color:#ffde9c; border-radius:12px; padding:20px 16px;">
+                    <span class="mm-code" style="font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:36px; line-height:44px; font-weight:700; letter-spacing:10px; color:#261a00; mso-line-height-rule:exactly;">{{ .Token }}</span>
+                  </td>
+                </tr>
+              </table>
+              <p class="mm-text" style="margin:0 0 28px 0; font-family:Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:20px; font-weight:600; color:#211b13;">{{ if eq .Data.lang "sk" }}Kód platí 1 hodinu.{{ else }}A kód 1 óráig érvényes.{{ end }}</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr><td class="mm-rule" style="border-top:1px solid #e6ddcf; font-size:0; line-height:0;">&nbsp;</td></tr>
+              </table>
+              <p class="mm-muted" style="margin:20px 0 0 0; font-family:Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:20px; color:#4f4537;">{{ if eq .Data.lang "sk" }}Ak si účet nevytváraš, tento e-mail pokojne ignoruj.{{ else }}Ha nem te kérted ezt a kódot, nyugodtan hagyd figyelmen kívül ezt a levelet.{{ end }}</p>
+            </td>
+          </tr>
+          <!-- footer below the card -->
+          <tr>
+            <td align="center" style="padding:24px 16px 0 16px; text-align:center;">
+              <p class="mm-primary" style="margin:0 0 4px 0; font-family:Literata, Georgia, 'Times New Roman', serif; font-size:14px; line-height:20px; font-weight:600; color:#7b5800;">{{ if eq .Data.lang "sk" }}Maturita po malých krokoch.{{ else }}Az érettségi, apró lépésekben.{{ end }}</p>
+              <p class="mm-muted" style="margin:0; font-family:Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:16px; color:#4f4537;">{{ if eq .Data.lang "sk" }}Tento e-mail ti poslala aplikácia MaturiMate automaticky, neodpovedaj naň.{{ else }}Ezt a levelet a MaturiMate küldte automatikusan, ne válaszolj rá.{{ end }}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

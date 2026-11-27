@@ -15,6 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -82,12 +83,19 @@ class DesktopGoogleSignInTest {
     private fun receiver() = LoopbackCallback(port = 0)
 
     /** The browser coming back: a GET to the receiver at the redirect address; its HTTP status. */
-    private suspend fun visit(redirectUrl: String, query: String): Int = withContext(Dispatchers.IO) {
+    private suspend fun visit(redirectUrl: String, query: String): Int = visitWithBody(redirectUrl, query).first
+
+    /** The browser coming back: a GET to the receiver at the redirect address; its HTTP status and body. */
+    private suspend fun visitWithBody(redirectUrl: String, query: String): Pair<Int, String> = withContext(Dispatchers.IO) {
         val url = URI("$redirectUrl?$query").toURL()
         (url.openConnection() as HttpURLConnection).run {
             connectTimeout = 2_000
             readTimeout = 5_000
-            responseCode.also { disconnect() }
+            val code = responseCode
+            val stream = if (code in 200..299) inputStream else errorStream
+            val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+            disconnect()
+            code to body
         }
     }
 
@@ -349,6 +357,57 @@ class DesktopGoogleSignInTest {
         assertTrue(signIns.awaitNone(10.seconds))
         assertEquals(SessionKey("user-1", "new-token"), auth.session)
         browser.coroutineContext[Job]!!.cancel()
+    }
+
+    @Test
+    fun callbackServesSuccessAndFailurePagesInTheAppLanguageWithoutReflectingQueryInput() = runBlocking<Unit> {
+        for ((lang, doneHeading, failedHeading) in listOf(
+            Triple("hu", "Sikeresen bejelentkeztél", "A bejelentkezés nem sikerült"),
+            Triple("sk", "Prihlásenie prebehlo úspešne", "Prihlásenie sa nepodarilo"),
+        )) {
+            val (doneStatus, doneBody) = pageAfter(lang, "code=abc&injected=%3Cscript%3Ealert(1)%3C%2Fscript%3E", expectSignedIn = true)
+            assertEquals(200, doneStatus)
+            assertTrue("lang=\"$lang\"" in doneBody, doneBody)
+            assertTrue(doneHeading in doneBody, doneBody)
+            assertTrue("<script" !in doneBody.lowercase() && "alert(1)" !in doneBody, doneBody)
+
+            val (refusedStatus, refusedBody) = pageAfter(
+                lang,
+                "error=%3Cscript%3Ealert(1)%3C%2Fscript%3E&error_description=%3Cb%3Einjected-desc%3C%2Fb%3E",
+                expectSignedIn = false,
+            )
+            assertEquals(200, refusedStatus)
+            assertTrue("lang=\"$lang\"" in refusedBody, refusedBody)
+            assertTrue(failedHeading in refusedBody, refusedBody)
+            assertTrue("<script" !in refusedBody.lowercase() && "injected-desc" !in refusedBody, refusedBody)
+
+            val (failedStatus, failedBody) = pageAfter(
+                lang,
+                "code=abc",
+                expectSignedIn = false,
+                exchangeFails = IllegalStateException("secret-cause-<b>boom</b>"),
+            )
+            assertEquals(200, failedStatus)
+            assertTrue("lang=\"$lang\"" in failedBody, failedBody)
+            assertTrue(failedHeading in failedBody, failedBody)
+            assertTrue("secret-cause" !in failedBody && "<b>" !in failedBody, failedBody)
+        }
+    }
+
+    /** One sign-in in [lang] whose browser comes back with [query]; the page the browser got (awaited, not raced). */
+    private suspend fun pageAfter(
+        lang: String,
+        query: String,
+        expectSignedIn: Boolean,
+        exchangeFails: Exception? = null,
+    ): Pair<Int, String> {
+        val response = CompletableDeferred<Pair<Int, String>>()
+        val auth = FakeBrowserAuth(exchangeFails = exchangeFails) { redirect ->
+            scope.launch { response.complete(visitWithBody(redirect, query)) }
+        }
+        val expected: OperationResult<Unit, AuthError> = if (expectSignedIn) OperationResult.Success(Unit) else OperationResult.Error(AuthError.UNKNOWN)
+        assertEquals(expected, flow(auth, LoopbackCallback(0, language = { lang })).signIn())
+        return withTimeout(5.seconds) { response.await() }
     }
 
     /** A non-loopback IPv4 address of this machine, or null when it has none (then that half is skipped). */
