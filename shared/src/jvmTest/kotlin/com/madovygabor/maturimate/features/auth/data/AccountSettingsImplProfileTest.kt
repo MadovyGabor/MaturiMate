@@ -141,8 +141,8 @@ class AccountSettingsImplProfileTest : AccountSettingsImplTestBase() {
         val saver = ExportSaver { name, text -> saved = name to text; "/home/anna/$name" }
         val settings = AccountSettingsImpl(Auth(), profiles, localUser, dbDispatcher, account = Server(), exportSaver = saver, today = { "2026-11-12" })
 
-        assertEquals(OperationResult.Success("/home/anna/maturimate-adataim-2026-11-12.json"), settings.exportData())
-        assertEquals("maturimate-adataim-2026-11-12.json", saved?.first)
+        assertEquals(OperationResult.Success("/home/anna/maturimate-export-2026-11-12.json"), settings.exportData())
+        assertEquals("maturimate-export-2026-11-12.json", saved?.first)
         // the same data, one field per line, so a person can read the file
         val text = saved!!.second
         assertEquals(Json.parseToJsonElement(EXPORT), Json.parseToJsonElement(text))

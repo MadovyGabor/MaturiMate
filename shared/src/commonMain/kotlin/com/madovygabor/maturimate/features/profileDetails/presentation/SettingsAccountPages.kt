@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import com.madovygabor.maturimate.core.presentation.theme.extendedColors
 import com.madovygabor.maturimate.core.presentation.theme.layout
@@ -49,15 +51,35 @@ import maturimate.shared.generated.resources.account_password_rule_length
 import maturimate.shared.generated.resources.code_confirm
 import maturimate.shared.generated.resources.code_label
 import maturimate.shared.generated.resources.code_resend
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_confirm
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_desc
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_google_confirm
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_google_text
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_password
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_section_confirm
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_warning_short
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_word
+import maturimate.shared.generated.resources.password_rule_met
+import maturimate.shared.generated.resources.password_rule_unmet
 import maturimate.shared.generated.resources.settings_delete_word_prompt
 import maturimate.shared.generated.resources.settings_edit_password_desc
 import maturimate.shared.generated.resources.settings_password
@@ -123,13 +145,19 @@ fun SettingsPasswordPage(
     onSendCode: () -> Unit,
     onBack: () -> Unit,
     onSave: (oldPassword: String, newPassword: String, code: String?) -> Unit,
+    onBackToForm: () -> Unit = onBack,
 ) {
-    // Current password is never written to saved state (plain remember): a rotation asks for it again.
+    // Passwords and one-time codes are kept in memory only (plain remember), never written to Android SavedState.
     var old by remember { mutableStateOf("") }
-    var new by rememberSaveable { mutableStateOf("") }
-    var repeat by rememberSaveable { mutableStateOf("") }
-    var code by rememberSaveable { mutableStateOf("") }
+    var new by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
     var newShown by rememberSaveable { mutableStateOf(false) }
+
+    // If rotation cleared in-memory passwords while on the CODE step, return to FORM instead of disabling Confirm forever.
+    LaunchedEffect(pageState.step, old) {
+        if (pageState.step == PasswordStep.CODE && old.isEmpty()) onBackToForm()
+    }
 
     val error = pageState.error
     val oldError = error == AuthError.INVALID_CREDENTIALS
@@ -149,47 +177,25 @@ fun SettingsPasswordPage(
                 canSave = formReady,
                 saving = busy,
             ) {
-                val clearIfError: () -> Unit = { if (error != null) onClearError() }
-                SettingsSectionCard(stringResource(Res.string.settings_password_section_current)) {
-                    AppTextField(
-                        value = old,
-                        onValueChange = { old = it; clearIfError() },
-                        label = stringResource(Res.string.settings_password_old),
-                        password = true,
-                        contentType = ContentType.Password,
-                        enabled = !busy,
-                        imeAction = ImeAction.Next,
-                        error = if (oldError) stringResource(Res.string.settings_password_wrong) else null,
-                    )
-                }
-                SettingsSectionCard(stringResource(Res.string.settings_password_section_new)) {
-                    AppTextField(
-                        value = new,
-                        onValueChange = { new = it; clearIfError() },
-                        label = stringResource(Res.string.settings_password_new),
-                        password = true,
-                        passwordShown = newShown,
-                        onPasswordShownChange = { newShown = it },
-                        contentType = ContentType.NewPassword,
-                        enabled = !busy,
-                        imeAction = ImeAction.Next,
-                        error = if (newError) error?.toUiText()?.asString() else null,
-                    )
-                    AppTextField(
-                        value = repeat,
-                        onValueChange = { repeat = it; clearIfError() },
-                        label = stringResource(Res.string.settings_password_repeat),
-                        password = true,
-                        passwordShown = newShown,
-                        onPasswordShownChange = { newShown = it },
-                        contentType = ContentType.NewPassword,
-                        enabled = !busy,
-                        imeAction = ImeAction.Done,
-                        onImeAction = { if (formReady && !busy) onSave(old, new, null) },
-                        error = if (mismatch) stringResource(Res.string.settings_password_mismatch) else null,
-                    )
-                    SettingsPasswordRules(new)
-                }
+                CurrentPasswordCard(
+                    old = old,
+                    busy = busy,
+                    oldError = oldError,
+                    onOldChange = { old = it; if (error != null) onClearError() },
+                )
+                NewPasswordCard(
+                    new = new,
+                    repeat = repeat,
+                    newShown = newShown,
+                    busy = busy,
+                    newErrorText = if (newError) error.toUiText().asString() else null,
+                    mismatch = mismatch,
+                    formReady = formReady,
+                    onNewChange = { new = it; if (error != null) onClearError() },
+                    onRepeatChange = { repeat = it; if (error != null) onClearError() },
+                    onShownChange = { newShown = it },
+                    onSubmit = { if (formReady && !busy) onSave(old, new, null) },
+                )
                 error?.takeIf { !oldError && !newError }?.let { PageErrorText(it) }
             }
         }
@@ -198,7 +204,7 @@ fun SettingsPasswordPage(
                 title = stringResource(Res.string.settings_password_reauth_title),
                 description = if (pageState.codeSent) stringResource(Res.string.settings_password_reauth_sent, email)
                 else stringResource(Res.string.settings_password_reauth_need_send),
-                onBack = onBack,
+                onBack = onBackToForm,
                 onSave = { onSave(old, new, code) },
                 canSave = codeReady,
                 saving = busy,
@@ -211,11 +217,12 @@ fun SettingsPasswordPage(
                         label = stringResource(Res.string.code_label),
                         enabled = !busy,
                         imeAction = ImeAction.Done,
-                        error = if (codeError) error?.toUiText()?.asString() else null,
+                        onImeAction = { if (codeReady && !busy) onSave(old, new, code) },
+                        error = if (codeError) error.toUiText().asString() else null,
                     )
                     AppButton(
                         text = stringResource(if (pageState.codeSent) Res.string.code_resend else Res.string.settings_password_code_send),
-                        onClick = onSendCode,
+                        onClick = { code = ""; onSendCode() },
                         variant = AppButtonVariant.TEXT,
                         enabled = !busy,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -227,9 +234,76 @@ fun SettingsPasswordPage(
     }
 }
 
+@Composable
+private fun CurrentPasswordCard(
+    old: String,
+    busy: Boolean,
+    oldError: Boolean,
+    onOldChange: (String) -> Unit,
+) {
+    SettingsSectionCard(stringResource(Res.string.settings_password_section_current)) {
+        AppTextField(
+            value = old,
+            onValueChange = onOldChange,
+            label = stringResource(Res.string.settings_password_old),
+            password = true,
+            contentType = ContentType.Password,
+            enabled = !busy,
+            imeAction = ImeAction.Next,
+            error = if (oldError) stringResource(Res.string.settings_password_wrong) else null,
+        )
+    }
+}
+
+@Composable
+private fun NewPasswordCard(
+    new: String,
+    repeat: String,
+    newShown: Boolean,
+    busy: Boolean,
+    newErrorText: String?,
+    mismatch: Boolean,
+    formReady: Boolean,
+    onNewChange: (String) -> Unit,
+    onRepeatChange: (String) -> Unit,
+    onShownChange: (Boolean) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    SettingsSectionCard(stringResource(Res.string.settings_password_section_new)) {
+        AppTextField(
+            value = new,
+            onValueChange = onNewChange,
+            label = stringResource(Res.string.settings_password_new),
+            password = true,
+            passwordShown = newShown,
+            onPasswordShownChange = onShownChange,
+            contentType = ContentType.NewPassword,
+            enabled = !busy,
+            imeAction = ImeAction.Next,
+            error = newErrorText,
+        )
+        AppTextField(
+            value = repeat,
+            onValueChange = onRepeatChange,
+            label = stringResource(Res.string.settings_password_repeat),
+            password = true,
+            passwordShown = newShown,
+            onPasswordShownChange = onShownChange,
+            contentType = ContentType.NewPassword,
+            enabled = !busy,
+            imeAction = ImeAction.Done,
+            onImeAction = { if (formReady && !busy) onSubmit() },
+            error = if (mismatch) stringResource(Res.string.settings_password_mismatch) else null,
+        )
+        SettingsPasswordRules(new)
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingsPasswordRules(password: String) {
+    val metText = stringResource(Res.string.password_rule_met)
+    val unmetText = stringResource(Res.string.password_rule_unmet)
     val rules = listOf(
         stringResource(Res.string.account_password_rule_length) to AccountRules.passwordHasLength(password),
         stringResource(Res.string.account_password_rule_case) to AccountRules.passwordHasBothCases(password),
@@ -241,7 +315,13 @@ private fun SettingsPasswordRules(password: String) {
     ) {
         for ((text, met) in rules) {
             val color = if (met) MaterialTheme.extendedColors.success else MaterialTheme.colorScheme.onSurfaceVariant
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space1)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.space1),
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    stateDescription = if (met) metText else unmetText
+                },
+            ) {
                 Icon(
                     imageVector = if (met) Icons.Rounded.Check else Icons.Rounded.RadioButtonUnchecked,
                     contentDescription = null,
@@ -312,7 +392,7 @@ fun SettingsDeletePage(
         SettingsSectionCard(stringResource(Res.string.settings_delete_section_confirm)) {
             AppTextField(
                 value = typed,
-                onValueChange = { typed = it },
+                onValueChange = { typed = it; if (error != null) onClearError() },
                 label = stringResource(Res.string.settings_delete_word_prompt, word),
                 enabled = !busy,
                 imeAction = if (withPassword) ImeAction.Next else ImeAction.Done,

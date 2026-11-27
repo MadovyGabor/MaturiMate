@@ -16,8 +16,11 @@ import com.madovygabor.maturimate.features.auth.domain.AccountUser
 import com.madovygabor.maturimate.features.auth.domain.AuthError
 import com.madovygabor.maturimate.features.auth.domain.AuthRepository
 import com.madovygabor.maturimate.features.auth.domain.DeletionProof
+import com.madovygabor.maturimate.features.content.domain.ContentUpdater
 import com.madovygabor.maturimate.features.learning.domain.LearningError
 import com.madovygabor.maturimate.features.learning.domain.ProgressRepository
+import com.madovygabor.maturimate.features.sync.domain.SyncEngine
+import com.madovygabor.maturimate.features.sync.domain.SyncTriggers
 import com.madovygabor.maturimate.features.userProfile.data.UserProfileRepositoryImpl
 import com.madovygabor.maturimate.features.userProfile.domain.ExamDateRepository
 import com.madovygabor.maturimate.features.userProfile.domain.OfficialExamDate
@@ -140,8 +143,23 @@ abstract class SettingsTestBase {
         progress: ProgressRepository = progress(OperationResult.Success(Unit)),
         snackbar: SnackbarController = SnackbarController(),
         examDates: ExamDateRepository = NoExamDates,
+        syncEngine: SyncEngine? = null,
+        syncTriggers: SyncTriggers? = null,
+        contentUpdater: ContentUpdater? = null,
         manualFeedbackMs: Long = 0L,
-    ) = SettingsViewModel(repository, auth, account, progress, snackbar, examDates, fixedToday = today, manualFeedbackMs = manualFeedbackMs)
+    ) = SettingsViewModel(
+        repository = repository,
+        auth = auth,
+        accountSettings = account,
+        progress = progress,
+        snackbar = snackbar,
+        examDates = examDates,
+        syncEngine = syncEngine,
+        syncTriggers = syncTriggers,
+        contentUpdater = contentUpdater,
+        fixedToday = today,
+        manualFeedbackMs = manualFeedbackMs,
+    )
 
     internal suspend fun SettingsViewModel.loaded() = state.awaitFirst { it?.profile?.role != null }!!
 

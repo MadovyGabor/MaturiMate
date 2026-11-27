@@ -33,6 +33,7 @@ import maturimate.shared.generated.resources.settings_sync_failed_last
 import maturimate.shared.generated.resources.settings_sync_never
 import maturimate.shared.generated.resources.settings_sync_running
 import maturimate.shared.generated.resources.settings_sync_synced
+import maturimate.shared.generated.resources.settings_sync_upload
 import maturimate.shared.generated.resources.settings_sync_waiting_network
 import maturimate.shared.generated.resources.settings_sync_waiting_network_last
 import maturimate.shared.generated.resources.settings_sync_waiting_rounds
@@ -53,7 +54,6 @@ data class SyncRowModel(
 
 data class ContentRowModel(
     val kind: RowStatusKind,
-    val lastSuccessAt: Long?,
     val installedVersion: Long?,
     val latestPendingVersion: Long?,
     val pendingMegabytes: Long,
@@ -91,7 +91,6 @@ fun classifyContent(content: ContentUpdateState): ContentRowModel {
             content.lastSuccessAt != null || content.installedVersion != null -> RowStatusKind.OK
             else -> RowStatusKind.IDLE
         },
-        lastSuccessAt = content.lastSuccessAt,
         installedVersion = content.installedVersion,
         latestPendingVersion = content.pending.maxOfOrNull { it.release.contentVersion },
         pendingMegabytes = megabytes,
@@ -116,10 +115,16 @@ fun formatTimestamp(epochMillis: Long, today: LocalDate?, zone: TimeZone = TimeZ
 }
 
 @Composable
-fun syncRowDisplay(sync: SyncState, today: LocalDate?, onRetry: () -> Unit): StatusRowDisplay {
+fun syncRowDisplay(
+    sync: SyncState,
+    today: LocalDate?,
+    onRetry: () -> Unit,
+    zone: TimeZone = TimeZone.currentSystemDefault(),
+): StatusRowDisplay {
     val model = classifySync(sync)
-    val last = model.lastSuccessAt?.let { formatTimestamp(it, today) }
+    val last = model.lastSuccessAt?.let { formatTimestamp(it, today, zone) }
     val retry = stringResource(Res.string.settings_retry)
+    val upload = stringResource(Res.string.settings_sync_upload)
     return when (model.kind) {
         RowStatusKind.BUSY -> StatusRowDisplay(
             text = stringResource(Res.string.settings_sync_running),
@@ -141,7 +146,7 @@ fun syncRowDisplay(sync: SyncState, today: LocalDate?, onRetry: () -> Unit): Sta
         RowStatusKind.ACTION_NEEDED -> StatusRowDisplay(
             text = pluralStringResource(Res.plurals.settings_sync_waiting_rounds, model.pendingRounds, model.pendingRounds),
             tone = SettingsValueTone.DEFAULT,
-            trailing = SettingsTrailing.Action(retry, onRetry),
+            trailing = SettingsTrailing.Action(upload, onRetry),
         )
         RowStatusKind.OK -> StatusRowDisplay(
             text = stringResource(Res.string.settings_sync_synced, last.orEmpty()),
@@ -157,7 +162,7 @@ fun syncRowDisplay(sync: SyncState, today: LocalDate?, onRetry: () -> Unit): Sta
 }
 
 @Composable
-fun contentRowDisplay(content: ContentUpdateState, today: LocalDate?, onRetryOrDownload: () -> Unit): StatusRowDisplay {
+fun contentRowDisplay(content: ContentUpdateState, onRetryOrDownload: () -> Unit): StatusRowDisplay {
     val model = classifyContent(content)
     val version = model.installedVersion?.let(::formatContentVersion)
     val retry = stringResource(Res.string.settings_retry)

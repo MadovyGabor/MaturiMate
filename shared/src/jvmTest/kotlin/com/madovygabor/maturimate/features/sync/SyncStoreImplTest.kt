@@ -17,7 +17,7 @@ import com.madovygabor.maturimate.features.sync.domain.SyncSettings
 import com.madovygabor.maturimate.features.sync.domain.SyncStreak
 import com.madovygabor.maturimate.features.sync.domain.SyncSubject
 import com.madovygabor.maturimate.features.sync.domain.SyncUnitProgress
-import kotlinx.coroutines.Dispatchers
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +32,7 @@ class SyncStoreImplTest {
         JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) }
     )
     private val localUser = LocalUserProvider(database, newDeviceId = { "dev-1" }, newGuestId = { "guest-1" })
-    private val store = SyncStoreImpl(database, localUser, Dispatchers.Unconfined)
+    private val store = SyncStoreImpl(database, localUser, testDbDispatcher())
     private val userId get() = localUser.userId()
 
     private fun response(

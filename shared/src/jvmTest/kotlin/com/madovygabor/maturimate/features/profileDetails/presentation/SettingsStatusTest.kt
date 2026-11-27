@@ -81,7 +81,6 @@ class SettingsStatusTest : SettingsTestBase() {
             AppTheme {
                 display = contentRowDisplay(
                     ContentUpdateState(lastSuccessAt = noon, installedVersion = null),
-                    today = today,
                     onRetryOrDownload = {},
                 )
             }
@@ -122,7 +121,6 @@ class SettingsStatusTest : SettingsTestBase() {
                         installedVersion = 2026112401L,
                         pending = listOf(PendingPack(ContentRelease(1, 7, 2026112801L, 1_500_000L, "a".repeat(64)))),
                     ),
-                    today = today,
                     onRetryOrDownload = {},
                 )
             }
@@ -138,11 +136,106 @@ class SettingsStatusTest : SettingsTestBase() {
         vm.loaded()
 
         vm.syncNow()
-        vm.state.awaitFirst { it?.sync?.running == true }
-        vm.state.awaitFirst { it?.sync?.running == false }
+        vm.syncState.awaitFirst { it.running }
+        vm.syncState.awaitFirst { !it.running }
 
         vm.updateContent()
-        vm.state.awaitFirst { it?.content?.downloading == true }
-        vm.state.awaitFirst { it?.content?.downloading == false }
+        vm.contentState.awaitFirst { it.downloading }
+        vm.contentState.awaitFirst { !it.downloading }
+    }
+
+    @Test
+    fun syncRowActionNeededUsesUploadLabelAndCheckContentUsesSyncEngine() = runDesktopComposeUiTest(412, 1200) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        lateinit var display: StatusRowDisplay
+        setContent {
+            AppTheme {
+                display = syncRowDisplay(
+                    SyncState(signedIn = true, pendingRounds = 2),
+                    today = today,
+                    onRetry = {},
+                )
+            }
+        }
+        assertEquals(
+            "Feltöltés",
+            (display.trailing as com.madovygabor.maturimate.core.presentation.uiComponents.SettingsTrailing.Action).text,
+        )
+
+        val repo = runBlocking { student(repository()) }
+        var syncCalls = 0
+        val engine = com.madovygabor.maturimate.features.sync.domain.SyncEngine(
+            repository = object : com.madovygabor.maturimate.features.sync.domain.SyncRepository {
+                override suspend fun sync(
+                    cursor: String?,
+                    deviceId: String,
+                    guestMerge: Boolean,
+                    changes: com.madovygabor.maturimate.features.sync.domain.SyncChanges,
+                ): com.madovygabor.maturimate.core.domain.error.OperationResult<com.madovygabor.maturimate.features.sync.domain.SyncResponse, SyncError> {
+                    syncCalls++
+                    return com.madovygabor.maturimate.core.domain.error.OperationResult.Error(SyncError.NETWORK)
+                }
+            },
+            store = java.lang.reflect.Proxy.newProxyInstance(
+                com.madovygabor.maturimate.features.sync.domain.SyncStore::class.java.classLoader,
+                arrayOf(com.madovygabor.maturimate.features.sync.domain.SyncStore::class.java),
+            ) { _, method, _ ->
+                when (method.name) {
+                    "state" -> com.madovygabor.maturimate.features.sync.domain.StoredSyncState(
+                        userId = "u",
+                        cursor = null,
+                        lastPushAt = null,
+                        lastSuccessAt = null,
+                        fullPushPending = false,
+                        guestMergePending = false,
+                        rejectedCount = 0,
+                    )
+                    "pendingSummary" -> Pair(0, null as Long?)
+                    "pending" -> com.madovygabor.maturimate.features.sync.domain.PendingChanges(
+                        com.madovygabor.maturimate.features.sync.domain.SyncChanges(),
+                        null,
+                        moreRounds = false,
+                    )
+                    "pendingCount" -> 0
+                    "cursor" -> null
+                    "needsGuestMerge" -> false
+                    "outgoing" -> com.madovygabor.maturimate.features.sync.domain.SyncChanges()
+                    else -> Unit
+                }
+            } as com.madovygabor.maturimate.features.sync.domain.SyncStore,
+            session = object : com.madovygabor.maturimate.features.sync.domain.SyncSession {
+                override suspend fun isSignedIn() = true
+                override suspend fun deviceId() = "dev"
+            },
+            now = { 10_000L },
+        )
+        val packs = java.lang.reflect.Proxy.newProxyInstance(
+            com.madovygabor.maturimate.features.content.domain.ContentPacks::class.java.classLoader,
+            arrayOf(com.madovygabor.maturimate.features.content.domain.ContentPacks::class.java),
+        ) { _, method, _ ->
+            when (method.name) {
+                "getSchemaVersion" -> 7L
+                "installedSubjects" -> mapOf(1L to com.madovygabor.maturimate.features.content.domain.SubjectContentInfo(false, 2026112401L))
+                "installFailed" -> false
+                else -> null
+            }
+        } as com.madovygabor.maturimate.features.content.domain.ContentPacks
+        val updater = com.madovygabor.maturimate.features.content.domain.ContentUpdater(
+            packs = packs,
+            source = com.madovygabor.maturimate.features.content.domain.PackSource {
+                com.madovygabor.maturimate.core.domain.error.OperationResult.Error(ContentError.NETWORK)
+            },
+            network = com.madovygabor.maturimate.features.content.domain.NetworkState { false },
+            chosenSubjects = { listOf(1L) },
+        )
+
+        val vm = settings(repo, syncEngine = engine, contentUpdater = updater, manualFeedbackMs = 0L)
+        runBlocking {
+            vm.loaded()
+            vm.updateContent()
+            vm.contentState.awaitFirst { it.lastError == ContentError.NETWORK }
+        }
+        assertEquals(1, syncCalls)
+        assertEquals(ContentError.NETWORK, vm.contentState.value.lastError)
     }
 }

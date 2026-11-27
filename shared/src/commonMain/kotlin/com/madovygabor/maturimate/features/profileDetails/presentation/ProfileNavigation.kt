@@ -54,6 +54,8 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
     }
     val back: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
 
+    val push: (NavKey) -> Unit = { dest -> if (backStack.lastOrNull() != dest) backStack.add(dest) }
+
     val transitions = rememberNavTransitions()
     NavDisplay(
         transitionSpec = transitions.forward(),
@@ -68,15 +70,15 @@ fun ProfileNavigation(openPage: MutableState<NavKey> = remember { mutableStateOf
         entryProvider = entryProvider {
             entry<Route.Main.Profile.Overview> {
                 ProfileOverviewScreen(
-                    onSettings = { backStack.add(Route.Main.Profile.Settings) },
-                    onHistory = { backStack.add(Route.Main.Profile.History) },
-                    onSignUp = { backStack.add(Route.Main.Profile.SignUp) },
-                    onSignIn = { backStack.add(Route.Main.Profile.SignIn) },
+                    onSettings = { push(Route.Main.Profile.Settings) },
+                    onHistory = { push(Route.Main.Profile.History) },
+                    onSignUp = { push(Route.Main.Profile.SignUp) },
+                    onSignIn = { push(Route.Main.Profile.SignIn) },
                 )
             }
             entry<Route.Main.Profile.History> { HistoryScreen(onBack = back) }
             entry<Route.Main.Profile.Settings> {
-                SettingsScreen(onBack = back, onSignUp = { backStack.add(Route.Main.Profile.SignUp) }, onSignIn = { backStack.add(Route.Main.Profile.SignIn) })
+                SettingsScreen(onBack = back, onSignUp = { push(Route.Main.Profile.SignUp) }, onSignIn = { push(Route.Main.Profile.SignIn) })
             }
             // the account screens of the onboarding, without its steps and "Körülnézek"; the guest's rows move
             // to the account (LocalUserProvider.adoptAccount), and the profile then shows the name

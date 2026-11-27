@@ -69,6 +69,7 @@
     <string name="profile_not_set">Nenastavené</string>
     <string name="common_cancel">Zrušiť</string>
     <string name="common_ok">OK</string>
+    <string name="common_set">Nastaviť</string>
     <string name="date_title">Kedy maturuješ?</string>
     <string name="date_why">Podľa toho vypočítame odpočítavanie a tvoj plán.</string>
     <string name="date_spring">Jar %1$d</string>
@@ -184,6 +185,8 @@
     <string name="account_password_rule_length">8+ znakov</string>
     <string name="account_password_rule_case">malé a veľké písmeno</string>
     <string name="account_password_rule_digit">číslica</string>
+    <string name="password_rule_met">Splnené</string>
+    <string name="password_rule_unmet">Chýba</string>
     <string name="account_password_hint">Aspoň 8 znakov, s malým a veľkým písmenom a číslicou.</string>
     <string name="account_consent">Mám aspoň 16 rokov a súhlasím s podmienkami používania a so zásadami ochrany osobných údajov.</string>
     <string name="account_consent_required">Ak chceš pokračovať, prijmi podmienky a zásady ochrany súkromia.</string>
@@ -446,19 +449,14 @@
     <string name="settings_sync">Synchronizácia</string>
     <string name="settings_content">Aktualizácia obsahu</string>
     <string name="settings_content_hint">Stiahnutie nových lekcií</string>
-    <string name="settings_content_up_to_date">Aktuálne · verzia %1$s</string>
     <string name="settings_content_available">Nový obsah: %1$s MB</string>
-    <string name="settings_content_downloading">Sťahuje sa…</string>
     <string name="settings_content_mobile">Stiahnuť cez mobilné dáta (%1$s MB)</string>
-    <string name="settings_content_error">Sťahovanie zlyhalo. Ťukni a skús znova.</string>
     <string name="settings_content_install_error">Obsah sa nepodarilo nainštalovať. Zostáva pôvodný obsah.</string>
     <string name="settings_reset">Začať pokrok odznova</string>
     <string name="settings_reset_hint">Séria a čas učenia zostanú</string>
     <string name="settings_sign_out">Odhlásiť sa</string>
     <string name="settings_delete">Zmazanie účtu</string>
     <string name="settings_delete_hint">Všetky tvoje údaje sa zmažú</string>
-    <string name="settings_delete_title">Zmažeš svoj účet?</string>
-    <string name="settings_delete_text">Všetky tvoje údaje, tvoj pokrok aj tvoj účet sa natrvalo zmažú zo servera aj z tohto zariadenia. Nedá sa to vrátiť. Doklad o tvojom súhlase uchováme podľa zákona.</string>
     <string name="settings_delete_confirm">Natrvalo zmazať</string>
     <string name="settings_export">Stiahnuť moje údaje</string>
     <string name="settings_export_hint">Kópia všetkého, čo o tebe uchovávame</string>
@@ -473,26 +471,19 @@
     <string name="settings_sign_out_unsynced_title">Pokrok nie je odoslaný</string>
     <string name="settings_sign_out_unsynced_text">Nepodarilo sa odoslať tvoj pokrok (bez pripojenia). Ak sa teraz odhlásiš, neodoslaná časť sa stratí.</string>
     <string name="settings_sign_out_anyway">Odhlásiť sa aj tak</string>
-    <string name="settings_sync_today">Naposledy: dnes %1$s</string>
-    <string name="settings_sync_date">Naposledy: %1$s</string>
     <plurals name="settings_sync_waiting_rounds">
         <item quantity="one">Čaká na odoslanie: %1$d kolo</item>
         <item quantity="few">Čaká na odoslanie: %1$d kolá</item>
         <item quantity="other">Čaká na odoslanie: %1$d kôl</item>
     </plurals>
-    <string name="settings_sync_waiting">Ešte neodoslané</string>
     <string name="settings_sync_running">Synchronizuje sa…</string>
-    <string name="settings_sync_error">Nepodarilo sa. Ťukni a skús znova.</string>
     <string name="sync_badge_description">Tvoj pokrok ešte nie je odoslaný. Ťukni pre podrobnosti.</string>
-    <string name="settings_name_title">Tvoje meno</string>
     <string name="settings_password_new">Nové heslo</string>
     <string name="settings_password_done">Tvoje heslo sa zmenilo.</string>
     <string name="settings_password_repeat">Nové heslo znova</string>
     <string name="settings_password_mismatch">Dve nové heslá sa nezhodujú.</string>
-    <string name="settings_password_code_text">Na zmenu hesla ti pošleme 6-miestny kód na adresu %1$s.</string>
     <string name="settings_password_code_send">Poslať kód</string>
     <string name="settings_name_done">Meno uložené.</string>
-    <string name="settings_email_fixed">%1$s · zmena zatiaľ nie je možná</string>
     <string name="settings_delete_word">ZMAZAŤ</string>
     <string name="settings_delete_word_prompt">Na potvrdenie napíš slovo %1$s.</string>
     <string name="settings_delete_password">Heslo tvojho účtu</string>
@@ -508,14 +499,12 @@
     <string name="settings_export_shared">Kópia údajov je odovzdaná na zdieľanie.</string>
 
     <!-- Settings S5: own edit pages, clear statuses -->
-    <string name="settings_saved">Nastavenie uložené.</string>
     <string name="settings_retry">Znova</string>
+    <string name="settings_sync_upload">Odoslať</string>
     <string name="settings_edit_role_title">Upraviť rolu</string>
     <string name="settings_edit_role_desc">Podľa toho sa upravia predmety a nastavenia učenia.</string>
-    <string name="settings_role_saved">Rola uložená.</string>
     <string name="settings_edit_school_language_title">Upraviť vyučovací jazyk</string>
     <string name="settings_edit_school_language_desc">Zoznam predmetov sa prispôsobí vybranému vyučovaciemu jazyku.</string>
-    <string name="settings_school_language_saved">Vyučovací jazyk uložený.</string>
     <string name="settings_edit_subjects_title">Upraviť predmety</string>
     <string name="settings_edit_subjects_desc">Vyber si predmety a úroveň angličtiny. Tvoj doterajší pokrok zostane.</string>
     <string name="settings_subjects_saved">Predmety uložené.</string>
@@ -538,13 +527,13 @@
     <string name="settings_password_reauth_sent">Poslali sme 6-miestny kód na adresu %1$s.</string>
     <string name="settings_password_reauth_need_send">Na zmenu hesla je potrebné overenie. Vyžiadaj si 6-miestny kód.</string>
     <string name="error_reauth_required">Na pokračovanie zadaj kód z e-mailu.</string>
-    <string name="settings_delete_desc">Tvoj účet a celý postup sa natrvalo zmažú.</string>
+    <string name="settings_delete_desc">Tvoj účet a celý pokrok sa natrvalo zmažú.</string>
     <string name="settings_delete_warning_short">Táto akcia sa nedá vrátiť späť.</string>
     <string name="settings_delete_section_confirm">Potvrdenie</string>
     <string name="settings_password_section_current">Overenie</string>
     <string name="settings_password_section_new">Nastavenie nového hesla</string>
     <string name="settings_password_section_code">Kód z e-mailu</string>
-    <string name="settings_reset_confirm_title">Potvrdenie reštartu</string>
+    <string name="settings_reset_confirm_title">Potvrdenie začiatku odznova</string>
     <string name="settings_reset_word">ODZNOVA</string>
     <string name="settings_reset_word_prompt">Na potvrdenie napíš: %1$s.</string>
     <string name="settings_reset_word_label">Potvrdzovacie slovo</string>

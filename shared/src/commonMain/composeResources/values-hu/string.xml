@@ -67,6 +67,7 @@
     <string name="profile_not_set">Nincs beállítva</string>
     <string name="common_cancel">Mégse</string>
     <string name="common_ok">OK</string>
+    <string name="common_set">Beállítás</string>
     <string name="date_title">Mikor érettségizel?</string>
     <string name="date_why">Ebből számoljuk a visszaszámlálást és a tervedet.</string>
     <string name="date_spring">%1$d tavasza</string>
@@ -172,6 +173,8 @@
     <string name="account_password_rule_length">8+ karakter</string>
     <string name="account_password_rule_case">kis- és nagybetű</string>
     <string name="account_password_rule_digit">szám</string>
+    <string name="password_rule_met">Teljesül</string>
+    <string name="password_rule_unmet">Hiányzik</string>
     <string name="account_password_hint">Legalább 8 karakter, kis- és nagybetűvel és számmal.</string>
     <string name="account_consent">Elmúltam 16 éves, és elfogadom a felhasználási feltételeket és az adatvédelmi tájékoztatót.</string>
     <string name="account_consent_required">A folytatáshoz fogadd el a feltételeket és az adatvédelmi tájékoztatót.</string>
@@ -428,19 +431,14 @@
     <string name="settings_sync">Szinkronizálás</string>
     <string name="settings_content">Tartalom frissítése</string>
     <string name="settings_content_hint">Új leckék letöltése</string>
-    <string name="settings_content_up_to_date">Naprakész · %1$s. verzió</string>
     <string name="settings_content_available">Új tartalom: %1$s MB</string>
-    <string name="settings_content_downloading">Letöltés…</string>
     <string name="settings_content_mobile">Letöltés mobilneten (%1$s MB)</string>
-    <string name="settings_content_error">A letöltés nem sikerült. Koppints az újrapróbáláshoz.</string>
     <string name="settings_content_install_error">A tartalmat nem sikerült telepíteni. A korábbi tartalom megmaradt.</string>
     <string name="settings_reset">Haladás újrakezdése</string>
     <string name="settings_reset_hint">A sorozat és a tanulási idő megmarad</string>
     <string name="settings_sign_out">Kijelentkezés</string>
     <string name="settings_delete">A fiók törlése</string>
     <string name="settings_delete_hint">Minden adatod törlődik</string>
-    <string name="settings_delete_title">Törlöd a fiókodat?</string>
-    <string name="settings_delete_text">Minden adatod, a haladásod és a fiókod végleg törlődik a szerverről és erről az eszközről. Ez nem vonható vissza. A hozzájárulásod bizonyítékát a törvény szerint megőrizzük.</string>
     <string name="settings_delete_confirm">Végleges törlés</string>
     <string name="settings_export">Adataim letöltése</string>
     <string name="settings_export_hint">Másolat mindenről, amit rólad tárolunk</string>
@@ -455,25 +453,18 @@
     <string name="settings_sign_out_unsynced_title">A haladásod nincs feltöltve</string>
     <string name="settings_sign_out_unsynced_text">Nem sikerült feltölteni a haladásodat (nincs kapcsolat). Ha most kijelentkezel, a fel nem töltött rész elveszik.</string>
     <string name="settings_sign_out_anyway">Kijelentkezés mégis</string>
-    <string name="settings_sync_today">Utoljára: ma %1$s</string>
-    <string name="settings_sync_date">Utoljára: %1$s</string>
     <plurals name="settings_sync_waiting_rounds">
         <item quantity="one">Feltöltésre vár: %1$d kör</item>
         <item quantity="other">Feltöltésre vár: %1$d kör</item>
     </plurals>
-    <string name="settings_sync_waiting">Még nincs feltöltve</string>
     <string name="settings_sync_running">Szinkronizálás…</string>
-    <string name="settings_sync_error">Nem sikerült. Koppints az újrapróbáláshoz.</string>
     <string name="sync_badge_description">A haladásod még nincs feltöltve. Koppints a részletekért.</string>
-    <string name="settings_name_title">A neved</string>
     <string name="settings_password_new">Új jelszó</string>
     <string name="settings_password_done">A jelszavad megváltozott.</string>
     <string name="settings_password_repeat">Új jelszó újra</string>
     <string name="settings_password_mismatch">A két új jelszó nem egyezik.</string>
-    <string name="settings_password_code_text">A jelszó megváltoztatásához küldünk egy 6 jegyű kódot ide: %1$s.</string>
     <string name="settings_password_code_send">Kód küldése</string>
     <string name="settings_name_done">A neved elmentve.</string>
-    <string name="settings_email_fixed">%1$s · a módosítás még nem érhető el</string>
     <string name="settings_delete_word">TÖRLÉS</string>
     <string name="settings_delete_word_prompt">A megerősítéshez írd be: %1$s.</string>
     <string name="settings_delete_password">A fiókod jelszava</string>
@@ -489,14 +480,12 @@
     <string name="settings_export_shared">Az adataid másolatát átadtuk megosztásra.</string>
 
     <!-- Settings S5: own edit pages, clear statuses -->
-    <string name="settings_saved">Beállítás elmentve.</string>
     <string name="settings_retry">Újra</string>
+    <string name="settings_sync_upload">Feltöltés</string>
     <string name="settings_edit_role_title">Szerepkör módosítása</string>
     <string name="settings_edit_role_desc">Ehhez igazodnak a tantárgyak és a tanulási beállítások.</string>
-    <string name="settings_role_saved">Szerepkör elmentve.</string>
     <string name="settings_edit_school_language_title">Tanítási nyelv módosítása</string>
     <string name="settings_edit_school_language_desc">A tantárgyak listája a választott tanítási nyelvhez igazodik.</string>
-    <string name="settings_school_language_saved">Tanítási nyelv elmentve.</string>
     <string name="settings_edit_subjects_title">Tantárgyak módosítása</string>
     <string name="settings_edit_subjects_desc">Válaszd ki a tantárgyaidat és az angol szintet. A korábbi haladásod megmarad.</string>
     <string name="settings_subjects_saved">Tantárgyak elmentve.</string>

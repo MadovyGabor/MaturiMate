@@ -12,7 +12,6 @@ import com.madovygabor.maturimate.features.content.domain.NetworkState
 import com.madovygabor.maturimate.features.content.domain.PackSaveResult
 import com.madovygabor.maturimate.features.content.domain.PackSource
 import com.madovygabor.maturimate.features.content.domain.SubjectContentInfo
-import com.madovygabor.maturimate.features.content.domain.contentVersionDate
 import com.madovygabor.maturimate.features.sync.domain.ContentRelease
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -20,7 +19,6 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -259,9 +257,26 @@ class ContentUpdaterTest {
     }
 
     @Test
-    fun contentVersionDateParsesValidVersionsAndRejectsInvalidOnes() {
-        assertEquals(LocalDate(2026, 11, 24), contentVersionDate(2026112401L))
-        assertNull(contentVersionDate(123L))
-        assertNull(contentVersionDate(2026130101L))
+    fun onCheckFailedRecordsErrorWithoutOverwritingLastSuccess() = runBlocking {
+        val packs = FakePacks(mutableMapOf(1L to SubjectContentInfo(isStarter = false, contentVersion = 2026111201)))
+        val u = updater(packs, subjects = listOf(1))
+        currentNow = 50_000L
+        u.onReleases(listOf(release(1, 2026111201)))
+
+        u.onCheckFailed(ContentError.NETWORK)
+        assertEquals(ContentError.NETWORK, u.state.value.lastError)
+        assertEquals(50_000L, u.state.value.lastSuccessAt)
+    }
+
+    @Test
+    fun onReleasesAllowMobileDataDownloadsOverCellular() = runBlocking {
+        val packs = FakePacks(mutableMapOf(1L to SubjectContentInfo(isStarter = false, contentVersion = 2026111201)))
+        val u = updater(packs, subjects = listOf(1), metered = true)
+        u.onReleases(listOf(release(1, 2026120101, size = 2000L)), allowMobileData = false)
+        assertTrue(u.state.value.needsMobileData)
+
+        u.onReleases(listOf(release(1, 2026120101, size = 2000L)), allowMobileData = true)
+        assertFalse(u.state.value.needsMobileData)
+        assertEquals(2026120101L, packs.installed[1L]?.contentVersion)
     }
 }

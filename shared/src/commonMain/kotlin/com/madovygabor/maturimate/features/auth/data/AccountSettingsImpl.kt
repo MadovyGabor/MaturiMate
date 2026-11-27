@@ -241,7 +241,7 @@ class AccountSettingsImpl(
             is OperationResult.Success -> result.data
             is OperationResult.Error -> return OperationResult.Error(result.error)
         }
-        val name = "maturimate-adataim-${today()}.json"
+        val name = "maturimate-export-${today()}.json"
         val where = (if (share) saver.share(name, pretty(text)) else saver.save(name, pretty(text)))
             ?: return OperationResult.Error(AuthError.UNKNOWN)
         return OperationResult.Success(where)

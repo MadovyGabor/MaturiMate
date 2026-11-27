@@ -24,10 +24,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import maturimate.shared.generated.resources.Res
+import maturimate.shared.generated.resources.settings_app_language_saved
 import maturimate.shared.generated.resources.settings_date_saved
 import maturimate.shared.generated.resources.settings_goal_saved
 import maturimate.shared.generated.resources.settings_name_done
-import maturimate.shared.generated.resources.settings_role_saved
 import maturimate.shared.generated.resources.settings_subjects_saved
 
 @OptIn(ExperimentalTestApi::class)
@@ -140,5 +140,54 @@ class SettingsEditPagesTest : SettingsTestBase() {
 
         val (items, level) = buildSubjectItems(runBlocking { repo.profile.first()!! })
         assertEquals(listOf(1L, 5L, 6L), toUserSubjects(items, level).map { it.subjectId })
+    }
+
+    @Test
+    fun roleAndSchoolLanguageSavesEmitTheirOwnSnackbarsAndLanguageIsGuarded() = runBlocking {
+        val repo = student(repository())
+        val snackbar = SnackbarController()
+        val vm = viewModel(repository = repo, snackbar = snackbar)
+        vm.loaded()
+
+        vm.saveRole(UserRole.TEACHER) {}
+        kotlin.test.assertTrue(snackbar.isQuiet())
+        assertEquals(UserRole.TEACHER, repo.profile.first()!!.role)
+
+        vm.setSchoolLanguage(TeachingLanguage.SK) {}
+        kotlin.test.assertTrue(snackbar.isQuiet())
+        assertEquals(TeachingLanguage.SK, repo.profile.first()!!.teachingLanguage)
+
+        vm.setAppLanguage(TeachingLanguage.SK)
+        assertEquals(said(Res.string.settings_app_language_saved), snackbar.next())
+        assertEquals(TeachingLanguage.SK, repo.profile.first()!!.uiLanguage)
+    }
+
+    @Test
+    fun subjectsPagePreservesUnsavedSelectionAcrossUnrelatedProfileUpdates() = runDesktopComposeUiTest(412, 2400) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val repo = runBlocking { student(repository()) }
+        var saved = false
+        val profileState = androidx.compose.runtime.mutableStateOf(runBlocking { repo.profile.first()!! })
+        setContent {
+            AppTheme {
+                SettingsSubjectsPage(
+                    profile = profileState.value,
+                    afterChange = false,
+                    busy = false,
+                    onBack = {},
+                    onSave = { saved = true },
+                )
+            }
+        }
+
+        waitForText("Matematika")
+        onNodeWithText("Mentés").assertIsNotEnabled()
+        onNodeWithText("Matematika").performClick()
+        onNodeWithText("Mentés").assertIsEnabled()
+
+        // Unrelated profile update (e.g. daily goal change) must not wipe the user's unsaved selection.
+        profileState.value = profileState.value.copy(dailyGoalMinutes = 20)
+        onNodeWithText("Mentés").assertIsEnabled().performClick()
+        assertEquals(true, saved)
     }
 }

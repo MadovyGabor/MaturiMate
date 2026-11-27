@@ -208,4 +208,26 @@ class SettingsDeletionTest : SettingsTestBase() {
         onNodeWithText("Töröl").assertIsNotEnabled().performClick()
         assertEquals(0, confirmed)
     }
+
+    @Test
+    fun typingConfirmationClearsInlineErrorAndFailedDeleteKeepsSnackbarQuiet() = runDesktopComposeUiTest(412, 2400) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val account = FakeAccount().apply { deleteResult = OperationResult.Error(AuthError.INVALID_CREDENTIALS) }
+        val snackbar = com.madovygabor.maturimate.core.presentation.utils.snackbar.SnackbarController()
+        setContent { AppTheme { SettingsScreen(viewModel = viewModel(account, snackbar = snackbar)) } }
+
+        waitForText("A fiók törlése")
+        onNodeWithText("A fiók törlése").performClick()
+        waitForText("Végleges törlés")
+        onNodeWithText("A megerősítéshez írd be: TÖRLÉS.").performTextInput("TÖRLÉS")
+        onNodeWithText("A fiókod jelszava").performTextInput("Wrong123")
+        onNodeWithText("Végleges törlés").assertIsEnabled().performClick()
+        waitForText("A jelszó nem jó.")
+        kotlin.test.assertTrue(runBlocking { snackbar.isQuiet() })
+
+        onNodeWithText("TÖRLÉS").performTextClearance()
+        waitUntil(timeoutMillis = com.madovygabor.maturimate.testutil.TEST_TIMEOUT.inWholeMilliseconds) {
+            onAllNodesWithText("A jelszó nem jó.").fetchSemanticsNodes().isEmpty()
+        }
+    }
 }

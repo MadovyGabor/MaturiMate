@@ -15,7 +15,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respondError
 import io.ktor.http.HttpStatusCode
-import kotlinx.coroutines.Dispatchers
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -51,13 +51,13 @@ class SyncSessionTest {
     @Test
     fun thePhonesOwnAccountIsSignedIn() = runBlocking {
         localUser.adoptAccount("account-x")
-        assertTrue(SyncSessionImpl(auth("account-x"), localUser, Dispatchers.Unconfined).isSignedIn())
+        assertTrue(SyncSessionImpl(auth("account-x"), localUser, testDbDispatcher()).isSignedIn())
     }
 
     @Test
     fun aGuestPhoneIsNotSignedInEvenWithASession() = runBlocking {
         localUser.userId()
-        assertFalse(SyncSessionImpl(auth("account-y"), localUser, Dispatchers.Unconfined).isSignedIn())
+        assertFalse(SyncSessionImpl(auth("account-y"), localUser, testDbDispatcher()).isSignedIn())
     }
 
     // N2: the phone belongs to X (its sync failed offline), then a sign-in to Y that is not set up (no adopt): a sync
@@ -65,12 +65,12 @@ class SyncSessionTest {
     @Test
     fun aSessionOfAnotherAccountIsNotThePhonesAndDoesNotSync() = runBlocking {
         localUser.adoptAccount("account-x")
-        assertFalse(SyncSessionImpl(auth("account-y"), localUser, Dispatchers.Unconfined).isSignedIn())
+        assertFalse(SyncSessionImpl(auth("account-y"), localUser, testDbDispatcher()).isSignedIn())
     }
 
     @Test
     fun noSessionIsNotSignedIn() = runBlocking {
         localUser.adoptAccount("account-x")
-        assertFalse(SyncSessionImpl(auth(null), localUser, Dispatchers.Unconfined).isSignedIn())
+        assertFalse(SyncSessionImpl(auth(null), localUser, testDbDispatcher()).isSignedIn())
     }
 }

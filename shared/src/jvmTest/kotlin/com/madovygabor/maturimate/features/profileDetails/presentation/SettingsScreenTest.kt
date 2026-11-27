@@ -267,7 +267,12 @@ class SettingsScreenTest : SettingsTestBase() {
     fun theLanguageChoicesCarryTheirBadges() = runDesktopComposeUiTest(412, 2400) {
         Locale.setDefault(Locale.forLanguageTag("hu"))
         val state = runBlocking { settings(student(repository())).loaded() }
-        setContent { AppTheme { SettingsContent(state, SettingsActions()) } }
+        setContent {
+            AppTheme {
+                var dialogs by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(SettingsDialogState()) }
+                SettingsContent(state, SettingsActions(onOpenDialog = { dialogs = SettingsDialogState(it) }), dialogs = dialogs)
+            }
+        }
 
         onNodeWithText("Az app nyelve").performClick()
         onAllNodesWithText("HU").assertCountEquals(1)

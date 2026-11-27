@@ -98,17 +98,17 @@ fun AppSettingsRow(
     value: String?,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    note: String? = null,
     valueTone: SettingsValueTone = SettingsValueTone.DEFAULT,
     trailing: SettingsTrailing = if (onClick != null) SettingsTrailing.Arrow else SettingsTrailing.None,
     danger: Boolean = false,
     divider: Boolean = true,
+    animateSize: Boolean = false,
 ) {
     val spacing = MaterialTheme.spacing
     val colors = MaterialTheme.colorScheme
     val extended = MaterialTheme.extendedColors
     val soon = trailing is SettingsTrailing.Soon
-    val action = onClick?.takeUnless { soon }
+    val action = onClick?.takeUnless { soon || trailing is SettingsTrailing.Action }
     val valueColor = when (valueTone) {
         SettingsValueTone.DEFAULT -> colors.onSurfaceVariant
         SettingsValueTone.SUCCESS -> extended.success
@@ -118,7 +118,10 @@ fun AppSettingsRow(
     Row(
         modifier
             .fillMaxWidth()
-            .animateContentSize(animationSpec = MaterialTheme.motion.spec(MaterialTheme.motion.durationShort))
+            .then(
+                if (animateSize) Modifier.animateContentSize(animationSpec = MaterialTheme.motion.spec(MaterialTheme.motion.durationShort))
+                else Modifier
+            )
             .then(
                 if (action == null) Modifier
                 else Modifier.clickable(role = if (trailing is SettingsTrailing.Toggle) Role.Switch else Role.Button, onClick = action)
@@ -140,7 +143,6 @@ fun AppSettingsRow(
         Column(faded.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = if (danger) colors.error else colors.onSurface)
             value?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = valueColor, maxLines = 2, overflow = TextOverflow.Ellipsis) }
-            note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
         }
         when (trailing) {
             SettingsTrailing.Arrow -> Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = colors.onSurfaceVariant)

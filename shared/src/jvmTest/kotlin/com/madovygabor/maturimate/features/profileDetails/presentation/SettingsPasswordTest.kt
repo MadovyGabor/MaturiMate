@@ -187,4 +187,43 @@ class SettingsPasswordTest : SettingsTestBase() {
             }
         }
     }
+
+    @Test
+    fun backFromCodeStepReturnsToFormAndResendClearsCode() = runDesktopComposeUiTest(412, 2400) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val account = FakeAccount().apply { changeResult = OperationResult.Error(AuthError.REAUTHENTICATION_REQUIRED) }
+        val snackbar = SnackbarController()
+        setContent { AppTheme { SettingsScreen(viewModel = viewModel(account, snackbar = snackbar)) } }
+
+        fillThePasswordForm()
+        waitForContentDescription("6 jegyű kód")
+        onNodeWithContentDescription("6 jegyű kód").performTextInput("1234")
+        onNodeWithText("Új kódot kérek").performClick()
+        waitUntil(timeoutMillis = TEST_TIMEOUT.inWholeMilliseconds) { account.codesSent == 2 }
+        onNodeWithText("Megerősítés").assertIsNotEnabled()
+
+        onNodeWithContentDescription("Vissza").performClick()
+        waitForText("Jelenlegi jelszó")
+        onNodeWithText("Új jelszó").assertExists()
+    }
+
+    @Test
+    fun codeFieldImeDoneSubmitsAndWrongCurrentPasswordKeepsSnackbarQuiet() = runDesktopComposeUiTest(412, 2400) {
+        Locale.setDefault(Locale.forLanguageTag("hu"))
+        val account = FakeAccount().apply { changeResult = OperationResult.Error(AuthError.INVALID_CREDENTIALS) }
+        val snackbar = SnackbarController()
+        setContent { AppTheme { SettingsScreen(viewModel = viewModel(account, snackbar = snackbar)) } }
+
+        fillThePasswordForm()
+        waitForText("A jelszó nem jó.")
+        kotlin.test.assertTrue(runBlocking { snackbar.isQuiet() })
+
+        account.changeResult = OperationResult.Error(AuthError.REAUTHENTICATION_REQUIRED)
+        onNodeWithText("Mentés").performClick()
+        waitForContentDescription("6 jegyű kód")
+        account.changeResult = OperationResult.Success(Unit)
+        onNodeWithContentDescription("6 jegyű kód").performTextInput("123456")
+        onNodeWithContentDescription("6 jegyű kód").performImeAction()
+        assertEquals(said(Res.string.settings_password_done), runBlocking { snackbar.next() })
+    }
 }

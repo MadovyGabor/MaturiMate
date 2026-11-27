@@ -61,7 +61,7 @@ class SupabaseSyncRepositoryTest {
         client.auth.importSession(
             UserSession(accessToken = "access", refreshToken = "refresh", expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = "account-x"))
         )
-        SupabaseSyncRepository(client.auth, client.postgrest, localUser, Dispatchers.Unconfined)
+        SupabaseSyncRepository(client.auth, client.postgrest, localUser, com.madovygabor.maturimate.testutil.testDbDispatcher())
     }
 
     @Test

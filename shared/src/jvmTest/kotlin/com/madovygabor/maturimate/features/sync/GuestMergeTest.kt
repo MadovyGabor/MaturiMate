@@ -17,7 +17,7 @@ import com.madovygabor.maturimate.features.sync.domain.SyncRepository
 import com.madovygabor.maturimate.features.sync.domain.SyncResponse
 import com.madovygabor.maturimate.features.sync.domain.SyncSession
 import com.madovygabor.maturimate.features.sync.domain.SyncSettings
-import kotlinx.coroutines.Dispatchers
+import com.madovygabor.maturimate.testutil.testDbDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,7 +30,7 @@ class GuestMergeTest {
 
     private val database = UserDatabase(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, foreignKeysOn()).also { UserDatabase.Schema.create(it) })
     private val localUser = LocalUserProvider(database, newDeviceId = { "dev" }, newGuestId = { "guest-1" })
-    private val store = SyncStoreImpl(database, localUser, Dispatchers.Unconfined)
+    private val store = SyncStoreImpl(database, localUser, testDbDispatcher())
     private val session = object : SyncSession {
         override suspend fun isSignedIn() = !localUser.isGuest()
         override suspend fun deviceId() = "dev"

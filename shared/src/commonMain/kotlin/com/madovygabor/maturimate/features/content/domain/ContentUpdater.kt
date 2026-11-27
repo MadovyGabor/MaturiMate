@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.datetime.LocalDate
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -103,16 +103,6 @@ data class ContentUpdateState(
     val needsMobileData: Boolean get() = pending.any { it.needsMobileData }
 }
 
-/** Parses a `YYYYMMDDNN` content version into its release [LocalDate], or null when invalid. */
-fun contentVersionDate(version: Long): LocalDate? {
-    val ymd = version / 100
-    val year = (ymd / 10_000).toInt()
-    val month = ((ymd / 100) % 100).toInt()
-    val day = (ymd % 100).toInt()
-    if (year !in 2000..2100) return null
-    return runCatching { LocalDate(year, month, day) }.getOrNull()
-}
-
 /** Whether the phone is on a network that may cost money (mobile data). */
 fun interface NetworkState {
     fun isMetered(): Boolean
@@ -158,9 +148,9 @@ class ContentUpdater(
     }
 
     /** After a sync: plans and downloads (without asking, unless mobile data and a large total). */
-    suspend fun onReleases(releases: List<ContentRelease>) {
+    suspend fun onReleases(releases: List<ContentRelease>, allowMobileData: Boolean = false) {
         this.releases = releases
-        update(allowMobileData = false)
+        update(allowMobileData = allowMobileData)
     }
 
     /** The settings row: the same, and the user said yes to mobile data. */
@@ -171,8 +161,13 @@ class ContentUpdater(
         scope?.launch { updateNow() }
     }
 
+    /** Records a failed manual release check without clearing [pending], [installedVersion] or [lastSuccessAt]. */
+    suspend fun onCheckFailed(error: ContentError) = mutex.withLock {
+        _state.value = _state.value.copy(downloading = false, lastError = error)
+    }
+
     /** Reads the currently installed content version without starting a network check or overwriting [lastSuccessAt]. */
-    suspend fun refresh() {
+    suspend fun refresh() = mutex.withLock {
         val subjects = chosenSubjects()
         val version = subjects.mapNotNull { packs.installedSubject(it)?.contentVersion }.maxOrNull()
             ?: packs.installedVersion()

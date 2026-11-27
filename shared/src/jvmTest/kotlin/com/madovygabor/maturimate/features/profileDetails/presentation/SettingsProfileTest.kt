@@ -34,7 +34,6 @@ import kotlinx.datetime.LocalTime
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.error_io
 import maturimate.shared.generated.resources.settings_reset_done
-import maturimate.shared.generated.resources.settings_school_language_saved
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsProfileTest : SettingsTestBase() {
@@ -113,7 +112,7 @@ class SettingsProfileTest : SettingsTestBase() {
         onNodeWithText("Újrakezdés").assertIsEnabled().performClick()
         waitForText("Valami nem sikerült. Próbáld újra.")
         onNodeWithText("Újrakezdés megerősítése").assertExists()
-        assertEquals(said(Res.string.error_io), runBlocking { snackbar.next() })
+        assertTrue(runBlocking { snackbar.isQuiet() })
 
         // the same dialog, tried again: it closes and a snackbar says it
         result = OperationResult.Success(Unit)
