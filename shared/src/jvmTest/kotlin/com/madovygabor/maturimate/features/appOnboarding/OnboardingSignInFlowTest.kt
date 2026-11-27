@@ -134,7 +134,7 @@ class OnboardingSignInFlowTest {
     private object NoSettings : AccountSettings {
         override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun sendPasswordCode(): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
-        override suspend fun changePassword(oldPassword: String, code: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun changePassword(oldPassword: String, code: String?, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun signOut(force: Boolean): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
     }
 

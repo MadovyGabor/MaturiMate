@@ -40,9 +40,17 @@ class AccountSettingsImplProfileTest : AccountSettingsImplTestBase() {
     }
 
     @Test
-    fun thePasswordChangesWithTheEmailedCodeAndAStrongNewOne() = runBlocking {
+    fun thePasswordChangesWithoutCodeOnAFreshSessionAndRequiresCodeWhenDemanded() = runBlocking {
         val auth = Auth()
         val settings = settings(auth)
+        // fresh session: succeeds with null code
+        assertEquals(OperationResult.Success(Unit), settings.changePassword("Old12345", null, "New12345"))
+        assertEquals("New12345", auth.newPassword)
+
+        // old session: server demands reauthentication
+        auth.requireReauth = true
+        auth.newPassword = null
+        assertEquals(OperationResult.Error(AuthError.REAUTHENTICATION_REQUIRED), settings.changePassword("Old12345", null, "New12345"))
         assertEquals(OperationResult.Success(Unit), settings.sendPasswordCode())
         assertEquals(1, auth.codesSent)
 
@@ -53,7 +61,6 @@ class AccountSettingsImplProfileTest : AccountSettingsImplTestBase() {
         assertNull(auth.newPassword)
         assertEquals(OperationResult.Success(Unit), settings.changePassword("Old12345", " 123456 ", "New12345"))
         assertEquals("New12345", auth.newPassword)
-        // the old password is checked by the server, never as a sign-in of this phone: the session stays as it is
         assertEquals(0, auth.signIns)
     }
 

@@ -105,10 +105,12 @@ abstract class AccountSettingsImplTestBase {
         /** The server checks the code: "123456" is the one it sent. */
         /** The current password the change carried to the server. */
         var sentCurrentPassword: String? = null
-        override suspend fun changePasswordWithCode(code: String, newPassword: String, currentPassword: String?): OperationResult<Unit, AuthError> {
+        var requireReauth: Boolean = false
+        override suspend fun changePasswordWithCode(code: String?, newPassword: String, currentPassword: String?): OperationResult<Unit, AuthError> {
             sentCurrentPassword = currentPassword
             return when {
-                code != "123456" -> OperationResult.Error(AuthError.INVALID_CODE)
+                code == null && requireReauth -> OperationResult.Error(AuthError.REAUTHENTICATION_REQUIRED)
+                code != null && code != "123456" -> OperationResult.Error(AuthError.INVALID_CODE)
                 newPassword == password -> OperationResult.Error(AuthError.SAME_PASSWORD)
                 else -> ok.also { this.newPassword = newPassword }
             }

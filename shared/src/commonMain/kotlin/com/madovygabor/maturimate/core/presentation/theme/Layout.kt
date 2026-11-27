@@ -18,6 +18,8 @@ data class Layout(
     val breakpointExpanded: Dp = 840.dp,
     /** Widest column of onboarding questions and forms. */
     val contentMaxWidth: Dp = 560.dp,
+    /** Widest dialog container on tablet and desktop. */
+    val dialogMaxWidth: Dp = 400.dp,
     /** Width of the side panel in the two-pane layout. */
     val sidePanelWidth: Dp = 360.dp,
     /** Width of the navigation rail on a tablet or desktop. */

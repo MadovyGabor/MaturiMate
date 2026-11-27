@@ -21,6 +21,8 @@ class InstalledContentPacks(private val provider: ContentDatabaseProvider) : Con
 
     override fun installedSubject(subjectId: Long): SubjectContentInfo? = provider.installedSubject(subjectId)?.toInfo()
 
+    override fun installedVersion(): Long? = provider.installedVersion()
+
     override fun availableSubject(subjectId: Long): SubjectContentInfo? = provider.availableSubject(subjectId)?.toInfo()
 
     override suspend fun savePack(release: ContentRelease, bytes: ByteArray): PackSaveResult =

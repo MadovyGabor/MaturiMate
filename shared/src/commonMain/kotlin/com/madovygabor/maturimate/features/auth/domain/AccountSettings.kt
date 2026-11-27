@@ -14,14 +14,14 @@ interface AccountSettings {
     suspend fun sendPasswordCode(): OperationResult<Unit, AuthError>
 
     /**
-     * The new password, proved by BOTH the [oldPassword] (checked by the server without a second session on this phone)
-     * and the [code] from [sendPasswordCode]: GoTrue checks the code only on sessions older than 24 hours, so the code
-     * alone would not prove anything on a fresh one. A wrong old password is [AuthError.INVALID_CREDENTIALS], too many tries
-     * [AuthError.TOO_MANY_REQUESTS]; the new one must follow [AccountRules.isStrongPassword] ([AuthError.WEAK_PASSWORD]);
-     * a wrong or expired code is [AuthError.INVALID_CODE], the old password again [AuthError.SAME_PASSWORD]. An account
-     * without a password (Google) has nothing to change.
+     * The new password, proved by [oldPassword] (checked by the server without a second session on this phone) and,
+     * when the server demands reauthentication (sessions older than 24 hours), the [code] from [sendPasswordCode].
+     * A wrong old password is [AuthError.INVALID_CREDENTIALS], too many tries [AuthError.TOO_MANY_REQUESTS]; the new
+     * one must follow [AccountRules.isStrongPassword] ([AuthError.WEAK_PASSWORD]); a missing required reauthentication
+     * is [AuthError.REAUTHENTICATION_REQUIRED], a wrong or expired code [AuthError.INVALID_CODE], the old password
+     * again [AuthError.SAME_PASSWORD]. An account without a password (Google) has nothing to change.
      */
-    suspend fun changePassword(oldPassword: String, code: String, newPassword: String): OperationResult<Unit, AuthError>
+    suspend fun changePassword(oldPassword: String, code: String?, newPassword: String): OperationResult<Unit, AuthError>
 
     /**
      * Uploads what is not uploaded yet, signs out and removes every local row of the user. The app then starts again with

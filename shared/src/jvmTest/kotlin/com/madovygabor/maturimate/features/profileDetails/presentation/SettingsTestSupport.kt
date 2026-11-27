@@ -43,7 +43,7 @@ internal class GuestPhone(private val guest: Boolean) : com.madovygabor.maturima
     override suspend fun isGuestPhone() = guest
     override suspend fun saveNames(firstName: String, lastName: String) = ok
     override suspend fun sendPasswordCode() = ok
-    override suspend fun changePassword(oldPassword: String, code: String, newPassword: String) = ok
+    override suspend fun changePassword(oldPassword: String, code: String?, newPassword: String) = ok
     override suspend fun signOut(force: Boolean) = ok
 }
 
@@ -72,7 +72,7 @@ internal class FakeAccount : AccountSettings {
     var exportResult: OperationResult<String, AuthError> = OperationResult.Success("maturimate.json")
     var codesSent = 0
     /** The old password, the code and the new password of the last change. */
-    @Volatile var changed: Triple<String, String, String>? = null
+    @Volatile var changed: Triple<String, String?, String>? = null
     var deletes = 0
     val proofs = mutableListOf<DeletionProof>()
     var exportedAsShare: Boolean? = null
@@ -83,7 +83,7 @@ internal class FakeAccount : AccountSettings {
     override suspend fun isGuestPhone() = false
     override suspend fun saveNames(firstName: String, lastName: String) = namesResult
     override suspend fun sendPasswordCode(): OperationResult<Unit, AuthError> { codesSent++; return codeResult }
-    override suspend fun changePassword(oldPassword: String, code: String, newPassword: String): OperationResult<Unit, AuthError> {
+    override suspend fun changePassword(oldPassword: String, code: String?, newPassword: String): OperationResult<Unit, AuthError> {
         changed = Triple(oldPassword, code, newPassword)
         return changeResult
     }
@@ -140,7 +140,8 @@ abstract class SettingsTestBase {
         progress: ProgressRepository = progress(OperationResult.Success(Unit)),
         snackbar: SnackbarController = SnackbarController(),
         examDates: ExamDateRepository = NoExamDates,
-    ) = SettingsViewModel(repository, auth, account, progress, snackbar, examDates, fixedToday = today)
+        manualFeedbackMs: Long = 0L,
+    ) = SettingsViewModel(repository, auth, account, progress, snackbar, examDates, fixedToday = today, manualFeedbackMs = manualFeedbackMs)
 
     internal suspend fun SettingsViewModel.loaded() = state.awaitFirst { it?.profile?.role != null }!!
 

@@ -7,6 +7,7 @@ Pill-shaped button in four variants. One `filled` main button per screen.
 - `tonal`: a secondary action. `secondary-container` fill, `on-secondary-container` text.
 - `outlined`: a third-level action. `outline` border, `primary` text.
 - `text`: a quiet action, for example "Körülnézek" on the sign-in screen. `primary` text.
+- `destructive`: a destructive filled action (e.g. account deletion, sign-out confirmation). `error` fill, `on-error` text.
 - Disabled: `surface-container-highest` fill, `on-surface-variant` text.
 - `radius-full` corners, `label-large` text.
 - At least `touch-target` (48 dp) tall.

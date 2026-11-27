@@ -62,6 +62,9 @@ import maturimate.shared.generated.resources.plan_title
 import maturimate.shared.generated.resources.role_learner
 import maturimate.shared.generated.resources.role_student
 import maturimate.shared.generated.resources.role_title
+import maturimate.shared.generated.resources.settings_edit_goal_title
+import maturimate.shared.generated.resources.settings_edit_role_title
+import maturimate.shared.generated.resources.settings_edit_subjects_title
 import maturimate.shared.generated.resources.subject_mat
 import maturimate.shared.generated.resources.subjects_title_learner
 import maturimate.shared.generated.resources.subjects_title_student
@@ -113,7 +116,7 @@ class OnboardingFlowTest {
     private object NoSettings : AccountSettings {
         override suspend fun saveNames(firstName: String, lastName: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun sendPasswordCode(): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
-        override suspend fun changePassword(oldPassword: String, code: String, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
+        override suspend fun changePassword(oldPassword: String, code: String?, newPassword: String): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
         override suspend fun signOut(force: Boolean): OperationResult<Unit, AuthError> = OperationResult.Success(Unit)
     }
 
@@ -255,9 +258,9 @@ class OnboardingFlowTest {
         waitFor(Res.string.practice_free_title)
         openAnswers()
 
-        // the goal opens its onboarding question, saved with "Mentés"
+        // the goal opens its dedicated settings edit page, saved with "Mentés"
         click(Res.string.onboarding_step_goal)
-        waitFor(Res.string.goal_title)
+        waitFor(Res.string.settings_edit_goal_title)
         onNodeWithText("20 perc").performClick()
         click(Res.string.common_save)
         waitFor(Res.string.settings_app_language)
@@ -281,10 +284,10 @@ class OnboardingFlowTest {
         openAnswers()
 
         click(Res.string.onboarding_step_role)
-        waitFor(Res.string.role_title)
+        waitFor(Res.string.settings_edit_role_title)
         click(Res.string.role_learner)
         click(Res.string.common_save)
-        waitFor(Res.string.subjects_title_learner)
+        waitFor(Res.string.settings_edit_subjects_title)
         click(Res.string.subject_mat)
         click(Res.string.common_save)
 

@@ -12,6 +12,7 @@ import com.madovygabor.maturimate.features.content.domain.NetworkState
 import com.madovygabor.maturimate.features.content.domain.PackSaveResult
 import com.madovygabor.maturimate.features.content.domain.PackSource
 import com.madovygabor.maturimate.features.content.domain.SubjectContentInfo
+import com.madovygabor.maturimate.features.content.domain.contentVersionDate
 import com.madovygabor.maturimate.features.sync.domain.ContentRelease
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -19,10 +20,12 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ContentUpdaterTest {
@@ -64,8 +67,9 @@ class ContentUpdaterTest {
         failWith?.let { OperationResult.Error(it) } ?: OperationResult.Success(ByteArray(r.sizeBytes.toInt()))
     }
 
+    private var currentNow = 10_000L
     private fun updater(packs: FakePacks, subjects: List<Long> = listOf(1, 2), metered: Boolean = false) =
-        ContentUpdater(packs, source, NetworkState { metered }, chosenSubjects = { subjects }, mobileDataAskBytes = 1500)
+        ContentUpdater(packs, source, NetworkState { metered }, chosenSubjects = { subjects }, mobileDataAskBytes = 1500, now = { currentNow })
 
     @Test
     fun theOnlyPacksPlannedAreNewerOrReplaceAStarterOfAChosenSubjectAndThisSchema() = runBlocking {
@@ -232,5 +236,32 @@ class ContentUpdaterTest {
         assertEquals(OperationResult.Error<ByteArray, ContentError>(ContentError.CORRUPT), short.download(release(1)))
         val unset = WorkerPackSource("", Tokens(), HttpClient(MockEngine { respond("") }))
         assertEquals(OperationResult.Error<ByteArray, ContentError>(ContentError.NOT_CONFIGURED), unset.download(release(1)))
+    }
+
+    @Test
+    fun lastSuccessAtIsRecordedOnSuccessAndPreservedAcrossFailures() = runBlocking {
+        val packs = FakePacks(mutableMapOf(1L to SubjectContentInfo(isStarter = false, contentVersion = 2026111201)))
+        val u = updater(packs, subjects = listOf(1))
+
+        u.refresh()
+        assertEquals(2026111201L, u.state.value.installedVersion)
+        assertNull(u.state.value.lastSuccessAt)
+
+        currentNow = 50_000L
+        u.onReleases(listOf(release(1, 2026111201)))
+        assertEquals(50_000L, u.state.value.lastSuccessAt)
+
+        currentNow = 90_000L
+        failWith = ContentError.NETWORK
+        u.onReleases(listOf(release(1, 2026120101)))
+        assertEquals(ContentError.NETWORK, u.state.value.lastError)
+        assertEquals(50_000L, u.state.value.lastSuccessAt)
+    }
+
+    @Test
+    fun contentVersionDateParsesValidVersionsAndRejectsInvalidOnes() {
+        assertEquals(LocalDate(2026, 11, 24), contentVersionDate(2026112401L))
+        assertNull(contentVersionDate(123L))
+        assertNull(contentVersionDate(2026130101L))
     }
 }

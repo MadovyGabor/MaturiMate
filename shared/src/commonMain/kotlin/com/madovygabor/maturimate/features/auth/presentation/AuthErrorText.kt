@@ -12,6 +12,7 @@ import maturimate.shared.generated.resources.error_email_not_confirmed
 import maturimate.shared.generated.resources.error_email_taken
 import maturimate.shared.generated.resources.error_network
 import maturimate.shared.generated.resources.error_password_weak
+import maturimate.shared.generated.resources.error_reauth_required
 import maturimate.shared.generated.resources.error_same_password
 import maturimate.shared.generated.resources.error_session_expired
 import maturimate.shared.generated.resources.error_signin
@@ -28,6 +29,7 @@ fun AuthError.toUiText(): UiText = UiText.StringRes(
         AuthError.SAME_PASSWORD -> Res.string.error_same_password
         AuthError.INVALID_EMAIL -> Res.string.error_email_invalid
         AuthError.INVALID_CODE -> Res.string.error_code_invalid
+        AuthError.REAUTHENTICATION_REQUIRED -> Res.string.error_reauth_required
         AuthError.TOO_MANY_REQUESTS -> Res.string.error_too_many
         AuthError.NETWORK -> Res.string.error_network
         AuthError.SESSION_EXPIRED -> Res.string.error_session_expired

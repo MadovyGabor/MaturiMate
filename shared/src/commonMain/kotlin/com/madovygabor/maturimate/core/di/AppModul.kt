@@ -210,6 +210,7 @@ val sharedModule = module {
             network = getOrNull<NetworkState>() ?: NetworkState { false },
             chosenSubjects = { profiles.profile.first()?.subjects?.map { it.subjectId }.orEmpty() },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            now = { Clock.System.now().toEpochMilliseconds() },
         )
     }
     single<AccountSetup> { AccountSetupImpl(get(), get(), get(), get(), get(USER_DATABASE), sync = get()) }

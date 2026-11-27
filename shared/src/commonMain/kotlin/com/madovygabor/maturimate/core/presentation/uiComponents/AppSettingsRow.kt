@@ -1,8 +1,10 @@
 package com.madovygabor.maturimate.core.presentation.uiComponents
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,8 +29,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import com.madovygabor.maturimate.core.presentation.theme.extendedColors
 import com.madovygabor.maturimate.core.presentation.theme.layout
+import com.madovygabor.maturimate.core.presentation.theme.motion
 import com.madovygabor.maturimate.core.presentation.theme.spacing
+
+/** Semantic tone of the value text in an [AppSettingsRow]. */
+enum class SettingsValueTone { DEFAULT, SUCCESS, ERROR }
 
 /** What sits at the end of an [AppSettingsRow]. */
 sealed interface SettingsTrailing {
@@ -39,6 +48,12 @@ sealed interface SettingsTrailing {
 
     /** A switch; a tap on the row turns it. */
     data class Toggle(val checked: Boolean) : SettingsTrailing
+
+    /** A spinner while background work is in progress. */
+    data object Busy : SettingsTrailing
+
+    /** A compact action button (e.g. Retry, Download) at the end of the row. */
+    data class Action(val text: String, val onClick: () -> Unit) : SettingsTrailing
 
     /** A tag such as "Hamarosan"; the row does nothing yet and is greyed. */
     data class Soon(val text: String) : SettingsTrailing
@@ -83,18 +98,27 @@ fun AppSettingsRow(
     value: String?,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    note: String? = null,
+    valueTone: SettingsValueTone = SettingsValueTone.DEFAULT,
     trailing: SettingsTrailing = if (onClick != null) SettingsTrailing.Arrow else SettingsTrailing.None,
     danger: Boolean = false,
     divider: Boolean = true,
 ) {
     val spacing = MaterialTheme.spacing
     val colors = MaterialTheme.colorScheme
+    val extended = MaterialTheme.extendedColors
     val soon = trailing is SettingsTrailing.Soon
     val action = onClick?.takeUnless { soon }
+    val valueColor = when (valueTone) {
+        SettingsValueTone.DEFAULT -> colors.onSurfaceVariant
+        SettingsValueTone.SUCCESS -> extended.success
+        SettingsValueTone.ERROR -> colors.error
+    }
     if (divider) HorizontalDivider(color = colors.outlineVariant)
     Row(
         modifier
             .fillMaxWidth()
+            .animateContentSize(animationSpec = MaterialTheme.motion.spec(MaterialTheme.motion.durationShort))
             .then(
                 if (action == null) Modifier
                 else Modifier.clickable(role = if (trailing is SettingsTrailing.Toggle) Role.Switch else Role.Button, onClick = action)
@@ -115,13 +139,30 @@ fun AppSettingsRow(
         }
         Column(faded.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = if (danger) colors.error else colors.onSurface)
-            value?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant) }
+            value?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = valueColor, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+            note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
         }
         when (trailing) {
             SettingsTrailing.Arrow -> Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = colors.onSurfaceVariant)
             SettingsTrailing.None -> Unit
             // the row takes the tap, so the switch itself is only a picture of the state
             is SettingsTrailing.Toggle -> Switch(checked = trailing.checked, onCheckedChange = null)
+            SettingsTrailing.Busy -> Box(
+                modifier = Modifier.size(MaterialTheme.layout.touchTarget),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(MaterialTheme.layout.iconSmall),
+                    strokeWidth = MaterialTheme.layout.borderThick,
+                    color = colors.primary,
+                )
+            }
+            is SettingsTrailing.Action -> AppButton(
+                text = trailing.text,
+                onClick = trailing.onClick,
+                variant = AppButtonVariant.TONAL,
+                compact = true,
+            )
             is SettingsTrailing.Soon -> AppTag(trailing.text)
         }
     }

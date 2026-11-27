@@ -9,6 +9,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.datetime.LocalDate
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /** What the phone holds of one subject: only its first lesson (a starter), or the full pack, and its version. */
 data class SubjectContentInfo(val isStarter: Boolean, val contentVersion: Long)
@@ -30,6 +33,9 @@ interface ContentPacks {
 
     /** What the installed content file holds of the subject; null when nothing. */
     fun installedSubject(subjectId: Long): SubjectContentInfo?
+
+    /** Version of the installed content manifest, or null when none is installed. */
+    fun installedVersion(): Long? = null
 
     /**
      * The better of the installed content and a downloaded pack that waits for its swap: what the phone has already, so a
@@ -90,9 +96,21 @@ data class ContentUpdateState(
     val lastError: ContentError? = null,
     /** The highest installed content version, for the row. */
     val installedVersion: Long? = null,
+    /** Epoch millis of the last successful content check/update, preserved across failures. */
+    val lastSuccessAt: Long? = null,
 ) {
     val pendingBytes: Long get() = pending.sumOf { it.release.sizeBytes }
     val needsMobileData: Boolean get() = pending.any { it.needsMobileData }
+}
+
+/** Parses a `YYYYMMDDNN` content version into its release [LocalDate], or null when invalid. */
+fun contentVersionDate(version: Long): LocalDate? {
+    val ymd = version / 100
+    val year = (ymd / 10_000).toInt()
+    val month = ((ymd / 100) % 100).toInt()
+    val day = (ymd % 100).toInt()
+    if (year !in 2000..2100) return null
+    return runCatching { LocalDate(year, month, day) }.getOrNull()
 }
 
 /** Whether the phone is on a network that may cost money (mobile data). */
@@ -107,6 +125,7 @@ fun interface NetworkState {
  * expected hash), keeps the pack, and has it swapped in when no lesson is open. On a metered network a total above
  * [mobileDataAskBytes] waits for the user's yes; below it nothing is asked. A failure leaves the installed content as it was.
  */
+@OptIn(ExperimentalTime::class)
 class ContentUpdater(
     private val packs: ContentPacks,
     private val source: PackSource,
@@ -115,6 +134,7 @@ class ContentUpdater(
     private val mobileDataAskBytes: Long = MOBILE_DATA_ASK_BYTES,
     /** Where a download asked from a screen runs, so it goes on when the screen closes. */
     private val scope: CoroutineScope? = null,
+    private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val mutex = Mutex()
     private var releases: List<ContentRelease> = emptyList()
@@ -151,6 +171,18 @@ class ContentUpdater(
         scope?.launch { updateNow() }
     }
 
+    /** Reads the currently installed content version without starting a network check or overwriting [lastSuccessAt]. */
+    suspend fun refresh() {
+        val subjects = chosenSubjects()
+        val version = subjects.mapNotNull { packs.installedSubject(it)?.contentVersion }.maxOrNull()
+            ?: packs.installedVersion()
+        val failed = packs.installFailed()
+        _state.value = _state.value.copy(
+            installedVersion = version,
+            lastError = _state.value.lastError ?: if (failed) ContentError.INSTALL_FAILED else null,
+        )
+    }
+
     private suspend fun update(allowMobileData: Boolean) {
         if (!mutex.tryLock()) return
         try {
@@ -159,16 +191,16 @@ class ContentUpdater(
             if (todo.isEmpty()) {
                 // nothing to download, but a pack downloaded earlier may still wait for its swap
                 packs.applyPending()
-                publish(emptyList(), downloading = false, error = null)
+                publish(emptyList(), downloading = false, error = null, markSuccess = true)
                 return
             }
             if (!allowMobileData && total > mobileDataAskBytes && network.isMetered()) {
-                publish(todo.map { PendingPack(it, needsMobileData = true) }, downloading = false, error = null)
+                publish(todo.map { PendingPack(it, needsMobileData = true) }, downloading = false, error = null, markSuccess = false)
                 return
             }
             var error: ContentError? = null
             val left = todo.toMutableList()
-            publish(left.map { PendingPack(it) }, downloading = true, error = null)
+            publish(left.map { PendingPack(it) }, downloading = true, error = null, markSuccess = false)
             for (release in todo) {
                 when (val result = source.download(release)) {
                     is OperationResult.Error -> {
@@ -181,26 +213,29 @@ class ContentUpdater(
                             break
                         }
                         left.remove(release)
-                        publish(left.map { PendingPack(it) }, downloading = true, error = null)
+                        publish(left.map { PendingPack(it) }, downloading = true, error = null, markSuccess = false)
                     }
                 }
             }
             // whatever came is swapped in now, or when the open lesson closes
             packs.applyPending()
-            publish(left.map { PendingPack(it) }, downloading = false, error = error)
+            publish(left.map { PendingPack(it) }, downloading = false, error = error, markSuccess = error == null)
         } finally {
             mutex.unlock()
         }
     }
 
-    private suspend fun publish(pending: List<PendingPack>, downloading: Boolean, error: ContentError?) {
+    private suspend fun publish(pending: List<PendingPack>, downloading: Boolean, error: ContentError?, markSuccess: Boolean) {
         val subjects = chosenSubjects()
+        val effectiveError = error ?: if (packs.installFailed()) ContentError.INSTALL_FAILED else null
         _state.value = ContentUpdateState(
             pending = pending,
             downloading = downloading,
             // a failed build of the kept packs is shown until another pack or version (or a restart) builds
-            lastError = error ?: if (packs.installFailed()) ContentError.INSTALL_FAILED else null,
-            installedVersion = subjects.mapNotNull { packs.installedSubject(it)?.contentVersion }.maxOrNull(),
+            lastError = effectiveError,
+            installedVersion = subjects.mapNotNull { packs.installedSubject(it)?.contentVersion }.maxOrNull()
+                ?: packs.installedVersion(),
+            lastSuccessAt = if (markSuccess && effectiveError == null) now() else _state.value.lastSuccessAt,
         )
     }
 

@@ -76,6 +76,25 @@ class AuthRepositoryImplPasswordTest : AuthRepositoryImplTestBase() {
             repository.signIn(EMAIL, PASSWORD)
             assertEquals(OperationResult.Error(AuthError.INVALID_CODE), repository.changePasswordWithCode("000000", "NewPassw0rd"), code)
         }
+        val needsReauth = repository { request ->
+            if (request.method == HttpMethod.Put) authError("reauthentication_needed") else json(session())
+        }
+        needsReauth.signIn(EMAIL, PASSWORD)
+        assertEquals(OperationResult.Error(AuthError.REAUTHENTICATION_REQUIRED), needsReauth.changePasswordWithCode(null, "NewPassw0rd"))
+    }
+
+    @Test
+    fun aFreshSessionOmitsNonceWhenCodeIsNull() = runBlocking {
+        val repository = repository { request -> if (request.method == HttpMethod.Put) json(user()) else json(session()) }
+        repository.signIn(EMAIL, PASSWORD)
+        requests.clear()
+
+        assertTrue(repository.changePasswordWithCode(null, "NewPassw0rd", currentPassword = PASSWORD).isSuccess())
+
+        val body = Json.parseToJsonElement(requests.single().second).jsonObject
+        assertEquals(null, body["nonce"])
+        assertEquals(PASSWORD, body["current_password"]?.jsonPrimitive?.content)
+        assertEquals("NewPassw0rd", body["password"]?.jsonPrimitive?.content)
     }
 
     @Test

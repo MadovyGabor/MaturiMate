@@ -37,6 +37,9 @@ enum class AuthError : Error {
     /** The 6-digit code is wrong or has expired. */
     INVALID_CODE,
 
+    /** The server requires a fresh sign-in / reauthentication code (session older than 24 hours). */
+    REAUTHENTICATION_REQUIRED,
+
     /** Too many attempts or e-mails in a short time. */
     TOO_MANY_REQUESTS,
 
@@ -108,11 +111,13 @@ interface AuthRepository {
     suspend fun sendReauthenticationCode(): OperationResult<Unit, AuthError> = OperationResult.Error(AuthError.UNKNOWN)
 
     /**
-     * Sets the new password of the signed-in user, proved by the [code] of [sendReauthenticationCode] and, when given, the
+     * Sets the new password of the signed-in user, proved by the optional [code] of [sendReauthenticationCode] (needed
+     * only when the server demands reauthentication, i.e. sessions older than 24 hours) and, when given, the
      * [currentPassword] (sent as GoTrue's `current_password`, checked by the server when "require current password" is on).
-     * A wrong or expired code is [AuthError.INVALID_CODE], a wrong current password [AuthError.INVALID_CREDENTIALS].
+     * A wrong or expired code is [AuthError.INVALID_CODE], a missing required code [AuthError.REAUTHENTICATION_REQUIRED],
+     * a wrong current password [AuthError.INVALID_CREDENTIALS].
      */
-    suspend fun changePasswordWithCode(code: String, newPassword: String, currentPassword: String? = null): OperationResult<Unit, AuthError> =
+    suspend fun changePasswordWithCode(code: String?, newPassword: String, currentPassword: String? = null): OperationResult<Unit, AuthError> =
         OperationResult.Error(AuthError.UNKNOWN)
 
     /**

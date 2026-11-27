@@ -157,12 +157,12 @@ class AuthRepositoryImpl(
         auth.reauthenticate()
     }
 
-    override suspend fun changePasswordWithCode(code: String, newPassword: String, currentPassword: String?) = call {
+    override suspend fun changePasswordWithCode(code: String?, newPassword: String, currentPassword: String?) = call {
         // A plain PUT /user, not updateUser { currentPassword = … }: supabase-kt 3.8.0 serializes that field as
         // "currentPassword" (no @SerialName, no naming strategy), and GoTrue reads "current_password", so it would be dropped.
         val body = buildJsonObject {
             put("password", newPassword)
-            put("nonce", code)
+            if (!code.isNullOrBlank()) put("nonce", code)
             currentPassword?.let { put("current_password", it) }
         }.toString()
         var response = putUser(body)
@@ -374,8 +374,8 @@ class AuthRepositoryImpl(
         AuthErrorCode.SamePassword -> AuthError.SAME_PASSWORD
         AuthErrorCode.EmailAddressInvalid -> AuthError.INVALID_EMAIL
         // the reauthentication code: wrong, expired, or missing
-        AuthErrorCode.OtpExpired, AuthErrorCode.ReauthenticationNotValid, AuthErrorCode.ReauthNonceMissing,
-        AuthErrorCode.ReauthenticationNeeded -> AuthError.INVALID_CODE
+        AuthErrorCode.OtpExpired, AuthErrorCode.ReauthenticationNotValid, AuthErrorCode.ReauthNonceMissing -> AuthError.INVALID_CODE
+        AuthErrorCode.ReauthenticationNeeded -> AuthError.REAUTHENTICATION_REQUIRED
         AuthErrorCode.SessionNotFound, AuthErrorCode.SessionExpired, AuthErrorCode.BadJwt -> AuthError.SESSION_EXPIRED
         AuthErrorCode.OverRequestRateLimit, AuthErrorCode.OverEmailSendRateLimit -> AuthError.TOO_MANY_REQUESTS
         else -> AuthError.UNKNOWN

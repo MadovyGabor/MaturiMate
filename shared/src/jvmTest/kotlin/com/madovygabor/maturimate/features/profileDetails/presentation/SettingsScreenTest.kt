@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
 import com.madovygabor.maturimate.features.appOnboarding.presentation.OnboardingStep
@@ -183,10 +184,13 @@ class SettingsScreenTest : SettingsTestBase() {
 
         onNodeWithText("Jelszó megváltoztatása").assertExists()
         onNodeWithText("Kijelentkezés").assertExists()
-        // the reset asks first, then runs
+        // the reset asks first, then asks for the confirmation word, then runs
         onNodeWithText("Haladás újrakezdése").performClick()
         assertEquals(SettingsDialog.RESET, opened)
         onNodeWithText("Újrakezded a haladást?").assertExists()
+        onNodeWithText("Tovább").performClick()
+        assertEquals(SettingsDialog.RESET_CONFIRM, opened)
+        onNodeWithText("Megerősítő szó").performTextInput("ÚJRAKEZDÉS")
         onNodeWithText("Újrakezdés").performClick()
         assertTrue(reset)
 
@@ -208,8 +212,9 @@ class SettingsScreenTest : SettingsTestBase() {
             }
         }
 
-        // the email is shown (it cannot be changed yet), the guest's line is gone
-        onNodeWithText("anna@example.com · a módosítás még nem érhető el").assertExists()
+        // the email is shown without the "Nem módosítható." note (plus in the header), the guest's line is gone
+        onAllNodesWithText("anna@example.com").assertCountEquals(2)
+        onAllNodesWithText("Nem módosítható.").assertCountEquals(0)
         onAllNodesWithText("Még nincs fiókod").assertCountEquals(0)
         onNodeWithText("Név").performClick()
         assertEquals(SettingsDialog.NAME, opened)
@@ -243,15 +248,18 @@ class SettingsScreenTest : SettingsTestBase() {
         var tapped = 0
         setContent { AppTheme { SettingsContent(loaded.copy(account = account, guestPhone = false, sync = sync), SettingsActions(onSync = { tapped++ })) } }
 
-        // never uploaded
-        onNodeWithText("Még nincs feltöltve").assertExists()
+        // never synced
+        onNodeWithText("Még nincs szinkronizálva").assertExists()
         sync = SyncState(signedIn = true, pendingRounds = 2)
         onNodeWithText("Feltöltésre vár: 2 kör").assertExists()
         sync = SyncState(signedIn = true, running = true)
         onNodeWithText("Szinkronizálás…").assertExists()
-        sync = SyncState(signedIn = true, lastError = SyncError.SERVER)
-        onNodeWithText("Nem sikerült. Koppints az újrapróbáláshoz.").assertExists()
-        onNodeWithText("Szinkronizálás").performClick()
+        val noon = today.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds() + 12 * 3_600_000L
+        sync = SyncState(signedIn = true, lastSuccessAt = noon, lastError = SyncError.NETWORK)
+        onNodeWithText("Hálózatra vár · Utoljára: ma 12:00").assertExists()
+        sync = SyncState(signedIn = true, lastSuccessAt = noon, lastError = SyncError.SERVER)
+        onNodeWithText("Sikertelen · Utoljára: ma 12:00").assertExists()
+        onAllNodesWithText("Újra")[0].performClick()
         assertEquals(1, tapped)
     }
 
@@ -274,7 +282,7 @@ class SettingsScreenTest : SettingsTestBase() {
         val noon = today.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds() + 12 * 3_600_000L
         setContent { AppTheme { SettingsContent(loaded.copy(account = account, guestPhone = false, sync = SyncState(signedIn = true, lastSuccessAt = noon)), SettingsActions()) } }
 
-        onNodeWithText("Utoljára: ma 12:00").assertExists()
+        onNodeWithText("Szinkronizálva · ma 12:00").assertExists()
     }
 
     /** Pictures of the settings, both themes and languages, into build/screenshots/settings. */

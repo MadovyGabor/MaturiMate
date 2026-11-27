@@ -45,6 +45,9 @@ enum class AppButtonVariant {
 
     /** A quiet action, for example "Már van fiókom". */
     TEXT,
+
+    /** A destructive filled action, for example "Végleges törlés" or "Kijelentkezés". */
+    DESTRUCTIVE,
 }
 
 /**
@@ -132,6 +135,21 @@ fun AppButton(
             interactionSource = source,
             enabled = enabled,
             shape = CircleShape,
+            contentPadding = padding,
+            content = { label() },
+        )
+        AppButtonVariant.DESTRUCTIVE -> Button(
+            onClick = click,
+            modifier = sizedModifier,
+            interactionSource = source,
+            enabled = enabled,
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
             contentPadding = padding,
             content = { label() },
         )

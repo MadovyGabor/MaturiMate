@@ -1,9 +1,12 @@
 package com.madovygabor.maturimate.features.profileDetails.presentation
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.madovygabor.maturimate.core.domain.error.OperationResult
 import com.madovygabor.maturimate.core.presentation.theme.AppTheme
@@ -31,6 +34,7 @@ import kotlinx.datetime.LocalTime
 import maturimate.shared.generated.resources.Res
 import maturimate.shared.generated.resources.error_io
 import maturimate.shared.generated.resources.settings_reset_done
+import maturimate.shared.generated.resources.settings_school_language_saved
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsProfileTest : SettingsTestBase() {
@@ -101,15 +105,20 @@ class SettingsProfileTest : SettingsTestBase() {
 
         waitForText("Haladás újrakezdése")
         onNodeWithText("Haladás újrakezdése").performClick()
-        onNodeWithText("Újrakezdés").performClick()
-        waitForText("Valami nem sikerült. Próbáld újra.")
         onNodeWithText("Újrakezded a haladást?").assertExists()
-        assertTrue(runBlocking { snackbar.isQuiet() })
+        onNodeWithText("Tovább").performClick()
+        waitForText("Újrakezdés megerősítése")
+        onNodeWithText("Újrakezdés").assertIsNotEnabled()
+        onNodeWithText("Megerősítő szó").performTextInput("újrakezdés")
+        onNodeWithText("Újrakezdés").assertIsEnabled().performClick()
+        waitForText("Valami nem sikerült. Próbáld újra.")
+        onNodeWithText("Újrakezdés megerősítése").assertExists()
+        assertEquals(said(Res.string.error_io), runBlocking { snackbar.next() })
 
         // the same dialog, tried again: it closes and a snackbar says it
         result = OperationResult.Success(Unit)
         onNodeWithText("Újrakezdés").performClick()
-        waitUntil(timeoutMillis = TEST_TIMEOUT.inWholeMilliseconds) { onAllNodesWithText("Újrakezded a haladást?").fetchSemanticsNodes().isEmpty() }
+        waitUntil(timeoutMillis = TEST_TIMEOUT.inWholeMilliseconds) { onAllNodesWithText("Újrakezdés megerősítése").fetchSemanticsNodes().isEmpty() }
         assertEquals(said(Res.string.settings_reset_done), runBlocking { snackbar.next() })
     }
 
@@ -119,14 +128,14 @@ class SettingsProfileTest : SettingsTestBase() {
         val viewModel = viewModel()
         runDesktopComposeUiTest(412, 2400) {
             setContent { AppTheme { SettingsScreen(viewModel = viewModel) } }
-            waitForText("Név")
-            viewModel.openDialog(SettingsDialog.NAME)
-            waitForText("A neved")
+            waitForText("Kijelentkezés")
+            viewModel.openDialog(SettingsDialog.SIGN_OUT)
+            waitForText("Kijelentkezel?")
         }
         // a new screen (a rotation builds one) shows the dialog that was open
         runDesktopComposeUiTest(412, 2400) {
             setContent { AppTheme { SettingsScreen(viewModel = viewModel) } }
-            waitForText("A neved")
+            waitForText("Kijelentkezel?")
         }
     }
 }

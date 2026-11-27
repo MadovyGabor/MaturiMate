@@ -71,22 +71,25 @@ class AccountSettingsImpl(
     }
 
     // NonCancellable: the server's password check opens a session that must be ended or handed to the revocation, also
-    // when the dialog goes away meanwhile
-    override suspend fun changePassword(oldPassword: String, code: String, newPassword: String): OperationResult<Unit, AuthError> =
+    // when the page goes away meanwhile
+    override suspend fun changePassword(oldPassword: String, code: String?, newPassword: String): OperationResult<Unit, AuthError> =
         withContext(NonCancellable) {
             val user = auth.currentUser() ?: return@withContext OperationResult.Error(AuthError.SESSION_EXPIRED)
             // an account made with Google has no password to change (the settings do not offer it)
             if (!user.hasPassword) return@withContext OperationResult.Error(AuthError.UNKNOWN)
-            val digits = code.trim()
-            if (digits.isEmpty()) return@withContext OperationResult.Error(AuthError.INVALID_CODE)
+            val digits = code?.trim()
+            if (code != null && digits.isNullOrEmpty()) return@withContext OperationResult.Error(AuthError.INVALID_CODE)
             if (oldPassword.isBlank()) return@withContext OperationResult.Error(AuthError.INVALID_CREDENTIALS)
             if (!AccountRules.isStrongPassword(newPassword)) return@withContext OperationResult.Error(AuthError.WEAK_PASSWORD)
-            // Both are the proof: GoTrue checks the e-mailed code only on sessions older than 24 hours, so the old password,
-            // checked by the server without a second session on this phone, covers a fresh one. The check gives the friendly
-            // error; the password goes with the change too (current_password), for the server's own "require current
-            // password" setting.
+            // The old password is checked by the server (and sent as current_password); GoTrue checks the reauthentication
+            // code only on sessions older than 24 hours and answers REAUTHENTICATION_REQUIRED when needed.
             checkPassword(oldPassword)?.let { return@withContext OperationResult.Error(it) }
-            auth.changePasswordWithCode(digits, newPassword, currentPassword = oldPassword)
+            val result = auth.changePasswordWithCode(digits, newPassword, currentPassword = oldPassword)
+            if (digits != null && result is OperationResult.Error && result.error == AuthError.REAUTHENTICATION_REQUIRED) {
+                OperationResult.Error(AuthError.INVALID_CODE)
+            } else {
+                result
+            }
         }
 
     /** The server's check of [password]; null when it is right. A session the check could not end is ended later. */
